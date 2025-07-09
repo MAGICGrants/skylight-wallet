@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:async';
+import 'package:monero/monero.dart' as monero;
+import 'package:dart_date/dart_date.dart';
 
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
@@ -44,57 +47,99 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getHeight();
+    List<HistoryTx> txHistory = [];
+
+    if (synced) {
+      txHistory = wallet.getTransactionHistory();
+    }
 
     return Scaffold(
-      body: Center(
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 20,
+          spacing: 10,
           children: [
-            Column(
+            Text(
+              'Connected: $connected',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              'Synced: $synced',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              'Height: $height',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              address,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              'Balance: $balance',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Row(
               spacing: 20,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  '$balance XMR',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displaySmall,
+                ElevatedButton(
+                  onPressed: () => print("hello"),
+                  child: const Text('Receive'),
                 ),
-                Text(
-                  address,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  'Connected: $connected',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  'Synced: $synced',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  'Height: $height',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Row(
-                  spacing: 20,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => print("hello"),
-                      child: const Text('Receive'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => print("hello"),
-                      child: const Text('Send'),
-                    ),
-                  ],
+                ElevatedButton(
+                  onPressed: () => print("hello"),
+                  child: const Text('Send'),
                 ),
               ],
+            ),
+            Expanded(
+              child: SizedBox(
+                child: ListView.builder(
+                  itemCount: txHistory.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final tx = txHistory[index];
+
+                    return SizedBox(
+                      height: 32,
+                      child: Row(
+                        spacing: 20,
+                        children: [
+                          if (tx.direction ==
+                              monero.TransactionInfo_Direction.Out)
+                            Icon(
+                              Icons.arrow_outward_rounded,
+                              color: Colors.red,
+                              size: 20,
+                              semanticLabel: 'Outgoing transaction',
+                            ),
+                          if (tx.direction ==
+                              monero.TransactionInfo_Direction.In)
+                            Transform.rotate(
+                              angle: 90 * math.pi / 180,
+                              child: const Icon(
+                                Icons.arrow_outward_rounded,
+                                color: Colors.teal,
+                                size: 20,
+                                semanticLabel: 'Incoming transaction',
+                              ),
+                            ),
+                          Text(tx.amount.toString()),
+                          Text(
+                            DateTime.fromMillisecondsSinceEpoch(
+                              tx.timestamp * 1000,
+                            ).timeago(),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ],
         ),

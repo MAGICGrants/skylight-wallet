@@ -83,6 +83,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     await wallet.restoreFromMnemonic(_mnemonic, _restoreHeight);
+                    // await wallet.openExistingWallet();
                     Navigator.pushNamed(context, '/wallet_home');
                   },
                   child: const Text('Restore'),

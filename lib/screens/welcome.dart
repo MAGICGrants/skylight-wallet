@@ -1,7 +1,35 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/util/wallet.dart';
+import 'package:provider/provider.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WalletHomeScreenState();
+}
+
+class _WalletHomeScreenState extends State<WelcomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // push to wallet home screen if wallet exists
+    _checkForExistingWallet();
+  }
+
+  Future _checkForExistingWallet() async {
+    final path = await getWalletPath();
+    final walletFile = File(path);
+
+    if (await walletFile.exists()) {
+      final wallet = Provider.of<WalletModel>(context, listen: false);
+      wallet.openExisting();
+      Navigator.pushNamed(context, '/wallet_home');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

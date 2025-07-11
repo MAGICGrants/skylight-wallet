@@ -16,7 +16,7 @@ class WalletHomeScreen extends StatefulWidget {
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
   // ignore: unused_field
-  int _counter = 0;
+  bool _trigger = true;
   Timer? _timer;
 
   @override
@@ -25,18 +25,24 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     _startTimer();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      setState(() {
-        _counter++;
-      });
-    });
-  }
-
   @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      setState(() {
+        _trigger = !_trigger;
+      });
+    });
+  }
+
+  void _deleteWallet() {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    wallet.delete();
+    Navigator.pushNamed(context, '/welcome');
   }
 
   @override
@@ -50,7 +56,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     List<HistoryTx> txHistory = [];
 
     if (synced) {
+      wallet.refresh();
       txHistory = wallet.getTransactionHistory();
+    }
+
+    if (txHistory.isNotEmpty) {
+      wallet.store();
     }
 
     return Scaffold(
@@ -92,8 +103,13 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   child: const Text('Receive'),
                 ),
                 ElevatedButton(
-                  onPressed: () => print("hello"),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/send_transaction'),
                   child: const Text('Send'),
+                ),
+                TextButton(
+                  onPressed: _deleteWallet,
+                  child: const Text('Delete'),
                 ),
               ],
             ),

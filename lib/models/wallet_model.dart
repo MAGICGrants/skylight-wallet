@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
-
 import 'package:monero/monero.dart' as monero;
 
 String generateHexString(int length) {
@@ -100,11 +100,19 @@ class WalletModel with ChangeNotifier {
   }
 
   Future delete() async {
-    final path = await getWalletPath();
-
     monero.WalletManager_closeWallet(_walletManagerPtr, _walletPtr, false);
+    final path = await getWalletPath();
     final walletFile = File(path);
+    final walletKeysFile = File('$path.keys');
     await walletFile.delete();
+    await walletKeysFile.delete();
+  }
+
+  Future<bool> hasExistingWallet() async {
+    return monero.WalletManager_walletExists(
+      _walletManagerPtr,
+      await getWalletPath(),
+    );
   }
 
   bool isConnected() {

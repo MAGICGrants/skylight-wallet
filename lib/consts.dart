@@ -1,1 +1,1 @@
-const String WALLET_NAME = 'mywallet11111111111111';
+const String WALLET_NAME = 'mywallet';

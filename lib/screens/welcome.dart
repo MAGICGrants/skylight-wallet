@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:provider/provider.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -21,11 +19,9 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
   }
 
   Future _checkForExistingWallet() async {
-    final path = await getWalletPath();
-    final walletFile = File(path);
+    final wallet = Provider.of<WalletModel>(context, listen: false);
 
-    if (await walletFile.exists()) {
-      final wallet = Provider.of<WalletModel>(context, listen: false);
+    if (await wallet.hasExistingWallet()) {
       wallet.openExisting();
       Navigator.pushNamed(context, '/wallet_home');
     }

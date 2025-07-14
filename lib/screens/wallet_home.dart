@@ -42,7 +42,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   void _deleteWallet() {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     wallet.delete();
-    Navigator.pushNamed(context, '/welcome');
+    Navigator.pushReplacementNamed(context, '/welcome');
   }
 
   @override

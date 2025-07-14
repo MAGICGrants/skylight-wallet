@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
-class SendTransactionScreen extends StatefulWidget {
-  const SendTransactionScreen({super.key});
+class SendScreen extends StatefulWidget {
+  const SendScreen({super.key});
 
   @override
-  State<SendTransactionScreen> createState() => _SendTransactionScreenState();
+  State<SendScreen> createState() => _SendScreenState();
 }
 
-class _SendTransactionScreenState extends State<SendTransactionScreen> {
+class _SendScreenState extends State<SendScreen> {
   String _destinationAddress = '';
   double _amount = 0;
 

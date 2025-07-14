@@ -49,7 +49,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Widget build(BuildContext context) {
     final wallet = context.watch<WalletModel>();
     final balance = wallet.getBalance();
-    final address = wallet.getAddress();
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getHeight();
@@ -98,8 +97,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   child: const Text('Receive'),
                 ),
                 ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/send_transaction'),
+                  onPressed: () => Navigator.pushNamed(context, '/send'),
                   child: const Text('Send'),
                 ),
                 TextButton(

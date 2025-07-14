@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/screens/receive.dart';
-import 'package:monero_light_wallet/screens/send_transaction.dart';
+import 'package:monero_light_wallet/screens/send.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/screens/create_wallet.dart';
 import 'package:monero_light_wallet/screens/restore_wallet.dart';
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         '/restore_warning': (context) => RestoreWarningScreen(),
         '/restore_wallet': (context) => RestoreWalletScreen(),
         '/wallet_home': (context) => WalletHomeScreen(),
-        '/send_transaction': (context) => SendTransactionScreen(),
+        '/send': (context) => SendScreen(),
         '/receive': (context) => ReceiveScreen(),
       },
     );

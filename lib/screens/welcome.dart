@@ -15,15 +15,15 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
     super.initState();
 
     // push to wallet home screen if wallet exists
-    _checkForExistingWallet();
+    _pushHomeIfWalletExists();
   }
 
-  Future _checkForExistingWallet() async {
+  Future _pushHomeIfWalletExists() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
     if (await wallet.hasExistingWallet()) {
       wallet.openExisting();
-      Navigator.pushNamed(context, '/wallet_home');
+      Navigator.pushReplacementNamed(context, '/wallet_home');
     }
   }
 

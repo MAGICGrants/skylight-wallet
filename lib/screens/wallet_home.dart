@@ -85,11 +85,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Text(
-              address,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
               'Balance: $balance',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
@@ -99,7 +94,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  onPressed: () => print("hello"),
+                  onPressed: () => Navigator.pushNamed(context, '/receive'),
                   child: const Text('Receive'),
                 ),
                 ElevatedButton(

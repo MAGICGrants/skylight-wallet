@@ -44,6 +44,8 @@ dependencies:
   provider: ^6.1.5
   path_provider: ^2.1.5
   dart_date: ^1.5.3
+  qr_flutter: ^4.1.0
+  share_plus: ^11.0.0
 
 dev_dependencies:
   flutter_test:

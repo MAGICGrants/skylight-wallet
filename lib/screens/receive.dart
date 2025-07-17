@@ -29,7 +29,6 @@ class ReceiveScreen extends StatelessWidget {
                 child: Text(
                   address,
                   textAlign: TextAlign.center,
-
                   style: TextStyle(fontFamily: 'monospace'),
                 ),
                 onTap: () async {

@@ -45,6 +45,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     Navigator.pushReplacementNamed(context, '/welcome');
   }
 
+  void _showTxDetails(int txIndex) {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final txDetails = wallet.getTxDetails(txIndex);
+    Navigator.pushNamed(context, '/tx_details', arguments: txDetails);
+  }
+
   @override
   Widget build(BuildContext context) {
     final wallet = context.watch<WalletModel>();
@@ -52,7 +58,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getHeight();
-    List<HistoryTx> txHistory = [];
+    List<TxDetails> txHistory = [];
 
     if (synced) {
       wallet.refresh();
@@ -115,35 +121,38 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
                     return SizedBox(
                       height: 32,
-                      child: Row(
-                        spacing: 20,
-                        children: [
-                          if (tx.direction ==
-                              monero.TransactionInfo_Direction.Out)
-                            Icon(
-                              Icons.arrow_outward_rounded,
-                              color: Colors.red,
-                              size: 20,
-                              semanticLabel: 'Outgoing transaction',
-                            ),
-                          if (tx.direction ==
-                              monero.TransactionInfo_Direction.In)
-                            Transform.rotate(
-                              angle: 90 * math.pi / 180,
-                              child: const Icon(
+                      child: GestureDetector(
+                        onTap: () => _showTxDetails(tx.index),
+                        child: Row(
+                          spacing: 20,
+                          children: [
+                            if (tx.direction ==
+                                monero.TransactionInfo_Direction.Out)
+                              Icon(
                                 Icons.arrow_outward_rounded,
-                                color: Colors.teal,
+                                color: Colors.red,
                                 size: 20,
-                                semanticLabel: 'Incoming transaction',
+                                semanticLabel: 'Outgoing transaction',
                               ),
+                            if (tx.direction ==
+                                monero.TransactionInfo_Direction.In)
+                              Transform.rotate(
+                                angle: 90 * math.pi / 180,
+                                child: const Icon(
+                                  Icons.arrow_outward_rounded,
+                                  color: Colors.teal,
+                                  size: 20,
+                                  semanticLabel: 'Incoming transaction',
+                                ),
+                              ),
+                            Text(tx.amount.toString()),
+                            Text(
+                              DateTime.fromMillisecondsSinceEpoch(
+                                tx.timestamp * 1000,
+                              ).timeago(),
                             ),
-                          Text(tx.amount.toString()),
-                          Text(
-                            DateTime.fromMillisecondsSinceEpoch(
-                              tx.timestamp * 1000,
-                            ).timeago(),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },

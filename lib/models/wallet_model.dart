@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/monero.dart' as monero;
 
@@ -16,18 +17,37 @@ String generateHexString(int length) {
   return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
 }
 
-class HistoryTx {
+class TxDetails {
+  final int index;
+  final monero.TransactionInfo_Direction direction;
   final String hash;
   final double amount;
+  final double fee;
+  final List<TxRecipient> recipients;
   final int timestamp;
-  final monero.TransactionInfo_Direction direction;
+  final int height;
+  final int confirmations;
+  final String key;
 
-  HistoryTx({
+  TxDetails({
+    required this.index,
+    required this.direction,
     required this.hash,
     required this.amount,
+    required this.fee,
+    required this.recipients,
     required this.timestamp,
-    required this.direction,
+    required this.height,
+    required this.confirmations,
+    required this.key,
   });
+}
+
+class TxRecipient {
+  final String address;
+  final double amount;
+
+  TxRecipient(this.address, this.amount);
 }
 
 class WalletModel with ChangeNotifier {
@@ -132,14 +152,16 @@ class WalletModel with ChangeNotifier {
   }
 
   double getBalance() {
-    return monero.Wallet_balance(_walletPtr, accountIndex: 0) / 1000000000000;
+    return doubleAmountFromInt(
+      monero.Wallet_balance(_walletPtr, accountIndex: 0),
+    );
   }
 
   void send(String destinationAddress, double amount) {
     final paymentId = generateHexString(32);
     final amountInt = monero.Wallet_amountFromDouble(amount);
 
-    final tx = monero.Wallet_createTransaction(
+    final txPtr = monero.Wallet_createTransaction(
       _walletPtr,
       dst_addr: destinationAddress,
       payment_id: paymentId,
@@ -149,41 +171,21 @@ class WalletModel with ChangeNotifier {
       subaddr_account: 0,
     );
 
-    monero.PendingTransaction_commit(tx, filename: '', overwrite: true);
+    monero.PendingTransaction_commit(txPtr, filename: '', overwrite: false);
+    store();
     refresh();
   }
 
-  List<HistoryTx> getTransactionHistory() {
+  List<TxDetails> getTransactionHistory() {
     const txHistSize = 100;
     final txHistPtr = monero.Wallet_history(_walletPtr);
     final txCount = monero.TransactionHistory_count(txHistPtr);
-    final List<HistoryTx> txs = [];
+    final List<TxDetails> txs = [];
 
     for (int i = 1; i <= txHistSize; i++) {
       final txIndex = txCount - i;
       if (txIndex < 0) break;
-
-      final txPtr = monero.TransactionHistory_transaction(
-        txHistPtr,
-        index: txIndex,
-      );
-
-      final hash = monero.TransactionInfo_hash(txPtr);
-      final amount = monero.TransactionInfo_amount(txPtr);
-      final timestamp = monero.TransactionInfo_timestamp(txPtr);
-      final height = monero.TransactionInfo_blockHeight(txPtr);
-      final direction = monero.TransactionInfo_direction(txPtr);
-      final fee = (direction == monero.TransactionInfo_Direction.Out)
-          ? monero.TransactionInfo_fee(txPtr)
-          : 0;
-
-      final tx = HistoryTx(
-        hash: hash,
-        amount: (amount + fee) / 1000000000000,
-        timestamp: timestamp,
-        direction: direction,
-      );
-
+      final tx = getTxDetails(txIndex);
       txs.add(tx);
     }
 
@@ -192,5 +194,48 @@ class WalletModel with ChangeNotifier {
     });
 
     return txs;
+  }
+
+  TxDetails getTxDetails(int txIndex) {
+    final txHistPtr = monero.Wallet_history(_walletPtr);
+
+    final txInfoPtr = monero.TransactionHistory_transaction(
+      txHistPtr,
+      index: txIndex,
+    );
+
+    final direction = monero.TransactionInfo_direction(txInfoPtr);
+    final hash = monero.TransactionInfo_hash(txInfoPtr);
+    final amountSent = doubleAmountFromInt(
+      monero.TransactionInfo_amount(txInfoPtr),
+    );
+    final fee = doubleAmountFromInt(monero.TransactionInfo_fee(txInfoPtr));
+    final timestamp = monero.TransactionInfo_timestamp(txInfoPtr);
+    final height = monero.TransactionInfo_blockHeight(txInfoPtr);
+    final confirmations = monero.Wallet_blockChainHeight(_walletPtr) - height;
+    final key = monero.Wallet_getTxKey(_walletPtr, txid: hash);
+
+    List<TxRecipient> recipients = [];
+    final recipientsCount = monero.TransactionInfo_transfers_count(txInfoPtr);
+
+    for (int i = 0; i < recipientsCount; i++) {
+      final address = monero.TransactionInfo_transfers_address(txInfoPtr, i);
+      final amountInt = monero.TransactionInfo_transfers_amount(txInfoPtr, i);
+      final amount = doubleAmountFromInt(amountInt);
+      recipients.add(TxRecipient(address, amount));
+    }
+
+    return TxDetails(
+      index: txIndex,
+      direction: direction,
+      hash: hash,
+      amount: amountSent,
+      fee: fee,
+      recipients: recipients,
+      timestamp: timestamp,
+      height: height,
+      confirmations: confirmations,
+      key: key,
+    );
   }
 }

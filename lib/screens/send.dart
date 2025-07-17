@@ -66,7 +66,7 @@ class _SendScreenState extends State<SendScreen> {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
+                  onPressed: () {
                     wallet.send(_destinationAddress, _amount);
                     Navigator.pushNamed(context, '/wallet_home');
                   },

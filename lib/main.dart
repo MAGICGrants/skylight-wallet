@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/screens/receive.dart';
 import 'package:monero_light_wallet/screens/send.dart';
+import 'package:monero_light_wallet/screens/tx_details.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/screens/create_wallet.dart';
 import 'package:monero_light_wallet/screens/restore_wallet.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       initialRoute: '/welcome',
       routes: {
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/wallet_home': (context) => WalletHomeScreen(),
         '/send': (context) => SendScreen(),
         '/receive': (context) => ReceiveScreen(),
+        '/tx_details': (context) => TxDetailsScreen(),
       },
     );
   }

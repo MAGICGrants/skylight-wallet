@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/screens/connection_details.dart';
 import 'package:monero_light_wallet/screens/receive.dart';
 import 'package:monero_light_wallet/screens/send.dart';
 import 'package:monero_light_wallet/screens/tx_details.dart';
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/welcome',
       routes: {
         '/welcome': (context) => WelcomeScreen(),
+        '/connection_details': (context) => ConnectionDetailsScreen(),
         '/create_wallet': (context) => CreateWalletScreen(),
         '/restore_warning': (context) => RestoreWarningScreen(),
         '/restore_wallet': (context) => RestoreWalletScreen(),

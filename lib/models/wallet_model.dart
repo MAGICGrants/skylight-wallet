@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/monero.dart' as monero;
+import 'package:shared_preferences/shared_preferences.dart';
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -50,6 +51,18 @@ class TxRecipient {
   TxRecipient(this.address, this.amount);
 }
 
+class DaemonConnectionDetails {
+  final String address;
+  final String proxyPort;
+  final bool useSsl;
+
+  DaemonConnectionDetails({
+    required this.address,
+    required this.proxyPort,
+    required this.useSsl,
+  });
+}
+
 class WalletModel with ChangeNotifier {
   final monero.WalletManager _walletManagerPtr =
       monero.WalletManagerFactory_getWalletManager();
@@ -57,11 +70,53 @@ class WalletModel with ChangeNotifier {
   late monero.wallet _walletPtr;
   late monero.Coins _coinsPtr;
   late monero.TransactionHistory _txHistoryPtr;
+  late String _connectionAddress;
+  late String _connectionProxyPort;
+  late bool _connectionUseSsl;
 
   monero.wallet get wallet => _walletPtr;
 
-  void _connectToDaemon() {
-    monero.Wallet_init(_walletPtr, daemonAddress: '192.168.255.114:18081');
+  Future persistCurrentConnection() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('connectionAddress', _connectionAddress);
+    prefs.setString('connectionProxyPort', _connectionProxyPort);
+    prefs.setBool('connectionUseSsl', _connectionUseSsl);
+  }
+
+  Future<DaemonConnectionDetails> getPersistedConnection() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return DaemonConnectionDetails(
+      address: prefs.getString('connectionAddress') ?? '',
+      proxyPort: prefs.getString('connectionProxyPort') ?? '',
+      useSsl: prefs.getBool('connectionUseSsl') ?? false,
+    );
+  }
+
+  Future loadPersistedConnection() async {
+    final connectionDetails = await getPersistedConnection();
+    setConnection(
+      connectionDetails.address,
+      connectionDetails.proxyPort,
+      connectionDetails.useSsl,
+    );
+  }
+
+  void setConnection(String address, String proxyPort, bool useSsl) {
+    _connectionAddress = address;
+    _connectionProxyPort = proxyPort;
+    _connectionUseSsl = useSsl;
+    notifyListeners();
+  }
+
+  void connectToDaemon() {
+    monero.Wallet_init(
+      _walletPtr,
+      daemonAddress: _connectionAddress,
+      proxyAddress: _connectionProxyPort != ''
+          ? '127.0.0.1:$_connectionProxyPort'
+          : '',
+      useSsl: _connectionUseSsl,
+    );
     monero.Wallet_setTrustedDaemon(_walletPtr, arg: true);
     monero.Wallet_connectToDaemon(_walletPtr);
   }
@@ -93,8 +148,6 @@ class WalletModel with ChangeNotifier {
     _txHistoryPtr = monero.Wallet_history(_walletPtr);
 
     store();
-    refresh();
-    _connectToDaemon();
     notifyListeners();
   }
 
@@ -110,8 +163,6 @@ class WalletModel with ChangeNotifier {
     _coinsPtr = monero.Wallet_coins(_walletPtr);
     _txHistoryPtr = monero.Wallet_history(_walletPtr);
 
-    _connectToDaemon();
-    refresh();
     notifyListeners();
   }
 

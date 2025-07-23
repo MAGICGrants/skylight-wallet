@@ -22,7 +22,8 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
     if (await wallet.hasExistingWallet()) {
-      wallet.openExisting();
+      await wallet.openExisting();
+      await wallet.loadPersistedConnection();
       Navigator.pushReplacementNamed(context, '/wallet_home');
     }
   }
@@ -46,7 +47,8 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/create_wallet'),
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/connection_details'),
               child: const Text('Get Started'),
             ),
           ],

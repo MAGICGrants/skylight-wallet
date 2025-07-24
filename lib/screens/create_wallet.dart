@@ -34,7 +34,8 @@ class CreateWalletScreen extends StatelessWidget {
                   child: const Text('Restore Existing'),
                 ),
                 ElevatedButton(
-                  onPressed: () => print("hello"),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/generate_seed'),
                   child: const Text('Create New'),
                 ),
               ],

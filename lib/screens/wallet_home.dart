@@ -60,7 +60,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final balance = wallet.getBalance();
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
-    final height = wallet.getHeight();
+    final height = wallet.getSyncedHeight();
     List<TxDetails> txHistory = [];
 
     if (synced) {
@@ -112,10 +112,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 TextButton(
                   onPressed: _deleteWallet,
                   child: const Text('Delete'),
-                ),
-                TextButton(
-                  onPressed: wallet.refresh,
-                  child: const Text('Sync'),
                 ),
               ],
             ),

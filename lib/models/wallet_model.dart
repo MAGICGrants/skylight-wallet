@@ -128,6 +128,14 @@ class WalletModel with ChangeNotifier {
     monero.TransactionHistory_refresh(_txHistoryPtr);
   }
 
+  String generatePolyseed() {
+    return monero.Wallet_createPolyseed();
+  }
+
+  int getCurrentHeight() {
+    return monero.WalletManager_blockchainHeight(_walletManagerPtr);
+  }
+
   Future<void> restoreFromMnemonic(
     String mnemonic,
     int restoreHeight, [
@@ -198,7 +206,7 @@ class WalletModel with ChangeNotifier {
     return monero.Wallet_address(_walletPtr, accountIndex: 0);
   }
 
-  int getHeight() {
+  int getSyncedHeight() {
     return monero.Wallet_blockChainHeight(_walletPtr);
   }
 

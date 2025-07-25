@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero/monero.dart' as monero;
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -14,10 +15,38 @@ class _SendScreenState extends State<SendScreen> {
   String _destinationAddress = '';
   double _amount = 0;
 
+  String _destinationAddressError = '';
+
+  void _send() {
+    _destinationAddressError = '';
+    String resolvedDestinationAddress = '';
+
+    final wallet = context.watch<WalletModel>();
+    final domainRegex = RegExp(
+      r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$',
+    );
+
+    if (domainRegex.hasMatch(_destinationAddress)) {
+      // check for openalias
+      resolvedDestinationAddress = wallet.resolveOpenAlias(_destinationAddress);
+
+      if (resolvedDestinationAddress == '') {
+        _destinationAddressError = 'Could not resolve OpenAlias.';
+        return;
+      }
+    } else if (monero.Wallet_addressValid(_destinationAddress, 0)) {
+      // check for address
+      resolvedDestinationAddress = _destinationAddress;
+    } else {
+      _destinationAddressError = 'Invalid address.';
+    }
+
+    wallet.send(resolvedDestinationAddress, _amount);
+    Navigator.pushNamed(context, '/wallet_home');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final wallet = context.watch<WalletModel>();
-
     return Scaffold(
       body: Center(
         child: Column(
@@ -31,6 +60,7 @@ class _SendScreenState extends State<SendScreen> {
                 decoration: InputDecoration(
                   hintText: 'Address',
                   border: OutlineInputBorder(),
+                  errorText: _destinationAddressError,
                 ),
                 onChanged: (text) {
                   setState(() {
@@ -65,13 +95,7 @@ class _SendScreenState extends State<SendScreen> {
                   onPressed: () => Navigator.pushNamed(context, '/wallet_home'),
                   child: const Text('Cancel'),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    wallet.send(_destinationAddress, _amount);
-                    Navigator.pushNamed(context, '/wallet_home');
-                  },
-                  child: const Text('Send'),
-                ),
+                ElevatedButton(onPressed: _send, child: const Text('Send')),
               ],
             ),
           ],

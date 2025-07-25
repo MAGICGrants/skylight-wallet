@@ -110,7 +110,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   child: const Text('Send'),
                 ),
                 TextButton(
-                  onPressed: _deleteWallet,
+                  onPressed: () => _deleteWallet,
                   child: const Text('Delete'),
                 ),
               ],

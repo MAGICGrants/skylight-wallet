@@ -235,6 +235,14 @@ class WalletModel with ChangeNotifier {
     refresh();
   }
 
+  String resolveOpenAlias(String address) {
+    return monero.WalletManager_resolveOpenAlias(
+      _walletManagerPtr,
+      address: address,
+      dnssecValid: true,
+    );
+  }
+
   List<TxDetails> getTransactionHistory() {
     const txHistSize = 100;
     final txHistPtr = monero.Wallet_history(_walletPtr);

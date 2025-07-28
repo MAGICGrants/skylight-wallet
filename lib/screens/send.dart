@@ -12,16 +12,21 @@ class SendScreen extends StatefulWidget {
 }
 
 class _SendScreenState extends State<SendScreen> {
+  bool _isLoading = false;
   String _destinationAddress = '';
   double _amount = 0;
 
   String _destinationAddressError = '';
 
   void _send() {
+    setState(() {
+      _isLoading = true;
+    });
+
     _destinationAddressError = '';
     String resolvedDestinationAddress = '';
 
-    final wallet = context.watch<WalletModel>();
+    final wallet = Provider.of<WalletModel>(context, listen: false);
     final domainRegex = RegExp(
       r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$',
     );
@@ -31,15 +36,29 @@ class _SendScreenState extends State<SendScreen> {
       resolvedDestinationAddress = wallet.resolveOpenAlias(_destinationAddress);
 
       if (resolvedDestinationAddress == '') {
-        _destinationAddressError = 'Could not resolve OpenAlias.';
+        setState(() {
+          _destinationAddressError = 'Could not resolve OpenAlias.';
+          _isLoading = false;
+        });
         return;
       }
     } else if (monero.Wallet_addressValid(_destinationAddress, 0)) {
       // check for address
-      resolvedDestinationAddress = _destinationAddress;
+      setState(() {
+        resolvedDestinationAddress = _destinationAddress;
+        _isLoading = false;
+      });
     } else {
-      _destinationAddressError = 'Invalid address.';
+      setState(() {
+        _destinationAddressError = 'Invalid address.';
+        _isLoading = false;
+      });
+      return;
     }
+
+    setState(() {
+      _isLoading = false;
+    });
 
     wallet.send(resolvedDestinationAddress, _amount);
     Navigator.pushNamed(context, '/wallet_home');
@@ -60,7 +79,9 @@ class _SendScreenState extends State<SendScreen> {
                 decoration: InputDecoration(
                   hintText: 'Address',
                   border: OutlineInputBorder(),
-                  errorText: _destinationAddressError,
+                  errorText: _destinationAddressError != ''
+                      ? _destinationAddressError
+                      : null,
                 ),
                 onChanged: (text) {
                   setState(() {
@@ -95,7 +116,26 @@ class _SendScreenState extends State<SendScreen> {
                   onPressed: () => Navigator.pushNamed(context, '/wallet_home'),
                   child: const Text('Cancel'),
                 ),
-                ElevatedButton(onPressed: _send, child: const Text('Send')),
+                ElevatedButton(
+                  onPressed: _send,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (!_isLoading)
+                        AnimatedOpacity(
+                          opacity: _isLoading ? 0.0 : 1.0,
+                          duration: Duration(milliseconds: 300),
+                          child: Text('Send'),
+                        ),
+                      if (_isLoading)
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ],

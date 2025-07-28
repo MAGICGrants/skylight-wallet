@@ -24,8 +24,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     super.initState();
     _startTimer();
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.connectToDaemon();
     wallet.refresh();
+    wallet.connectToDaemon();
   }
 
   @override
@@ -110,7 +110,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   child: const Text('Send'),
                 ),
                 TextButton(
-                  onPressed: () => _deleteWallet,
+                  onPressed: _deleteWallet,
                   child: const Text('Delete'),
                 ),
               ],

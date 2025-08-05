@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/notifications_service.dart';
 import 'package:provider/provider.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:dart_date/dart_date.dart';
+import 'package:workmanager/workmanager.dart';
 
+import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
 class WalletHomeScreen extends StatefulWidget {
@@ -26,11 +29,15 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     wallet.refresh();
     wallet.connectToDaemon();
+
+    _startTask();
+    NotificationService().showNotification();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    Workmanager().cancelByUniqueName('simplePeriodicTask');
     super.dispose();
   }
 
@@ -40,6 +47,27 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         _trigger = !_trigger;
       });
     });
+  }
+
+  Future _startTask() async {
+    await Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: true, // Set to false for production
+    );
+
+    Workmanager().registerPeriodicTask(
+      "simplePeriodicTask", // Unique name for your task
+      "simplePeriodicTask", // The task name to be passed to callbackDispatcher
+      frequency: Duration(
+        minutes: 15,
+      ), // Minimum 15 minutes on Android. Ignored on iOS (set in AppDelegate).
+      initialDelay: Duration(seconds: 10), // Optional initial delay
+      constraints: Constraints(
+        networkType: NetworkType
+            .connected, // Example: only run when connected to network
+        requiresBatteryNotLow: true,
+      ),
+    );
   }
 
   void _deleteWallet() {

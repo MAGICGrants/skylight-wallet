@@ -101,6 +101,21 @@ class WalletModel with ChangeNotifier {
     );
   }
 
+  Future persistTxHistoryCount() async {
+    final count = await getTxHistoryCount();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('txHistoryCount', count);
+  }
+
+  Future<int> getPersistedTxHistoryCount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('txHistoryCount') ?? 0;
+  }
+
+  Future<int> getTxHistoryCount() async {
+    return monero.TransactionHistory_count(_txHistoryPtr);
+  }
+
   void setConnection(String address, String proxyPort, bool useSsl) {
     _connectionAddress = address;
     _connectionProxyPort = proxyPort;
@@ -185,6 +200,9 @@ class WalletModel with ChangeNotifier {
     final walletKeysFile = File('$path.keys');
     await walletFile.delete();
     await walletKeysFile.delete();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('txHistoryCount');
   }
 
   Future<bool> hasExistingWallet() async {

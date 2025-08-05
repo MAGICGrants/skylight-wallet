@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/notifications_service.dart';
+import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/screens/connection_details.dart';
 import 'package:monero_light_wallet/screens/generate_seed.dart';
 import 'package:monero_light_wallet/screens/receive.dart';
 import 'package:monero_light_wallet/screens/send.dart';
 import 'package:monero_light_wallet/screens/tx_details.dart';
-import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/screens/create_wallet.dart';
 import 'package:monero_light_wallet/screens/restore_wallet.dart';
 import 'package:monero_light_wallet/screens/restore_warning.dart';
 import 'package:monero_light_wallet/screens/wallet_home.dart';
 import 'package:monero_light_wallet/screens/welcome.dart';
 
-void main() {
+void main() async {
+  NotificationService().init();
   runApp(
     ChangeNotifierProvider(
       create: (context) => WalletModel(),

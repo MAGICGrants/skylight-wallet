@@ -19,9 +19,17 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
     seed = wallet.generatePolyseed().split(' ');
   }
 
-  void _continue() {
+  void _continue() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.restoreFromMnemonic(seed.join(' '), wallet.getCurrentHeight());
+    wallet.connectToDaemon();
+    print(seed.join(' '));
+    print(wallet.getCurrentHeight());
+
+    await wallet.restoreFromMnemonic(
+      seed.join(' '),
+      wallet.getCurrentHeight() - 1000,
+    );
+    wallet.store();
     Navigator.pushReplacementNamed(context, '/wallet_home');
   }
 

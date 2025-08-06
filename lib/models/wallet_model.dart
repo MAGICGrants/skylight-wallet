@@ -65,10 +65,10 @@ class DaemonConnectionDetails {
 
 class WalletModel with ChangeNotifier {
   final monero.WalletManager _walletManagerPtr =
-      monero.WalletManagerFactory_getWalletManager();
+      monero.WalletManagerFactory_getLWSFWalletManager();
 
   late monero.wallet _walletPtr;
-  late monero.Coins _coinsPtr;
+  // late monero.Coins _coinsPtr;
   late monero.TransactionHistory _txHistoryPtr;
   late String _connectionAddress;
   late String _connectionProxyPort;
@@ -131,6 +131,7 @@ class WalletModel with ChangeNotifier {
           ? '127.0.0.1:$_connectionProxyPort'
           : '',
       useSsl: _connectionUseSsl,
+      lightWallet: true,
     );
     monero.Wallet_setTrustedDaemon(_walletPtr, arg: true);
     monero.Wallet_connectToDaemon(_walletPtr);
@@ -139,7 +140,7 @@ class WalletModel with ChangeNotifier {
   void refresh() {
     monero.Wallet_startRefresh(_walletPtr);
     monero.Wallet_refresh(_walletPtr);
-    monero.Coins_refresh(_coinsPtr);
+    // monero.Coins_refresh(_coinsPtr);
     monero.TransactionHistory_refresh(_txHistoryPtr);
   }
 
@@ -167,7 +168,7 @@ class WalletModel with ChangeNotifier {
       seedOffset: passphrase,
     );
 
-    _coinsPtr = monero.Wallet_coins(_walletPtr);
+    // _coinsPtr = monero.Wallet_coins(_walletPtr);
     _txHistoryPtr = monero.Wallet_history(_walletPtr);
 
     store();
@@ -183,7 +184,7 @@ class WalletModel with ChangeNotifier {
       password: 'pass',
     );
 
-    _coinsPtr = monero.Wallet_coins(_walletPtr);
+    // _coinsPtr = monero.Wallet_coins(_walletPtr);
     _txHistoryPtr = monero.Wallet_history(_walletPtr);
 
     notifyListeners();
@@ -197,11 +198,9 @@ class WalletModel with ChangeNotifier {
     monero.WalletManager_closeWallet(_walletManagerPtr, _walletPtr, false);
     final path = await getWalletPath();
     final walletFile = File(path);
-    final walletKeysFile = File('$path.keys');
     await walletFile.delete();
-    await walletKeysFile.delete();
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     prefs.remove('txHistoryCount');
   }
 
@@ -235,15 +234,14 @@ class WalletModel with ChangeNotifier {
   }
 
   void send(String destinationAddress, double amount) {
-    final paymentId = generateHexString(32);
     final amountInt = monero.Wallet_amountFromDouble(amount);
 
     final txPtr = monero.Wallet_createTransaction(
       _walletPtr,
       dst_addr: destinationAddress,
-      payment_id: paymentId,
+      payment_id: '',
       amount: amountInt,
-      mixin_count: 10,
+      mixin_count: 15,
       pendingTransactionPriority: 0,
       subaddr_account: 0,
     );

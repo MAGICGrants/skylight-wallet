@@ -220,9 +220,9 @@ packages:
     dependency: "direct main"
     description:
       path: "impls/monero.dart"
-      ref: master
-      resolved-ref: "073b85ad010044fa62ed7a21bd52febef522c35a"
-      url: "https://github.com/mrcyjanek/monero_c"
+      ref: lwsf
+      resolved-ref: "561c6eb72cfb189b84727897f22b7d4359e4b789"
+      url: "https://github.com/vtnerd/monero_c"
     source: git
     version: "0.0.0"
   nested:

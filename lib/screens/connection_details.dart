@@ -22,7 +22,6 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
 
   @override
   void dispose() {
-    // Dispose the controllers when the widget is removed from the widget tree
     _addressController.dispose();
     super.dispose();
   }
@@ -36,7 +35,7 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
       _hasTested = true;
     });
 
-    final url = '$proto://$daemonAddress/get_height';
+    final url = '$proto://$daemonAddress/get_address_info';
     HttpClient httpClient = HttpClient();
 
     if (proxyAddress != '') {
@@ -54,7 +53,7 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
       final response = await request.close();
 
       setState(() {
-        _connectionSuccess = response.statusCode == HttpStatus.ok;
+        _connectionSuccess = response.statusCode != HttpStatus.notFound;
       });
     } catch (e) {
       setState(() {
@@ -95,7 +94,7 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   Text(
-                    "Let's setup a connection with a daemon.",
+                    "Let's setup a connection with LWS.",
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),

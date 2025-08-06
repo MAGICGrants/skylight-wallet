@@ -37,8 +37,8 @@ dependencies:
 
   monero:
     git:
-      url: https://github.com/mrcyjanek/monero_c
-      ref: master
+      url: https://github.com/vtnerd/monero_c
+      ref: lwsf
       path: impls/monero.dart
   path: ^1.9.1
   provider: ^6.1.5

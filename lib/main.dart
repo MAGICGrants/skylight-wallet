@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/notifications_service.dart';
+import 'package:monero_light_wallet/services/notifications_service.dart';
+import 'package:monero_light_wallet/screens/settings.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/screens/connection_details.dart';
@@ -14,7 +15,8 @@ import 'package:monero_light_wallet/screens/wallet_home.dart';
 import 'package:monero_light_wallet/screens/welcome.dart';
 
 void main() async {
-  NotificationService().init();
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
   runApp(
     ChangeNotifierProvider(
       create: (context) => WalletModel(),
@@ -43,6 +45,7 @@ class MyApp extends StatelessWidget {
         '/restore_warning': (context) => RestoreWarningScreen(),
         '/restore_wallet': (context) => RestoreWalletScreen(),
         '/wallet_home': (context) => WalletHomeScreen(),
+        '/settings': (context) => SettingsScreen(),
         '/send': (context) => SendScreen(),
         '/receive': (context) => ReceiveScreen(),
         '/tx_details': (context) => TxDetailsScreen(),

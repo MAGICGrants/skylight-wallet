@@ -1,7 +1,11 @@
-import 'dart:io';
-
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/services/notifications_service.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:monero/monero.dart' as monero;
+
+class PeriodicTasks {
+  static const newTransactionsCheck = 'newTransactionsCheck';
+}
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -9,7 +13,11 @@ void callbackDispatcher() {
     final wallet = WalletModel();
 
     switch (task) {
-      case "simplePeriodicTask":
+      case PeriodicTasks.newTransactionsCheck:
+        if (!await wallet.hasExistingWallet()) {
+          return false;
+        }
+
         await wallet.openExisting();
         final connection = await wallet.getPersistedConnection();
 
@@ -20,9 +28,26 @@ void callbackDispatcher() {
         );
 
         wallet.connectToDaemon();
+        wallet.refresh();
 
-        while (!wallet.isSynced()) {
-          sleep(Duration(seconds: 10));
+        if (!wallet.isConnected()) {
+          return false;
+        }
+
+        int itersBeforeSynced = 0;
+
+        while (true) {
+          if (wallet.isSynced()) {
+            break;
+          }
+
+          await Future.delayed(Duration(seconds: 10));
+
+          itersBeforeSynced++;
+
+          if (itersBeforeSynced == 20) {
+            return false;
+          }
         }
 
         final persistedTxCount = await wallet.getPersistedTxHistoryCount();
@@ -30,7 +55,12 @@ void callbackDispatcher() {
         final newTxCount = currentTxCount - persistedTxCount;
 
         if (newTxCount > 0 && currentTxCount != 0) {
-          // notify!
+          for (int i = 0; i < newTxCount; i++) {
+            final tx = wallet.getTxDetails(i);
+            if (tx.direction == monero.TransactionInfo_Direction.In) {
+              NotificationService().showIncomingTxNotification(tx.amount);
+            }
+          }
 
           await wallet.persistTxHistoryCount();
         }
@@ -38,7 +68,22 @@ void callbackDispatcher() {
         break;
     }
 
-    // Return true if the task was successful, false if it needs to be retried
-    return Future.value(true);
+    return true;
   });
+}
+
+Future<void> startNewTransactionsCheckTask() async {
+  await Workmanager().registerPeriodicTask(
+    PeriodicTasks.newTransactionsCheck,
+    "New transactions check",
+    frequency: Duration(minutes: 15),
+    constraints: Constraints(
+      networkType: NetworkType.connected,
+      requiresBatteryNotLow: true,
+    ),
+  );
+}
+
+Future<void> cancelNewTransactionsCheckTask() async {
+  await Workmanager().cancelByUniqueName(PeriodicTasks.newTransactionsCheck);
 }

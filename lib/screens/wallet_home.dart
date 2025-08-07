@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/notifications_service.dart';
+import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:dart_date/dart_date.dart';
@@ -25,19 +25,17 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void initState() {
     super.initState();
+    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    _initNewTxsCheckIfNeeded();
     _startTimer();
     final wallet = Provider.of<WalletModel>(context, listen: false);
     wallet.refresh();
     wallet.connectToDaemon();
-
-    _startTask();
-    NotificationService().showNotification();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    Workmanager().cancelByUniqueName('simplePeriodicTask');
     super.dispose();
   }
 
@@ -47,27 +45,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         _trigger = !_trigger;
       });
     });
-  }
-
-  Future _startTask() async {
-    await Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: true, // Set to false for production
-    );
-
-    Workmanager().registerPeriodicTask(
-      "simplePeriodicTask", // Unique name for your task
-      "simplePeriodicTask", // The task name to be passed to callbackDispatcher
-      frequency: Duration(
-        minutes: 15,
-      ), // Minimum 15 minutes on Android. Ignored on iOS (set in AppDelegate).
-      initialDelay: Duration(seconds: 10), // Optional initial delay
-      constraints: Constraints(
-        networkType: NetworkType
-            .connected, // Example: only run when connected to network
-        requiresBatteryNotLow: true,
-      ),
-    );
   }
 
   void _deleteWallet() {
@@ -82,6 +59,20 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     Navigator.pushNamed(context, '/tx_details', arguments: txDetails);
   }
 
+  Future<void> _initNewTxsCheckIfNeeded() async {
+    final notificationsEnabled = await SharedPreferencesService.get(
+      SharedPreferencesKeys.notificationsEnabled,
+    );
+
+    final taskIsRunning = await Workmanager().isScheduledByUniqueName(
+      PeriodicTasks.newTransactionsCheck,
+    );
+
+    if (notificationsEnabled && !taskIsRunning) {
+      await startNewTransactionsCheckTask();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final wallet = context.watch<WalletModel>();
@@ -94,6 +85,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     if (synced) {
       wallet.refresh();
       txHistory = wallet.getTransactionHistory();
+      wallet.persistTxHistoryCount();
     }
 
     if (txHistory.isNotEmpty) {
@@ -136,6 +128,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.pushNamed(context, '/send'),
                   child: const Text('Send'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/settings'),
+                  child: const Text('Settings'),
                 ),
                 TextButton(
                   onPressed: _deleteWallet,

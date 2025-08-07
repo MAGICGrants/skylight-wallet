@@ -49,6 +49,8 @@ dependencies:
   intl: ^0.20.2
   shared_preferences: ^2.5.3
   http: ^1.4.0
+  workmanager: ^0.8.0
+  flutter_local_notifications: ^19.4.0
 
 dev_dependencies:
   flutter_test:

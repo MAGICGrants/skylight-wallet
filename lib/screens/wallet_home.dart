@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:dart_date/dart_date.dart';
+import 'package:workmanager/workmanager.dart';
 
+import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
 class WalletHomeScreen extends StatefulWidget {
@@ -22,6 +25,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void initState() {
     super.initState();
+    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    _initNewTxsCheckIfNeeded();
     _startTimer();
     final wallet = Provider.of<WalletModel>(context, listen: false);
     wallet.refresh();
@@ -54,6 +59,20 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     Navigator.pushNamed(context, '/tx_details', arguments: txDetails);
   }
 
+  Future<void> _initNewTxsCheckIfNeeded() async {
+    final notificationsEnabled = await SharedPreferencesService.get(
+      SharedPreferencesKeys.notificationsEnabled,
+    );
+
+    final taskIsRunning = await Workmanager().isScheduledByUniqueName(
+      PeriodicTasks.newTransactionsCheck,
+    );
+
+    if (notificationsEnabled && !taskIsRunning) {
+      await startNewTransactionsCheckTask();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final wallet = context.watch<WalletModel>();
@@ -66,6 +85,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     if (synced) {
       wallet.refresh();
       txHistory = wallet.getTransactionHistory();
+      wallet.persistTxHistoryCount();
     }
 
     if (txHistory.isNotEmpty) {
@@ -108,6 +128,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.pushNamed(context, '/send'),
                   child: const Text('Send'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/settings'),
+                  child: const Text('Settings'),
                 ),
                 TextButton(
                   onPressed: _deleteWallet,

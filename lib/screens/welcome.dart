@@ -24,7 +24,10 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
     if (await wallet.hasExistingWallet()) {
       await wallet.openExisting();
       await wallet.loadPersistedConnection();
-      Navigator.pushReplacementNamed(context, '/wallet_home');
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/wallet_home');
+      }
     }
   }
 

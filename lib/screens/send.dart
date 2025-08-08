@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero/monero.dart' as monero;
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -42,7 +41,7 @@ class _SendScreenState extends State<SendScreen> {
         });
         return;
       }
-    } else if (monero.Wallet_addressValid(_destinationAddress, 0)) {
+    } else if (wallet.wallet.addressValid(_destinationAddress, 0)) {
       // check for address
       setState(() {
         resolvedDestinationAddress = _destinationAddress;

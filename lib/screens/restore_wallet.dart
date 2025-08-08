@@ -77,13 +77,15 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: () => print("hello"),
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: () async {
                     await wallet.restoreFromMnemonic(_mnemonic, _restoreHeight);
-                    Navigator.pushReplacementNamed(context, '/wallet_home');
+                    if (context.mounted) {
+                      Navigator.pushReplacementNamed(context, '/wallet_home');
+                    }
                   },
                   child: const Text('Restore'),
                 ),

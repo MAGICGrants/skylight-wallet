@@ -1,10 +1,14 @@
+// ignore_for_file: implementation_imports
+
 import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
-import 'package:monero/monero.dart' as monero;
+import 'package:monero/src/monero.dart';
+import 'package:monero/src/wallet2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 String generateHexString(int length) {
@@ -20,7 +24,7 @@ String generateHexString(int length) {
 
 class TxDetails {
   final int index;
-  final monero.TransactionInfo_Direction direction;
+  final int direction;
   final String hash;
   final double amount;
   final double fee;
@@ -51,12 +55,12 @@ class TxRecipient {
   TxRecipient(this.address, this.amount);
 }
 
-class DaemonConnectionDetails {
+class LWSConnectionDetails {
   final String address;
   final String proxyPort;
   final bool useSsl;
 
-  DaemonConnectionDetails({
+  LWSConnectionDetails({
     required this.address,
     required this.proxyPort,
     required this.useSsl,
@@ -64,35 +68,53 @@ class DaemonConnectionDetails {
 }
 
 class WalletModel with ChangeNotifier {
-  final monero.WalletManager _walletManagerPtr =
-      monero.WalletManagerFactory_getLWSFWalletManager();
+  final _walletManager = Monero().walletManagerFactory().getLWSFWalletManager();
 
-  late monero.wallet _walletPtr;
+  late Wallet2Wallet _wallet;
   // late monero.Coins _coinsPtr;
-  late monero.TransactionHistory _txHistoryPtr;
+  late Wallet2TransactionHistory _txHistory;
   late String _connectionAddress;
   late String _connectionProxyPort;
   late bool _connectionUseSsl;
 
-  monero.wallet get wallet => _walletPtr;
+  Wallet2Wallet get wallet => _wallet;
 
-  Future persistCurrentConnection() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('connectionAddress', _connectionAddress);
-    prefs.setString('connectionProxyPort', _connectionProxyPort);
-    prefs.setBool('connectionUseSsl', _connectionUseSsl);
-  }
-
-  Future<DaemonConnectionDetails> getPersistedConnection() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return DaemonConnectionDetails(
-      address: prefs.getString('connectionAddress') ?? '',
-      proxyPort: prefs.getString('connectionProxyPort') ?? '',
-      useSsl: prefs.getBool('connectionUseSsl') ?? false,
+  Future<void> persistCurrentConnection() async {
+    await SharedPreferencesService.set(
+      SharedPreferencesKeys.connectionAddress,
+      _connectionAddress,
+    );
+    await SharedPreferencesService.set(
+      SharedPreferencesKeys.connectionProxyPort,
+      _connectionProxyPort,
+    );
+    await SharedPreferencesService.set(
+      SharedPreferencesKeys.connectionUseSsl,
+      _connectionUseSsl,
     );
   }
 
-  Future loadPersistedConnection() async {
+  Future<LWSConnectionDetails> getPersistedConnection() async {
+    return LWSConnectionDetails(
+      address:
+          await SharedPreferencesService.get(
+            SharedPreferencesKeys.connectionAddress,
+          ) ??
+          '',
+      proxyPort:
+          await SharedPreferencesService.get(
+            SharedPreferencesKeys.connectionProxyPort,
+          ) ??
+          '',
+      useSsl:
+          await SharedPreferencesService.get(
+            SharedPreferencesKeys.connectionUseSsl,
+          ) ??
+          false,
+    );
+  }
+
+  Future<void> loadPersistedConnection() async {
     final connectionDetails = await getPersistedConnection();
     setConnection(
       connectionDetails.address,
@@ -113,7 +135,7 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<int> getTxHistoryCount() async {
-    return monero.TransactionHistory_count(_txHistoryPtr);
+    return _txHistory.count();
   }
 
   void setConnection(String address, String proxyPort, bool useSsl) {
@@ -124,8 +146,7 @@ class WalletModel with ChangeNotifier {
   }
 
   void connectToDaemon() {
-    monero.Wallet_init(
-      _walletPtr,
+    _wallet.init(
       daemonAddress: _connectionAddress,
       proxyAddress: _connectionProxyPort != ''
           ? '127.0.0.1:$_connectionProxyPort'
@@ -133,23 +154,22 @@ class WalletModel with ChangeNotifier {
       useSsl: _connectionUseSsl,
       lightWallet: true,
     );
-    monero.Wallet_setTrustedDaemon(_walletPtr, arg: true);
-    monero.Wallet_connectToDaemon(_walletPtr);
+    _wallet.connectToDaemon();
   }
 
   void refresh() {
-    monero.Wallet_startRefresh(_walletPtr);
-    monero.Wallet_refresh(_walletPtr);
+    _wallet.startRefresh();
+    _wallet.refresh();
     // monero.Coins_refresh(_coinsPtr);
-    monero.TransactionHistory_refresh(_txHistoryPtr);
+    _txHistory.refresh();
   }
 
   String generatePolyseed() {
-    return monero.Wallet_createPolyseed();
+    return _wallet.createPolyseed();
   }
 
-  int getCurrentHeight() {
-    return monero.WalletManager_blockchainHeight(_walletManagerPtr);
+  Future<int> getCurrentHeight() {
+    return _walletManager.blockchainHeight();
   }
 
   Future<void> restoreFromMnemonic(
@@ -159,8 +179,7 @@ class WalletModel with ChangeNotifier {
   ]) async {
     final path = await getWalletPath();
 
-    _walletPtr = monero.WalletManager_recoveryWallet(
-      _walletManagerPtr,
+    _wallet = _walletManager.recoveryWallet(
       mnemonic: mnemonic,
       password: 'pass',
       path: path,
@@ -169,7 +188,7 @@ class WalletModel with ChangeNotifier {
     );
 
     // _coinsPtr = monero.Wallet_coins(_walletPtr);
-    _txHistoryPtr = monero.Wallet_history(_walletPtr);
+    _txHistory = wallet.history();
 
     store();
     notifyListeners();
@@ -178,24 +197,19 @@ class WalletModel with ChangeNotifier {
   Future openExisting() async {
     final path = await getWalletPath();
 
-    _walletPtr = monero.WalletManager_openWallet(
-      _walletManagerPtr,
-      path: path,
-      password: 'pass',
-    );
-
+    _wallet = _walletManager.openWallet(path: path, password: 'pass');
     // _coinsPtr = monero.Wallet_coins(_walletPtr);
-    _txHistoryPtr = monero.Wallet_history(_walletPtr);
+    _txHistory = _wallet.history();
 
     notifyListeners();
   }
 
   void store() {
-    monero.Wallet_store(_walletPtr);
+    _wallet.store();
   }
 
   Future delete() async {
-    monero.WalletManager_closeWallet(_walletManagerPtr, _walletPtr, false);
+    _walletManager.closeWallet(_wallet, false);
     final path = await getWalletPath();
     final walletFile = File(path);
     await walletFile.delete();
@@ -205,39 +219,33 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<bool> hasExistingWallet() async {
-    return monero.WalletManager_walletExists(
-      _walletManagerPtr,
-      await getWalletPath(),
-    );
+    return _walletManager.walletExists(await getWalletPath());
   }
 
   bool isConnected() {
-    return monero.Wallet_connected(_walletPtr) != 0;
+    return _wallet.connected() != 0;
   }
 
   bool isSynced() {
-    return monero.Wallet_synchronized(_walletPtr);
+    return _wallet.synchronized();
   }
 
   String getAddress() {
-    return monero.Wallet_address(_walletPtr, accountIndex: 0);
+    return _wallet.address(accountIndex: 0);
   }
 
   int getSyncedHeight() {
-    return monero.Wallet_blockChainHeight(_walletPtr);
+    return _wallet.blockChainHeight();
   }
 
   double getBalance() {
-    return doubleAmountFromInt(
-      monero.Wallet_balance(_walletPtr, accountIndex: 0),
-    );
+    return doubleAmountFromInt(_wallet.balance(accountIndex: 0));
   }
 
   void send(String destinationAddress, double amount) {
-    final amountInt = monero.Wallet_amountFromDouble(amount);
+    final amountInt = _wallet.amountFromDouble(amount);
 
-    final txPtr = monero.Wallet_createTransaction(
-      _walletPtr,
+    final tx = _wallet.createTransaction(
       dst_addr: destinationAddress,
       payment_id: '',
       amount: amountInt,
@@ -246,23 +254,18 @@ class WalletModel with ChangeNotifier {
       subaddr_account: 0,
     );
 
-    monero.PendingTransaction_commit(txPtr, filename: '', overwrite: false);
+    tx.commit(filename: '', overwrite: false);
     store();
     refresh();
   }
 
   String resolveOpenAlias(String address) {
-    return monero.WalletManager_resolveOpenAlias(
-      _walletManagerPtr,
-      address: address,
-      dnssecValid: true,
-    );
+    return _walletManager.resolveOpenAlias(address: address, dnssecValid: true);
   }
 
   List<TxDetails> getTransactionHistory() {
     const txHistSize = 100;
-    final txHistPtr = monero.Wallet_history(_walletPtr);
-    final txCount = monero.TransactionHistory_count(txHistPtr);
+    final txCount = _txHistory.count();
     final List<TxDetails> txs = [];
 
     for (int i = 1; i <= txHistSize; i++) {
@@ -280,30 +283,22 @@ class WalletModel with ChangeNotifier {
   }
 
   TxDetails getTxDetails(int txIndex) {
-    final txHistPtr = monero.Wallet_history(_walletPtr);
-
-    final txInfoPtr = monero.TransactionHistory_transaction(
-      txHistPtr,
-      index: txIndex,
-    );
-
-    final direction = monero.TransactionInfo_direction(txInfoPtr);
-    final hash = monero.TransactionInfo_hash(txInfoPtr);
-    final amountSent = doubleAmountFromInt(
-      monero.TransactionInfo_amount(txInfoPtr),
-    );
-    final fee = doubleAmountFromInt(monero.TransactionInfo_fee(txInfoPtr));
-    final timestamp = monero.TransactionInfo_timestamp(txInfoPtr);
-    final height = monero.TransactionInfo_blockHeight(txInfoPtr);
-    final confirmations = monero.Wallet_blockChainHeight(_walletPtr) - height;
-    final key = monero.Wallet_getTxKey(_walletPtr, txid: hash);
+    final tx = _txHistory.transaction(txIndex);
+    final direction = tx.direction();
+    final hash = tx.hash();
+    final amountSent = doubleAmountFromInt(tx.amount());
+    final fee = doubleAmountFromInt(tx.fee());
+    final timestamp = tx.timestamp();
+    final height = tx.blockHeight();
+    final confirmations = _wallet.blockChainHeight() - height;
+    final key = _wallet.getTxKey(txid: hash);
 
     List<TxRecipient> recipients = [];
-    final recipientsCount = monero.TransactionInfo_transfers_count(txInfoPtr);
+    final recipientsCount = tx.transfers_count();
 
     for (int i = 0; i < recipientsCount; i++) {
-      final address = monero.TransactionInfo_transfers_address(txInfoPtr, i);
-      final amountInt = monero.TransactionInfo_transfers_amount(txInfoPtr, i);
+      final address = tx.transfers_address(i);
+      final amountInt = tx.transfers_amount(i);
       final amount = doubleAmountFromInt(amountInt);
       recipients.add(TxRecipient(address, amount));
     }

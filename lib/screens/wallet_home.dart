@@ -3,12 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
-import 'package:monero/monero.dart' as monero;
 import 'package:dart_date/dart_date.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/consts.dart' as consts;
 
 class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});
@@ -60,9 +60,11 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   }
 
   Future<void> _initNewTxsCheckIfNeeded() async {
-    final notificationsEnabled = await SharedPreferencesService.get(
-      SharedPreferencesKeys.notificationsEnabled,
-    );
+    final notificationsEnabled =
+        await SharedPreferencesService.get<bool>(
+          SharedPreferencesKeys.notificationsEnabled,
+        ) ??
+        false;
 
     final taskIsRunning = await Workmanager().isScheduledByUniqueName(
       PeriodicTasks.newTransactionsCheck,
@@ -153,16 +155,14 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                         child: Row(
                           spacing: 20,
                           children: [
-                            if (tx.direction ==
-                                monero.TransactionInfo_Direction.Out)
+                            if (tx.direction == consts.txDirectionOutgoing)
                               Icon(
                                 Icons.arrow_outward_rounded,
                                 color: Colors.red,
                                 size: 20,
                                 semanticLabel: 'Outgoing transaction',
                               ),
-                            if (tx.direction ==
-                                monero.TransactionInfo_Direction.In)
+                            if (tx.direction == consts.txDirectionIncoming)
                               Transform.rotate(
                                 angle: 90 * math.pi / 180,
                                 child: const Icon(

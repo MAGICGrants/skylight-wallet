@@ -34,7 +34,7 @@ class RestoreWarningScreen extends StatelessWidget {
                   child: const Text('Continue'),
                 ),
                 ElevatedButton(
-                  onPressed: () => print("hello"),
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),
                 ),
               ],

@@ -2,6 +2,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesKeys {
   static const String notificationsEnabled = 'notificationsEnabled';
+  static const String connectionAddress = 'connectionAddress';
+  static const String connectionProxyPort = 'connectionProxyPort';
+  static const String connectionUseSsl = 'connectionUseSsl';
 }
 
 class SharedPreferencesService {
@@ -12,12 +15,16 @@ class SharedPreferencesService {
     final String keyString = key.toString();
 
     switch (T) {
+      // ignore: type_literal_in_constant_pattern
       case bool:
         return prefs.getBool(keyString) as T?;
+      // ignore: type_literal_in_constant_pattern
       case String:
         return prefs.getString(keyString) as T?;
+      // ignore: type_literal_in_constant_pattern
       case int:
         return prefs.getInt(keyString) as T?;
+      // ignore: type_literal_in_constant_pattern
       case double:
         return prefs.getDouble(keyString) as T?;
       default:

@@ -21,9 +21,27 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
   bool _connectionSuccess = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadPersistedConnection();
+  }
+
+  @override
   void dispose() {
     _addressController.dispose();
+    _proxyPortController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPersistedConnection() async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final conn = await wallet.getPersistedConnection();
+
+    setState(() {
+      _addressController.text = conn.address;
+      _proxyPortController.text = conn.proxyPort;
+      _useSsl = conn.useSsl;
+    });
   }
 
   Future _testConnection() async {

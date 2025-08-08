@@ -1,7 +1,7 @@
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/services/notifications_service.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:monero/monero.dart' as monero;
+import 'package:monero_light_wallet/consts.dart' as consts;
 
 class PeriodicTasks {
   static const newTransactionsCheck = 'newTransactionsCheck';
@@ -57,7 +57,7 @@ void callbackDispatcher() {
         if (newTxCount > 0 && currentTxCount != 0) {
           for (int i = 0; i < newTxCount; i++) {
             final tx = wallet.getTxDetails(i);
-            if (tx.direction == monero.TransactionInfo_Direction.In) {
+            if (tx.direction == consts.txDirectionIncoming) {
               NotificationService().showIncomingTxNotification(tx.amount);
             }
           }

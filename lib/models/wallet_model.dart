@@ -29,6 +29,8 @@ class TxDetails {
   final double amount;
   final double fee;
   final List<TxRecipient> recipients;
+  final int? accountIndex;
+  final List<int> subaddrIndexList;
   final int timestamp;
   final int height;
   final int confirmations;
@@ -41,6 +43,8 @@ class TxDetails {
     required this.amount,
     required this.fee,
     required this.recipients,
+    required this.accountIndex,
+    required this.subaddrIndexList,
     required this.timestamp,
     required this.height,
     required this.confirmations,
@@ -71,7 +75,6 @@ class WalletModel with ChangeNotifier {
   final _walletManager = Monero().walletManagerFactory().getLWSFWalletManager();
 
   late Wallet2Wallet _wallet;
-  // late monero.Coins _coinsPtr;
   late Wallet2TransactionHistory _txHistory;
   late String _connectionAddress;
   late String _connectionProxyPort;
@@ -160,7 +163,6 @@ class WalletModel with ChangeNotifier {
   void refresh() {
     _wallet.startRefresh();
     _wallet.refresh();
-    // monero.Coins_refresh(_coinsPtr);
     _txHistory.refresh();
   }
 
@@ -187,7 +189,6 @@ class WalletModel with ChangeNotifier {
       seedOffset: passphrase,
     );
 
-    // _coinsPtr = monero.Wallet_coins(_walletPtr);
     _txHistory = wallet.history();
 
     store();
@@ -198,7 +199,6 @@ class WalletModel with ChangeNotifier {
     final path = await getWalletPath();
 
     _wallet = _walletManager.openWallet(path: path, password: 'pass');
-    // _coinsPtr = monero.Wallet_coins(_walletPtr);
     _txHistory = _wallet.history();
 
     notifyListeners();
@@ -230,8 +230,29 @@ class WalletModel with ChangeNotifier {
     return _wallet.synchronized();
   }
 
-  String getAddress() {
+  String getPrimaryAddress() {
     return _wallet.address(accountIndex: 0);
+  }
+
+  String getUnusedSubaddress() {
+    final txHistory = getTransactionHistory();
+    Set<int> usedIndexes = {};
+
+    for (final tx in txHistory) {
+      if (tx.accountIndex == 0) {
+        for (final subaddrIndex in tx.subaddrIndexList) {
+          usedIndexes.add(subaddrIndex);
+        }
+      }
+    }
+
+    int nextSubaddrIndex = 1;
+
+    while (usedIndexes.contains(nextSubaddrIndex)) {
+      nextSubaddrIndex++;
+    }
+
+    return _wallet.address(accountIndex: 0, addressIndex: nextSubaddrIndex);
   }
 
   int getSyncedHeight() {
@@ -255,6 +276,11 @@ class WalletModel with ChangeNotifier {
     );
 
     tx.commit(filename: '', overwrite: false);
+    print('Unlocked balance:');
+    print(_wallet.unlockedBalance(accountIndex: 0));
+    print('Sending:');
+    print(amountInt);
+    print(tx.errorString());
     store();
     refresh();
   }
@@ -264,14 +290,11 @@ class WalletModel with ChangeNotifier {
   }
 
   List<TxDetails> getTransactionHistory() {
-    const txHistSize = 100;
     final txCount = _txHistory.count();
     final List<TxDetails> txs = [];
 
-    for (int i = 1; i <= txHistSize; i++) {
-      final txIndex = txCount - i;
-      if (txIndex < 0) break;
-      final tx = getTxDetails(txIndex);
+    for (int i = 0; i < txCount; i++) {
+      final tx = getTxDetails(i);
       txs.add(tx);
     }
 
@@ -295,6 +318,12 @@ class WalletModel with ChangeNotifier {
 
     List<TxRecipient> recipients = [];
     final recipientsCount = tx.transfers_count();
+    final accountIndex = tx.subaddrAccount();
+    final subaddrIndexList = tx
+        .subaddrIndex()
+        .split(", ")
+        .map((e) => int.tryParse(e) ?? 0)
+        .toList();
 
     for (int i = 0; i < recipientsCount; i++) {
       final address = tx.transfers_address(i);
@@ -310,6 +339,8 @@ class WalletModel with ChangeNotifier {
       amount: amountSent,
       fee: fee,
       recipients: recipients,
+      accountIndex: accountIndex,
+      subaddrIndexList: subaddrIndexList,
       timestamp: timestamp,
       height: height,
       confirmations: confirmations,

@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
-import 'package:dart_date/dart_date.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
@@ -77,12 +78,15 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
     final balance = wallet.getBalance();
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getSyncedHeight();
     List<TxDetails> txHistory = [];
+
+    final currentLocale = Localizations.localeOf(context);
 
     if (synced) {
       wallet.refresh();
@@ -100,44 +104,44 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
           spacing: 10,
           children: [
             Text(
-              'Connected: $connected',
+              '${i18n.homeConnected}: $connected',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Text(
-              'Synced: $synced',
+              '${i18n.homeSynced}: $synced',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Text(
-              'Height: $height',
+              '${i18n.homeHeight}: $height',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Text(
-              'Balance: $balance',
+              '${i18n.homeBalance}: $balance XMR',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Row(
-              spacing: 20,
+              spacing: 10,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
                   onPressed: () => Navigator.pushNamed(context, '/receive'),
-                  child: const Text('Receive'),
+                  child: Text(i18n.homeReceive),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pushNamed(context, '/send'),
-                  child: const Text('Send'),
+                  child: Text(i18n.homeSend),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/settings'),
-                  child: const Text('Settings'),
+                  child: Text(i18n.homeSettings),
                 ),
                 TextButton(
                   onPressed: _deleteWallet,
-                  child: const Text('Delete'),
+                  child: Text(i18n.homeDelete),
                 ),
               ],
             ),
@@ -174,9 +178,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                               ),
                             Text(tx.amount.toString()),
                             Text(
-                              DateTime.fromMillisecondsSinceEpoch(
-                                tx.timestamp * 1000,
-                              ).timeago(),
+                              timeago.format(
+                                DateTime.fromMillisecondsSinceEpoch(
+                                  tx.timestamp * 1000,
+                                ),
+                                locale: currentLocale.languageCode,
+                              ),
                             ),
                           ],
                         ),

@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesKeys {
+  static const String language = 'language';
   static const String notificationsEnabled = 'notificationsEnabled';
   static const String connectionAddress = 'connectionAddress';
   static const String connectionProxyPort = 'connectionProxyPort';

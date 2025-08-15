@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
 class TxDetailsScreen extends StatelessWidget {
@@ -8,6 +9,7 @@ class TxDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context);
     final txDetails = ModalRoute.of(context)!.settings.arguments as TxDetails;
     final amountSent = txDetails.amount.toString();
@@ -31,7 +33,10 @@ class TxDetailsScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hash', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    i18n.txDetailsHashLabel,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   GestureDetector(
                     child: Text(
                       txDetails.hash,
@@ -45,14 +50,20 @@ class TxDetailsScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Amount', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    i18n.txDetailsAmountLabel,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   Text('$amountSent XMR'),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Fee', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    i18n.txDetailsFeeLabel,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   Text('$fee XMR'),
                 ],
               ),
@@ -60,7 +71,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Time and Date',
+                    i18n.txDetailsTimeAndDateLabel,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text('$dateFormatted $timeFormatted'),
@@ -70,7 +81,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Confirmation Height',
+                    i18n.txDetailsConfirmationHeightLabel,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(txDetails.height.toString()),
@@ -80,7 +91,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Confirmations',
+                    i18n.txDetailsConfirmationsLabel,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(txDetails.confirmations.toString()),
@@ -90,7 +101,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'View Key',
+                    i18n.txDetailsViewKeyLabel,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   GestureDetector(
@@ -107,7 +118,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Recipients',
+                    i18n.txDetailsRecipientsLabel,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   ListView.separated(

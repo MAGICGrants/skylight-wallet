@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 
 class CreateWalletScreen extends StatelessWidget {
   const CreateWalletScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(title: Text('Monero Light Wallet')),
       body: Center(
@@ -13,13 +16,13 @@ class CreateWalletScreen extends StatelessWidget {
           spacing: 20,
           children: [
             Text(
-              'Create Wallet',
+              i18n.createWalletTitle,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Do you already have a Monero wallet seed, or do you need to make a new one?',
+                i18n.createWalletDescription,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
@@ -31,12 +34,12 @@ class CreateWalletScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () =>
                       Navigator.pushNamed(context, '/restore_warning'),
-                  child: const Text('Restore Existing'),
+                  child: Text(i18n.createWalletRestoreExistingButton),
                 ),
                 ElevatedButton(
                   onPressed: () =>
                       Navigator.pushNamed(context, '/generate_seed'),
-                  child: const Text('Create New'),
+                  child: Text(i18n.createWalletCreateNewButton),
                 ),
               ],
             ),

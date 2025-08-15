@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 
 class RestoreWarningScreen extends StatelessWidget {
   const RestoreWarningScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(title: Text('Monero Light Wallet')),
       body: Center(
@@ -13,13 +16,13 @@ class RestoreWarningScreen extends StatelessWidget {
           spacing: 20,
           children: [
             Text(
-              'Restore Warning',
+              i18n.restoreWarningTitle,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Are you sure? The server that you connect to will be able to see your past and future Monero transaction history.',
+                i18n.restoreWarningDescription,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
@@ -31,11 +34,11 @@ class RestoreWarningScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () =>
                       Navigator.pushNamed(context, '/restore_wallet'),
-                  child: const Text('Continue'),
+                  child: Text(i18n.restoreWarningContinueButton),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(i18n.restoreWarningCancelButton),
                 ),
               ],
             ),

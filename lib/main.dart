@@ -1,9 +1,15 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/models/language_model.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/services/notifications_service.dart';
 import 'package:monero_light_wallet/screens/settings.dart';
-import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/screens/connection_details.dart';
+import 'package:monero_light_wallet/screens/connection_setup.dart';
 import 'package:monero_light_wallet/screens/generate_seed.dart';
 import 'package:monero_light_wallet/screens/receive.dart';
 import 'package:monero_light_wallet/screens/send.dart';
@@ -17,12 +23,9 @@ import 'package:monero_light_wallet/screens/welcome.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService().init();
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => WalletModel(),
-      child: const MyApp(),
-    ),
-  );
+  timeago.setLocaleMessages('pt', timeago.PtBrMessages());
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -31,25 +34,50 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => WalletModel()),
+        ChangeNotifierProvider(create: (context) => LanguageModel()),
+      ],
+      child: Consumer<LanguageModel>(
+        builder: (context, localeProvider, child) {
+          return FutureBuilder(
+            future: SharedPreferences.getInstance(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return MaterialApp(
+                  title: 'Monero Light Wallet',
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  theme: ThemeData(
+                    colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+                  ),
+                  initialRoute: '/welcome',
+                  locale: Locale.fromSubtags(
+                    languageCode: localeProvider.language,
+                  ),
+                  routes: {
+                    '/welcome': (context) => WelcomeScreen(),
+                    '/connection_setup': (context) => ConnectionSetupScreen(),
+                    '/create_wallet': (context) => CreateWalletScreen(),
+                    '/generate_seed': (context) => GenerateSeedScreen(),
+                    '/restore_warning': (context) => RestoreWarningScreen(),
+                    '/restore_wallet': (context) => RestoreWalletScreen(),
+                    '/wallet_home': (context) => WalletHomeScreen(),
+                    '/settings': (context) => SettingsScreen(),
+                    '/send': (context) => SendScreen(),
+                    '/receive': (context) => ReceiveScreen(),
+                    '/tx_details': (context) => TxDetailsScreen(),
+                  },
+                );
+              }
+
+              return Center(child: CircularProgressIndicator());
+            },
+          );
+        },
       ),
-      initialRoute: '/welcome',
-      routes: {
-        '/welcome': (context) => WelcomeScreen(),
-        '/connection_details': (context) => ConnectionDetailsScreen(),
-        '/create_wallet': (context) => CreateWalletScreen(),
-        '/generate_seed': (context) => GenerateSeedScreen(),
-        '/restore_warning': (context) => RestoreWarningScreen(),
-        '/restore_wallet': (context) => RestoreWalletScreen(),
-        '/wallet_home': (context) => WalletHomeScreen(),
-        '/settings': (context) => SettingsScreen(),
-        '/send': (context) => SendScreen(),
-        '/receive': (context) => ReceiveScreen(),
-        '/tx_details': (context) => TxDetailsScreen(),
-      },
     );
   }
 }

@@ -1,18 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:provider/provider.dart';
 
-class ConnectionDetailsScreen extends StatefulWidget {
-  const ConnectionDetailsScreen({super.key});
+class ConnectionSetupScreen extends StatefulWidget {
+  const ConnectionSetupScreen({super.key});
 
   @override
-  State<ConnectionDetailsScreen> createState() =>
-      _ConnectionDetailsScreenState();
+  State<ConnectionSetupScreen> createState() => _ConnectionSetupScreenState();
 }
 
-class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
+class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _proxyPortController = TextEditingController();
   bool _useSsl = false;
@@ -96,6 +96,8 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -108,11 +110,11 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                 spacing: 10,
                 children: [
                   Text(
-                    'Connection Setup',
+                    i18n.connectionSetupTitle,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   Text(
-                    "Let's setup a connection with LWS.",
+                    i18n.connectionSetupDescription,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
@@ -124,8 +126,8 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                   TextFormField(
                     controller: _addressController,
                     decoration: InputDecoration(
-                      labelText: 'Address',
-                      hintText: 'e.g., 192.168.1.1 or example.com',
+                      labelText: i18n.connectionSetupAddressLabel,
+                      hintText: i18n.connectionSetupAddressHint,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
@@ -145,8 +147,8 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                   TextFormField(
                     controller: _proxyPortController,
                     decoration: InputDecoration(
-                      labelText: 'Proxy Port (optional)',
-                      hintText: 'e.g. 4444 for I2P',
+                      labelText: i18n.connectionSetupProxyPortLabel,
+                      hintText: i18n.connectionSetupProxyPortHint,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
@@ -157,7 +159,7 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                     ],
                   ),
                   CheckboxListTile(
-                    title: const Text('Use SSL'),
+                    title: Text(i18n.connectionSetupUseSslLabel),
                     value: _useSsl,
                     onChanged: (bool? newValue) {
                       setState(() {
@@ -180,7 +182,9 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                               AnimatedOpacity(
                                 opacity: _isLoading ? 0.0 : 1.0,
                                 duration: Duration(milliseconds: 300),
-                                child: Text('Test Connection'),
+                                child: Text(
+                                  i18n.connectionSetupTestConnectionButton,
+                                ),
                               ),
                             if (_isLoading)
                               SizedBox(
@@ -196,7 +200,7 @@ class _ConnectionDetailsScreenState extends State<ConnectionDetailsScreen> {
                       if (_connectionSuccess)
                         ElevatedButton(
                           onPressed: _saveConnection,
-                          child: Text('Continue'),
+                          child: Text(i18n.connectionSetupContinueButton),
                         ),
                     ],
                   ),

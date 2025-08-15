@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +34,8 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(title: Text('Monero Light Wallet')),
       body: Center(
@@ -40,19 +43,22 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20,
           children: [
-            Text('Welcome!', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              i18n.welcomeTitle,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Light Monero Wallet is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.',
+                i18n.welcomeDescription,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
             ElevatedButton(
               onPressed: () =>
-                  Navigator.pushNamed(context, '/connection_details'),
-              child: const Text('Get Started'),
+                  Navigator.pushNamed(context, '/connection_setup'),
+              child: Text(i18n.welcomeGetStarted),
             ),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:provider/provider.dart';
 
@@ -37,6 +38,8 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -46,13 +49,13 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
             spacing: 20,
             children: [
               Text(
-                'New Wallet',
+                i18n.generateSeedTitle,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'This is your polyseed. Write it down and keep it in a safe place.',
+                  i18n.generateSeedDescription,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
@@ -66,7 +69,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
               ),
               ElevatedButton(
                 onPressed: _continue,
-                child: const Text('I wrote it down'),
+                child: Text(i18n.generateSeedContinueButton),
               ),
             ],
           ),

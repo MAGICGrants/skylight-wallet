@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
@@ -18,6 +19,8 @@ class _SendScreenState extends State<SendScreen> {
   String _destinationAddressError = '';
 
   void _send() {
+    final i18n = Provider.of<AppLocalizations>(context);
+
     setState(() {
       _isLoading = true;
     });
@@ -36,7 +39,7 @@ class _SendScreenState extends State<SendScreen> {
 
       if (resolvedDestinationAddress == '') {
         setState(() {
-          _destinationAddressError = 'Could not resolve OpenAlias.';
+          _destinationAddressError = i18n.sendOpenAliasResolveError;
           _isLoading = false;
         });
         return;
@@ -49,7 +52,7 @@ class _SendScreenState extends State<SendScreen> {
       });
     } else {
       setState(() {
-        _destinationAddressError = 'Invalid address.';
+        _destinationAddressError = i18n.sendInvalidAddressError;
         _isLoading = false;
       });
       return;
@@ -65,18 +68,23 @@ class _SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20,
           children: [
-            Text('Send', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              i18n.sendTitle,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Address',
+                  labelText: i18n.sendAddressLabel,
                   border: OutlineInputBorder(),
                   errorText: _destinationAddressError != ''
                       ? _destinationAddressError
@@ -97,7 +105,7 @@ class _SendScreenState extends State<SendScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?')),
                 ],
                 decoration: InputDecoration(
-                  hintText: 'Amount',
+                  labelText: i18n.sendAmountLabel,
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (text) {
@@ -112,8 +120,8 @@ class _SendScreenState extends State<SendScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/wallet_home'),
-                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(i18n.sendCancelButton),
                 ),
                 ElevatedButton(
                   onPressed: _send,
@@ -124,7 +132,7 @@ class _SendScreenState extends State<SendScreen> {
                         AnimatedOpacity(
                           opacity: _isLoading ? 0.0 : 1.0,
                           duration: Duration(milliseconds: 300),
-                          child: Text('Send'),
+                          child: Text(i18n.sendSendButton),
                         ),
                       if (_isLoading)
                         SizedBox(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
@@ -16,6 +17,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
 
     return Scaffold(
@@ -26,25 +28,25 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
           spacing: 20,
           children: [
             Text(
-              'Restore Wallet',
+              i18n.restoreWalletTitle,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Input your Monero seed below. We will check common formats.',
+                i18n.restoreWalletDescription,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
                 minLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'Seed',
+                  labelText: i18n.restoreWalletSeedLabel,
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (text) {
@@ -62,7 +64,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                   FilteringTextInputFormatter.digitsOnly,
                 ],
                 decoration: InputDecoration(
-                  hintText: 'Restore Height',
+                  labelText: i18n.restoreWalletRestoreHeightLabel,
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (text) {
@@ -78,7 +80,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(i18n.restoreWalletCancelButton),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -87,7 +89,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                       Navigator.pushReplacementNamed(context, '/wallet_home');
                     }
                   },
-                  child: const Text('Restore'),
+                  child: Text(i18n.restoreWalletRestoreButton),
                 ),
               ],
             ),

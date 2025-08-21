@@ -15,18 +15,11 @@ void callbackDispatcher() {
     switch (task) {
       case PeriodicTasks.newTransactionsCheck:
         if (!await wallet.hasExistingWallet()) {
-          return false;
+          return true;
         }
 
         await wallet.openExisting();
-        final connection = await wallet.getPersistedConnection();
-
-        wallet.setConnection(
-          connection.address,
-          connection.proxyPort,
-          connection.useSsl,
-        );
-
+        await wallet.loadPersistedConnection();
         wallet.connectToDaemon();
         wallet.refresh();
 

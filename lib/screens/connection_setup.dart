@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:provider/provider.dart';
 
 class ConnectionSetupScreen extends StatefulWidget {
@@ -14,7 +15,9 @@ class ConnectionSetupScreen extends StatefulWidget {
 
 class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _proxyPortController = TextEditingController();
+  final TextEditingController _customProxyPortController =
+      TextEditingController();
+  bool _useTor = false;
   bool _useSsl = false;
   bool _hasTested = false;
   bool _isLoading = false;
@@ -29,7 +32,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   @override
   void dispose() {
     _addressController.dispose();
-    _proxyPortController.dispose();
+    _customProxyPortController.dispose();
     super.dispose();
   }
 
@@ -39,15 +42,33 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     setState(() {
       _addressController.text = conn.address;
-      _proxyPortController.text = conn.proxyPort;
+      _customProxyPortController.text = conn.proxyPort;
       _useSsl = conn.useSsl;
     });
+  }
+
+  void _setUseTor(bool? newValue) {
+    setState(() {
+      _useTor = newValue ?? false;
+    });
+
+    if (newValue == true) {
+      _customProxyPortController.text = '';
+    }
   }
 
   Future _testConnection() async {
     final proto = _useSsl ? 'https' : 'http';
     final daemonAddress = _addressController.text;
-    final proxyAddress = _proxyPortController.text;
+    final customProxyPort = _customProxyPortController.text;
+    String torProxyPort = '';
+
+    if (_useTor) {
+      await TorService.sharedInstance.start();
+      torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
+    }
+
+    String proxyPort = torProxyPort != '' ? torProxyPort : customProxyPort;
 
     setState(() {
       _hasTested = true;
@@ -56,10 +77,10 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     final url = '$proto://$daemonAddress/get_address_info';
     HttpClient httpClient = HttpClient();
 
-    if (proxyAddress != '') {
+    if (proxyPort != '') {
       httpClient = httpClient
         ..findProxy = (uri) {
-          return "PROXY $proxyAddress";
+          return "PROXY localhost:$proxyPort";
         };
     }
 
@@ -86,10 +107,17 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
   void _saveConnection() {
     final daemonAddress = _addressController.text;
-    final proxyAddress = _proxyPortController.text;
+    final proxyAddress = _customProxyPortController.text;
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.setConnection(daemonAddress, proxyAddress, _useSsl);
+
+    wallet.setConnection(
+      address: daemonAddress,
+      proxyPort: proxyAddress,
+      useTor: _useTor,
+      useSsl: _useSsl,
+    );
+
     wallet.persistCurrentConnection();
     Navigator.pushNamed(context, '/create_wallet');
   }
@@ -144,20 +172,29 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                     ),
                     keyboardType: TextInputType.url,
                   ),
-                  TextFormField(
-                    controller: _proxyPortController,
-                    decoration: InputDecoration(
-                      labelText: i18n.connectionSetupProxyPortLabel,
-                      hintText: i18n.connectionSetupProxyPortHint,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+                  if (!_useTor)
+                    TextFormField(
+                      controller: _customProxyPortController,
+                      decoration: InputDecoration(
+                        labelText: i18n.connectionSetupProxyPortLabel,
+                        hintText: i18n.connectionSetupProxyPortHint,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
                       ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                     ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                  CheckboxListTile(
+                    title: Text(i18n.connectionSetupUseTorLabel),
+                    value: _useTor,
+                    onChanged: _setUseTor,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
                   ),
+
                   CheckboxListTile(
                     title: Text(i18n.connectionSetupUseSslLabel),
                     value: _useSsl,

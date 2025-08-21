@@ -13,6 +13,7 @@
   "connectionSetupAddressHint": "ex: 192.168.1.1:18090 ou exemplo.com:18090",
   "connectionSetupProxyPortLabel": "Porta do Proxy (opcional)",
   "connectionSetupProxyPortHint": "ex: 4444 para I2P",
+  "connectionSetupUseTorLabel": "Usar Tor",
   "connectionSetupUseSslLabel": "Usar SSL",
   "connectionSetupTestConnectionButton": "Testar Conexão",
   "connectionSetupContinueButton": "Continuar",

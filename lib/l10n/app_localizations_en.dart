@@ -52,10 +52,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionSetupProxyPortHint => 'e.g. 4444 for I2P';
 
   @override
+  String get connectionSetupUseTorLabel => 'Use Tor';
+
+  @override
   String get connectionSetupUseSslLabel => 'Use SSL';
 
   @override
-  String get connectionSetupTestConnectionButton => 'TestConnection';
+  String get connectionSetupTestConnectionButton => 'Test Connection';
 
   @override
   String get connectionSetupContinueButton => 'Continue';
@@ -144,25 +147,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveShowPrimaryAddressButton => 'Show Primary Address';
 
   @override
-  String get sendTitle => 'Enviar';
+  String get sendTitle => 'Send';
 
   @override
-  String get sendAddressLabel => 'Endereco';
+  String get sendAddressLabel => 'Address';
 
   @override
-  String get sendAmountLabel => 'Quantia';
+  String get sendAmountLabel => 'Amount';
 
   @override
-  String get sendCancelButton => 'Cancelar';
+  String get sendCancelButton => 'Cancel';
 
   @override
-  String get sendSendButton => 'Enviar';
+  String get sendSendButton => 'Send';
 
   @override
-  String get sendOpenAliasResolveError => 'OpenAlias invalido.';
+  String get sendOpenAliasResolveError => 'Invalid OpenAlias.';
 
   @override
-  String get sendInvalidAddressError => 'Endereco invalido.';
+  String get sendInvalidAddressError => 'Invalid address.';
 
   @override
   String get settingsTitle => 'Settings';

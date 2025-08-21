@@ -1,10 +1,8 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/services/notifications_service.dart';
 import 'package:monero_light_wallet/screens/settings.dart';

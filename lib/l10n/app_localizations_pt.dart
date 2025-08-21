@@ -52,6 +52,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionSetupProxyPortHint => 'ex: 4444 para I2P';
 
   @override
+  String get connectionSetupUseTorLabel => 'Usar Tor';
+
+  @override
   String get connectionSetupUseSslLabel => 'Usar SSL';
 
   @override

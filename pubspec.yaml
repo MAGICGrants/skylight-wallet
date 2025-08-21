@@ -34,6 +34,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  tor_ffi_plugin:
+    path: ./external/tor
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -55,6 +58,7 @@ dependencies:
   workmanager: ^0.8.0
   flutter_local_notifications: ^19.4.0
   timeago: ^3.7.1
+  flutter_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:

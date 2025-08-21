@@ -1,0 +1,3 @@
+[submodule "external/tor"]
+	path = external/tor
+	url = https://github.com/cypherstack/tor.git

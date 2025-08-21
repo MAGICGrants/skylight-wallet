@@ -176,6 +176,12 @@ abstract class AppLocalizations {
   /// **'e.g. 4444 for I2P'**
   String get connectionSetupProxyPortHint;
 
+  /// No description provided for @connectionSetupUseTorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Tor'**
+  String get connectionSetupUseTorLabel;
+
   /// No description provided for @connectionSetupUseSslLabel.
   ///
   /// In en, this message translates to:
@@ -185,7 +191,7 @@ abstract class AppLocalizations {
   /// No description provided for @connectionSetupTestConnectionButton.
   ///
   /// In en, this message translates to:
-  /// **'TestConnection'**
+  /// **'Test Connection'**
   String get connectionSetupTestConnectionButton;
 
   /// No description provided for @connectionSetupContinueButton.
@@ -353,43 +359,43 @@ abstract class AppLocalizations {
   /// No description provided for @sendTitle.
   ///
   /// In en, this message translates to:
-  /// **'Enviar'**
+  /// **'Send'**
   String get sendTitle;
 
   /// No description provided for @sendAddressLabel.
   ///
   /// In en, this message translates to:
-  /// **'Endereco'**
+  /// **'Address'**
   String get sendAddressLabel;
 
   /// No description provided for @sendAmountLabel.
   ///
   /// In en, this message translates to:
-  /// **'Quantia'**
+  /// **'Amount'**
   String get sendAmountLabel;
 
   /// No description provided for @sendCancelButton.
   ///
   /// In en, this message translates to:
-  /// **'Cancelar'**
+  /// **'Cancel'**
   String get sendCancelButton;
 
   /// No description provided for @sendSendButton.
   ///
   /// In en, this message translates to:
-  /// **'Enviar'**
+  /// **'Send'**
   String get sendSendButton;
 
   /// No description provided for @sendOpenAliasResolveError.
   ///
   /// In en, this message translates to:
-  /// **'OpenAlias invalido.'**
+  /// **'Invalid OpenAlias.'**
   String get sendOpenAliasResolveError;
 
   /// No description provided for @sendInvalidAddressError.
   ///
   /// In en, this message translates to:
-  /// **'Endereco invalido.'**
+  /// **'Invalid address.'**
   String get sendInvalidAddressError;
 
   /// No description provided for @settingsTitle.

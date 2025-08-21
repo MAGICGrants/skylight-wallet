@@ -5,6 +5,7 @@ class SharedPreferencesKeys {
   static const String notificationsEnabled = 'notificationsEnabled';
   static const String connectionAddress = 'connectionAddress';
   static const String connectionProxyPort = 'connectionProxyPort';
+  static const String connectionUseTor = 'connectionUseTor';
   static const String connectionUseSsl = 'connectionUseSsl';
 }
 

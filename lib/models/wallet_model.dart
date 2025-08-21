@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
+import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/src/monero.dart';
@@ -62,11 +63,13 @@ class TxRecipient {
 class LWSConnectionDetails {
   final String address;
   final String proxyPort;
+  final bool useTor;
   final bool useSsl;
 
   LWSConnectionDetails({
     required this.address,
     required this.proxyPort,
+    required this.useTor,
     required this.useSsl,
   });
 }
@@ -78,6 +81,7 @@ class WalletModel with ChangeNotifier {
   late Wallet2TransactionHistory _txHistory;
   late String _connectionAddress;
   late String _connectionProxyPort;
+  late bool _connectionUseTor;
   late bool _connectionUseSsl;
 
   Wallet2Wallet get wallet => _wallet;
@@ -92,6 +96,10 @@ class WalletModel with ChangeNotifier {
       _connectionProxyPort,
     );
     await SharedPreferencesService.set(
+      SharedPreferencesKeys.connectionUseTor,
+      _connectionUseTor,
+    );
+    await SharedPreferencesService.set(
       SharedPreferencesKeys.connectionUseSsl,
       _connectionUseSsl,
     );
@@ -100,17 +108,22 @@ class WalletModel with ChangeNotifier {
   Future<LWSConnectionDetails> getPersistedConnection() async {
     return LWSConnectionDetails(
       address:
-          await SharedPreferencesService.get(
+          await SharedPreferencesService.get<String>(
             SharedPreferencesKeys.connectionAddress,
           ) ??
           '',
       proxyPort:
-          await SharedPreferencesService.get(
+          await SharedPreferencesService.get<String>(
             SharedPreferencesKeys.connectionProxyPort,
           ) ??
           '',
+      useTor:
+          await SharedPreferencesService.get<bool>(
+            SharedPreferencesKeys.connectionUseTor,
+          ) ??
+          false,
       useSsl:
-          await SharedPreferencesService.get(
+          await SharedPreferencesService.get<bool>(
             SharedPreferencesKeys.connectionUseSsl,
           ) ??
           false,
@@ -120,9 +133,10 @@ class WalletModel with ChangeNotifier {
   Future<void> loadPersistedConnection() async {
     final connectionDetails = await getPersistedConnection();
     setConnection(
-      connectionDetails.address,
-      connectionDetails.proxyPort,
-      connectionDetails.useSsl,
+      address: connectionDetails.address,
+      proxyPort: connectionDetails.proxyPort,
+      useTor: connectionDetails.useTor,
+      useSsl: connectionDetails.useSsl,
     );
   }
 
@@ -141,22 +155,36 @@ class WalletModel with ChangeNotifier {
     return _txHistory.count();
   }
 
-  void setConnection(String address, String proxyPort, bool useSsl) {
+  void setConnection({
+    required String address,
+    required String proxyPort,
+    required bool useTor,
+    required bool useSsl,
+  }) {
     _connectionAddress = address;
     _connectionProxyPort = proxyPort;
+    _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
     notifyListeners();
   }
 
-  void connectToDaemon() {
+  Future<void> connectToDaemon() async {
+    String? torProxyPort;
+
+    if (_connectionUseTor) {
+      await TorService.sharedInstance.start();
+      torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
+    }
+
+    final proxyPort = torProxyPort ?? _connectionProxyPort;
+
     _wallet.init(
       daemonAddress: _connectionAddress,
-      proxyAddress: _connectionProxyPort != ''
-          ? '127.0.0.1:$_connectionProxyPort'
-          : '',
+      proxyAddress: proxyPort != '' ? '127.0.0.1:$proxyPort' : '',
       useSsl: _connectionUseSsl,
       lightWallet: true,
     );
+
     _wallet.connectToDaemon();
   }
 
@@ -276,10 +304,6 @@ class WalletModel with ChangeNotifier {
     );
 
     tx.commit(filename: '', overwrite: false);
-    print('Unlocked balance:');
-    print(_wallet.unlockedBalance(accountIndex: 0));
-    print('Sending:');
-    print(amountInt);
     print(tx.errorString());
     store();
     refresh();

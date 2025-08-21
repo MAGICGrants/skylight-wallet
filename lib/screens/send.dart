@@ -19,7 +19,7 @@ class _SendScreenState extends State<SendScreen> {
   String _destinationAddressError = '';
 
   void _send() {
-    final i18n = Provider.of<AppLocalizations>(context);
+    final i18n = AppLocalizations.of(context)!;
 
     setState(() {
       _isLoading = true;

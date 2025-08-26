@@ -304,7 +304,13 @@ class WalletModel with ChangeNotifier {
     );
 
     tx.commit(filename: '', overwrite: false);
-    print(tx.errorString());
+
+    final errorMsg = tx.errorString();
+
+    if (errorMsg != '') {
+      throw FormatException(errorMsg);
+    }
+
     store();
     refresh();
   }

@@ -43,6 +43,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     setState(() {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
+      _useTor = conn.useTor;
       _useSsl = conn.useSsl;
     });
   }
@@ -88,8 +89,9 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
       setState(() {
         _isLoading = true;
       });
+
       final request = await httpClient.getUrl(Uri.parse(url));
-      final response = await request.close();
+      final response = await request.close().timeout(Duration(seconds: 10));
 
       setState(() {
         _connectionSuccess = response.statusCode != HttpStatus.notFound;

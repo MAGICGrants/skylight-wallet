@@ -26,12 +26,26 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void initState() {
     super.initState();
+
     Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
     _initNewTxsCheckIfNeeded();
     _startTimer();
+
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.refresh();
-    wallet.connectToDaemon();
+
+    if (!wallet.isConnected()) {
+      wallet.refresh();
+      wallet.connectToDaemon();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final Map<String, dynamic>? args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+      if (args != null && args['showTxSuccessToast']) {
+        _showTxSuccessToast();
+      }
+    });
   }
 
   @override
@@ -46,12 +60,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         _trigger = !_trigger;
       });
     });
-  }
-
-  void _deleteWallet() {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.delete();
-    Navigator.pushReplacementNamed(context, '/welcome');
   }
 
   void _showTxDetails(int txIndex) {
@@ -74,6 +82,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     if (notificationsEnabled && !taskIsRunning) {
       await startNewTransactionsCheckTask();
     }
+  }
+
+  void _showTxSuccessToast() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: const Text('Transaction successfully sent!')),
+    );
   }
 
   @override
@@ -99,51 +113,88 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     }
 
     return Scaffold(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        onDestinationSelected: (index) => {
+          if (index == 1) {Navigator.pushNamed(context, '/settings')},
+        },
+        destinations: [
+          NavigationDestination(
+            icon: Icon(Icons.wallet),
+            label: i18n.navigationBarWallet,
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings),
+            label: i18n.navigationBarSettings,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
-          spacing: 10,
+          spacing: 20,
           children: [
-            Text(
-              '${i18n.homeConnected}: $connected',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
-              '${i18n.homeSynced}: $synced',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
-              '${i18n.homeHeight}: $height',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
-              '${i18n.homeBalance}: $balance XMR',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Row(
-              spacing: 10,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/receive'),
-                  child: Text(i18n.homeReceive),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/send'),
-                  child: Text(i18n.homeSend),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/settings'),
-                  child: Text(i18n.homeSettings),
-                ),
-                TextButton(
-                  onPressed: _deleteWallet,
-                  child: Text(i18n.homeDelete),
-                ),
-              ],
+            Padding(
+              padding: EdgeInsetsGeometry.all(20),
+              child: Column(
+                spacing: 20,
+                children: [
+                  Chip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 12,
+                      children: connected && synced
+                          ? [
+                              Icon(Icons.check, color: Colors.teal),
+                              Text('${i18n.homeHeight} $height'),
+                            ]
+                          : connected && (!synced || height == 0)
+                          ? [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              Text(i18n.homeSyncing),
+                            ]
+                          : [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              Text(i18n.homeConnecting),
+                            ],
+                    ),
+                    // color: WidgetStateProperty.all(Colors.teal.shade100),
+                    shadowColor: null,
+                  ),
+                  Text(
+                    '$balance XMR',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.displaySmall,
+                  ),
+                  Row(
+                    spacing: 10,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/receive'),
+                        child: Text(i18n.homeReceive),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pushNamed(context, '/send'),
+                        child: Text(i18n.homeSend),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: SizedBox(
@@ -152,40 +203,46 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   itemBuilder: (BuildContext context, int index) {
                     final tx = txHistory[index];
 
-                    return SizedBox(
-                      height: 32,
-                      child: GestureDetector(
-                        onTap: () => _showTxDetails(tx.index),
-                        child: Row(
-                          spacing: 20,
-                          children: [
-                            if (tx.direction == consts.txDirectionOutgoing)
-                              Icon(
-                                Icons.arrow_outward_rounded,
-                                color: Colors.red,
-                                size: 20,
-                                semanticLabel: 'Outgoing transaction',
-                              ),
-                            if (tx.direction == consts.txDirectionIncoming)
-                              Transform.rotate(
-                                angle: 90 * math.pi / 180,
-                                child: const Icon(
+                    return Padding(
+                      padding: EdgeInsetsDirectional.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
+                      child: SizedBox(
+                        height: 32,
+                        child: GestureDetector(
+                          onTap: () => _showTxDetails(tx.index),
+                          child: Row(
+                            spacing: 20,
+                            children: [
+                              if (tx.direction == consts.txDirectionOutgoing)
+                                Icon(
                                   Icons.arrow_outward_rounded,
-                                  color: Colors.teal,
+                                  color: Colors.red,
                                   size: 20,
-                                  semanticLabel: 'Incoming transaction',
+                                  semanticLabel: 'Outgoing transaction',
+                                ),
+                              if (tx.direction == consts.txDirectionIncoming)
+                                Transform.rotate(
+                                  angle: 90 * math.pi / 180,
+                                  child: const Icon(
+                                    Icons.arrow_outward_rounded,
+                                    color: Colors.teal,
+                                    size: 20,
+                                    semanticLabel: 'Incoming transaction',
+                                  ),
+                                ),
+                              Text(tx.amount.toString()),
+                              Text(
+                                timeago.format(
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                    tx.timestamp * 1000,
+                                  ),
+                                  locale: currentLocale.languageCode,
                                 ),
                               ),
-                            Text(tx.amount.toString()),
-                            Text(
-                              timeago.format(
-                                DateTime.fromMillisecondsSinceEpoch(
-                                  tx.timestamp * 1000,
-                                ),
-                                locale: currentLocale.languageCode,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );

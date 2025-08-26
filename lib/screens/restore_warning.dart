@@ -38,7 +38,7 @@ class RestoreWarningScreen extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(i18n.restoreWarningCancelButton),
+                  child: Text(i18n.cancel),
                 ),
               ],
             ),

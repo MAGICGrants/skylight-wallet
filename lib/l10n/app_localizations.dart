@@ -98,6 +98,12 @@ abstract class AppLocalizations {
     Locale('pt'),
   ];
 
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelar'**
+  String get cancel;
+
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:
@@ -133,12 +139,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get restoreWarningContinueButton;
-
-  /// No description provided for @restoreWarningCancelButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get restoreWarningCancelButton;
 
   /// No description provided for @connectionSetupTitle.
   ///
@@ -266,41 +266,41 @@ abstract class AppLocalizations {
   /// **'Restore Height'**
   String get restoreWalletRestoreHeightLabel;
 
-  /// No description provided for @restoreWalletCancelButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get restoreWalletCancelButton;
-
   /// No description provided for @restoreWalletRestoreButton.
   ///
   /// In en, this message translates to:
   /// **'Restore'**
   String get restoreWalletRestoreButton;
 
-  /// No description provided for @homeConnected.
+  /// No description provided for @navigationBarWallet.
   ///
   /// In en, this message translates to:
-  /// **'Connected'**
-  String get homeConnected;
+  /// **'Wallet'**
+  String get navigationBarWallet;
 
-  /// No description provided for @homeSynced.
+  /// No description provided for @navigationBarSettings.
   ///
   /// In en, this message translates to:
-  /// **'Synced'**
-  String get homeSynced;
+  /// **'Settings'**
+  String get navigationBarSettings;
+
+  /// No description provided for @homeConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get homeConnecting;
+
+  /// No description provided for @homeSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing'**
+  String get homeSyncing;
 
   /// No description provided for @homeHeight.
   ///
   /// In en, this message translates to:
   /// **'Height'**
   String get homeHeight;
-
-  /// No description provided for @homeBalance.
-  ///
-  /// In en, this message translates to:
-  /// **'Balance'**
-  String get homeBalance;
 
   /// No description provided for @homeReceive.
   ///
@@ -313,18 +313,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send'**
   String get homeSend;
-
-  /// No description provided for @homeSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get homeSettings;
-
-  /// No description provided for @homeDelete.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete'**
-  String get homeDelete;
 
   /// No description provided for @receivePrimaryAddressWarn.
   ///
@@ -374,12 +362,6 @@ abstract class AppLocalizations {
   /// **'Amount'**
   String get sendAmountLabel;
 
-  /// No description provided for @sendCancelButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get sendCancelButton;
-
   /// No description provided for @sendSendButton.
   ///
   /// In en, this message translates to:
@@ -398,6 +380,12 @@ abstract class AppLocalizations {
   /// **'Invalid address.'**
   String get sendInvalidAddressError;
 
+  /// No description provided for @sendInsufficientBalanceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient balance.'**
+  String get sendInsufficientBalanceError;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
@@ -415,6 +403,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get settingsLanguageLabel;
+
+  /// No description provided for @settingsDeleteWalletButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Wallet'**
+  String get settingsDeleteWalletButton;
+
+  /// No description provided for @settingsDeleteWalletDialogText.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete your wallet? You will lose access to your funds unless you have backed up your seed phrase.'**
+  String get settingsDeleteWalletDialogText;
+
+  /// No description provided for @settingsDeleteWalletDialogDeleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get settingsDeleteWalletDialogDeleteButton;
 
   /// No description provided for @txDetailsHashLabel.
   ///

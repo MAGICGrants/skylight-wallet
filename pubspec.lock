@@ -282,7 +282,7 @@ packages:
     description:
       path: "impls/monero.dart"
       ref: lwsf
-      resolved-ref: "82606bd2fba99a14b35891d49a29e28b3740dbd9"
+      resolved-ref: addb5b888dab67c78fbcd8678601c1608cf22d08
       url: "https://github.com/vtnerd/monero_c"
     source: git
     version: "0.0.0"

@@ -1,9 +1,7 @@
-// A StatefulWidget to manage the state of the notifications toggle.
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/language_model.dart';
+import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
@@ -54,16 +52,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showDeleteWalletDialog() {
+    final i18n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(i18n.settingsDeleteWalletButton),
+        content: Text(i18n.settingsDeleteWalletDialogText),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: Icon(Icons.cancel),
+            label: Text(i18n.cancel),
+          ),
+          TextButton.icon(
+            onPressed: _deleteWallet,
+            icon: Icon(Icons.delete_forever),
+            label: Text(i18n.settingsDeleteWalletDialogDeleteButton),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteWallet() {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    wallet.delete();
+    Navigator.pushReplacementNamed(context, '/welcome');
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final language = context.watch<LanguageModel>();
 
     return Scaffold(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 1,
+        onDestinationSelected: (index) => {
+          if (index == 0) {Navigator.pushNamed(context, '/wallet_home')},
+        },
+        destinations: [
+          NavigationDestination(
+            icon: Icon(Icons.wallet),
+            label: i18n.navigationBarSettings,
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings),
+            label: i18n.navigationBarSettings,
+          ),
+        ],
+      ),
       appBar: AppBar(title: Text(i18n.settingsTitle)),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -93,6 +141,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }).toList(),
                 ),
               ],
+            ),
+            Container(
+              margin: EdgeInsets.only(top: 20),
+              child: TextButton.icon(
+                onPressed: _showDeleteWalletDialog,
+                label: Text(i18n.settingsDeleteWalletButton),
+                icon: Icon(Icons.delete),
+                style: ButtonStyle(
+                  foregroundColor: WidgetStateProperty.all(Colors.red),
+                ),
+              ),
             ),
           ],
         ),

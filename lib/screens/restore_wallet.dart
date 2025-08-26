@@ -80,7 +80,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(i18n.restoreWalletCancelButton),
+                  child: Text(i18n.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () async {

@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get cancel => 'Cancelar';
+
+  @override
   String get welcomeTitle => 'Welcome!';
 
   @override
@@ -27,9 +30,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreWarningContinueButton => 'Continue';
-
-  @override
-  String get restoreWarningCancelButton => 'Cancel';
 
   @override
   String get connectionSetupTitle => 'Connection Setup';
@@ -100,34 +100,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletRestoreHeightLabel => 'Restore Height';
 
   @override
-  String get restoreWalletCancelButton => 'Cancel';
-
-  @override
   String get restoreWalletRestoreButton => 'Restore';
 
   @override
-  String get homeConnected => 'Connected';
+  String get navigationBarWallet => 'Wallet';
 
   @override
-  String get homeSynced => 'Synced';
+  String get navigationBarSettings => 'Settings';
+
+  @override
+  String get homeConnecting => 'Connecting';
+
+  @override
+  String get homeSyncing => 'Syncing';
 
   @override
   String get homeHeight => 'Height';
-
-  @override
-  String get homeBalance => 'Balance';
 
   @override
   String get homeReceive => 'Receive';
 
   @override
   String get homeSend => 'Send';
-
-  @override
-  String get homeSettings => 'Settings';
-
-  @override
-  String get homeDelete => 'Delete';
 
   @override
   String get receivePrimaryAddressWarn =>
@@ -156,9 +150,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendAmountLabel => 'Amount';
 
   @override
-  String get sendCancelButton => 'Cancel';
-
-  @override
   String get sendSendButton => 'Send';
 
   @override
@@ -168,6 +159,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInvalidAddressError => 'Invalid address.';
 
   @override
+  String get sendInsufficientBalanceError => 'Insufficient balance.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -175,6 +169,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLanguageLabel => 'Language';
+
+  @override
+  String get settingsDeleteWalletButton => 'Delete Wallet';
+
+  @override
+  String get settingsDeleteWalletDialogText =>
+      'Are you sure you want to delete your wallet? You will lose access to your funds unless you have backed up your seed phrase.';
+
+  @override
+  String get settingsDeleteWalletDialogDeleteButton => 'Delete';
 
   @override
   String get txDetailsHashLabel => 'Hash';

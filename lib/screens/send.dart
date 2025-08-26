@@ -14,11 +14,14 @@ class SendScreen extends StatefulWidget {
 class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
   String _destinationAddress = '';
-  double _amount = 0;
+  final _amountController = TextEditingController(text: '');
 
   String _destinationAddressError = '';
+  String _amountError = '';
 
   void _send() {
+    final amount = double.parse(_amountController.text);
+
     final i18n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -58,31 +61,61 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
+    if (amount > wallet.getBalance()) {
+      setState(() {
+        _amountError = i18n.sendInsufficientBalanceError;
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = false;
     });
 
-    wallet.send(resolvedDestinationAddress, _amount);
-    Navigator.pushNamed(context, '/wallet_home');
+    try {
+      wallet.send(resolvedDestinationAddress, amount);
+    } on FormatException catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('FormatException: ', '')),
+        ),
+      );
+      return;
+    } catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unknown error.')));
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      '/wallet_home',
+      arguments: {'showTxSuccessToast': true},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
 
+    final wallet = context.watch<WalletModel>();
+    final balance = wallet.getBalance();
+
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 20,
-          children: [
-            Text(
-              i18n.sendTitle,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 20,
+            children: [
+              Text(
+                i18n.sendTitle,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              TextField(
                 decoration: InputDecoration(
                   labelText: i18n.sendAddressLabel,
                   border: OutlineInputBorder(),
@@ -96,56 +129,73 @@ class _SendScreenState extends State<SendScreen> {
                   });
                 },
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?')),
-                ],
-                decoration: InputDecoration(
-                  labelText: i18n.sendAmountLabel,
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (text) {
-                  setState(() {
-                    _amount = double.parse(text);
-                  });
-                },
-              ),
-            ),
-            Row(
-              spacing: 20,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(i18n.sendCancelButton),
-                ),
-                ElevatedButton(
-                  onPressed: _send,
-                  child: Stack(
-                    alignment: Alignment.center,
+              Column(
+                spacing: 10,
+                children: [
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d+(\.\d*)?'),
+                      ),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: i18n.sendAmountLabel,
+                      border: OutlineInputBorder(),
+                      errorText: _amountError != '' ? _amountError : null,
+                    ),
+                  ),
+                  Row(
                     children: [
-                      if (!_isLoading)
-                        AnimatedOpacity(
-                          opacity: _isLoading ? 0.0 : 1.0,
-                          duration: Duration(milliseconds: 300),
-                          child: Text(i18n.sendSendButton),
+                      Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          _amountController.text = balance.toString();
+                        },
+                        child: Text(
+                          '$balance XMR',
+                          style: TextStyle(fontSize: 18),
                         ),
-                      if (_isLoading)
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              Row(
+                spacing: 20,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(i18n.cancel),
+                  ),
+                  ElevatedButton(
+                    onPressed: _send,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        if (!_isLoading)
+                          AnimatedOpacity(
+                            opacity: _isLoading ? 0.0 : 1.0,
+                            duration: Duration(milliseconds: 300),
+                            child: Text(i18n.sendSendButton),
+                          ),
+                        if (_isLoading)
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

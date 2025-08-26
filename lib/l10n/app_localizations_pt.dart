@@ -9,6 +9,9 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get cancel => 'Cancelar';
+
+  @override
   String get welcomeTitle => 'Bem-vindo!';
 
   @override
@@ -27,9 +30,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWarningContinueButton => 'Continuar';
-
-  @override
-  String get restoreWarningCancelButton => 'Cancelar';
 
   @override
   String get connectionSetupTitle => 'Configuração da Conexão';
@@ -100,22 +100,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletRestoreHeightLabel => 'Altura de Restauração';
 
   @override
-  String get restoreWalletCancelButton => 'Cancelar';
-
-  @override
   String get restoreWalletRestoreButton => 'Restaurar';
 
   @override
-  String get homeConnected => 'Conectado';
+  String get navigationBarWallet => 'Carteira';
 
   @override
-  String get homeSynced => 'Sincronizado';
+  String get navigationBarSettings => 'Configurações';
 
   @override
-  String get homeHeight => 'Altura';
+  String get homeConnecting => 'Conectando';
 
   @override
-  String get homeBalance => 'Saldo';
+  String get homeSyncing => 'Sincronizando';
+
+  @override
+  String get homeHeight => 'Bloco';
 
   @override
   String get homeReceive => 'Receber';
@@ -124,18 +124,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeSend => 'Enviar';
 
   @override
-  String get homeSettings => 'Configurações';
-
-  @override
-  String get homeDelete => 'Excluir';
-
-  @override
   String get receivePrimaryAddressWarn =>
       'Aviso: Para maior privacidade, considere usar subendereços se o seu servidor de light wallet os suportar.';
 
   @override
   String get receiveSubaddressWarn =>
-      'Aviso: Certifique-se de que seu servidor de carteira leve suporta subendereços, caso contrário, você não conseguirá ver as transações recebidas.';
+      'Aviso: Certifique-se de que seu servidor de light wallet suporta subendereços, caso contrário, você não conseguirá ver as transações recebidas.';
 
   @override
   String get receiveShareButton => 'Compartilhar';
@@ -156,9 +150,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendAmountLabel => 'Valor';
 
   @override
-  String get sendCancelButton => 'Cancelar';
-
-  @override
   String get sendSendButton => 'Enviar';
 
   @override
@@ -168,6 +159,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendInvalidAddressError => 'Endereço inválido.';
 
   @override
+  String get sendInsufficientBalanceError => 'Saldo insuficiente.';
+
+  @override
   String get settingsTitle => 'Configurações';
 
   @override
@@ -175,6 +169,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsLanguageLabel => 'Idioma';
+
+  @override
+  String get settingsDeleteWalletButton => 'Excluir Carteira';
+
+  @override
+  String get settingsDeleteWalletDialogText =>
+      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua semente.';
+
+  @override
+  String get settingsDeleteWalletDialogDeleteButton => 'Excluir';
 
   @override
   String get txDetailsHashLabel => 'Hash';

@@ -23,6 +23,7 @@ class TxDetailsScreen extends StatelessWidget {
     final timeFormatted = DateFormat.jm(locale.toString()).format(dateTime);
 
     return Scaffold(
+      appBar: AppBar(title: Text(i18n.txDetailsTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),

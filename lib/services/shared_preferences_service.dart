@@ -7,6 +7,7 @@ class SharedPreferencesKeys {
   static const String connectionProxyPort = 'connectionProxyPort';
   static const String connectionUseTor = 'connectionUseTor';
   static const String connectionUseSsl = 'connectionUseSsl';
+  static const String showReceiveSubaddress = 'showReceiveSubaddress';
 }
 
 class SharedPreferencesService {

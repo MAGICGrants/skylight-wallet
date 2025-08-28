@@ -314,6 +314,42 @@ abstract class AppLocalizations {
   /// **'Send'**
   String get homeSend;
 
+  /// No description provided for @homeBalanceLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'locked'**
+  String get homeBalanceLocked;
+
+  /// No description provided for @homeTransactionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions'**
+  String get homeTransactionsTitle;
+
+  /// No description provided for @homeOutgoingTxSemanticLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Outgoing Transaction'**
+  String get homeOutgoingTxSemanticLabel;
+
+  /// No description provided for @homeIncomingTxSemanticLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming Transaction'**
+  String get homeIncomingTxSemanticLabel;
+
+  /// No description provided for @homeTransactionPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get homeTransactionPending;
+
+  /// No description provided for @homeTransactionConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get homeTransactionConfirmed;
+
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
@@ -421,6 +457,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get settingsDeleteWalletDialogDeleteButton;
+
+  /// No description provided for @txDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get txDetailsTitle;
 
   /// No description provided for @txDetailsHashLabel.
   ///

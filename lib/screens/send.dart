@@ -19,7 +19,7 @@ class _SendScreenState extends State<SendScreen> {
   String _destinationAddressError = '';
   String _amountError = '';
 
-  void _send() {
+  Future<void> _send() async {
     final amount = double.parse(_amountController.text);
 
     final i18n = AppLocalizations.of(context)!;
@@ -61,7 +61,7 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
-    if (amount > wallet.getBalance()) {
+    if (amount > wallet.getTotalBalance()) {
       setState(() {
         _amountError = i18n.sendInsufficientBalanceError;
         _isLoading = false;
@@ -74,7 +74,7 @@ class _SendScreenState extends State<SendScreen> {
     });
 
     try {
-      wallet.send(resolvedDestinationAddress, amount);
+      await wallet.send(resolvedDestinationAddress, amount);
     } on FormatException catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -101,7 +101,7 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     final wallet = context.watch<WalletModel>();
-    final balance = wallet.getBalance();
+    final unlockedBalance = wallet.getUnlockedBalance();
 
     return Scaffold(
       body: Center(
@@ -153,10 +153,10 @@ class _SendScreenState extends State<SendScreen> {
                       Spacer(),
                       GestureDetector(
                         onTap: () {
-                          _amountController.text = balance.toString();
+                          _amountController.text = unlockedBalance.toString();
                         },
                         child: Text(
-                          '$balance XMR',
+                          '$unlockedBalance XMR',
                           style: TextStyle(fontSize: 18),
                         ),
                       ),

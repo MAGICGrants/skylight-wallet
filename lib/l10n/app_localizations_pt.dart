@@ -124,6 +124,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeSend => 'Enviar';
 
   @override
+  String get homeBalanceLocked => 'travado';
+
+  @override
+  String get homeTransactionsTitle => 'Transações';
+
+  @override
+  String get homeOutgoingTxSemanticLabel => 'Transação de Saída';
+
+  @override
+  String get homeIncomingTxSemanticLabel => 'Transação de Entrada';
+
+  @override
+  String get homeTransactionPending => 'Pendente';
+
+  @override
+  String get homeTransactionConfirmed => 'Confirmado';
+
+  @override
   String get receivePrimaryAddressWarn =>
       'Aviso: Para maior privacidade, considere usar subendereços se o seu servidor de light wallet os suportar.';
 
@@ -138,7 +156,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get receiveShowSubaddressButton => 'Mostrar Subendereço';
 
   @override
-  String get receiveShowPrimaryAddressButton => 'Mostrar Endereço Principal';
+  String get receiveShowPrimaryAddressButton => 'Mostrar Endereço Primário';
 
   @override
   String get sendTitle => 'Enviar';
@@ -179,6 +197,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsDeleteWalletDialogDeleteButton => 'Excluir';
+
+  @override
+  String get txDetailsTitle => 'Transação';
 
   @override
   String get txDetailsHashLabel => 'Hash';

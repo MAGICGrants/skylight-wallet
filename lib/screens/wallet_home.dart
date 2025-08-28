@@ -19,17 +19,12 @@ class WalletHomeScreen extends StatefulWidget {
 }
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
-  // ignore: unused_field
-  bool _trigger = true;
   Timer? _timer;
+  List<TxDetails>? _txHistory;
 
   @override
   void initState() {
     super.initState();
-
-    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
-    _initNewTxsCheckIfNeeded();
-    _startTimer();
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
@@ -37,6 +32,11 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       wallet.refresh();
       wallet.connectToDaemon();
     }
+
+    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    _initNewTxsCheckIfNeeded();
+    _startTimer();
+    _loadTxHistory();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final Map<String, dynamic>? args =
@@ -55,16 +55,26 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      setState(() {
-        _trigger = !_trigger;
-      });
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      final wallet = Provider.of<WalletModel>(context, listen: false);
+      wallet.refresh();
+      wallet.store();
+      _loadTxHistory();
     });
   }
 
-  void _showTxDetails(int txIndex) {
+  Future<void> _loadTxHistory() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final txDetails = wallet.getTxDetails(txIndex);
+    final newTxHistory = await wallet.getFullTxHistory();
+
+    setState(() {
+      _txHistory = newTxHistory;
+    });
+
+    await wallet.persistTxHistoryCount();
+  }
+
+  void _showTxDetails(TxDetails txDetails) {
     Navigator.pushNamed(context, '/tx_details', arguments: txDetails);
   }
 
@@ -94,23 +104,13 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
-    final balance = wallet.getBalance();
+    final totalBalance = wallet.getTotalBalance();
+    final unlockedBalance = wallet.getUnlockedBalance();
+    final lockedBalance = totalBalance - unlockedBalance;
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getSyncedHeight();
-    List<TxDetails> txHistory = [];
-
     final currentLocale = Localizations.localeOf(context);
-
-    if (synced) {
-      wallet.refresh();
-      txHistory = wallet.getTransactionHistory();
-      wallet.persistTxHistoryCount();
-    }
-
-    if (txHistory.isNotEmpty) {
-      wallet.store();
-    }
 
     return Scaffold(
       bottomNavigationBar: NavigationBar(
@@ -132,6 +132,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       body: SafeArea(
         child: Column(
           spacing: 20,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Padding(
               padding: EdgeInsetsGeometry.all(20),
@@ -173,83 +174,133 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     // color: WidgetStateProperty.all(Colors.teal.shade100),
                     shadowColor: null,
                   ),
-                  Text(
-                    '$balance XMR',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displaySmall,
+                  Column(
+                    children: [
+                      Text(
+                        '$totalBalance XMR',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      if (lockedBalance > 0)
+                        Text(
+                          '($lockedBalance XMR ${i18n.homeBalanceLocked})',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
                   ),
                   Row(
                     spacing: 10,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ElevatedButton(
+                      ElevatedButton.icon(
+                        label: Text(i18n.homeReceive),
+                        icon: Transform.rotate(
+                          angle: 90 * math.pi / 180,
+                          child: Icon(Icons.arrow_outward_rounded),
+                        ),
                         onPressed: () =>
                             Navigator.pushNamed(context, '/receive'),
-                        child: Text(i18n.homeReceive),
                       ),
-                      ElevatedButton(
+                      ElevatedButton.icon(
+                        label: Text(i18n.homeSend),
+                        icon: Icon(Icons.arrow_outward_rounded),
                         onPressed: () => Navigator.pushNamed(context, '/send'),
-                        child: Text(i18n.homeSend),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: SizedBox(
-                child: ListView.builder(
-                  itemCount: txHistory.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final tx = txHistory[index];
-
-                    return Padding(
-                      padding: EdgeInsetsDirectional.symmetric(
-                        horizontal: 20,
-                        vertical: 4,
-                      ),
-                      child: SizedBox(
-                        height: 32,
-                        child: GestureDetector(
-                          onTap: () => _showTxDetails(tx.index),
-                          child: Row(
-                            spacing: 20,
-                            children: [
-                              if (tx.direction == consts.txDirectionOutgoing)
-                                Icon(
-                                  Icons.arrow_outward_rounded,
-                                  color: Colors.red,
-                                  size: 20,
-                                  semanticLabel: 'Outgoing transaction',
-                                ),
-                              if (tx.direction == consts.txDirectionIncoming)
-                                Transform.rotate(
-                                  angle: 90 * math.pi / 180,
-                                  child: const Icon(
-                                    Icons.arrow_outward_rounded,
-                                    color: Colors.teal,
-                                    size: 20,
-                                    semanticLabel: 'Incoming transaction',
-                                  ),
-                                ),
-                              Text(tx.amount.toString()),
-                              Text(
-                                timeago.format(
-                                  DateTime.fromMillisecondsSinceEpoch(
-                                    tx.timestamp * 1000,
-                                  ),
-                                  locale: currentLocale.languageCode,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: EdgeInsetsGeometry.symmetric(horizontal: 20),
+                child: Text(
+                  i18n.homeTransactionsTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.start,
                 ),
               ),
             ),
+            if (_txHistory != null && _txHistory!.isNotEmpty)
+              Expanded(
+                child: SizedBox(
+                  child: ListView.separated(
+                    separatorBuilder: (context, index) => Divider(),
+                    itemCount: _txHistory!.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final tx = _txHistory![index];
+
+                      return Padding(
+                        padding: EdgeInsetsDirectional.symmetric(
+                          horizontal: 20,
+                          vertical: 4,
+                        ),
+                        child: SizedBox(
+                          height: 42,
+                          child: GestureDetector(
+                            onTap: () => _showTxDetails(tx),
+                            child: Row(
+                              spacing: 20,
+                              children: [
+                                if (tx.direction == consts.txDirectionOutgoing)
+                                  Icon(
+                                    Icons.arrow_outward_rounded,
+                                    color: Colors.red,
+                                    size: 20,
+                                    semanticLabel:
+                                        i18n.homeOutgoingTxSemanticLabel,
+                                  ),
+                                if (tx.direction == consts.txDirectionIncoming)
+                                  Transform.rotate(
+                                    angle: 90 * math.pi / 180,
+                                    child: Icon(
+                                      Icons.arrow_outward_rounded,
+                                      color: Colors.teal,
+                                      size: 20,
+                                      semanticLabel:
+                                          i18n.homeIncomingTxSemanticLabel,
+                                    ),
+                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${tx.amount} XMR',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (tx.confirmations < 10)
+                                      Text(
+                                        '${i18n.homeTransactionPending} - ${tx.confirmations}/10',
+                                      ),
+                                    if (tx.confirmations >= 10)
+                                      Text(i18n.homeTransactionConfirmed),
+                                  ],
+                                ),
+                                Spacer(),
+                                Text(
+                                  timeago.format(
+                                    DateTime.fromMillisecondsSinceEpoch(
+                                      tx.timestamp * 1000,
+                                    ),
+                                    locale: currentLocale.languageCode,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            if (_txHistory != null && _txHistory!.isEmpty)
+              Text('No Transactions'),
+            if (_txHistory == null) CircularProgressIndicator(),
           ],
         ),
       ),

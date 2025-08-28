@@ -124,6 +124,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSend => 'Send';
 
   @override
+  String get homeBalanceLocked => 'locked';
+
+  @override
+  String get homeTransactionsTitle => 'Transactions';
+
+  @override
+  String get homeOutgoingTxSemanticLabel => 'Outgoing Transaction';
+
+  @override
+  String get homeIncomingTxSemanticLabel => 'Incoming Transaction';
+
+  @override
+  String get homeTransactionPending => 'Pending';
+
+  @override
+  String get homeTransactionConfirmed => 'Confirmed';
+
+  @override
   String get receivePrimaryAddressWarn =>
       'Warning: For better privacy, consider using subaddresses if supported by your light wallet server.';
 
@@ -179,6 +197,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDeleteWalletDialogDeleteButton => 'Delete';
+
+  @override
+  String get txDetailsTitle => 'Transaction';
 
   @override
   String get txDetailsHashLabel => 'Hash';

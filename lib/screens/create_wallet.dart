@@ -38,7 +38,7 @@ class CreateWalletScreen extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () =>
-                      Navigator.pushNamed(context, '/generate_seed'),
+                      Navigator.pushReplacementNamed(context, '/generate_seed'),
                   child: Text(i18n.createWalletCreateNewButton),
                 ),
               ],

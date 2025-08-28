@@ -13,7 +13,7 @@ class SendScreen extends StatefulWidget {
 
 class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
-  String _destinationAddress = '';
+  final _destinationAddressController = TextEditingController(text: '');
   final _amountController = TextEditingController(text: '');
 
   String _destinationAddressError = '';
@@ -26,9 +26,11 @@ class _SendScreenState extends State<SendScreen> {
 
     setState(() {
       _isLoading = true;
+      _destinationAddressError = '';
+      _amountError = '';
     });
 
-    _destinationAddressError = '';
+    final destinationAddress = _destinationAddressController.text;
     String resolvedDestinationAddress = '';
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
@@ -36,9 +38,9 @@ class _SendScreenState extends State<SendScreen> {
       r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$',
     );
 
-    if (domainRegex.hasMatch(_destinationAddress)) {
+    if (domainRegex.hasMatch(destinationAddress)) {
       // check for openalias
-      resolvedDestinationAddress = wallet.resolveOpenAlias(_destinationAddress);
+      resolvedDestinationAddress = wallet.resolveOpenAlias(destinationAddress);
 
       if (resolvedDestinationAddress == '') {
         setState(() {
@@ -47,10 +49,10 @@ class _SendScreenState extends State<SendScreen> {
         });
         return;
       }
-    } else if (wallet.wallet.addressValid(_destinationAddress, 0)) {
+    } else if (wallet.wallet.addressValid(destinationAddress, 0)) {
       // check for address
       setState(() {
-        resolvedDestinationAddress = _destinationAddress;
+        resolvedDestinationAddress = destinationAddress;
         _isLoading = false;
       });
     } else {
@@ -69,10 +71,6 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = false;
-    });
-
     try {
       await wallet.send(resolvedDestinationAddress, amount);
     } on FormatException catch (error) {
@@ -81,13 +79,27 @@ class _SendScreenState extends State<SendScreen> {
           content: Text(error.toString().replaceFirst('FormatException: ', '')),
         ),
       );
+
+      setState(() {
+        _isLoading = false;
+      });
+
       return;
     } catch (error) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Unknown error.')));
+
+      setState(() {
+        _isLoading = false;
+      });
+
       return;
     }
+
+    setState(() {
+      _isLoading = false;
+    });
 
     Navigator.pushNamed(
       context,
@@ -116,6 +128,7 @@ class _SendScreenState extends State<SendScreen> {
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               TextField(
+                controller: _destinationAddressController,
                 decoration: InputDecoration(
                   labelText: i18n.sendAddressLabel,
                   border: OutlineInputBorder(),
@@ -123,11 +136,6 @@ class _SendScreenState extends State<SendScreen> {
                       ? _destinationAddressError
                       : null,
                 ),
-                onChanged: (text) {
-                  setState(() {
-                    _destinationAddress = text;
-                  });
-                },
               ),
               Column(
                 spacing: 10,

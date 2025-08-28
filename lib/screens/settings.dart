@@ -79,9 +79,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _deleteWallet() {
+  Future<void> _deleteWallet() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.delete();
+    await wallet.delete();
     Navigator.pushReplacementNamed(context, '/welcome');
   }
 

@@ -12,13 +12,58 @@ class RestoreWalletScreen extends StatefulWidget {
 }
 
 class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
-  String _mnemonic = '';
-  int _restoreHeight = 0;
+  final _mnemonicController = TextEditingController();
+  final _restoreHeightController = TextEditingController();
+  String? _mnemonicError;
+
+  Future<void> _restore() async {
+    setState(() {
+      _mnemonicError = null;
+    });
+
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+
+    final mnemonic = _mnemonicController.text;
+    final restoreHeight = int.parse(_restoreHeightController.text);
+
+    try {
+      await wallet.restoreFromMnemonic(mnemonic, restoreHeight);
+    } on Exception catch (error) {
+      final errorMsg = error.toString().replaceFirst('Exception: ', '');
+
+      if (errorMsg == 'Invalid mnemonic.') {
+        setState(() {
+          _mnemonicError = errorMsg;
+        });
+
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
+      }
+      return;
+    } catch (error) {
+      if (mounted) {
+        final i18n = AppLocalizations.of(context)!;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/wallet_home');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = context.watch<WalletModel>();
 
     return Scaffold(
       appBar: AppBar(title: Text('Monero Light Wallet')),
@@ -41,24 +86,22 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
             ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
+              child: TextFormField(
+                controller: _mnemonicController,
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
                 minLines: 3,
                 decoration: InputDecoration(
                   labelText: i18n.restoreWalletSeedLabel,
+                  errorText: _mnemonicError,
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (text) {
-                  setState(() {
-                    _mnemonic = text;
-                  });
-                },
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
+              child: TextFormField(
+                controller: _restoreHeightController,
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.digitsOnly,
@@ -67,10 +110,12 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                   labelText: i18n.restoreWalletRestoreHeightLabel,
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (text) {
-                  setState(() {
-                    _restoreHeight = int.parse(text);
-                  });
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return i18n.fieldEmptyError;
+                  }
+
+                  return null;
                 },
               ),
             ),
@@ -83,12 +128,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                   child: Text(i18n.cancel),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                    await wallet.restoreFromMnemonic(_mnemonic, _restoreHeight);
-                    if (context.mounted) {
-                      Navigator.pushReplacementNamed(context, '/wallet_home');
-                    }
-                  },
+                  onPressed: _restore,
                   child: Text(i18n.restoreWalletRestoreButton),
                 ),
               ],

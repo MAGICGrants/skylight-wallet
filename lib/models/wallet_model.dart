@@ -116,7 +116,9 @@ class LWSConnectionDetails {
 }
 
 class WalletModel with ChangeNotifier {
-  final _walletManager = Monero().walletManagerFactory().getLWSFWalletManager();
+  final _w2WalletManager = Monero()
+      .walletManagerFactory()
+      .getLWSFWalletManager();
 
   late Wallet2Wallet _w2Wallet;
   late Wallet2TransactionHistory _w2TxHistory;
@@ -235,12 +237,21 @@ class WalletModel with ChangeNotifier {
     _w2TxHistory.refresh();
   }
 
-  String generatePolyseed() {
-    return _w2Wallet.createPolyseed();
+  Future<String> create() async {
+    _w2Wallet = _w2WalletManager.createWallet(path: '', password: 'pass');
+    final polyseed = _w2Wallet.createPolyseed();
+
+    // We need to connect to LWS to be able to get the current height.
+    await connectToDaemon();
+
+    final currentHeight = await getCurrentHeight();
+    await restoreFromMnemonic(polyseed, currentHeight);
+    store();
+    return polyseed;
   }
 
   Future<int> getCurrentHeight() {
-    return _walletManager.blockchainHeight();
+    return _w2WalletManager.blockchainHeight();
   }
 
   Future<void> restoreFromMnemonic(
@@ -250,15 +261,48 @@ class WalletModel with ChangeNotifier {
   ]) async {
     final path = await getWalletPath();
 
-    _w2Wallet = _walletManager.recoveryWallet(
+    final legacyWallet = _w2WalletManager.recoveryWallet(
       mnemonic: mnemonic,
       password: 'pass',
-      path: path,
+      path: '',
       restoreHeight: restoreHeight,
       seedOffset: passphrase,
     );
 
-    _w2TxHistory = wallet.history();
+    final polyseedWallet = _w2WalletManager.createWalletFromPolyseed(
+      path: '',
+      password: 'pass',
+      mnemonic: mnemonic,
+      seedOffset: '',
+      newWallet: true,
+      restoreHeight: restoreHeight,
+      kdfRounds: 1,
+    );
+
+    final legacyError = legacyWallet.errorString();
+    final polyseedError = polyseedWallet.errorString();
+
+    if (!legacyError.contains('word list failed verification')) {
+      _w2Wallet = _w2WalletManager.recoveryWallet(
+        path: path,
+        mnemonic: mnemonic,
+        password: 'pass',
+        restoreHeight: restoreHeight,
+        seedOffset: passphrase,
+      );
+    } else if (polyseedError != 'Failed polyseed decode') {
+      _w2Wallet = _w2WalletManager.createWalletFromPolyseed(
+        path: path,
+        password: 'pass',
+        mnemonic: mnemonic,
+        seedOffset: '',
+        newWallet: true,
+        restoreHeight: restoreHeight,
+        kdfRounds: 1,
+      );
+    }
+
+    _w2TxHistory = _w2Wallet.history();
 
     store();
     notifyListeners();
@@ -267,7 +311,7 @@ class WalletModel with ChangeNotifier {
   Future openExisting() async {
     final path = await getWalletPath();
 
-    _w2Wallet = _walletManager.openWallet(path: path, password: 'pass');
+    _w2Wallet = _w2WalletManager.openWallet(path: path, password: 'pass');
     _w2TxHistory = _w2Wallet.history();
 
     notifyListeners();
@@ -278,7 +322,7 @@ class WalletModel with ChangeNotifier {
   }
 
   Future delete() async {
-    _walletManager.closeWallet(_w2Wallet, false);
+    _w2WalletManager.closeWallet(_w2Wallet, false);
     final path = await getWalletPath();
     final walletFile = File(path);
     await walletFile.delete();
@@ -288,7 +332,7 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<bool> hasExistingWallet() async {
-    return _walletManager.walletExists(await getWalletPath());
+    return _w2WalletManager.walletExists(await getWalletPath());
   }
 
   bool isConnected() {
@@ -376,14 +420,15 @@ class WalletModel with ChangeNotifier {
 
     await addPendingTx(txDetails);
 
-    print(txDetails);
-
     store();
     refresh();
   }
 
   String resolveOpenAlias(String address) {
-    return _walletManager.resolveOpenAlias(address: address, dnssecValid: true);
+    return _w2WalletManager.resolveOpenAlias(
+      address: address,
+      dnssecValid: true,
+    );
   }
 
   Future<void> addPendingTx(TxDetails tx) async {
@@ -437,7 +482,6 @@ class WalletModel with ChangeNotifier {
 
   Future<List<TxDetails>> getFullTxHistory() async {
     final pendingTxs = await _getPendingTxs();
-    print(pendingTxs.length);
     final confirmedTxHistory = getConfirmedTxHistory();
 
     final confirmedTxMap = {for (var tx in confirmedTxHistory) tx.hash: tx};

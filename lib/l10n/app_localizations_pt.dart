@@ -12,6 +12,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get unknownError => 'Erro desconhecido.';
+
+  @override
+  String get fieldEmptyError => 'Este campo não pode ficar vazio.';
+
+  @override
   String get welcomeTitle => 'Bem-vindo!';
 
   @override
@@ -97,10 +103,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletSeedLabel => 'Semente';
 
   @override
-  String get restoreWalletRestoreHeightLabel => 'Altura de Restauração';
+  String get restoreWalletRestoreHeightLabel => 'Bloco de Restauração';
 
   @override
   String get restoreWalletRestoreButton => 'Restaurar';
+
+  @override
+  String get restoreWalletInvalidMnemonic => 'Semente inválida.';
 
   @override
   String get navigationBarWallet => 'Carteira';
@@ -171,6 +180,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendSendButton => 'Enviar';
 
   @override
+  String get sendTransactionSuccessfullySent =>
+      'Transação enviada com sucesso!';
+
+  @override
   String get sendOpenAliasResolveError => 'OpenAlias inválido.';
 
   @override
@@ -214,7 +227,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsTimeAndDateLabel => 'Data e Hora';
 
   @override
-  String get txDetailsConfirmationHeightLabel => 'Altura de Confirmação';
+  String get txDetailsConfirmationHeightLabel => 'Bloco de Confirmação';
 
   @override
   String get txDetailsConfirmationsLabel => 'Confirmações';

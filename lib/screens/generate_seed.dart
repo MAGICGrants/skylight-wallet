@@ -11,26 +11,24 @@ class GenerateSeedScreen extends StatefulWidget {
 }
 
 class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
-  late List<String> seed;
+  List<String> _seed = [];
 
   @override
   void initState() {
     super.initState();
+    _createWallet();
+  }
+
+  Future<void> _createWallet() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    seed = wallet.generatePolyseed().split(' ');
+    final seed = await wallet.create();
+
+    setState(() {
+      _seed = seed.split(' ');
+    });
   }
 
   void _continue() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.connectToDaemon();
-
-    await wallet.restoreFromMnemonic(
-      seed.join(' '),
-      await wallet.getCurrentHeight() - 1000,
-    );
-
-    wallet.store();
-
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/wallet_home');
     }
@@ -63,7 +61,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 10,
-                children: seed.map((word) {
+                children: _seed.map((word) {
                   return Chip(label: Text(word));
                 }).toList(),
               ),

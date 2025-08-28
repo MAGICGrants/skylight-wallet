@@ -12,6 +12,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get unknownError => 'Unknown error.';
+
+  @override
+  String get fieldEmptyError => 'This field cannot be empty.';
+
+  @override
   String get welcomeTitle => 'Welcome!';
 
   @override
@@ -103,6 +109,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletRestoreButton => 'Restore';
 
   @override
+  String get restoreWalletInvalidMnemonic => 'Invalid mnemonic.';
+
+  @override
   String get navigationBarWallet => 'Wallet';
 
   @override
@@ -169,6 +178,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendSendButton => 'Send';
+
+  @override
+  String get sendTransactionSuccessfullySent =>
+      'Transaction successfully sent!';
 
   @override
   String get sendOpenAliasResolveError => 'Invalid OpenAlias.';

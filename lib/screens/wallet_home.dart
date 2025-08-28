@@ -95,8 +95,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   }
 
   void _showTxSuccessToast() {
+    final i18n = AppLocalizations.of(context)!;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: const Text('Transaction successfully sent!')),
+      SnackBar(content: Text(i18n.sendTransactionSuccessfullySent)),
     );
   }
 

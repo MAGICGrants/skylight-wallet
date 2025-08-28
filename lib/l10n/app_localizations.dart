@@ -104,6 +104,18 @@ abstract class AppLocalizations {
   /// **'Cancelar'**
   String get cancel;
 
+  /// No description provided for @unknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error.'**
+  String get unknownError;
+
+  /// No description provided for @fieldEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'This field cannot be empty.'**
+  String get fieldEmptyError;
+
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:
@@ -272,6 +284,12 @@ abstract class AppLocalizations {
   /// **'Restore'**
   String get restoreWalletRestoreButton;
 
+  /// No description provided for @restoreWalletInvalidMnemonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid mnemonic.'**
+  String get restoreWalletInvalidMnemonic;
+
   /// No description provided for @navigationBarWallet.
   ///
   /// In en, this message translates to:
@@ -403,6 +421,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send'**
   String get sendSendButton;
+
+  /// No description provided for @sendTransactionSuccessfullySent.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction successfully sent!'**
+  String get sendTransactionSuccessfullySent;
 
   /// No description provided for @sendOpenAliasResolveError.
   ///

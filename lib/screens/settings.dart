@@ -4,6 +4,7 @@ import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
+import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -82,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteWallet() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     await wallet.delete();
-    Navigator.pushReplacementNamed(context, '/welcome');
+    if (mounted) Navigator.pushReplacementNamed(context, '/welcome');
   }
 
   @override
@@ -91,22 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final language = context.watch<LanguageModel>();
 
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 1,
-        onDestinationSelected: (index) => {
-          if (index == 0) {Navigator.pushNamed(context, '/wallet_home')},
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.wallet),
-            label: i18n.navigationBarSettings,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings),
-            label: i18n.navigationBarSettings,
-          ),
-        ],
-      ),
+      bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
       appBar: AppBar(title: Text(i18n.settingsTitle)),
       body: Padding(
         padding: const EdgeInsets.all(20),

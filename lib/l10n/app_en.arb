@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "cancel": "Cancelar",
+  "cancel": "Cancel",
   "unknownError": "Unknown error.",
   "fieldEmptyError": "This field cannot be empty.",
   "welcomeTitle": "Welcome!",
@@ -34,6 +34,7 @@
   "restoreWalletInvalidMnemonic": "Invalid mnemonic.",
   "navigationBarWallet": "Wallet",
   "navigationBarSettings": "Settings",
+  "navigationBarKeys": "Keys",
   "homeConnecting": "Connecting",
   "homeSyncing": "Syncing",
   "homeHeight": "Height",
@@ -72,5 +73,11 @@
   "txDetailsConfirmationHeightLabel": "Confirmation Height",
   "txDetailsConfirmationsLabel": "Confirmations",
   "txDetailsViewKeyLabel": "View Key",
-  "txDetailsRecipientsLabel": "Recipients"
+  "txDetailsRecipientsLabel": "Recipients",
+  "keysPrimaryAddress": "Primary Address",
+  "keysRestoreHeight": "Restore Height",
+  "keysSecretSpendKey": "Secret Spend Key",
+  "keysPublicSpendKey": "Public Spend Key",
+  "keysSecretViewKey": "Secret View Key",
+  "keysPublicViewKey": "Public View Key"
 }

@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get cancel => 'Cancelar';
+  String get cancel => 'Cancel';
 
   @override
   String get unknownError => 'Unknown error.';
@@ -116,6 +116,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navigationBarSettings => 'Settings';
+
+  @override
+  String get navigationBarKeys => 'Keys';
 
   @override
   String get homeConnecting => 'Connecting';
@@ -237,4 +240,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get txDetailsRecipientsLabel => 'Recipients';
+
+  @override
+  String get keysPrimaryAddress => 'Primary Address';
+
+  @override
+  String get keysRestoreHeight => 'Restore Height';
+
+  @override
+  String get keysSecretSpendKey => 'Secret Spend Key';
+
+  @override
+  String get keysPublicSpendKey => 'Public Spend Key';
+
+  @override
+  String get keysSecretViewKey => 'Secret View Key';
+
+  @override
+  String get keysPublicViewKey => 'Public View Key';
 }

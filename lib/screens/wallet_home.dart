@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:timeago/timeago.dart' as timeago;
-
+import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/consts.dart' as consts;
+import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
 
 class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});
@@ -27,9 +27,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     super.initState();
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
+    wallet.refresh();
 
     if (!wallet.isConnected()) {
-      wallet.refresh();
       wallet.connectToDaemon();
     }
 
@@ -115,22 +115,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final currentLocale = Localizations.localeOf(context);
 
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) => {
-          if (index == 1) {Navigator.pushNamed(context, '/settings')},
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.wallet),
-            label: i18n.navigationBarWallet,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings),
-            label: i18n.navigationBarSettings,
-          ),
-        ],
-      ),
+      bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
       body: SafeArea(
         child: Column(
           spacing: 20,
@@ -146,7 +131,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: 12,
-                      children: connected && synced
+                      children: connected && synced && height != 0
                           ? [
                               Icon(Icons.check, color: Colors.teal),
                               Text('${i18n.homeHeight} $height'),
@@ -173,8 +158,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                               Text(i18n.homeConnecting),
                             ],
                     ),
-                    // color: WidgetStateProperty.all(Colors.teal.shade100),
-                    shadowColor: null,
                   ),
                   Column(
                     children: [

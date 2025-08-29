@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
-  /// **'Cancelar'**
+  /// **'Cancel'**
   String get cancel;
 
   /// No description provided for @unknownError.
@@ -301,6 +301,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get navigationBarSettings;
+
+  /// No description provided for @navigationBarKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys'**
+  String get navigationBarKeys;
 
   /// No description provided for @homeConnecting.
   ///
@@ -535,6 +541,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recipients'**
   String get txDetailsRecipientsLabel;
+
+  /// No description provided for @keysPrimaryAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Address'**
+  String get keysPrimaryAddress;
+
+  /// No description provided for @keysRestoreHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Height'**
+  String get keysRestoreHeight;
+
+  /// No description provided for @keysSecretSpendKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret Spend Key'**
+  String get keysSecretSpendKey;
+
+  /// No description provided for @keysPublicSpendKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Spend Key'**
+  String get keysPublicSpendKey;
+
+  /// No description provided for @keysSecretViewKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret View Key'**
+  String get keysSecretViewKey;
+
+  /// No description provided for @keysPublicViewKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Public View Key'**
+  String get keysPublicViewKey;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/screens/keys.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -26,6 +27,16 @@ void main() async {
   runApp(MyApp());
 }
 
+Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
+  if (await wallet.hasExistingWallet()) {
+    await wallet.openExisting();
+    await wallet.loadPersistedConnection();
+    return true;
+  }
+
+  return false;
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -38,11 +49,24 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => LanguageModel()),
       ],
       child: Consumer<LanguageModel>(
-        builder: (context, localeProvider, child) {
+        builder: (context, languageProvider, child) {
+          final wallet = Provider.of<WalletModel>(context, listen: false);
+
           return FutureBuilder(
-            future: SharedPreferences.getInstance(),
+            // Since LanguageModel loads the user's language from
+            // SharedPreferences, we need to wait until an instance is loaded.
+            // We also need to wait until it is determined whether or not a
+            // wallet already exists, so we know which screen to send the user
+            // to initially.
+            future: Future.wait([
+              SharedPreferences.getInstance(),
+              loadExistingWalletIfExists(wallet),
+            ]),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
+                final walletExists = snapshot.data![1] as bool;
+                final initialRoute = walletExists ? '/wallet_home' : '/welcome';
+
                 return MaterialApp(
                   title: 'Monero Light Wallet',
                   localizationsDelegates:
@@ -51,9 +75,10 @@ class MyApp extends StatelessWidget {
                   theme: ThemeData(
                     colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
                   ),
-                  initialRoute: '/welcome',
+
+                  initialRoute: initialRoute,
                   locale: Locale.fromSubtags(
-                    languageCode: localeProvider.language,
+                    languageCode: languageProvider.language,
                   ),
                   routes: {
                     '/welcome': (context) => WelcomeScreen(),
@@ -64,6 +89,7 @@ class MyApp extends StatelessWidget {
                     '/restore_wallet': (context) => RestoreWalletScreen(),
                     '/wallet_home': (context) => WalletHomeScreen(),
                     '/settings': (context) => SettingsScreen(),
+                    '/keys': (context) => KeysScreen(),
                     '/send': (context) => SendScreen(),
                     '/receive': (context) => ReceiveScreen(),
                     '/tx_details': (context) => TxDetailsScreen(),
@@ -71,7 +97,13 @@ class MyApp extends StatelessWidget {
                 );
               }
 
-              return Center(child: CircularProgressIndicator());
+              return MaterialApp(
+                title: 'Monero Light Wallet',
+                theme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+                ),
+                builder: (context, child) => Scaffold(),
+              );
             },
           );
         },

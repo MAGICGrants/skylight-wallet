@@ -118,6 +118,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navigationBarSettings => 'Configurações';
 
   @override
+  String get navigationBarKeys => 'Chaves';
+
+  @override
   String get homeConnecting => 'Conectando';
 
   @override
@@ -237,4 +240,22 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get txDetailsRecipientsLabel => 'Destinatários';
+
+  @override
+  String get keysPrimaryAddress => 'Endereço Primário';
+
+  @override
+  String get keysRestoreHeight => 'Bloco de Restauração';
+
+  @override
+  String get keysSecretSpendKey => 'Chave Privada de Gasto';
+
+  @override
+  String get keysPublicSpendKey => 'Chave Pública de Gasto';
+
+  @override
+  String get keysSecretViewKey => 'Chave Privada de Visualização';
+
+  @override
+  String get keysPublicViewKey => 'Chave Pública de Visualização';
 }

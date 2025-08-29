@@ -34,6 +34,7 @@
   "restoreWalletInvalidMnemonic": "Semente inválida.",
   "navigationBarWallet": "Carteira",
   "navigationBarSettings": "Configurações",
+  "navigationBarKeys": "Chaves",
   "homeConnecting": "Conectando",
   "homeSyncing": "Sincronizando",
   "homeHeight": "Bloco",
@@ -72,5 +73,11 @@
   "txDetailsConfirmationHeightLabel": "Bloco de Confirmação",
   "txDetailsConfirmationsLabel": "Confirmações",
   "txDetailsViewKeyLabel": "Chave de Visualização",
-  "txDetailsRecipientsLabel": "Destinatários"
+  "txDetailsRecipientsLabel": "Destinatários",
+  "keysPrimaryAddress": "Endereço Primário",
+  "keysRestoreHeight": "Bloco de Restauração",
+  "keysSecretSpendKey": "Chave Privada de Gasto",
+  "keysPublicSpendKey": "Chave Pública de Gasto",
+  "keysSecretViewKey": "Chave Privada de Visualização",
+  "keysPublicViewKey": "Chave Pública de Visualização"
 }

@@ -64,7 +64,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
               ),
               if (_seed.isEmpty || _restoreHeight == 0)
                 CircularProgressIndicator(),
-              if (_seed.isNotEmpty || _restoreHeight > 0)
+              if (_seed.isNotEmpty && _restoreHeight > 0)
                 Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 10,
@@ -72,7 +72,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                     return Chip(label: Text(word));
                   }).toList(),
                 ),
-              if (_seed.isNotEmpty || _restoreHeight > 0)
+              if (_seed.isNotEmpty && _restoreHeight > 0)
                 ElevatedButton(
                   onPressed: () => Navigator.pushReplacementNamed(
                     context,

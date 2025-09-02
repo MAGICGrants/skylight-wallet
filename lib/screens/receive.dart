@@ -6,6 +6,7 @@ import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 class ReceiveScreen extends StatefulWidget {
   const ReceiveScreen({super.key});
@@ -17,6 +18,7 @@ class ReceiveScreen extends StatefulWidget {
 class _ReceiveScreenState extends State<ReceiveScreen> {
   String _address = '';
   bool _showSubaddress = false;
+  double _previousBrightness = 0.0;
 
   @override
   void initState() {
@@ -26,6 +28,13 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     _address = wallet.getPrimaryAddress();
 
     _loadShowReceiveSubaddress();
+    _setBrightnessToMax();
+  }
+
+  @override
+  void dispose() {
+    _setBrightnessToNormal();
+    super.dispose();
   }
 
   Future<void> _loadShowReceiveSubaddress() async {
@@ -59,6 +68,17 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
         _address = wallet.getPrimaryAddress();
       });
     }
+  }
+
+  Future<void> _setBrightnessToMax() async {
+    _previousBrightness = await ScreenBrightness().system;
+    await ScreenBrightness().setApplicationScreenBrightness(1.0);
+  }
+
+  Future<void> _setBrightnessToNormal() async {
+    await ScreenBrightness().setApplicationScreenBrightness(
+      _previousBrightness,
+    );
   }
 
   @override

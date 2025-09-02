@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/screens/keys.dart';
+import 'package:monero_light_wallet/screens/lws_details.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -85,6 +86,7 @@ class MyApp extends StatelessWidget {
                     '/connection_setup': (context) => ConnectionSetupScreen(),
                     '/create_wallet': (context) => CreateWalletScreen(),
                     '/generate_seed': (context) => GenerateSeedScreen(),
+                    '/lws_details': (context) => LwsDetailsScreen(),
                     '/restore_warning': (context) => RestoreWarningScreen(),
                     '/restore_wallet': (context) => RestoreWalletScreen(),
                     '/wallet_home': (context) => WalletHomeScreen(),

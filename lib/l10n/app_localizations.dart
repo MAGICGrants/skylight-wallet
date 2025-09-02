@@ -98,6 +98,12 @@ abstract class AppLocalizations {
     Locale('pt'),
   ];
 
+  /// No description provided for @continueText.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueText;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
@@ -253,6 +259,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I wrote it down'**
   String get generateSeedContinueButton;
+
+  /// No description provided for @lwsDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet Details'**
+  String get lwsDetailsTitle;
+
+  /// No description provided for @lwsDetailsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You can use these details to whitelist this wallet on the light wallet server if needed.'**
+  String get lwsDetailsDescription;
+
+  /// No description provided for @lwsDetailsPrimaryAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Address'**
+  String get lwsDetailsPrimaryAddressLabel;
+
+  /// No description provided for @lwsDetailsSecretViewKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret View Key'**
+  String get lwsDetailsSecretViewKeyLabel;
+
+  /// No description provided for @lwsDetailsRestoreHeightLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Height'**
+  String get lwsDetailsRestoreHeightLabel;
 
   /// No description provided for @restoreWalletTitle.
   ///

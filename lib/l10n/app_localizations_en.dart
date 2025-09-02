@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get continueText => 'Continue';
+
+  @override
   String get cancel => 'Cancel';
 
   @override
@@ -91,6 +94,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generateSeedContinueButton => 'I wrote it down';
+
+  @override
+  String get lwsDetailsTitle => 'Wallet Details';
+
+  @override
+  String get lwsDetailsDescription =>
+      'You can use these details to whitelist this wallet on the light wallet server if needed.';
+
+  @override
+  String get lwsDetailsPrimaryAddressLabel => 'Primary Address';
+
+  @override
+  String get lwsDetailsSecretViewKeyLabel => 'Secret View Key';
+
+  @override
+  String get lwsDetailsRestoreHeightLabel => 'Restore Height';
 
   @override
   String get restoreWalletTitle => 'Restore Wallet';

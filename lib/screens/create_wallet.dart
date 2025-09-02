@@ -20,7 +20,7 @@ class CreateWalletScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
                 i18n.createWalletDescription,
                 textAlign: TextAlign.center,

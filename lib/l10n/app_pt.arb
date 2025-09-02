@@ -1,5 +1,6 @@
 {
   "@@locale": "pt",
+  "continueText": "Continuar",
   "cancel": "Cancelar",
   "unknownError": "Erro desconhecido.",
   "fieldEmptyError": "Este campo não pode ficar vazio.",
@@ -26,6 +27,11 @@
   "generateSeedTitle": "Nova Carteira",
   "generateSeedDescription": "Esta é a sua polyseed. Anote-a e guarde-a em um lugar seguro.",
   "generateSeedContinueButton": "Eu anotei",
+  "lwsDetailsTitle": "Detalhes da Carteira",
+  "lwsDetailsDescription": "Você pode usar esses detalhes para permitir essa carteira no seu servidor de light wallet caso necessário.",
+  "lwsDetailsPrimaryAddressLabel": "Endereço Primário",
+  "lwsDetailsSecretViewKeyLabel": "Chave Privada de Visualização",
+  "lwsDetailsRestoreHeightLabel": "Bloco de Restauração",
   "restoreWalletTitle": "Restaurar Carteira",
   "restoreWalletDescription": "Insira sua semente Monero abaixo. Verificaremos os formatos comuns.",
   "restoreWalletSeedLabel": "Semente",

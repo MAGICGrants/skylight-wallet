@@ -1,5 +1,6 @@
 {
   "@@locale": "en",
+  "continueText": "Continue",
   "cancel": "Cancel",
   "unknownError": "Unknown error.",
   "fieldEmptyError": "This field cannot be empty.",
@@ -26,6 +27,11 @@
   "generateSeedTitle": "New Wallet",
   "generateSeedDescription": "This is your polyseed. Write it down and keep it in a safe place.",
   "generateSeedContinueButton": "I wrote it down",
+  "lwsDetailsTitle": "Wallet Details",
+  "lwsDetailsDescription": "You can use these details to whitelist this wallet on the light wallet server if needed.",
+  "lwsDetailsPrimaryAddressLabel": "Primary Address",
+  "lwsDetailsSecretViewKeyLabel": "Secret View Key",
+  "lwsDetailsRestoreHeightLabel": "Restore Height",
   "restoreWalletTitle": "Restore Wallet",
   "restoreWalletDescription": "Input your Monero seed below. We will check common formats.",
   "restoreWalletSeedLabel": "Seed",

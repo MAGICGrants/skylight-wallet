@@ -131,7 +131,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 20,

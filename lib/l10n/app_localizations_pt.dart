@@ -9,6 +9,9 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get continueText => 'Continuar';
+
+  @override
   String get cancel => 'Cancelar';
 
   @override
@@ -91,6 +94,22 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generateSeedContinueButton => 'Eu anotei';
+
+  @override
+  String get lwsDetailsTitle => 'Detalhes da Carteira';
+
+  @override
+  String get lwsDetailsDescription =>
+      'Você pode usar esses detalhes para permitir essa carteira no seu servidor de light wallet caso necessário.';
+
+  @override
+  String get lwsDetailsPrimaryAddressLabel => 'Endereço Primário';
+
+  @override
+  String get lwsDetailsSecretViewKeyLabel => 'Chave Privada de Visualização';
+
+  @override
+  String get lwsDetailsRestoreHeightLabel => 'Bloco de Restauração';
 
   @override
   String get restoreWalletTitle => 'Restaurar Carteira';

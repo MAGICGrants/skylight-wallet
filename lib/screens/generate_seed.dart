@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/util/height.dart';
 import 'package:provider/provider.dart';
 
 class GenerateSeedScreen extends StatefulWidget {
@@ -12,11 +13,13 @@ class GenerateSeedScreen extends StatefulWidget {
 
 class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
   List<String> _seed = [];
+  int _restoreHeight = 0;
 
   @override
   void initState() {
     super.initState();
     _createWallet();
+    _loadCurrentHeight();
   }
 
   Future<void> _createWallet() async {
@@ -28,10 +31,11 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
     });
   }
 
-  void _continue() async {
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/wallet_home');
-    }
+  Future<void> _loadCurrentHeight() async {
+    final height = await getCurrentBlockchainHeight();
+    setState(() {
+      _restoreHeight = height;
+    });
   }
 
   @override
@@ -51,24 +55,32 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   i18n.generateSeedDescription,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 10,
-                children: _seed.map((word) {
-                  return Chip(label: Text(word));
-                }).toList(),
-              ),
-              ElevatedButton(
-                onPressed: _continue,
-                child: Text(i18n.generateSeedContinueButton),
-              ),
+              if (_seed.isEmpty || _restoreHeight == 0)
+                CircularProgressIndicator(),
+              if (_seed.isNotEmpty || _restoreHeight > 0)
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  children: _seed.map((word) {
+                    return Chip(label: Text(word));
+                  }).toList(),
+                ),
+              if (_seed.isNotEmpty || _restoreHeight > 0)
+                ElevatedButton(
+                  onPressed: () => Navigator.pushReplacementNamed(
+                    context,
+                    '/lws_details',
+                    arguments: _restoreHeight,
+                  ),
+                  child: Text(i18n.generateSeedContinueButton),
+                ),
             ],
           ),
         ),

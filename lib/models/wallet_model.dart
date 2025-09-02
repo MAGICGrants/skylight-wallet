@@ -9,6 +9,7 @@ import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
+import 'package:monero_light_wallet/util/height.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
@@ -128,6 +129,7 @@ class WalletModel with ChangeNotifier {
   late bool _connectionUseSsl;
 
   Wallet2Wallet get wallet => _w2Wallet;
+  Wallet2WalletManager get walletManager => _w2WalletManager;
 
   Future<void> persistCurrentConnection() async {
     await SharedPreferencesService.set(
@@ -239,14 +241,15 @@ class WalletModel with ChangeNotifier {
 
   Future<String> create() async {
     _w2Wallet = _w2WalletManager.createWallet(path: '', password: 'pass');
+    _w2TxHistory = _w2Wallet.history();
     final polyseed = _w2Wallet.createPolyseed();
 
-    // We need to connect to LWS to be able to get the current height.
-    await connectToDaemon();
-
-    final currentHeight = await getCurrentHeight();
+    final currentHeight = await getCurrentBlockchainHeight();
     await restoreFromMnemonic(polyseed, currentHeight);
+    refresh();
+    await connectToDaemon();
     store();
+
     return polyseed;
   }
 

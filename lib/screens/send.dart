@@ -4,6 +4,13 @@ import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
+class SendScreenArgs {
+  String destinationAddress;
+  double? amount;
+
+  SendScreenArgs({required this.destinationAddress, this.amount});
+}
+
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
 
@@ -19,6 +26,30 @@ class _SendScreenState extends State<SendScreen> {
 
   String _destinationAddressError = '';
   String _amountError = '';
+
+  @override
+  void dispose() {
+    _destinationAddressController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadFormFromArgs();
+  }
+
+  void _loadFormFromArgs() {
+    final args = ModalRoute.of(context)!.settings.arguments as SendScreenArgs?;
+
+    if (args != null) {
+      _destinationAddressController.text = args.destinationAddress;
+      _amountController.text = args.amount != null
+          ? args.amount.toString()
+          : '';
+    }
+  }
 
   Future<void> _send() async {
     final amount = double.parse(_amountController.text);
@@ -146,15 +177,25 @@ class _SendScreenState extends State<SendScreen> {
                 i18n.sendTitle,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              TextField(
-                controller: _destinationAddressController,
-                decoration: InputDecoration(
-                  labelText: i18n.sendAddressLabel,
-                  border: OutlineInputBorder(),
-                  errorText: _destinationAddressError != ''
-                      ? _destinationAddressError
-                      : null,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _destinationAddressController,
+                      decoration: InputDecoration(
+                        labelText: i18n.sendAddressLabel,
+                        border: OutlineInputBorder(),
+                        errorText: _destinationAddressError != ''
+                            ? _destinationAddressError
+                            : null,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pushNamed(context, '/scan_qr'),
+                    icon: Icon(Icons.qr_code),
+                  ),
+                ],
               ),
               Column(
                 spacing: 10,

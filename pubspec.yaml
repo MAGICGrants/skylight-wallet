@@ -60,6 +60,7 @@ dependencies:
   timeago: ^3.7.1
   flutter_riverpod: ^2.6.1
   screen_brightness: ^2.1.7
+  mobile_scanner: ^7.0.1
 
 dev_dependencies:
   flutter_test:

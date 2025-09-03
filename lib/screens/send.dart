@@ -15,6 +15,7 @@ class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
   final _destinationAddressController = TextEditingController(text: '');
   final _amountController = TextEditingController(text: '');
+  bool _isSweepAll = false;
 
   String _destinationAddressError = '';
   String _amountError = '';
@@ -72,7 +73,7 @@ class _SendScreenState extends State<SendScreen> {
     }
 
     try {
-      await wallet.send(resolvedDestinationAddress, amount);
+      await wallet.send(resolvedDestinationAddress, amount, _isSweepAll);
     } on FormatException catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -106,6 +107,24 @@ class _SendScreenState extends State<SendScreen> {
       '/wallet_home',
       arguments: {'showTxSuccessToast': true},
     );
+  }
+
+  void _setBalanceAsSendAmount() {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final unlockedBalance = wallet.getUnlockedBalance();
+    _amountController.text = unlockedBalance.toString();
+
+    setState(() {
+      _isSweepAll = true;
+    });
+  }
+
+  void _onSendAmountChanged() {
+    if (_isSweepAll) {
+      setState(() {
+        _isSweepAll = false;
+      });
+    }
   }
 
   @override
@@ -142,6 +161,7 @@ class _SendScreenState extends State<SendScreen> {
                 children: [
                   TextField(
                     controller: _amountController,
+                    onChanged: (value) => _onSendAmountChanged(),
                     keyboardType: TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -160,9 +180,7 @@ class _SendScreenState extends State<SendScreen> {
                     children: [
                       Spacer(),
                       GestureDetector(
-                        onTap: () {
-                          _amountController.text = unlockedBalance.toString();
-                        },
+                        onTap: _setBalanceAsSendAmount,
                         child: Text(
                           '$unlockedBalance XMR',
                           style: TextStyle(fontSize: 18),

@@ -14,7 +14,7 @@
   "connectionSetupDescription": "Vamos configurar uma conexão com o LWS.",
   "connectionSetupAddressLabel": "Endereço",
   "connectionSetupAddressHint": "ex: 192.168.1.1:18090 ou exemplo.com:18090",
-  "connectionSetupProxyPortLabel": "Porta do Proxy (opcional)",
+  "connectionSetupProxyPortLabel": "Porta do Proxy HTTP (opcional)",
   "connectionSetupProxyPortHint": "ex: 4444 para I2P",
   "connectionSetupUseTorLabel": "Usar Tor",
   "connectionSetupUseSslLabel": "Usar SSL",

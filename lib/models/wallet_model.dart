@@ -217,7 +217,6 @@ class WalletModel with ChangeNotifier {
     String? torProxyPort;
 
     if (_connectionUseTor) {
-      await TorService.sharedInstance.start();
       torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
     }
 

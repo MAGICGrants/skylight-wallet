@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:monero_light_wallet/util/socks_http.dart';
+import 'package:provider/provider.dart';
+
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:provider/provider.dart';
 
 class ConnectionSetupScreen extends StatefulWidget {
   const ConnectionSetupScreen({super.key});
@@ -76,26 +78,38 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     });
 
     final url = '$proto://$daemonAddress/get_address_info';
-    HttpClient httpClient = HttpClient();
 
-    if (proxyPort != '') {
-      httpClient = httpClient
-        ..findProxy = (uri) {
-          return "PROXY localhost:$proxyPort";
-        };
-    }
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      setState(() {
-        _isLoading = true;
-      });
+      if (_useTor) {
+        final proxyInfo = TorService.sharedInstance.getProxyInfo();
+        final response = await makeSocksHttpRequest('POST', url, proxyInfo);
 
-      final request = await httpClient.getUrl(Uri.parse(url));
-      final response = await request.close().timeout(Duration(seconds: 10));
+        setState(() {
+          _connectionSuccess =
+              response.statusCode == HttpStatus.internalServerError;
+        });
+      } else {
+        var httpClient = HttpClient();
 
-      setState(() {
-        _connectionSuccess = response.statusCode != HttpStatus.notFound;
-      });
+        if (proxyPort != '') {
+          httpClient = httpClient
+            ..findProxy = (uri) {
+              return "PROXY localhost:$proxyPort";
+            };
+        }
+
+        final request = await httpClient.postUrl(Uri.parse(url));
+        final response = await request.close().timeout(Duration(seconds: 10));
+
+        setState(() {
+          _connectionSuccess =
+              response.statusCode == HttpStatus.internalServerError;
+        });
+      }
     } catch (e) {
       setState(() {
         _connectionSuccess = false;

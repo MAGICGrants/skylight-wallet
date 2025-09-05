@@ -55,7 +55,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
-  String get connectionSetupProxyPortLabel => 'Proxy Port (optional)';
+  String get connectionSetupProxyPortLabel => 'HTTP Proxy Port (optional)';
 
   @override
   String get connectionSetupProxyPortHint => 'e.g. 4444 for I2P';

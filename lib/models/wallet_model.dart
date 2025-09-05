@@ -383,14 +383,18 @@ class WalletModel with ChangeNotifier {
     return doubleAmountFromInt(_w2Wallet.unlockedBalance(accountIndex: 0));
   }
 
-  Future<void> send(String destinationAddress, double amount) async {
+  Future<void> send(
+    String destinationAddress,
+    double amount,
+    bool isSweepAll,
+  ) async {
     final amountInt = _w2Wallet.amountFromDouble(amount);
 
-    final tx = _w2Wallet.createTransaction(
-      dst_addr: destinationAddress,
-      payment_id: '',
-      amount: amountInt,
-      mixin_count: 15,
+    final tx = _w2Wallet.createTransactionMultDest(
+      isSweepAll: isSweepAll,
+      dstAddr: [destinationAddress],
+      amounts: [amountInt],
+      mixinCount: 15,
       pendingTransactionPriority: 0,
       subaddr_account: 0,
     );

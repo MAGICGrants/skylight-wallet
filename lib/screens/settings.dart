@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
@@ -16,7 +17,8 @@ class SettingsScreen extends StatefulWidget {
 
 // The state class for the SettingsScreen.
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _newTxNotificationsEnabled = false;
+  var _newTxNotificationsEnabled = false;
+  var _fiatCurrency = 'USD';
 
   @override
   void initState() {
@@ -31,8 +33,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ) ??
         false;
 
+    final fiatCurrency =
+        await SharedPreferencesService.get<String>(
+          SharedPreferencesKeys.fiatCurrency,
+        ) ??
+        'USD';
+
     setState(() {
       _newTxNotificationsEnabled = newTxNotificationsEnabled;
+      _fiatCurrency = fiatCurrency;
     });
   }
 
@@ -49,6 +58,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     await SharedPreferencesService.set<bool>(
       SharedPreferencesKeys.notificationsEnabled,
+      value,
+    );
+  }
+
+  void _setFiatCurrency(String? value) async {
+    if (value == null) return;
+
+    setState(() {
+      _fiatCurrency = value;
+    });
+
+    await SharedPreferencesService.set<String>(
+      SharedPreferencesKeys.fiatCurrency,
       value,
     );
   }
@@ -95,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
       appBar: AppBar(title: Text(i18n.settingsTitle)),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -123,6 +145,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return DropdownMenuItem<String>(
                       value: locale.languageCode,
                       child: Text(locale.languageCode.toUpperCase()),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Fiat Currency', style: TextStyle(fontSize: 18)),
+                DropdownButton<String>(
+                  value: _fiatCurrency,
+                  onChanged: _setFiatCurrency,
+                  items: supportedFiatCurrencies.map((fiatCode) {
+                    return DropdownMenuItem<String>(
+                      value: fiatCode,
+                      child: Text(fiatCode),
                     );
                   }).toList(),
                 ),

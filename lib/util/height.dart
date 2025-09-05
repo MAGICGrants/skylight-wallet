@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:monero_light_wallet/util/socks_http.dart';
+
+import 'package:monero_light_wallet/services/tor_service.dart';
 
 Future<int> getCurrentBlockchainHeight() async {
   final urls = [
@@ -8,19 +10,17 @@ Future<int> getCurrentBlockchainHeight() async {
     'https://node3.monerodevs.org:18089/get_height',
   ];
 
+  final proxyInfo = TorService.sharedInstance.getProxyInfo();
+
   for (String url in urls) {
     try {
-      final httpClient = HttpClient();
-      final request = await httpClient.getUrl(Uri.parse(url));
-      final response = await request.close().timeout(Duration(seconds: 10));
+      final response = await makeSocksHttpRequest('GET', url, proxyInfo);
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(
-          await response.transform(utf8.decoder).join(),
-        );
+        final jsonResponse = jsonDecode(response.body);
 
-        if (jsonData['height'] is int) {
-          return jsonData['height'];
+        if (jsonResponse['height'] is int) {
+          return jsonResponse['height'];
         }
       }
     } catch (e) {

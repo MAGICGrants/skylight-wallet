@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// No description provided for @connectionSetupProxyPortLabel.
   ///
   /// In en, this message translates to:
-  /// **'Proxy Port (optional)'**
+  /// **'HTTP Proxy Port (optional)'**
   String get connectionSetupProxyPortLabel;
 
   /// No description provided for @connectionSetupProxyPortHint.

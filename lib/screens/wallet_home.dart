@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/util/fiat_rate.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -21,10 +22,14 @@ class WalletHomeScreen extends StatefulWidget {
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Timer? _timer;
   List<TxDetails>? _txHistory;
+  double? _fiatRate;
+  String? _fiatSymbol;
 
   @override
   void initState() {
     super.initState();
+
+    _loadFiatRate();
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
     wallet.refresh();
@@ -102,12 +107,33 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     );
   }
 
+  Future<void> _loadFiatRate() async {
+    final fiatCode =
+        await SharedPreferencesService.get<String>(
+          SharedPreferencesKeys.fiatCurrency,
+        ) ??
+        'USD';
+
+    final fiatSymbol = fiatCode == 'EUR' ? '€' : '\$';
+    final rate = await getFiatRate(fiatCode);
+
+    if (mounted) {
+      setState(() {
+        _fiatRate = rate;
+        _fiatSymbol = fiatSymbol;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
     final totalBalance = wallet.getTotalBalance();
     final unlockedBalance = wallet.getUnlockedBalance();
+    final totalBalanceFiat = _fiatRate is double
+        ? totalBalance * _fiatRate!
+        : null;
     final lockedBalance = totalBalance - unlockedBalance;
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
@@ -162,10 +188,16 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   Column(
                     children: [
                       Text(
-                        '$totalBalance XMR',
+                        totalBalance > 0 ? '$totalBalance XMR' : '0 XMR',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
+                      if (totalBalanceFiat is double)
+                        Text(
+                          '$_fiatSymbol${totalBalanceFiat.toStringAsFixed(2)}',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       if (lockedBalance > 0)
                         Text(
                           '($lockedBalance XMR ${i18n.homeBalanceLocked})',

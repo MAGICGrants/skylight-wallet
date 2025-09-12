@@ -57,7 +57,11 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     }
 
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/wallet_home');
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/wallet_home',
+        (Route<dynamic> route) => false,
+      );
     }
   }
 

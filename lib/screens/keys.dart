@@ -2,17 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/util/height.dart';
 import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:provider/provider.dart';
 
-class KeysScreen extends StatelessWidget {
+class KeysScreen extends StatefulWidget {
   const KeysScreen({super.key});
+
+  @override
+  State<KeysScreen> createState() => _KeysScreenState();
+}
+
+class _KeysScreenState extends State<KeysScreen> {
+  var _restoreHeight = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestoreHeight();
+  }
+
+  Future<void> _loadRestoreHeight() async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final restoreHeight = wallet.wallet.getRefreshFromBlockHeight();
+
+    if (restoreHeight > 0) {
+      setState(() {
+        _restoreHeight = _restoreHeight;
+      });
+    } else {
+      final currentHeight = await getCurrentBlockchainHeight();
+      setState(() {
+        _restoreHeight = currentHeight;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
-    final restoreHeight = wallet.wallet.getRefreshFromBlockHeight();
     final primaryAddress = wallet.getPrimaryAddress();
     final secretSpendKey = wallet.wallet.secretSpendKey();
     final publicSpendKey = wallet.wallet.publicSpendKey();
@@ -21,7 +50,7 @@ class KeysScreen extends StatelessWidget {
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 1),
-      appBar: AppBar(title: Text('Keys')),
+      appBar: AppBar(title: Text(i18n.keysTitle)),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
@@ -74,13 +103,13 @@ class KeysScreen extends StatelessWidget {
                             ),
                           ),
                           controller: TextEditingController(
-                            text: restoreHeight.toString(),
+                            text: _restoreHeight.toString(),
                           ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Clipboard.setData(
-                          ClipboardData(text: restoreHeight.toString()),
+                          ClipboardData(text: _restoreHeight.toString()),
                         ),
                         icon: Icon(Icons.copy),
                       ),

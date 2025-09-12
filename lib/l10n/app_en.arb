@@ -52,6 +52,7 @@
   "homeIncomingTxSemanticLabel": "Incoming Transaction",
   "homeTransactionPending": "Pending",
   "homeTransactionConfirmed": "Confirmed",
+  "homeNoTransactions": "No transactions",
   "receivePrimaryAddressWarn": "Warning: For better privacy, consider using subaddresses if supported by your light wallet server.",
   "receiveSubaddressWarn": "Warning: Make sure your light wallet server supports subaddresses, otherwise, you will not be able to see incoming transactions.",
   "receiveShareButton": "Share",
@@ -68,6 +69,7 @@
   "settingsTitle": "Settings",
   "settingsNotifyNewTxs": "Notify New Transactions",
   "settingsLanguageLabel": "Language",
+  "settingsDisplayCurrencyLabel": "Display Currency",
   "settingsDeleteWalletButton": "Delete Wallet",
   "settingsDeleteWalletDialogText": "Are you sure you want to delete your wallet? You will lose access to your funds unless you have backed up your seed phrase.",
   "settingsDeleteWalletDialogDeleteButton": "Delete",
@@ -80,10 +82,12 @@
   "txDetailsConfirmationsLabel": "Confirmations",
   "txDetailsViewKeyLabel": "View Key",
   "txDetailsRecipientsLabel": "Recipients",
+  "keysTitle": "Keys",
   "keysPrimaryAddress": "Primary Address",
   "keysRestoreHeight": "Restore Height",
   "keysSecretSpendKey": "Secret Spend Key",
   "keysPublicSpendKey": "Public Spend Key",
   "keysSecretViewKey": "Secret View Key",
-  "keysPublicViewKey": "Public View Key"
+  "keysPublicViewKey": "Public View Key",
+  "scanQrTitle": "Scan QR Code"
 }

@@ -410,6 +410,12 @@ abstract class AppLocalizations {
   /// **'Confirmed'**
   String get homeTransactionConfirmed;
 
+  /// No description provided for @homeNoTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions'**
+  String get homeNoTransactions;
+
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
@@ -506,6 +512,12 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get settingsLanguageLabel;
 
+  /// No description provided for @settingsDisplayCurrencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Display Currency'**
+  String get settingsDisplayCurrencyLabel;
+
   /// No description provided for @settingsDeleteWalletButton.
   ///
   /// In en, this message translates to:
@@ -578,6 +590,12 @@ abstract class AppLocalizations {
   /// **'Recipients'**
   String get txDetailsRecipientsLabel;
 
+  /// No description provided for @keysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys'**
+  String get keysTitle;
+
   /// No description provided for @keysPrimaryAddress.
   ///
   /// In en, this message translates to:
@@ -613,6 +631,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Public View Key'**
   String get keysPublicViewKey;
+
+  /// No description provided for @scanQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get scanQrTitle;
 }
 
 class _AppLocalizationsDelegate

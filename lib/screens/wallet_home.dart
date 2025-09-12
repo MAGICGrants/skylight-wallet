@@ -60,7 +60,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
       final wallet = Provider.of<WalletModel>(context, listen: false);
       wallet.refresh();
       wallet.store();
@@ -316,7 +316,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 ),
               ),
             if (_txHistory != null && _txHistory!.isEmpty)
-              Text('No Transactions'),
+              Text(i18n.homeNoTransactions),
             if (_txHistory == null) CircularProgressIndicator(),
           ],
         ),

@@ -27,7 +27,11 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
       await wallet.loadPersistedConnection();
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/wallet_home');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/wallet_home',
+          (Route<dynamic> route) => false,
+        );
       }
     }
   }

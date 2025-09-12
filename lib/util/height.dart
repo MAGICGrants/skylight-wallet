@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:monero_light_wallet/util/socks_http.dart';
 
@@ -14,7 +15,11 @@ Future<int> getCurrentBlockchainHeight() async {
 
   for (String url in urls) {
     try {
-      final response = await makeSocksHttpRequest('GET', url, proxyInfo);
+      final response = await makeSocksHttpRequest(
+        'GET',
+        url,
+        proxyInfo,
+      ).timeout(Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -28,5 +33,5 @@ Future<int> getCurrentBlockchainHeight() async {
     }
   }
 
-  throw Exception('Failed to load height from all provided URLs');
+  throw Exception('failedToLoadHeight');
 }

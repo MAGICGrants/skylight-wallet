@@ -99,8 +99,11 @@ class LwsDetailsScreen extends StatelessWidget {
                 ],
               ),
               ElevatedButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/wallet_home'),
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/wallet_home',
+                  (Route<dynamic> route) => false,
+                ),
                 child: Text(i18n.continueText),
               ),
             ],

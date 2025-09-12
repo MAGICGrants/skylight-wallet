@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:monero_light_wallet/screens/create_wallet.dart';
 import 'package:monero_light_wallet/util/height.dart';
 import 'package:provider/provider.dart';
 
@@ -24,18 +27,51 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
   Future<void> _createWallet() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final seed = await wallet.create();
 
-    setState(() {
-      _seed = seed.split(' ');
-    });
+    try {
+      final seed = await wallet.create();
+      setState(() {
+        _seed = seed.split(' ');
+      });
+    } catch (error) {
+      var errorMsg = 'Sorry, something went wrong.';
+
+      if (error.toString().contains('failedToLoadHeight')) {
+        errorMsg = 'Check your internet connection.';
+      }
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/create_wallet',
+          arguments: CreateWalletScreenArgs(toastMessage: errorMsg),
+        );
+      }
+    }
   }
 
   Future<void> _loadCurrentHeight() async {
-    final height = await getCurrentBlockchainHeight();
-    setState(() {
-      _restoreHeight = height;
-    });
+    try {
+      final height = await getCurrentBlockchainHeight();
+
+      setState(() {
+        _restoreHeight = height;
+      });
+    } catch (error) {
+      var errorMsg = 'Sorry, something went wrong.';
+
+      if (error.toString().contains('failedToLoadHeight')) {
+        errorMsg = 'Check your internet connection.';
+      }
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/create_wallet',
+          arguments: CreateWalletScreenArgs(toastMessage: errorMsg),
+        );
+      }
+    }
   }
 
   @override
@@ -74,9 +110,10 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                 ),
               if (_seed.isNotEmpty && _restoreHeight > 0)
                 ElevatedButton(
-                  onPressed: () => Navigator.pushReplacementNamed(
+                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/lws_details',
+                    (Route<dynamic> route) => false,
                     arguments: _restoreHeight,
                   ),
                   child: Text(i18n.generateSeedContinueButton),

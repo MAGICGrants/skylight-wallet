@@ -105,7 +105,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteWallet() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     await wallet.delete();
-    if (mounted) Navigator.pushReplacementNamed(context, '/welcome');
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/welcome',
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 
   @override
@@ -153,7 +159,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Fiat Currency', style: TextStyle(fontSize: 18)),
+                Text(
+                  i18n.settingsDisplayCurrencyLabel,
+                  style: TextStyle(fontSize: 18),
+                ),
                 DropdownButton<String>(
                   value: _fiatCurrency,
                   onChanged: _setFiatCurrency,

@@ -1,8 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 
-class CreateWalletScreen extends StatelessWidget {
+class CreateWalletScreenArgs {
+  String toastMessage;
+
+  CreateWalletScreenArgs({required this.toastMessage});
+}
+
+class CreateWalletScreen extends StatefulWidget {
   const CreateWalletScreen({super.key});
+
+  @override
+  State<CreateWalletScreen> createState() => _CreateWalletScreenState();
+}
+
+class _CreateWalletScreenState extends State<CreateWalletScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _showErrorIfNeeded();
+  }
+
+  void _showErrorIfNeeded() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as CreateWalletScreenArgs?;
+
+      if (args != null && args.toastMessage != '') {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(args.toastMessage)));
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +67,11 @@ class CreateWalletScreen extends StatelessWidget {
                   child: Text(i18n.createWalletRestoreExistingButton),
                 ),
                 ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/generate_seed'),
+                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/generate_seed',
+                    (Route<dynamic> route) => false,
+                  ),
                   child: Text(i18n.createWalletCreateNewButton),
                 ),
               ],

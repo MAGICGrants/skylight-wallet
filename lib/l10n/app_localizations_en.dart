@@ -173,6 +173,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTransactionConfirmed => 'Confirmed';
 
   @override
+  String get homeNoTransactions => 'No transactions';
+
+  @override
   String get receivePrimaryAddressWarn =>
       'Warning: For better privacy, consider using subaddresses if supported by your light wallet server.';
 
@@ -224,6 +227,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageLabel => 'Language';
 
   @override
+  String get settingsDisplayCurrencyLabel => 'Display Currency';
+
+  @override
   String get settingsDeleteWalletButton => 'Delete Wallet';
 
   @override
@@ -261,6 +267,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Recipients';
 
   @override
+  String get keysTitle => 'Keys';
+
+  @override
   String get keysPrimaryAddress => 'Primary Address';
 
   @override
@@ -277,4 +286,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keysPublicViewKey => 'Public View Key';
+
+  @override
+  String get scanQrTitle => 'Scan QR Code';
 }

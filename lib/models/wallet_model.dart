@@ -1,16 +1,19 @@
 // ignore_for_file: implementation_imports
 
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math';
-
 import 'package:flutter/foundation.dart';
+
 import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/height.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
+import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -242,7 +245,6 @@ class WalletModel with ChangeNotifier {
     _w2Wallet = _w2WalletManager.createWallet(path: '', password: 'pass');
     _w2TxHistory = _w2Wallet.history();
     final polyseed = _w2Wallet.createPolyseed();
-
     final currentHeight = await getCurrentBlockchainHeight();
     await restoreFromMnemonic(polyseed, currentHeight);
     refresh();
@@ -390,15 +392,20 @@ class WalletModel with ChangeNotifier {
   ) async {
     final amountInt = _w2Wallet.amountFromDouble(amount);
 
-    final tx = _w2Wallet.createTransactionMultDest(
-      isSweepAll: isSweepAll,
-      dstAddr: [destinationAddress],
-      amounts: [amountInt],
-      mixinCount: 15,
-      pendingTransactionPriority: 0,
-      subaddr_account: 0,
-    );
+    final txPointer = await Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.Wallet_createTransactionMultDest(
+        Pointer.fromAddress(_w2Wallet.ffiAddress()),
+        isSweepAll: isSweepAll,
+        dstAddr: [destinationAddress],
+        amounts: [amountInt],
+        mixinCount: 15,
+        pendingTransactionPriority: 0,
+        subaddr_account: 0,
+      );
+    });
 
+    final tx = MoneroPendingTransaction(txPointer);
     tx.commit(filename: '', overwrite: false);
 
     final errorMsg = tx.errorString();

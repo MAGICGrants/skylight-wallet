@@ -4,6 +4,7 @@ import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/periodic_tasks.dart';
+import 'package:monero_light_wallet/services/notifications_service.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-// The state class for the SettingsScreen.
 class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
   var _fiatCurrency = 'USD';
@@ -51,15 +51,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     if (value) {
-      startNewTransactionsCheckTask();
+      final isAllowed = await NotificationService().promptPermission();
+
+      if (isAllowed) {
+        startNewTransactionsCheckTask();
+        await SharedPreferencesService.set<bool>(
+          SharedPreferencesKeys.notificationsEnabled,
+          true,
+        );
+      }
     } else {
       cancelNewTransactionsCheckTask();
+      await SharedPreferencesService.set<bool>(
+        SharedPreferencesKeys.notificationsEnabled,
+        false,
+      );
     }
-
-    await SharedPreferencesService.set<bool>(
-      SharedPreferencesKeys.notificationsEnabled,
-      value,
-    );
   }
 
   void _setFiatCurrency(String? value) async {

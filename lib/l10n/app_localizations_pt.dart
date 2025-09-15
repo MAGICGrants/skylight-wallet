@@ -18,6 +18,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get unknownError => 'Erro desconhecido.';
 
   @override
+  String get amount => 'Valor';
+
+  @override
+  String get networkFee => 'Taxa da Rede';
+
+  @override
+  String get address => 'Endereço';
+
+  @override
   String get fieldEmptyError => 'Este campo não pode ficar vazio.';
 
   @override
@@ -46,9 +55,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get connectionSetupDescription =>
       'Vamos configurar uma conexão com o LWS.';
-
-  @override
-  String get connectionSetupAddressLabel => 'Endereço';
 
   @override
   String get connectionSetupAddressHint =>
@@ -196,12 +202,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendTitle => 'Enviar';
 
   @override
-  String get sendAddressLabel => 'Endereço';
-
-  @override
-  String get sendAmountLabel => 'Valor';
-
-  @override
   String get sendSendButton => 'Enviar';
 
   @override
@@ -246,12 +246,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsHashLabel => 'Hash';
 
   @override
-  String get txDetailsAmountLabel => 'Valor';
-
-  @override
-  String get txDetailsFeeLabel => 'Taxa';
-
-  @override
   String get txDetailsTimeAndDateLabel => 'Data e Hora';
 
   @override
@@ -289,4 +283,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get scanQrTitle => 'Escanear QR Code';
+
+  @override
+  String get confirmSendTitle => 'Confirm Send';
+
+  @override
+  String get confirmSendDescription =>
+      'Transactions are irreversible, so make sure that these details match exactly.';
 }

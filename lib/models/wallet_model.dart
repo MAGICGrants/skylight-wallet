@@ -385,7 +385,7 @@ class WalletModel with ChangeNotifier {
     return doubleAmountFromInt(_w2Wallet.unlockedBalance(accountIndex: 0));
   }
 
-  Future<void> send(
+  Future<MoneroPendingTransaction> createTx(
     String destinationAddress,
     double amount,
     bool isSweepAll,
@@ -405,7 +405,13 @@ class WalletModel with ChangeNotifier {
       );
     });
 
-    final tx = MoneroPendingTransaction(txPointer);
+    return MoneroPendingTransaction(txPointer);
+  }
+
+  Future<void> commitTx(
+    MoneroPendingTransaction tx,
+    String destinationAddress,
+  ) async {
     tx.commit(filename: '', overwrite: false);
 
     final errorMsg = tx.errorString();
@@ -414,7 +420,10 @@ class WalletModel with ChangeNotifier {
       throw FormatException(errorMsg);
     }
 
-    final recipient = TxRecipient(destinationAddress, amount);
+    final recipient = TxRecipient(
+      destinationAddress,
+      doubleAmountFromInt(tx.amount()),
+    );
 
     final TxDetails txDetails = TxDetails(
       index: null,

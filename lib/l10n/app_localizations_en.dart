@@ -18,6 +18,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknownError => 'Unknown error.';
 
   @override
+  String get amount => 'Amount';
+
+  @override
+  String get networkFee => 'Network Fee';
+
+  @override
+  String get address => 'Address';
+
+  @override
   String get fieldEmptyError => 'This field cannot be empty.';
 
   @override
@@ -46,9 +55,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connectionSetupDescription =>
       'Let\'s setup a connection with LWS.';
-
-  @override
-  String get connectionSetupAddressLabel => 'Address';
 
   @override
   String get connectionSetupAddressHint =>
@@ -196,12 +202,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTitle => 'Send';
 
   @override
-  String get sendAddressLabel => 'Address';
-
-  @override
-  String get sendAmountLabel => 'Amount';
-
-  @override
   String get sendSendButton => 'Send';
 
   @override
@@ -246,12 +246,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get txDetailsHashLabel => 'Hash';
 
   @override
-  String get txDetailsAmountLabel => 'Amount';
-
-  @override
-  String get txDetailsFeeLabel => 'Fee';
-
-  @override
   String get txDetailsTimeAndDateLabel => 'Time and Date';
 
   @override
@@ -289,4 +283,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanQrTitle => 'Scan QR Code';
+
+  @override
+  String get confirmSendTitle => 'Confirm Send';
+
+  @override
+  String get confirmSendDescription =>
+      'Transactions are irreversible, so make sure that these details match exactly.';
 }

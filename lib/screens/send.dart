@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:monero_light_wallet/screens/confirm_send.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
@@ -62,31 +63,33 @@ class _SendScreenState extends State<SendScreen> {
       _amountError = '';
     });
 
-    final destinationAddress = _destinationAddressController.text;
-    String resolvedDestinationAddress = '';
+    final unresolvedDestinationAddress = _destinationAddressController.text;
+    String? destinationOpenAlias;
+    String destinationAddress = '';
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
     final domainRegex = RegExp(
       r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$',
     );
 
-    if (domainRegex.hasMatch(destinationAddress)) {
+    if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
       // check for openalias
-      resolvedDestinationAddress = wallet.resolveOpenAlias(destinationAddress);
+      destinationAddress = wallet.resolveOpenAlias(
+        unresolvedDestinationAddress,
+      );
 
-      if (resolvedDestinationAddress == '') {
+      if (destinationAddress == '') {
         setState(() {
           _destinationAddressError = i18n.sendOpenAliasResolveError;
           _isLoading = false;
         });
         return;
       }
-    } else if (wallet.wallet.addressValid(destinationAddress, 0)) {
+
+      destinationOpenAlias = unresolvedDestinationAddress;
+    } else if (wallet.wallet.addressValid(unresolvedDestinationAddress, 0)) {
       // check for address
-      setState(() {
-        resolvedDestinationAddress = destinationAddress;
-        _isLoading = false;
-      });
+      destinationAddress = unresolvedDestinationAddress;
     } else {
       setState(() {
         _destinationAddressError = i18n.sendInvalidAddressError;
@@ -104,40 +107,34 @@ class _SendScreenState extends State<SendScreen> {
     }
 
     try {
-      await wallet.send(resolvedDestinationAddress, amount, _isSweepAll);
-    } on FormatException catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('FormatException: ', '')),
-        ),
-      );
+      final tx = await wallet.createTx(destinationAddress, amount, _isSweepAll);
 
       setState(() {
         _isLoading = false;
       });
 
-      return;
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/confirm_send',
+          arguments: ConfirmSendScreenArgs(
+            tx: tx,
+            destinationAddress: destinationAddress,
+            destinationOpenAlias: destinationOpenAlias,
+          ),
+        );
+      }
     } catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unknown error.')));
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      return;
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+      }
     }
 
     setState(() {
       _isLoading = false;
     });
-
-    Navigator.pushNamed(
-      context,
-      '/wallet_home',
-      arguments: {'showTxSuccessToast': true},
-    );
   }
 
   void _setBalanceAsSendAmount() {
@@ -183,7 +180,7 @@ class _SendScreenState extends State<SendScreen> {
                     child: TextField(
                       controller: _destinationAddressController,
                       decoration: InputDecoration(
-                        labelText: i18n.sendAddressLabel,
+                        labelText: i18n.address,
                         border: OutlineInputBorder(),
                         errorText: _destinationAddressError != ''
                             ? _destinationAddressError
@@ -212,7 +209,7 @@ class _SendScreenState extends State<SendScreen> {
                       ),
                     ],
                     decoration: InputDecoration(
-                      labelText: i18n.sendAmountLabel,
+                      labelText: i18n.amount,
                       border: OutlineInputBorder(),
                       errorText: _amountError != '' ? _amountError : null,
                     ),

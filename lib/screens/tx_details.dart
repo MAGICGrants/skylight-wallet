@@ -52,7 +52,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    i18n.txDetailsAmountLabel,
+                    i18n.amount,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text('$amountSent XMR'),
@@ -62,7 +62,7 @@ class TxDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    i18n.txDetailsFeeLabel,
+                    i18n.networkFee,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text('$fee XMR'),

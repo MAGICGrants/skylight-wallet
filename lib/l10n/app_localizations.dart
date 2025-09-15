@@ -116,6 +116,24 @@ abstract class AppLocalizations {
   /// **'Unknown error.'**
   String get unknownError;
 
+  /// No description provided for @amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// No description provided for @networkFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Network Fee'**
+  String get networkFee;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
   /// No description provided for @fieldEmptyError.
   ///
   /// In en, this message translates to:
@@ -169,12 +187,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Let\'s setup a connection with LWS.'**
   String get connectionSetupDescription;
-
-  /// No description provided for @connectionSetupAddressLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Address'**
-  String get connectionSetupAddressLabel;
 
   /// No description provided for @connectionSetupAddressHint.
   ///
@@ -452,18 +464,6 @@ abstract class AppLocalizations {
   /// **'Send'**
   String get sendTitle;
 
-  /// No description provided for @sendAddressLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Address'**
-  String get sendAddressLabel;
-
-  /// No description provided for @sendAmountLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Amount'**
-  String get sendAmountLabel;
-
   /// No description provided for @sendSendButton.
   ///
   /// In en, this message translates to:
@@ -548,18 +548,6 @@ abstract class AppLocalizations {
   /// **'Hash'**
   String get txDetailsHashLabel;
 
-  /// No description provided for @txDetailsAmountLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Amount'**
-  String get txDetailsAmountLabel;
-
-  /// No description provided for @txDetailsFeeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Fee'**
-  String get txDetailsFeeLabel;
-
   /// No description provided for @txDetailsTimeAndDateLabel.
   ///
   /// In en, this message translates to:
@@ -637,6 +625,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan QR Code'**
   String get scanQrTitle;
+
+  /// No description provided for @confirmSendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Send'**
+  String get confirmSendTitle;
+
+  /// No description provided for @confirmSendDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions are irreversible, so make sure that these details match exactly.'**
+  String get confirmSendDescription;
 }
 
 class _AppLocalizationsDelegate

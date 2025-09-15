@@ -170,7 +170,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                   TextFormField(
                     controller: _addressController,
                     decoration: InputDecoration(
-                      labelText: i18n.connectionSetupAddressLabel,
+                      labelText: i18n.address,
                       hintText: i18n.connectionSetupAddressHint,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),

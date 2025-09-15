@@ -8,7 +8,7 @@ import 'package:monero_light_wallet/services/tor_service.dart';
 Future<int> getCurrentBlockchainHeight() async {
   final urls = [
     'rucknium757bokwv3ss35ftgc3gzb7hgbvvglbg3hisp7tsj2fkd2nyd.onion:18081/get_height', // Rucknium
-    'un4yrhwq4d53caoiaadeiur5e5wgkgp74zw3p3twqh3nxh6ztz347dad.onion:18081/get_height,' // Triplebit
+    'un4yrhwq4d53caoiaadeiur5e5wgkgp74zw3p3twqh3nxh6ztz347dad.onion:18081/get_height', // Triplebit
     'fz2lbxvjob6ifeonngaep2xvf2ypxjjn23i3ncblcxjreovev56ubyyd.onion:18089/get_height', // Unredacted
   ];
 

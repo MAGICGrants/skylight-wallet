@@ -38,6 +38,7 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     _loadFormFromArgs();
   }
 

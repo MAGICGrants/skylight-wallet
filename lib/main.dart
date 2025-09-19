@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/screens/confirm_send.dart';
 import 'package:monero_light_wallet/screens/keys.dart';
 import 'package:monero_light_wallet/screens/lws_details.dart';
 import 'package:monero_light_wallet/screens/scan_qr.dart';
@@ -78,7 +79,6 @@ class MyApp extends StatelessWidget {
                   theme: ThemeData(
                     colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
                   ),
-
                   initialRoute: initialRoute,
                   locale: Locale.fromSubtags(
                     languageCode: languageProvider.language,
@@ -95,6 +95,7 @@ class MyApp extends StatelessWidget {
                     '/settings': (context) => SettingsScreen(),
                     '/keys': (context) => KeysScreen(),
                     '/send': (context) => SendScreen(),
+                    '/confirm_send': (context) => ConfirmSendScreen(),
                     '/scan_qr': (context) => ScanQrScreen(),
                     '/receive': (context) => ReceiveScreen(),
                     '/tx_details': (context) => TxDetailsScreen(),

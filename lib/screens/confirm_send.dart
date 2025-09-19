@@ -32,10 +32,17 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   double _fee = 0.0;
   String? _destinationOpenAlias;
   String _destinationAddress = '';
+  List<String> _destinationAddressSliced = [];
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
     _loadTxDetails();
   }
 
@@ -48,11 +55,28 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     }
 
     setState(() {
+      _tx = args.tx;
       _amount = doubleAmountFromInt(args.tx.amount());
       _fee = doubleAmountFromInt(args.tx.fee());
       _destinationOpenAlias = args.destinationOpenAlias;
       _destinationAddress = args.destinationAddress;
+      _destinationAddressSliced = _sliceAddress(args.destinationAddress);
     });
+  }
+
+  List<String> _sliceAddress(String address) {
+    List<String> result = [];
+
+    for (int i = 0; i < address.length; i += 5) {
+      // Get the substring of the next 5 characters
+      String substring = address.substring(
+        i,
+        i + 5 > address.length ? address.length : i + 5,
+      );
+      result.add(substring);
+    }
+
+    return result;
   }
 
   Future<void> _confirmSend() async {
@@ -107,13 +131,20 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n.confirmSendTitle)),
+      appBar: AppBar(),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 40),
+        padding: EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20,
           children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                i18n.confirmSendTitle,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ),
             Text(
               i18n.confirmSendDescription,
               textAlign: TextAlign.center,
@@ -121,20 +152,62 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text(i18n.amount), Text(_amount.toString())],
+              children: [
+                Text(
+                  i18n.amount,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text('$_amount XMR'),
+              ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text(i18n.networkFee), Text(_fee.toString())],
+              children: [
+                Text(
+                  i18n.networkFee,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text('$_fee XMR'),
+              ],
             ),
             if (_destinationOpenAlias is String)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [Text('OpenAlias'), Text(_destinationOpenAlias!)],
+                children: [
+                  Text(
+                    'OpenAlias',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(_destinationOpenAlias!),
+                ],
               ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text(i18n.address), Text(_destinationAddress)],
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  i18n.address,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+
+                Expanded(
+                  child: Container(
+                    margin: EdgeInsetsGeometry.only(left: 40),
+                    child: Wrap(
+                      spacing: 4,
+                      alignment: WrapAlignment.end,
+                      children: _destinationAddressSliced
+                          .map(
+                            (addrSlice) => Text(
+                              addrSlice,
+                              style: TextStyle(fontFamily: 'monospace'),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ),
+              ],
             ),
             ElevatedButton(
               onPressed: _confirmSend,

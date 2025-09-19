@@ -391,19 +391,22 @@ class WalletModel with ChangeNotifier {
     bool isSweepAll,
   ) async {
     final amountInt = _w2Wallet.amountFromDouble(amount);
+    final w2WalletFfiAddr = _w2Wallet.ffiAddress();
 
-    final txPointer = await Isolate.run(() {
-      // ignore: deprecated_member_use
-      return monero.Wallet_createTransactionMultDest(
-        Pointer.fromAddress(_w2Wallet.ffiAddress()),
-        isSweepAll: isSweepAll,
-        dstAddr: [destinationAddress],
-        amounts: [amountInt],
-        mixinCount: 15,
-        pendingTransactionPriority: 0,
-        subaddr_account: 0,
-      );
-    });
+    final txPointer = Pointer<Void>.fromAddress(
+      await Isolate.run(() {
+        // ignore: deprecated_member_use
+        return monero.Wallet_createTransactionMultDest(
+          Pointer.fromAddress(w2WalletFfiAddr),
+          isSweepAll: isSweepAll,
+          dstAddr: [destinationAddress],
+          amounts: [amountInt],
+          mixinCount: 15,
+          pendingTransactionPriority: 0,
+          subaddr_account: 0,
+        ).address;
+      }),
+    );
 
     return MoneroPendingTransaction(txPointer);
   }

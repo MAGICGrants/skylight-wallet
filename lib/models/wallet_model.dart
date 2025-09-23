@@ -242,9 +242,8 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<String> create() async {
-    _w2Wallet = _w2WalletManager.createWallet(path: '', password: 'pass');
-    _w2TxHistory = _w2Wallet.history();
-    final polyseed = _w2Wallet.createPolyseed();
+    // ignore: deprecated_member_use
+    final polyseed = await Isolate.run(() => monero.Wallet_createPolyseed());
     final currentHeight = await getCurrentBlockchainHeight();
     await restoreFromMnemonic(polyseed, currentHeight);
     refresh();
@@ -263,50 +262,95 @@ class WalletModel with ChangeNotifier {
     int restoreHeight, [
     String passphrase = '',
   ]) async {
-    final path = await getWalletPath();
+    final wmFfiAddr = _w2WalletManager.ffiAddress();
 
-    final legacyWallet = _w2WalletManager.recoveryWallet(
-      mnemonic: mnemonic,
-      password: 'pass',
-      path: '',
-      restoreHeight: restoreHeight,
-      seedOffset: passphrase,
+    final legacyWalletPtr = Pointer<Void>.fromAddress(
+      await Isolate.run(() {
+        // ignore: deprecated_member_use
+        return monero.WalletManager_recoveryWallet(
+          Pointer.fromAddress(wmFfiAddr),
+          mnemonic: mnemonic,
+          password: 'pass',
+          path: '',
+          restoreHeight: restoreHeight,
+          seedOffset: passphrase,
+        ).address;
+      }),
     );
 
-    final polyseedWallet = _w2WalletManager.createWalletFromPolyseed(
-      path: '',
-      password: 'pass',
-      mnemonic: mnemonic,
-      seedOffset: '',
-      newWallet: true,
-      restoreHeight: restoreHeight,
-      kdfRounds: 1,
+    final legacyWallet = MoneroWallet(legacyWalletPtr);
+
+    final polyseedWalletPtr = Pointer<Void>.fromAddress(
+      await Isolate.run(() {
+        // ignore: deprecated_member_use
+        return monero.WalletManager_createWalletFromPolyseed(
+          Pointer.fromAddress(wmFfiAddr),
+          path: '',
+          password: 'pass',
+          mnemonic: mnemonic,
+          seedOffset: '',
+          newWallet: true,
+          restoreHeight: restoreHeight,
+          kdfRounds: 1,
+        ).address;
+      }),
     );
+
+    final polyseedWallet = MoneroWallet(polyseedWalletPtr);
 
     final legacyError = legacyWallet.errorString();
     final polyseedError = polyseedWallet.errorString();
 
+    final walletPath = await getWalletPath();
+
     if (!legacyError.contains('word list failed verification')) {
-      _w2Wallet = _w2WalletManager.recoveryWallet(
-        path: path,
-        mnemonic: mnemonic,
-        password: 'pass',
-        restoreHeight: restoreHeight,
-        seedOffset: passphrase,
+      final walletPtr = Pointer<Void>.fromAddress(
+        await Isolate.run(() {
+          // ignore: deprecated_member_use
+          return monero.WalletManager_recoveryWallet(
+            Pointer.fromAddress(wmFfiAddr),
+            mnemonic: mnemonic,
+            password: 'pass',
+            path: walletPath,
+            restoreHeight: restoreHeight,
+            seedOffset: passphrase,
+          ).address;
+        }),
       );
+
+      _w2Wallet = MoneroWallet(walletPtr);
     } else if (polyseedError != 'Failed polyseed decode') {
-      _w2Wallet = _w2WalletManager.createWalletFromPolyseed(
-        path: path,
-        password: 'pass',
-        mnemonic: mnemonic,
-        seedOffset: '',
-        newWallet: true,
-        restoreHeight: restoreHeight,
-        kdfRounds: 1,
+      final walletPtr = Pointer<Void>.fromAddress(
+        await Isolate.run(() {
+          // ignore: deprecated_member_use
+          return monero.WalletManager_createWalletFromPolyseed(
+            Pointer.fromAddress(wmFfiAddr),
+            path: walletPath,
+            password: 'pass',
+            mnemonic: mnemonic,
+            seedOffset: passphrase,
+            newWallet: true,
+            restoreHeight: restoreHeight,
+            kdfRounds: 1,
+          ).address;
+        }),
       );
+
+      _w2Wallet = MoneroWallet(walletPtr);
     }
 
-    _w2TxHistory = _w2Wallet.history();
+    final walletFfiAddr = _w2Wallet.ffiAddress();
+
+    _w2TxHistory = MoneroTransactionHistory(
+      Pointer<Void>.fromAddress(
+        await Isolate.run(
+          // ignore: deprecated_member_use
+          () => monero.Wallet_history(
+            Pointer<Void>.fromAddress(walletFfiAddr),
+          ).address,
+        ),
+      ),
+    );
 
     store();
     notifyListeners();
@@ -321,8 +365,12 @@ class WalletModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void store() {
-    _w2Wallet.store();
+  Future<bool> store() async {
+    final walletFfiAddr = _w2Wallet.ffiAddress();
+    return Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_store(Pointer<Void>.fromAddress(walletFfiAddr)),
+    );
   }
 
   Future delete() async {
@@ -415,7 +463,16 @@ class WalletModel with ChangeNotifier {
     MoneroPendingTransaction tx,
     String destinationAddress,
   ) async {
-    tx.commit(filename: '', overwrite: false);
+    final txFfiAddr = tx.ffiAddress();
+
+    await Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.PendingTransaction_commit(
+        Pointer.fromAddress(txFfiAddr),
+        filename: '',
+        overwrite: false,
+      );
+    });
 
     final errorMsg = tx.errorString();
 

@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Address'**
   String get address;
 
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
   /// No description provided for @fieldEmptyError.
   ///
   /// In en, this message translates to:
@@ -409,12 +415,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Incoming Transaction'**
   String get homeIncomingTxSemanticLabel;
-
-  /// No description provided for @homeTransactionPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Pending'**
-  String get homeTransactionPending;
 
   /// No description provided for @homeTransactionConfirmed.
   ///

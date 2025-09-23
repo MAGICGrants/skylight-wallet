@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get address => 'Address';
 
   @override
+  String get pending => 'Pending';
+
+  @override
   String get fieldEmptyError => 'This field cannot be empty.';
 
   @override
@@ -171,9 +174,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeIncomingTxSemanticLabel => 'Incoming Transaction';
-
-  @override
-  String get homeTransactionPending => 'Pending';
 
   @override
   String get homeTransactionConfirmed => 'Confirmed';

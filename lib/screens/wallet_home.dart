@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/util/fiat_rate.dart';
+import 'package:monero_light_wallet/widgets/status_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -128,17 +131,25 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context);
     final wallet = context.watch<WalletModel>();
-    final totalBalance = wallet.getTotalBalance();
-    final unlockedBalance = wallet.getUnlockedBalance();
-    final totalBalanceFiat = _fiatRate is double
-        ? totalBalance * _fiatRate!
-        : null;
-    final lockedBalance = totalBalance - unlockedBalance;
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getSyncedHeight();
-    final currentLocale = Localizations.localeOf(context);
+    final totalBalance = wallet.getTotalBalance();
+    final unlockedBalance = wallet.getUnlockedBalance();
+    final unlockedBalanceFiat = _fiatRate is double
+        ? unlockedBalance * _fiatRate!
+        : null;
+    final lockedBalance = totalBalance - unlockedBalance;
+    final unlockedBalanceStr = unlockedBalance.toStringAsFixed(11);
+    final unlockedBalanceSmallerSlice = unlockedBalanceStr.substring(
+      unlockedBalanceStr.length - 8,
+    );
+    final unlockedBalanceBiggerSlice = unlockedBalanceStr.substring(
+      0,
+      unlockedBalanceStr.length - 8,
+    );
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
@@ -152,59 +163,139 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
               child: Column(
                 spacing: 20,
                 children: [
-                  Chip(
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 12,
-                      children: connected && synced && height != 0
-                          ? [
-                              Icon(Icons.check, color: Colors.teal),
-                              Text('${i18n.homeHeight} $height'),
-                            ]
-                          : connected && (!synced || height == 0)
-                          ? [
-                              SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                  SizedBox(
+                    width: double.infinity,
+                    height: 86,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Column(
+                            spacing: 10,
+                            children: [
+                              if (connected && synced && height != 0)
+                                SizedBox(
+                                  width: 26,
+                                  height: 26,
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    size: 26,
+                                    color: Colors.teal,
+                                  ),
+                                ),
+
+                              if (connected && (!synced || height == 0))
+                                SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    constraints: BoxConstraints(
+                                      maxWidth: 22,
+                                      maxHeight: 22,
+                                    ),
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+
+                              if (!connected)
+                                SizedBox(
+                                  width: 26,
+                                  height: 26,
+                                  child: Icon(Icons.cancel, color: Colors.red),
+                                ),
+
+                              StatusIcon(
+                                status:
+                                    TorService.sharedInstance.status ==
+                                        TorConnectionStatus.connected
+                                    ? StatusIconStatus.complete
+                                    : StatusIconStatus.loading,
+                                child: SvgPicture.asset(
+                                  'assets/icons/tor.svg',
+                                  width: 22,
+                                  height: 22,
                                 ),
                               ),
-                              Text(i18n.homeSyncing),
-                            ]
-                          : [
-                              SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                              Text(i18n.homeConnecting),
                             ],
+                          ),
+                        ),
+                        Center(
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                spacing: 10,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/monero.svg',
+                                    width: 22,
+                                    height: 22,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        unlockedBalanceBiggerSlice,
+                                        style: TextStyle(
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      Container(
+                                        margin: EdgeInsetsGeometry.only(top: 5),
+                                        child: Text(
+                                          unlockedBalanceSmallerSlice,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              if (lockedBalance > 0)
+                                Text(
+                                  '+${lockedBalance.toStringAsFixed(11)} ${i18n.pending.toLowerCase()}',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              if (unlockedBalanceFiat is double)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$_fiatSymbol${unlockedBalanceFiat.toInt()}',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Container(
+                                      margin: EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        (unlockedBalanceFiat % 1)
+                                            .toStringAsFixed(2)
+                                            .substring(2),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w300,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        totalBalance > 0 ? '$totalBalance XMR' : '0 XMR',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      if (totalBalanceFiat is double)
-                        Text(
-                          '$_fiatSymbol${totalBalanceFiat.toStringAsFixed(2)}',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      if (lockedBalance > 0)
-                        Text(
-                          '($lockedBalance XMR ${i18n.homeBalanceLocked})',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                    ],
                   ),
                   Row(
                     spacing: 10,
@@ -248,6 +339,17 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     itemCount: _txHistory!.length,
                     itemBuilder: (BuildContext context, int index) {
                       final tx = _txHistory![index];
+                      final amountStr = tx.amount.toStringAsFixed(11);
+                      final amountSmallerSlice = amountStr.substring(
+                        amountStr.length - 8,
+                      );
+                      final amountBiggerSlice = amountStr.substring(
+                        0,
+                        amountStr.length - 8,
+                      );
+                      final amountFiat = _fiatRate is double
+                          ? tx.amount * _fiatRate!
+                          : null;
 
                       return Padding(
                         padding: EdgeInsetsDirectional.symmetric(
@@ -255,7 +357,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                           vertical: 4,
                         ),
                         child: SizedBox(
-                          height: 42,
+                          height: 44,
                           child: GestureDetector(
                             onTap: () => _showTxDetails(tx),
                             child: Row(
@@ -281,30 +383,95 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                     ),
                                   ),
                                 Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '${tx.amount} XMR',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          amountBiggerSlice,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Container(
+                                          margin: EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            amountSmallerSlice,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 9,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    if (tx.confirmations < 10)
-                                      Text(
-                                        '${i18n.homeTransactionPending} - ${tx.confirmations}/10',
+                                    if (amountFiat is double)
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '$_fiatSymbol${amountFiat.toInt()}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                          Container(
+                                            margin: EdgeInsets.only(top: 3),
+                                            child: Text(
+                                              (amountFiat % 1)
+                                                  .toStringAsFixed(2)
+                                                  .substring(2),
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w300,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    if (tx.confirmations >= 10)
-                                      Text(i18n.homeTransactionConfirmed),
                                   ],
                                 ),
                                 Spacer(),
-                                Text(
-                                  timeago.format(
-                                    DateTime.fromMillisecondsSinceEpoch(
-                                      tx.timestamp * 1000,
+                                Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (tx.confirmations < 10)
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${tx.confirmations}/10',
+                                            style: TextStyle(
+                                              color: Colors.amber.shade700,
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.hourglass_top_rounded,
+                                            color: Colors.amber.shade700,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    if (tx.confirmations >= 10) Text(''),
+                                    Text(
+                                      timeago.format(
+                                        DateTime.fromMillisecondsSinceEpoch(
+                                          tx.timestamp * 1000,
+                                        ),
+                                        locale: currentLocale.languageCode,
+                                      ),
                                     ),
-                                    locale: currentLocale.languageCode,
-                                  ),
+                                  ],
                                 ),
                               ],
                             ),

@@ -170,7 +170,10 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('${_amount.toStringAsFixed(12)} XMR'),
+                    Text(
+                      '${_amount.toStringAsFixed(12)} XMR',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     if (amountFiat is double)
                       Text('$fiatSymbol${amountFiat.toStringAsFixed(2)}'),
                   ],
@@ -188,7 +191,10 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('${_fee.toStringAsFixed(12)} XMR'),
+                    Text(
+                      '${_fee.toStringAsFixed(12)} XMR',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     if (networkFeeFiat is double)
                       Text('$fiatSymbol${networkFeeFiat.toStringAsFixed(2)}'),
                   ],
@@ -222,10 +228,21 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                       spacing: 4,
                       alignment: WrapAlignment.end,
                       children: _destinationAddressSliced
+                          .asMap()
+                          .entries
                           .map(
-                            (addrSlice) => Text(
-                              addrSlice,
-                              style: TextStyle(fontFamily: 'monospace'),
+                            (item) => Text(
+                              item.value,
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                // highlight start and end slices of address
+                                fontWeight:
+                                    item.key == 0 ||
+                                        item.key ==
+                                            _destinationAddressSliced.length - 1
+                                    ? FontWeight.w700
+                                    : FontWeight.w300,
+                              ),
                             ),
                           )
                           .toList(),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum StatusIconStatus { loading, complete }
+enum StatusIconStatus { loading, complete, fail }
 
 class StatusIcon extends StatelessWidget {
   final Widget child;
@@ -23,17 +23,21 @@ class StatusIcon extends StatelessWidget {
             child: Container(
               width: 12,
               height: 12,
-              // padding: EdgeInsetsGeometry.all(2),
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: status == StatusIconStatus.loading
-                  ? CircularProgressIndicator(strokeWidth: 2)
-                  : Icon(
+              child: status == StatusIconStatus.complete
+                  ? Icon(
                       Icons.check_circle_rounded,
                       size: 12,
                       color: Colors.teal,
+                    )
+                  : status == StatusIconStatus.fail
+                  ? Icon(Icons.cancel, size: 12, color: Colors.red)
+                  : CircularProgressIndicator(
+                      strokeWidth: 2,
+                      padding: EdgeInsets.all(2),
                     ),
             ),
           ),

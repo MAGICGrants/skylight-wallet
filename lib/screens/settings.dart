@@ -80,6 +80,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SharedPreferencesKeys.fiatCurrency,
       value,
     );
+
+    // Clear rate
+    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
   }
 
   void _showDeleteWalletDialog() {

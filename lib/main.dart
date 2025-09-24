@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/models/fiat_rate_model.dart';
 import 'package:monero_light_wallet/screens/confirm_send.dart';
 import 'package:monero_light_wallet/screens/keys.dart';
 import 'package:monero_light_wallet/screens/lws_details.dart';
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => WalletModel()),
         ChangeNotifierProvider(create: (context) => LanguageModel()),
+        ChangeNotifierProvider(create: (context) => FiatRateModel()),
       ],
       child: Consumer<LanguageModel>(
         builder: (context, languageProvider, child) {

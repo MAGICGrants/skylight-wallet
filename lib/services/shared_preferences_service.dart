@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SharedPreferencesKeys {
   static const String language = 'language';
   static const String fiatCurrency = 'fiatCurrency';
+  static const String fiatRate = 'fiatRate';
   static const String notificationsEnabled = 'notificationsEnabled';
   static const String connectionAddress = 'connectionAddress';
   static const String connectionProxyPort = 'connectionProxyPort';
@@ -49,5 +50,10 @@ class SharedPreferencesService {
     } else if (value is double) {
       await prefs.setDouble(keyString, value);
     }
+  }
+
+  static Future<void> remove(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
   }
 }

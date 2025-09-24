@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:monero_light_wallet/util/fiat_rate.dart';
+import 'package:monero_light_wallet/models/fiat_rate_model.dart';
 import 'package:monero_light_wallet/widgets/status_icon.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
@@ -25,14 +25,10 @@ class WalletHomeScreen extends StatefulWidget {
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Timer? _timer;
   List<TxDetails>? _txHistory;
-  double? _fiatRate;
-  String? _fiatSymbol;
 
   @override
   void initState() {
     super.initState();
-
-    _loadFiatRate();
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
     wallet.refresh();
@@ -110,39 +106,22 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     );
   }
 
-  Future<void> _loadFiatRate() async {
-    final fiatCode =
-        await SharedPreferencesService.get<String>(
-          SharedPreferencesKeys.fiatCurrency,
-        ) ??
-        'USD';
-
-    final fiatSymbol = fiatCode == 'EUR' ? '€' : '\$';
-    final rate = await getFiatRate(fiatCode);
-
-    if (mounted) {
-      setState(() {
-        _fiatRate = rate;
-        _fiatSymbol = fiatSymbol;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final currentLocale = Localizations.localeOf(context);
     final wallet = context.watch<WalletModel>();
+    final fiatRate = context.watch<FiatRateModel>();
     final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getSyncedHeight();
     final totalBalance = wallet.getTotalBalance();
     final unlockedBalance = wallet.getUnlockedBalance();
-    final unlockedBalanceFiat = _fiatRate is double
-        ? unlockedBalance * _fiatRate!
+    final unlockedBalanceFiat = fiatRate.rate is double
+        ? unlockedBalance * fiatRate.rate!
         : null;
     final lockedBalance = totalBalance - unlockedBalance;
-    final unlockedBalanceStr = unlockedBalance.toStringAsFixed(11);
+    final unlockedBalanceStr = unlockedBalance.toStringAsFixed(12);
     final unlockedBalanceSmallerSlice = unlockedBalanceStr.substring(
       unlockedBalanceStr.length - 8,
     );
@@ -150,6 +129,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       0,
       unlockedBalanceStr.length - 8,
     );
+
+    final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
@@ -207,9 +188,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
                               StatusIcon(
                                 status:
-                                    TorService.sharedInstance.status ==
-                                        TorConnectionStatus.connected
+                                    fiatRate.rate is double &&
+                                        !fiatRate.hasFailed
                                     ? StatusIconStatus.complete
+                                    : fiatRate.rate == null &&
+                                          fiatRate.hasFailed
+                                    ? StatusIconStatus.fail
                                     : StatusIconStatus.loading,
                                 child: SvgPicture.asset(
                                   'assets/icons/tor.svg',
@@ -261,9 +245,17 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                               ),
                               if (lockedBalance > 0)
                                 Text(
-                                  '+${lockedBalance.toStringAsFixed(11)} ${i18n.pending.toLowerCase()}',
+                                  '+${lockedBalance.toStringAsFixed(12)} ${i18n.pending.toLowerCase()}',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              if (unlockedBalanceFiat == null)
+                                Skeletonizer(
+                                  enabled: true,
+                                  child: Text(
+                                    'Potato',
+                                    style: TextStyle(fontSize: 18),
+                                  ),
                                 ),
                               if (unlockedBalanceFiat is double)
                                 Row(
@@ -271,7 +263,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '$_fiatSymbol${unlockedBalanceFiat.toInt()}',
+                                      '$fiatSymbol${unlockedBalanceFiat.toInt()}',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w400,
@@ -302,6 +294,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton.icon(
+                        style: ButtonStyle(),
                         label: Text(i18n.homeReceive),
                         icon: Transform.rotate(
                           angle: 90 * math.pi / 180,
@@ -339,7 +332,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     itemCount: _txHistory!.length,
                     itemBuilder: (BuildContext context, int index) {
                       final tx = _txHistory![index];
-                      final amountStr = tx.amount.toStringAsFixed(11);
+                      final amountStr = tx.amount.toStringAsFixed(12);
                       final amountSmallerSlice = amountStr.substring(
                         amountStr.length - 8,
                       );
@@ -347,8 +340,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                         0,
                         amountStr.length - 8,
                       );
-                      final amountFiat = _fiatRate is double
-                          ? tx.amount * _fiatRate!
+                      final amountFiat = fiatRate.rate is double
+                          ? tx.amount * fiatRate.rate!
                           : null;
 
                       return Padding(
@@ -410,6 +403,14 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (amountFiat == null)
+                                      Skeletonizer(
+                                        enabled: true,
+                                        child: Text(
+                                          'Potato',
+                                          style: TextStyle(fontSize: 14),
+                                        ),
+                                      ),
                                     if (amountFiat is double)
                                       Row(
                                         mainAxisAlignment:
@@ -418,7 +419,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '$_fiatSymbol${amountFiat.toInt()}',
+                                            '$fiatSymbol${amountFiat.toInt()}',
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w400,

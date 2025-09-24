@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // ignore: implementation_imports
 import 'package:monero/src/monero.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:monero_light_wallet/models/fiat_rate_model.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:provider/provider.dart';
@@ -129,6 +130,14 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final fiatRate = context.watch<FiatRateModel>();
+    final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
+    final amountFiat = fiatRate.rate is double
+        ? _amount * fiatRate.rate!
+        : null;
+    final networkFeeFiat = fiatRate.rate is double
+        ? _amount * fiatRate.rate!
+        : null;
 
     return Scaffold(
       appBar: AppBar(),
@@ -152,22 +161,38 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   i18n.amount,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text('$_amount XMR'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${_amount.toStringAsFixed(12)} XMR'),
+                    if (amountFiat is double)
+                      Text('$fiatSymbol${amountFiat.toStringAsFixed(2)}'),
+                  ],
+                ),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   i18n.networkFee,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text('$_fee XMR'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${_fee.toStringAsFixed(12)} XMR'),
+                    if (networkFeeFiat is double)
+                      Text('$fiatSymbol${networkFeeFiat.toStringAsFixed(2)}'),
+                  ],
+                ),
               ],
             ),
             if (_destinationOpenAlias is String)

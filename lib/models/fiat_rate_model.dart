@@ -70,6 +70,7 @@ class FiatRateModel with ChangeNotifier {
         if (rate is String) {
           _rate = double.parse(rate);
           _persist(double.parse(rate));
+          _hasFailed = false;
         } else {
           _hasFailed = true;
         }

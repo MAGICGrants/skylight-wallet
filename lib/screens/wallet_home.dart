@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:monero_light_wallet/models/fiat_rate_model.dart';
+import 'package:monero_light_wallet/widgets/fiat_amount.dart';
+import 'package:monero_light_wallet/widgets/monero_amount.dart';
 import 'package:monero_light_wallet/widgets/status_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -121,15 +123,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         ? unlockedBalance * fiatRate.rate!
         : null;
     final lockedBalance = totalBalance - unlockedBalance;
-    final unlockedBalanceStr = unlockedBalance.toStringAsFixed(12);
-    final unlockedBalanceSmallerSlice = unlockedBalanceStr.substring(
-      unlockedBalanceStr.length - 8,
-    );
-    final unlockedBalanceBiggerSlice = unlockedBalanceStr.substring(
-      0,
-      unlockedBalanceStr.length - 8,
-    );
-
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
 
     return Scaffold(
@@ -191,8 +184,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                     fiatRate.rate is double &&
                                         !fiatRate.hasFailed
                                     ? StatusIconStatus.complete
-                                    : fiatRate.rate == null &&
-                                          fiatRate.hasFailed
+                                    : fiatRate.hasFailed
                                     ? StatusIconStatus.fail
                                     : StatusIconStatus.loading,
                                 child: SvgPicture.asset(
@@ -217,29 +209,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                     width: 22,
                                     height: 22,
                                   ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        unlockedBalanceBiggerSlice,
-                                        style: TextStyle(
-                                          fontSize: 30,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: EdgeInsetsGeometry.only(top: 5),
-                                        child: Text(
-                                          unlockedBalanceSmallerSlice,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  MoneroAmount(
+                                    amount: unlockedBalance,
+                                    maxFontSize: 30,
                                   ),
                                 ],
                               ),
@@ -258,30 +230,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
                               if (unlockedBalanceFiat is double)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '$fiatSymbol${unlockedBalanceFiat.toInt()}',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: EdgeInsets.only(top: 2),
-                                      child: Text(
-                                        (unlockedBalanceFiat % 1)
-                                            .toStringAsFixed(2)
-                                            .substring(2),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w300,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                FiatAmount(
+                                  prefix: fiatSymbol,
+                                  amount: unlockedBalanceFiat,
+                                  maxFontSize: 18,
                                 ),
                             ],
                           ),
@@ -332,14 +284,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     itemCount: _txHistory!.length,
                     itemBuilder: (BuildContext context, int index) {
                       final tx = _txHistory![index];
-                      final amountStr = tx.amount.toStringAsFixed(12);
-                      final amountSmallerSlice = amountStr.substring(
-                        amountStr.length - 8,
-                      );
-                      final amountBiggerSlice = amountStr.substring(
-                        0,
-                        amountStr.length - 8,
-                      );
                       final amountFiat = fiatRate.rate is double
                           ? tx.amount * fiatRate.rate!
                           : null;
@@ -380,28 +324,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                       MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          amountBiggerSlice,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        Container(
-                                          margin: EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            amountSmallerSlice,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 9,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    MoneroAmount(
+                                      amount: tx.amount,
+                                      maxFontSize: 16,
                                     ),
                                     if (amountFiat == null)
                                       Skeletonizer(
@@ -412,32 +337,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                         ),
                                       ),
                                     if (amountFiat is double)
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '$fiatSymbol${amountFiat.toInt()}',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                          Container(
-                                            margin: EdgeInsets.only(top: 3),
-                                            child: Text(
-                                              (amountFiat % 1)
-                                                  .toStringAsFixed(2)
-                                                  .substring(2),
-                                              style: TextStyle(
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.w300,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                      FiatAmount(
+                                        prefix: fiatSymbol,
+                                        amount: amountFiat,
+                                        maxFontSize: 14,
                                       ),
                                   ],
                                 ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/screens/confirm_send.dart';
+import 'package:monero_light_wallet/widgets/monero_amount.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
@@ -175,25 +177,19 @@ class _SendScreenState extends State<SendScreen> {
                 i18n.sendTitle,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _destinationAddressController,
-                      decoration: InputDecoration(
-                        labelText: i18n.address,
-                        border: OutlineInputBorder(),
-                        errorText: _destinationAddressError != ''
-                            ? _destinationAddressError
-                            : null,
-                      ),
-                    ),
-                  ),
-                  IconButton(
+              TextField(
+                controller: _destinationAddressController,
+                decoration: InputDecoration(
+                  labelText: i18n.address,
+                  border: OutlineInputBorder(),
+                  errorText: _destinationAddressError != ''
+                      ? _destinationAddressError
+                      : null,
+                  suffixIcon: IconButton(
                     onPressed: () => Navigator.pushNamed(context, '/scan_qr'),
                     icon: Icon(Icons.qr_code),
                   ),
-                ],
+                ),
               ),
               Column(
                 spacing: 10,
@@ -213,6 +209,10 @@ class _SendScreenState extends State<SendScreen> {
                       labelText: i18n.amount,
                       border: OutlineInputBorder(),
                       errorText: _amountError != '' ? _amountError : null,
+                      suffixIcon: TextButton(
+                        onPressed: _setBalanceAsSendAmount,
+                        child: Text('Max'),
+                      ),
                     ),
                   ),
                   Row(
@@ -220,9 +220,19 @@ class _SendScreenState extends State<SendScreen> {
                       Spacer(),
                       GestureDetector(
                         onTap: _setBalanceAsSendAmount,
-                        child: Text(
-                          '$unlockedBalance XMR',
-                          style: TextStyle(fontSize: 18),
+                        child: Row(
+                          spacing: 6,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/monero.svg',
+                              width: 18,
+                              height: 18,
+                            ),
+                            MoneroAmount(
+                              amount: unlockedBalance,
+                              maxFontSize: 18,
+                            ),
+                          ],
                         ),
                       ),
                     ],

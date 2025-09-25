@@ -91,21 +91,99 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: Text(i18n.settingsDeleteWalletButton),
+        title: Row(
+          spacing: 6,
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            Text(i18n.settingsDeleteWalletButton),
+          ],
+        ),
         content: Text(i18n.settingsDeleteWalletDialogText),
         actions: [
           TextButton.icon(
+            onPressed: _deleteWallet,
+            icon: Icon(Icons.delete_forever),
+            label: Text(i18n.settingsDeleteWalletDialogDeleteButton),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+          FilledButton.icon(
             onPressed: () {
               Navigator.pop(context);
             },
             icon: Icon(Icons.cancel),
             label: Text(i18n.cancel),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showViewLwsKeysDialog() {
+    final i18n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Row(
+          spacing: 6,
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            Text(i18n.warning),
+          ],
+        ),
+        content: Text(i18n.settingsViewLwsKeysDialogText),
+        actions: [
           TextButton.icon(
-            onPressed: _deleteWallet,
-            icon: Icon(Icons.delete_forever),
-            label: Text(i18n.settingsDeleteWalletDialogDeleteButton),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/lws_keys');
+            },
+            icon: Icon(Icons.warning),
+            label: Text(i18n.settingsViewLwsKeysDialogRevealButton),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: Icon(Icons.cancel),
+            label: Text(i18n.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showViewSecretKeysDialog() {
+    final i18n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Row(
+          spacing: 6,
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            Text(i18n.warning),
+          ],
+        ),
+        content: Text(i18n.settingsViewSecretKeysDialogText),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/secret_keys');
+            },
+            icon: Icon(Icons.warning),
+            label: Text(i18n.settingsViewSecretKeysDialogRevealButton),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: Icon(Icons.cancel),
+            label: Text(i18n.cancel),
           ),
         ],
       ),
@@ -130,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final language = context.watch<LanguageModel>();
 
     return Scaffold(
-      bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
+      bottomNavigationBar: WalletNavigationBar(selectedIndex: 1),
       appBar: AppBar(title: Text(i18n.settingsTitle)),
       body: Padding(
         padding: EdgeInsets.all(20),
@@ -186,14 +264,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             Container(
-              margin: EdgeInsets.only(top: 20),
-              child: TextButton.icon(
-                onPressed: _showDeleteWalletDialog,
-                label: Text(i18n.settingsDeleteWalletButton),
-                icon: Icon(Icons.delete),
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all(Colors.red),
+              margin: EdgeInsetsGeometry.symmetric(vertical: 10),
+              child: Divider(),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  i18n.settingsLwsViewKeysLabel,
+                  style: TextStyle(fontSize: 18),
                 ),
+                TextButton.icon(
+                  onPressed: _showViewLwsKeysDialog,
+                  icon: Icon(Icons.key),
+                  label: Text(i18n.settingsLwsViewKeysButton),
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.all(Colors.orange),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  i18n.settingsSecretKeysLabel,
+                  style: TextStyle(fontSize: 18),
+                ),
+                TextButton.icon(
+                  onPressed: _showViewSecretKeysDialog,
+                  icon: Icon(Icons.key),
+                  label: Text(i18n.settingsSecretKeysButton),
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.all(Colors.red),
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              margin: EdgeInsetsGeometry.symmetric(vertical: 10),
+              child: Divider(),
+            ),
+            TextButton.icon(
+              onPressed: _showDeleteWalletDialog,
+              label: Text(i18n.settingsDeleteWalletButton),
+              icon: Icon(Icons.delete),
+              style: ButtonStyle(
+                foregroundColor: WidgetStateProperty.all(Colors.red),
               ),
             ),
           ],

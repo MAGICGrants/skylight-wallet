@@ -18,6 +18,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get unknownError => 'Erro desconhecido.';
 
   @override
+  String get warning => 'Atenção';
+
+  @override
   String get amount => 'Valor';
 
   @override
@@ -230,6 +233,32 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsDisplayCurrencyLabel => 'Moeda Local';
 
   @override
+  String get settingsLwsViewKeysLabel => 'Chaves de Visualização do LWS';
+
+  @override
+  String get settingsLwsViewKeysButton => 'Ver';
+
+  @override
+  String get settingsSecretKeysLabel => 'Chaves Privadas de Restauração';
+
+  @override
+  String get settingsSecretKeysButton => 'Ver';
+
+  @override
+  String get settingsViewLwsKeysDialogText =>
+      'Somente compartilhe estas informações com o seu servidor LWS. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.';
+
+  @override
+  String get settingsViewLwsKeysDialogRevealButton => 'Revelar';
+
+  @override
+  String get settingsViewSecretKeysDialogText =>
+      'Não compartilhe essas chaves com ninguém, incluindo pessoas que aleguem ser suporte. Se você receber um pedido para fornecê-las, está sendo vítima de um golpe. Se você fornecer essas informações a outra pessoa, perderá seu dinheiro e ele não poderá ser recuperado.';
+
+  @override
+  String get settingsViewSecretKeysDialogRevealButton => 'Revelar';
+
+  @override
   String get settingsDeleteWalletButton => 'Excluir Carteira';
 
   @override
@@ -261,25 +290,31 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Destinatários';
 
   @override
-  String get keysTitle => 'Chaves';
+  String get lwsKeysTitle => 'Chaves do LWS';
 
   @override
-  String get keysPrimaryAddress => 'Endereço Primário';
+  String get lwsKeysPrimaryAddress => 'Endereço Primário';
 
   @override
-  String get keysRestoreHeight => 'Bloco de Restauração';
+  String get lwsKeysRestoreHeight => 'Bloco de Restauração';
 
   @override
-  String get keysSecretSpendKey => 'Chave Privada de Gasto';
+  String get lwsKeysSecretViewKey => 'Chave Privada de Visualização';
 
   @override
-  String get keysPublicSpendKey => 'Chave Pública de Gasto';
+  String get secretKeysTitle => 'Chaves Privadas de Restauração';
 
   @override
-  String get keysSecretViewKey => 'Chave Privada de Visualização';
+  String get secretKeysMnemonic => 'Semente';
 
   @override
-  String get keysPublicViewKey => 'Chave Pública de Visualização';
+  String get secretKeysPublicSpendKey => 'Chave Pública de Gasto';
+
+  @override
+  String get secretKeysSecretSpendKey => 'Chave Privada de Gasto';
+
+  @override
+  String get secretKeysPublicViewKey => 'Chave Pública de Visualização';
 
   @override
   String get scanQrTitle => 'Escanear QR Code';

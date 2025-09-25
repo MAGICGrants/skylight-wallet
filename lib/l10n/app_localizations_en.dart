@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknownError => 'Unknown error.';
 
   @override
+  String get warning => 'Warning';
+
+  @override
   String get amount => 'Amount';
 
   @override
@@ -230,6 +233,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDisplayCurrencyLabel => 'Display Currency';
 
   @override
+  String get settingsLwsViewKeysLabel => 'LWS View Keys';
+
+  @override
+  String get settingsLwsViewKeysButton => 'View';
+
+  @override
+  String get settingsSecretKeysLabel => 'Secret Restore Keys';
+
+  @override
+  String get settingsSecretKeysButton => 'View';
+
+  @override
+  String get settingsViewLwsKeysDialogText =>
+      'Only share this information with your LWS server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.';
+
+  @override
+  String get settingsViewLwsKeysDialogRevealButton => 'Reveal';
+
+  @override
+  String get settingsViewSecretKeysDialogText =>
+      'Do not share these keys with anyone, including anyone claiming to be support. If you receive a request to provide these, you are being scammed. If you provide this information to another person, you will lose your money and it cannot be recovered.';
+
+  @override
+  String get settingsViewSecretKeysDialogRevealButton => 'Reveal';
+
+  @override
   String get settingsDeleteWalletButton => 'Delete Wallet';
 
   @override
@@ -261,25 +290,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Recipients';
 
   @override
-  String get keysTitle => 'Keys';
+  String get lwsKeysTitle => 'LWS Keys';
 
   @override
-  String get keysPrimaryAddress => 'Primary Address';
+  String get lwsKeysPrimaryAddress => 'Primary Address';
 
   @override
-  String get keysRestoreHeight => 'Restore Height';
+  String get lwsKeysRestoreHeight => 'Restore Height';
 
   @override
-  String get keysSecretSpendKey => 'Secret Spend Key';
+  String get lwsKeysSecretViewKey => 'Secret View Key';
 
   @override
-  String get keysPublicSpendKey => 'Public Spend Key';
+  String get secretKeysTitle => 'Secret Restore Keys';
 
   @override
-  String get keysSecretViewKey => 'Secret View Key';
+  String get secretKeysMnemonic => 'Seed';
 
   @override
-  String get keysPublicViewKey => 'Public View Key';
+  String get secretKeysPublicSpendKey => 'Public Spend Key';
+
+  @override
+  String get secretKeysSecretSpendKey => 'Secret Spend Key';
+
+  @override
+  String get secretKeysPublicViewKey => 'Public View Key';
 
   @override
   String get scanQrTitle => 'Scan QR Code';

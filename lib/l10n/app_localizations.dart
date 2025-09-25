@@ -116,6 +116,12 @@ abstract class AppLocalizations {
   /// **'Unknown error.'**
   String get unknownError;
 
+  /// No description provided for @warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get warning;
+
   /// No description provided for @amount.
   ///
   /// In en, this message translates to:
@@ -518,6 +524,54 @@ abstract class AppLocalizations {
   /// **'Display Currency'**
   String get settingsDisplayCurrencyLabel;
 
+  /// No description provided for @settingsLwsViewKeysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'LWS View Keys'**
+  String get settingsLwsViewKeysLabel;
+
+  /// No description provided for @settingsLwsViewKeysButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get settingsLwsViewKeysButton;
+
+  /// No description provided for @settingsSecretKeysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret Restore Keys'**
+  String get settingsSecretKeysLabel;
+
+  /// No description provided for @settingsSecretKeysButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get settingsSecretKeysButton;
+
+  /// No description provided for @settingsViewLwsKeysDialogText.
+  ///
+  /// In en, this message translates to:
+  /// **'Only share this information with your LWS server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.'**
+  String get settingsViewLwsKeysDialogText;
+
+  /// No description provided for @settingsViewLwsKeysDialogRevealButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reveal'**
+  String get settingsViewLwsKeysDialogRevealButton;
+
+  /// No description provided for @settingsViewSecretKeysDialogText.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not share these keys with anyone, including anyone claiming to be support. If you receive a request to provide these, you are being scammed. If you provide this information to another person, you will lose your money and it cannot be recovered.'**
+  String get settingsViewSecretKeysDialogText;
+
+  /// No description provided for @settingsViewSecretKeysDialogRevealButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reveal'**
+  String get settingsViewSecretKeysDialogRevealButton;
+
   /// No description provided for @settingsDeleteWalletButton.
   ///
   /// In en, this message translates to:
@@ -578,47 +632,59 @@ abstract class AppLocalizations {
   /// **'Recipients'**
   String get txDetailsRecipientsLabel;
 
-  /// No description provided for @keysTitle.
+  /// No description provided for @lwsKeysTitle.
   ///
   /// In en, this message translates to:
-  /// **'Keys'**
-  String get keysTitle;
+  /// **'LWS Keys'**
+  String get lwsKeysTitle;
 
-  /// No description provided for @keysPrimaryAddress.
+  /// No description provided for @lwsKeysPrimaryAddress.
   ///
   /// In en, this message translates to:
   /// **'Primary Address'**
-  String get keysPrimaryAddress;
+  String get lwsKeysPrimaryAddress;
 
-  /// No description provided for @keysRestoreHeight.
+  /// No description provided for @lwsKeysRestoreHeight.
   ///
   /// In en, this message translates to:
   /// **'Restore Height'**
-  String get keysRestoreHeight;
+  String get lwsKeysRestoreHeight;
 
-  /// No description provided for @keysSecretSpendKey.
-  ///
-  /// In en, this message translates to:
-  /// **'Secret Spend Key'**
-  String get keysSecretSpendKey;
-
-  /// No description provided for @keysPublicSpendKey.
-  ///
-  /// In en, this message translates to:
-  /// **'Public Spend Key'**
-  String get keysPublicSpendKey;
-
-  /// No description provided for @keysSecretViewKey.
+  /// No description provided for @lwsKeysSecretViewKey.
   ///
   /// In en, this message translates to:
   /// **'Secret View Key'**
-  String get keysSecretViewKey;
+  String get lwsKeysSecretViewKey;
 
-  /// No description provided for @keysPublicViewKey.
+  /// No description provided for @secretKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret Restore Keys'**
+  String get secretKeysTitle;
+
+  /// No description provided for @secretKeysMnemonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed'**
+  String get secretKeysMnemonic;
+
+  /// No description provided for @secretKeysPublicSpendKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Spend Key'**
+  String get secretKeysPublicSpendKey;
+
+  /// No description provided for @secretKeysSecretSpendKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret Spend Key'**
+  String get secretKeysSecretSpendKey;
+
+  /// No description provided for @secretKeysPublicViewKey.
   ///
   /// In en, this message translates to:
   /// **'Public View Key'**
-  String get keysPublicViewKey;
+  String get secretKeysPublicViewKey;
 
   /// No description provided for @scanQrTitle.
   ///

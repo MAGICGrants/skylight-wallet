@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/models/fiat_rate_model.dart';
-import 'package:monero_light_wallet/screens/confirm_send.dart';
-import 'package:monero_light_wallet/screens/keys.dart';
-import 'package:monero_light_wallet/screens/lws_details.dart';
-import 'package:monero_light_wallet/screens/scan_qr.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
+
+import 'package:monero_light_wallet/models/fiat_rate_model.dart';
+import 'package:monero_light_wallet/screens/confirm_send.dart';
+import 'package:monero_light_wallet/screens/lws_details.dart';
+import 'package:monero_light_wallet/screens/lws_keys.dart';
+import 'package:monero_light_wallet/screens/scan_qr.dart';
+import 'package:monero_light_wallet/screens/secret_keys.dart';
+import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/services/notifications_service.dart';
@@ -95,7 +97,8 @@ class MyApp extends StatelessWidget {
                     '/restore_wallet': (context) => RestoreWalletScreen(),
                     '/wallet_home': (context) => WalletHomeScreen(),
                     '/settings': (context) => SettingsScreen(),
-                    '/keys': (context) => KeysScreen(),
+                    '/lws_keys': (context) => LwsKeysScreen(),
+                    '/secret_keys': (context) => SecretKeysScreen(),
                     '/send': (context) => SendScreen(),
                     '/confirm_send': (context) => ConfirmSendScreen(),
                     '/scan_qr': (context) => ScanQrScreen(),

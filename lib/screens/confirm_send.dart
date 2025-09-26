@@ -136,7 +136,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
         ? _amount * fiatRate.rate!
         : null;
     final networkFeeFiat = fiatRate.rate is double
-        ? _amount * fiatRate.rate!
+        ? _fee * fiatRate.rate!
         : null;
 
     return Scaffold(

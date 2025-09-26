@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:monero_light_wallet/util/socks_http.dart';
 
+import 'package:monero_light_wallet/util/logging.dart';
+import 'package:monero_light_wallet/util/socks_http.dart';
 import 'package:monero_light_wallet/services/tor_service.dart';
 
 Future<int> getCurrentBlockchainHeight() async {
@@ -31,8 +32,8 @@ Future<int> getCurrentBlockchainHeight() async {
           return jsonResponse['height'];
         }
       }
-    } catch (e) {
-      //
+    } catch (error) {
+      log(LogLevel.error, error.toString());
     }
   }
 

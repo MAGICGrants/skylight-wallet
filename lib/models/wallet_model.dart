@@ -12,6 +12,7 @@ import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/height.dart';
+import 'package:monero_light_wallet/util/logging.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
@@ -360,6 +361,12 @@ class WalletModel with ChangeNotifier {
     final path = await getWalletPath();
 
     _w2Wallet = _w2WalletManager.openWallet(path: path, password: 'pass');
+    final errorString = _w2WalletManager.errorString();
+
+    if (errorString != '') {
+      log(LogLevel.error, 'Failed to open existing wallet: $errorString');
+    }
+
     _w2TxHistory = _w2Wallet.history();
 
     notifyListeners();
@@ -384,7 +391,14 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<bool> hasExistingWallet() async {
-    return _w2WalletManager.walletExists(await getWalletPath());
+    final exists = _w2WalletManager.walletExists(await getWalletPath());
+    final errorString = _w2WalletManager.errorString();
+
+    if (errorString != '') {
+      log(LogLevel.error, 'Failed to check if wallet exists: $errorString');
+    }
+
+    return exists;
   }
 
   bool isConnected() {
@@ -477,6 +491,8 @@ class WalletModel with ChangeNotifier {
     final errorMsg = tx.errorString();
 
     if (errorMsg != '' && errorMsg != 'Schema expected string') {
+      log(LogLevel.error, 'Failed to commit transaction');
+      log(LogLevel.error, errorMsg);
       throw FormatException(errorMsg);
     }
 

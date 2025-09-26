@@ -110,7 +110,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
               response.statusCode == HttpStatus.internalServerError;
         });
       }
-    } catch (e) {
+    } catch (error) {
       setState(() {
         _connectionSuccess = false;
       });

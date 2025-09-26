@@ -25,7 +25,9 @@ class WalletHomeScreen extends StatefulWidget {
 }
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
-  Timer? _timer;
+  Timer? _timer1;
+  Timer? _timer10;
+  bool _isConnected = false;
   List<TxDetails>? _txHistory;
 
   @override
@@ -39,10 +41,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       wallet.connectToDaemon();
     }
 
+    _loadTxHistory();
+
     Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
     _initNewTxsCheckIfNeeded();
-    _startTimer();
-    _loadTxHistory();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final Map<String, dynamic>? args =
@@ -56,16 +58,54 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer10?.cancel();
+    _timer1?.cancel();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _startTimers();
+  }
+
+  void _startTimers() {
+    if (!mounted) return;
+
+    _timer1 = Timer.periodic(Duration(seconds: 1), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       final wallet = Provider.of<WalletModel>(context, listen: false);
-      wallet.refresh();
-      wallet.store();
-      _loadTxHistory();
+      final isConnected = wallet.isConnected();
+
+      if (isConnected != _isConnected) {
+        setState(() {
+          _isConnected = isConnected;
+        });
+
+        if (isConnected) {
+          wallet.refresh();
+          await _loadTxHistory();
+          wallet.store();
+        }
+      }
+    });
+
+    _timer10 = Timer.periodic(Duration(seconds: 10), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final wallet = Provider.of<WalletModel>(context, listen: false);
+      if (_isConnected) {
+        wallet.refresh();
+        await _loadTxHistory();
+        wallet.store();
+      }
     });
   }
 
@@ -114,7 +154,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final currentLocale = Localizations.localeOf(context);
     final wallet = context.watch<WalletModel>();
     final fiatRate = context.watch<FiatRateModel>();
-    final connected = wallet.isConnected();
     final synced = wallet.isSynced();
     final height = wallet.getSyncedHeight();
     final totalBalance = wallet.getTotalBalance();
@@ -148,7 +187,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                           child: Column(
                             spacing: 10,
                             children: [
-                              if (connected && synced && height != 0)
+                              if (_isConnected && synced && height != 0)
                                 SizedBox(
                                   width: 26,
                                   height: 26,
@@ -159,7 +198,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (connected && (!synced || height == 0))
+                              if (_isConnected && (!synced || height == 0))
                                 SizedBox(
                                   width: 22,
                                   height: 22,
@@ -172,7 +211,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (!connected)
+                              if (!_isConnected)
                                 SizedBox(
                                   width: 26,
                                   height: 26,

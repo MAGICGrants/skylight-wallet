@@ -25,6 +25,7 @@ import 'package:monero_light_wallet/screens/restore_wallet.dart';
 import 'package:monero_light_wallet/screens/restore_warning.dart';
 import 'package:monero_light_wallet/screens/wallet_home.dart';
 import 'package:monero_light_wallet/screens/welcome.dart';
+import 'package:monero_light_wallet/util/logging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,7 +72,8 @@ class MyApp extends StatelessWidget {
               TorService.sharedInstance.start(),
             ]),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
+              if (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.data != null) {
                 final walletExists = snapshot.data![1] as bool;
                 final initialRoute = walletExists ? '/wallet_home' : '/welcome';
 
@@ -106,6 +108,11 @@ class MyApp extends StatelessWidget {
                     '/tx_details': (context) => TxDetailsScreen(),
                   },
                 );
+              }
+
+              if (snapshot.data == null) {
+                log(LogLevel.error, 'Future builder snapshot data is null.');
+                log(LogLevel.error, snapshot.error.toString());
               }
 
               return MaterialApp(

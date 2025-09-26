@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:monero_light_wallet/models/fiat_rate_model.dart';
+import 'package:monero_light_wallet/services/tor_service.dart';
 import 'package:monero_light_wallet/widgets/fiat_amount.dart';
 import 'package:monero_light_wallet/widgets/monero_amount.dart';
 import 'package:monero_light_wallet/widgets/status_icon.dart';
@@ -66,7 +67,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _startTimers();
+
+    if (_timer1 == null && _timer10 == null) {
+      _startTimers();
+    }
   }
 
   void _startTimers() {
@@ -221,7 +225,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                               StatusIcon(
                                 status:
                                     fiatRate.rate is double &&
-                                        !fiatRate.hasFailed
+                                        !fiatRate.hasFailed &&
+                                        TorService.sharedInstance.status ==
+                                            TorConnectionStatus.connected
                                     ? StatusIconStatus.complete
                                     : fiatRate.hasFailed
                                     ? StatusIconStatus.fail

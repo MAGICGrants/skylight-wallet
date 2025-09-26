@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:monero_light_wallet/models/fiat_rate_model.dart';
 import 'package:monero_light_wallet/models/language_model.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/periodic_tasks.dart';
@@ -83,6 +84,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     // Clear rate
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
+
+    if (mounted) {
+      final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+      await fiatRate.reset();
+    }
   }
 
   void _showDeleteWalletDialog() {

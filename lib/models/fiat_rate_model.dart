@@ -10,6 +10,7 @@ class FiatRateModel with ChangeNotifier {
   double? _rate;
   bool _hasFailed = false;
   String _fiatCode = 'USD';
+  Timer? rateFetchTimer;
 
   double? get rate => _rate;
   bool get hasFailed => _hasFailed;
@@ -17,9 +18,26 @@ class FiatRateModel with ChangeNotifier {
 
   FiatRateModel() {
     _loadPersisted();
+    _startTorStatusCheckTimer();
+  }
 
+  void _startTorStatusCheckTimer() {
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      if (TorService.sharedInstance.status == TorConnectionStatus.connected &&
+          rateFetchTimer == null) {
+        _startRateFetchTimer();
+      }
+    });
+  }
+
+  void _startRateFetchTimer() {
     Timer.periodic(Duration(minutes: 1), (timer) {
-      _fetch();
+      if (TorService.sharedInstance.status == TorConnectionStatus.connected) {
+        _fetch();
+      } else {
+        timer.cancel();
+        rateFetchTimer = null;
+      }
     });
   }
 
@@ -36,9 +54,7 @@ class FiatRateModel with ChangeNotifier {
       SharedPreferencesKeys.fiatRate,
     );
 
-    if (rate is double) {
-      _rate = rate;
-    }
+    _rate = rate;
   }
 
   Future<void> _persist(double rate) async {
@@ -87,5 +103,13 @@ class FiatRateModel with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> reset() async {
+    _loadPersisted();
+
+    if (TorService.sharedInstance.status == TorConnectionStatus.connected) {
+      await _fetch();
+    }
   }
 }

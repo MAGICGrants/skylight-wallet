@@ -69,13 +69,13 @@ class MyApp extends StatelessWidget {
             future: Future.wait([
               SharedPreferences.getInstance(),
               loadExistingWalletIfExists(wallet),
-              TorService.sharedInstance.start(),
             ]),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done &&
                   snapshot.data != null) {
                 final walletExists = snapshot.data![1] as bool;
                 final initialRoute = walletExists ? '/wallet_home' : '/welcome';
+                TorService.sharedInstance.start();
 
                 return MaterialApp(
                   title: 'Monero Light Wallet',

@@ -1,5 +1,6 @@
 // ignore_for_file: implementation_imports
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
@@ -121,19 +122,101 @@ class LWSConnectionDetails {
 }
 
 class WalletModel with ChangeNotifier {
+  Timer? _connectionCheckTimer;
+  Timer? _refreshTimer;
+
   final _w2WalletManager = Monero()
       .walletManagerFactory()
       .getLWSFWalletManager();
 
+  late int _w2WalletManagerFfiAddr;
+
   late Wallet2Wallet _w2Wallet;
+  late int _w2WalletFfiAddress;
+
   late Wallet2TransactionHistory _w2TxHistory;
+  late int _w2TxHistoryFfiAddress;
+
   late String _connectionAddress;
   late String _connectionProxyPort;
   late bool _connectionUseTor;
   late bool _connectionUseSsl;
 
-  Wallet2Wallet get wallet => _w2Wallet;
-  Wallet2WalletManager get walletManager => _w2WalletManager;
+  var _isConnected = false;
+  var _isSynced = false;
+  int? _syncedHeight;
+  double? _unlockedBalance;
+  double? _totalBalance;
+  List<TxDetails> _txHistory = [];
+
+  bool get isConnected => _isConnected;
+  bool get isSynced => _isSynced;
+  int? get syncedHeight => _syncedHeight;
+  double? get unlockedBalance => _unlockedBalance;
+  double? get totalBalance => _totalBalance;
+  List<TxDetails> get txHistory => _txHistory;
+
+  WalletModel() {
+    _w2WalletManagerFfiAddr = _w2WalletManager.ffiAddress();
+
+    _startTimers();
+  }
+
+  void _startTimers() {
+    _connectionCheckTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _runCheckConnectionTimerTask();
+    });
+
+    _refreshTimer = Timer.periodic(Duration(seconds: 20), (timer) {
+      _runRefreshTimerTask();
+    });
+  }
+
+  Future<void> _runCheckConnectionTimerTask() async {
+    final isConnected = await getIsConnected();
+
+    if (isConnected != _isConnected) {
+      _isConnected = isConnected;
+
+      if (isConnected) {
+        refresh();
+        await _loadTxHistory();
+        await store();
+      }
+
+      notifyListeners();
+    }
+  }
+
+  Future<void> _runRefreshTimerTask() async {
+    await Future.wait([
+      loadIsSynced(),
+      loadSyncedHeight(),
+      loadUnlockedBalance(),
+      loadTotalBalance(),
+      _loadTxHistory(),
+    ]);
+
+    notifyListeners();
+  }
+
+  Future<void> _loadTxHistory() async {
+    final txCount = _w2TxHistory.count();
+
+    if (txCount > _txHistory.length) {
+      _txHistory = await _getFullTxHistory();
+      await _persistTxHistoryCount();
+    }
+  }
+
+  // Future<int> _getTxHistoryCount() async {
+  //   return Isolate.run(
+  //     // ignore: deprecated_member_use
+  //     () => monero.TransactionHistory_count(
+  //       Pointer<Void>.fromAddress(_w2TxHistoryFfiAddress),
+  //     ),
+  //   );
+  // }
 
   Future<void> persistCurrentConnection() async {
     await SharedPreferencesService.set(
@@ -189,19 +272,14 @@ class WalletModel with ChangeNotifier {
     );
   }
 
-  Future persistTxHistoryCount() async {
-    final count = await getTxHistoryCount();
+  Future<void> _persistTxHistoryCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt('txHistoryCount', count);
+    prefs.setInt('txHistoryCount', _txHistory.length);
   }
 
   Future<int> getPersistedTxHistoryCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt('txHistoryCount') ?? 0;
-  }
-
-  Future<int> getTxHistoryCount() async {
-    return _w2TxHistory.count();
   }
 
   void setConnection({
@@ -255,7 +333,14 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<int> getCurrentHeight() {
-    return _w2WalletManager.blockchainHeight();
+    final wmFfiAddr = _w2WalletManager.ffiAddress();
+
+    return Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.WalletManager_blockchainHeight(
+        Pointer.fromAddress(wmFfiAddr),
+      );
+    });
   }
 
   Future<void> restoreFromMnemonic(
@@ -340,18 +425,20 @@ class WalletModel with ChangeNotifier {
       _w2Wallet = MoneroWallet(walletPtr);
     }
 
-    final walletFfiAddr = _w2Wallet.ffiAddress();
+    _w2WalletFfiAddress = _w2Wallet.ffiAddress();
 
     _w2TxHistory = MoneroTransactionHistory(
       Pointer<Void>.fromAddress(
         await Isolate.run(
           // ignore: deprecated_member_use
           () => monero.Wallet_history(
-            Pointer<Void>.fromAddress(walletFfiAddr),
+            Pointer<Void>.fromAddress(_w2WalletFfiAddress),
           ).address,
         ),
       ),
     );
+
+    _w2TxHistoryFfiAddress = _w2TxHistory.ffiAddress();
 
     store();
     notifyListeners();
@@ -401,12 +488,57 @@ class WalletModel with ChangeNotifier {
     return exists;
   }
 
-  bool isConnected() {
-    return _w2Wallet.connected() != 0;
+  Future<bool> getIsConnected() async {
+    final w2WalletFfiAddr = _w2Wallet.ffiAddress();
+
+    final connected = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_connected(Pointer<Void>.fromAddress(w2WalletFfiAddr)),
+    );
+
+    return connected != 0;
   }
 
-  bool isSynced() {
-    return _w2Wallet.synchronized();
+  Future<void> loadIsSynced() async {
+    _isSynced = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_synchronized(
+        Pointer<Void>.fromAddress(_w2WalletFfiAddress),
+      ),
+    );
+  }
+
+  Future<void> loadSyncedHeight() async {
+    _syncedHeight = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_blockChainHeight(
+        Pointer<Void>.fromAddress(_w2WalletFfiAddress),
+      ),
+    );
+  }
+
+  Future<void> loadTotalBalance() async {
+    final amount = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_balance(
+        Pointer<Void>.fromAddress(_w2WalletFfiAddress),
+        accountIndex: 0,
+      ),
+    );
+
+    _totalBalance = doubleAmountFromInt(amount);
+  }
+
+  Future<void> loadUnlockedBalance() async {
+    final amount = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_unlockedBalance(
+        Pointer<Void>.fromAddress(_w2WalletFfiAddress),
+        accountIndex: 0,
+      ),
+    );
+
+    _unlockedBalance = doubleAmountFromInt(amount);
   }
 
   String getPrimaryAddress() {
@@ -414,7 +546,7 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<String> getUnusedSubaddress() async {
-    final txHistory = await getFullTxHistory();
+    final txHistory = await _getFullTxHistory();
 
     Set<int> usedIndexes = {};
 
@@ -433,18 +565,6 @@ class WalletModel with ChangeNotifier {
     }
 
     return _w2Wallet.address(accountIndex: 0, addressIndex: nextSubaddrIndex);
-  }
-
-  int getSyncedHeight() {
-    return _w2Wallet.blockChainHeight();
-  }
-
-  double getTotalBalance() {
-    return doubleAmountFromInt(_w2Wallet.balance(accountIndex: 0));
-  }
-
-  double getUnlockedBalance() {
-    return doubleAmountFromInt(_w2Wallet.unlockedBalance(accountIndex: 0));
   }
 
   Future<MoneroPendingTransaction> createTx(
@@ -578,7 +698,7 @@ class WalletModel with ChangeNotifier {
     return confirmedTxs;
   }
 
-  Future<List<TxDetails>> getFullTxHistory() async {
+  Future<List<TxDetails>> _getFullTxHistory() async {
     final pendingTxs = await _getPendingTxs();
     final confirmedTxHistory = getConfirmedTxHistory();
 

@@ -55,7 +55,7 @@ void callbackDispatcher() {
             }
           }
 
-          await wallet.persistTxHistoryCount();
+          await wallet._persistTxHistoryCount();
         }
 
         break;

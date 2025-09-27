@@ -83,7 +83,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       }
 
       final wallet = Provider.of<WalletModel>(context, listen: false);
-      final isConnected = wallet.isConnected();
+      final isConnected = await wallet.isConnected();
 
       if (isConnected != _isConnected) {
         setState(() {
@@ -115,13 +115,13 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
   Future<void> _loadTxHistory() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final newTxHistory = await wallet.getFullTxHistory();
+    final newTxHistory = await wallet._getFullTxHistory();
 
     setState(() {
       _txHistory = newTxHistory;
     });
 
-    await wallet.persistTxHistoryCount();
+    await wallet._persistTxHistoryCount();
   }
 
   void _showTxDetails(TxDetails txDetails) {

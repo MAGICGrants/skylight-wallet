@@ -5,6 +5,7 @@ import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/screens/create_wallet.dart';
 import 'package:monero_light_wallet/util/height.dart';
+import 'package:monero_light_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 
 class GenerateSeedScreen extends StatefulWidget {
@@ -38,6 +39,8 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
       if (error.toString().contains('failedToLoadHeight')) {
         errorMsg = 'Check your internet connection.';
+      } else {
+        log(LogLevel.error, error.toString());
       }
 
       if (mounted) {

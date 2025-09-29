@@ -26,23 +26,9 @@ class WalletHomeScreen extends StatefulWidget {
 }
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
-  Timer? _timer1;
-  Timer? _timer10;
-  bool _isConnected = false;
-  List<TxDetails>? _txHistory;
-
   @override
   void initState() {
     super.initState();
-
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    wallet.refresh();
-
-    if (!wallet.isConnected()) {
-      wallet.connectToDaemon();
-    }
-
-    _loadTxHistory();
 
     Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
     _initNewTxsCheckIfNeeded();
@@ -59,69 +45,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
   @override
   void dispose() {
-    _timer10?.cancel();
-    _timer1?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    if (_timer1 == null && _timer10 == null) {
-      _startTimers();
-    }
-  }
-
-  void _startTimers() {
-    if (!mounted) return;
-
-    _timer1 = Timer.periodic(Duration(seconds: 1), (timer) async {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      final wallet = Provider.of<WalletModel>(context, listen: false);
-      final isConnected = await wallet.isConnected();
-
-      if (isConnected != _isConnected) {
-        setState(() {
-          _isConnected = isConnected;
-        });
-
-        if (isConnected) {
-          wallet.refresh();
-          await _loadTxHistory();
-          wallet.store();
-        }
-      }
-    });
-
-    _timer10 = Timer.periodic(Duration(seconds: 10), (timer) async {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      final wallet = Provider.of<WalletModel>(context, listen: false);
-      if (_isConnected) {
-        wallet.refresh();
-        await _loadTxHistory();
-        wallet.store();
-      }
-    });
-  }
-
-  Future<void> _loadTxHistory() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    final newTxHistory = await wallet._getFullTxHistory();
-
-    setState(() {
-      _txHistory = newTxHistory;
-    });
-
-    await wallet._persistTxHistoryCount();
   }
 
   void _showTxDetails(TxDetails txDetails) {
@@ -158,14 +87,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final currentLocale = Localizations.localeOf(context);
     final wallet = context.watch<WalletModel>();
     final fiatRate = context.watch<FiatRateModel>();
-    final synced = wallet.isSynced();
-    final height = wallet.getSyncedHeight();
-    final totalBalance = wallet.getTotalBalance();
-    final unlockedBalance = wallet.getUnlockedBalance();
-    final unlockedBalanceFiat = fiatRate.rate is double
-        ? unlockedBalance * fiatRate.rate!
+    final unlockedBalanceFiat =
+        fiatRate.rate is double && wallet.unlockedBalance is double
+        ? wallet.unlockedBalance! * fiatRate.rate!
         : null;
-    final lockedBalance = totalBalance - unlockedBalance;
+    final lockedBalance =
+        (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
 
     return Scaffold(
@@ -191,7 +118,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                           child: Column(
                             spacing: 10,
                             children: [
-                              if (_isConnected && synced && height != 0)
+                              if (wallet.isConnected &&
+                                  wallet.isSynced &&
+                                  wallet.syncedHeight != 0)
                                 SizedBox(
                                   width: 26,
                                   height: 26,
@@ -202,7 +131,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (_isConnected && (!synced || height == 0))
+                              if (wallet.isConnected &&
+                                  (!wallet.isSynced ||
+                                      wallet.syncedHeight == 0))
                                 SizedBox(
                                   width: 22,
                                   height: 22,
@@ -215,7 +146,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (!_isConnected)
+                              if (!wallet.isConnected)
                                 SizedBox(
                                   width: 26,
                                   height: 26,
@@ -255,7 +186,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                     height: 22,
                                   ),
                                   MoneroAmount(
-                                    amount: unlockedBalance,
+                                    amount: wallet.unlockedBalance ?? 0,
                                     maxFontSize: 30,
                                   ),
                                 ],
@@ -321,14 +252,14 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 ),
               ),
             ),
-            if (_txHistory != null && _txHistory!.isNotEmpty)
+            if (wallet.txHistory != null && wallet.txHistory!.isNotEmpty)
               Expanded(
                 child: SizedBox(
                   child: ListView.separated(
                     separatorBuilder: (context, index) => Divider(),
-                    itemCount: _txHistory!.length,
+                    itemCount: wallet.txHistory!.length,
                     itemBuilder: (BuildContext context, int index) {
-                      final tx = _txHistory![index];
+                      final tx = wallet.txHistory![index];
                       final amountFiat = fiatRate.rate is double
                           ? tx.amount * fiatRate.rate!
                           : null;
@@ -431,9 +362,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   ),
                 ),
               ),
-            if (_txHistory != null && _txHistory!.isEmpty)
+            if (wallet.txHistory != null && wallet.txHistory!.isEmpty)
               Text(i18n.homeNoTransactions),
-            if (_txHistory == null) CircularProgressIndicator(),
+            if (wallet.txHistory == null) CircularProgressIndicator(),
           ],
         ),
       ),

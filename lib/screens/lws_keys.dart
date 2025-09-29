@@ -24,7 +24,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> {
 
   Future<void> _loadRestoreHeight() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final restoreHeight = wallet.wallet.getRefreshFromBlockHeight();
+    final restoreHeight = wallet.w2Wallet!.getRefreshFromBlockHeight();
 
     if (restoreHeight > 0) {
       setState(() {
@@ -43,7 +43,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
     final primaryAddress = wallet.getPrimaryAddress();
-    final secretViewKey = wallet.wallet.secretViewKey();
+    final secretViewKey = wallet.w2Wallet!.secretViewKey();
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.lwsKeysTitle)),

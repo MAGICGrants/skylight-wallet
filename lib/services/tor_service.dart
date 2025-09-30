@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,5 +76,18 @@ class TorService {
     _status = TorConnectionStatus.disconnected;
 
     return;
+  }
+
+  Future<void> waitUntilConnected() async {
+    final completer = Completer<void>();
+
+    Timer.periodic(Duration(milliseconds: 50), (timer) {
+      if (status == TorConnectionStatus.connected) {
+        timer.cancel();
+        completer.complete();
+      }
+    });
+
+    return completer.future;
   }
 }

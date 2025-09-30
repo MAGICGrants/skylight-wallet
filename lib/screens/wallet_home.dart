@@ -95,6 +95,11 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
 
+    print(wallet.isConnected);
+    print(wallet.isSynced);
+    print(wallet.syncedHeight);
+    print('----');
+
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
       body: SafeArea(
@@ -131,9 +136,13 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (wallet.isConnected &&
-                                  (!wallet.isSynced ||
-                                      wallet.syncedHeight == 0))
+                              // TODO: make dis better
+                              if ((wallet.usingTor &&
+                                      TorService.sharedInstance.status ==
+                                          TorConnectionStatus.connecting) ||
+                                  wallet.isConnected &&
+                                      (!wallet.isSynced ||
+                                          wallet.syncedHeight == 0))
                                 SizedBox(
                                   width: 22,
                                   height: 22,
@@ -146,7 +155,11 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (!wallet.isConnected)
+                              if (wallet.usingTor
+                                  ? TorService.sharedInstance.status !=
+                                            TorConnectionStatus.connecting &&
+                                        !wallet.isConnected
+                                  : !wallet.isConnected)
                                 SizedBox(
                                   width: 26,
                                   height: 26,

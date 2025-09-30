@@ -77,6 +77,16 @@ class MyApp extends StatelessWidget {
                 final initialRoute = walletExists ? '/wallet_home' : '/welcome';
                 TorService.sharedInstance.start();
 
+                if (walletExists) {
+                  (() async {
+                    await wallet.refresh();
+                    await wallet.loadAllStats();
+                    wallet.notifyListenersFromOutside();
+                    await wallet.connectToDaemon();
+                    wallet.notifyListenersFromOutside();
+                  })();
+                }
+
                 return MaterialApp(
                   title: 'Monero Light Wallet',
                   localizationsDelegates:

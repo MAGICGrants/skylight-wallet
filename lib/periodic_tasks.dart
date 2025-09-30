@@ -20,8 +20,8 @@ void callbackDispatcher() {
 
         await wallet.openExisting();
         await wallet.loadPersistedConnection();
-        wallet.connectToDaemon();
-        wallet.refresh();
+        await wallet.refresh();
+        await wallet.connectToDaemon();
 
         if (wallet.isConnected) {
           return false;

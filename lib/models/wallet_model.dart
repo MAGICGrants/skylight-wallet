@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
@@ -20,7 +21,6 @@ import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -137,6 +137,7 @@ class WalletModel with ChangeNotifier {
   late bool _connectionUseTor;
   late bool _connectionUseSsl;
 
+  var _hasAttemptedConnection = false;
   var _isConnected = false;
   var _isSynced = false;
   int? _syncedHeight;
@@ -145,6 +146,7 @@ class WalletModel with ChangeNotifier {
   List<TxDetails>? _txHistory = [];
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
+  bool get hasAttemptedConnection => _hasAttemptedConnection;
   bool get isConnected => _isConnected;
   bool get isSynced => _isSynced;
   int? get syncedHeight => _syncedHeight;
@@ -178,6 +180,8 @@ class WalletModel with ChangeNotifier {
       return;
     }
 
+    print('im still alive 1');
+
     final isConnected = await getIsConnected();
 
     if (isConnected != _isConnected) {
@@ -191,9 +195,16 @@ class WalletModel with ChangeNotifier {
       return;
     }
 
+    print('im still alive 2');
+
     await refresh();
-    await loadAllStats();
-    notifyListeners();
+    await loadAllStats().timeout(Duration(seconds: 20));
+
+    final txCount = _w2TxHistory!.count();
+
+    if (_isConnected && _isSynced && txCount > 0) {
+      await store();
+    }
   }
 
   Future<void> loadAllStats() async {
@@ -204,6 +215,8 @@ class WalletModel with ChangeNotifier {
       loadTotalBalance(),
       _loadTxHistory(),
     ]);
+
+    notifyListeners();
   }
 
   Future<void> _loadTxHistory() async {
@@ -315,6 +328,8 @@ class WalletModel with ChangeNotifier {
       useSsl: _connectionUseSsl,
     );
 
+    _hasAttemptedConnection = true;
+
     notifyListeners();
   }
 
@@ -324,13 +339,14 @@ class WalletModel with ChangeNotifier {
     bool useSsl = false,
   }) async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
+    final proxyAddress = proxyPort != '' ? '127.0.0.1:$proxyPort' : '';
 
     await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_init(
         Pointer.fromAddress(walletFfiAddr),
-        daemonAddress: address,
-        proxyAddress: proxyPort != '' ? '127.0.0.1:$proxyPort' : '',
+        daemonAddress: '${useSsl ? 'https://' : 'http://'}$address',
+        proxyAddress: proxyAddress,
         useSsl: useSsl,
         lightWallet: true,
       ),
@@ -340,6 +356,12 @@ class WalletModel with ChangeNotifier {
       // ignore: deprecated_member_use
       () => monero.Wallet_connectToDaemon(Pointer.fromAddress(walletFfiAddr)),
     );
+
+    final connectError = _w2Wallet!.errorString();
+
+    if (connectError != '') {
+      log(LogLevel.warn, connectError);
+    }
   }
 
   Future<void> refresh() async {
@@ -496,10 +518,9 @@ class WalletModel with ChangeNotifier {
 
   Future delete() async {
     _w2WalletManager.closeWallet(_w2Wallet!, false);
-    _w2Wallet == null;
+    _w2Wallet = null;
     final path = await getWalletPath();
-    final walletFile = File(path);
-    await walletFile.delete();
+    await File(path).delete();
 
     final prefs = await SharedPreferences.getInstance();
     prefs.remove('txHistoryCount');

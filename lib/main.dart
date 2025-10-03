@@ -81,9 +81,7 @@ class MyApp extends StatelessWidget {
                   (() async {
                     await wallet.refresh();
                     await wallet.loadAllStats();
-                    wallet.notifyListenersFromOutside();
                     await wallet.connectToDaemon();
-                    wallet.notifyListenersFromOutside();
                   })();
                 }
 

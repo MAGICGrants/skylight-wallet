@@ -18,6 +18,8 @@ import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/consts.dart' as consts;
 import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
 
+enum LwsConnectionStatus { disconnected, connecting, connected }
+
 class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});
 
@@ -94,11 +96,19 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final lockedBalance =
         (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
+    var connectionStatus = LwsConnectionStatus.disconnected;
 
-    print(wallet.isConnected);
-    print(wallet.isSynced);
-    print(wallet.syncedHeight);
-    print('----');
+    if (wallet.isConnected &&
+        wallet.isSynced &&
+        (wallet.syncedHeight ?? 0) > 0) {
+      connectionStatus = LwsConnectionStatus.connected;
+    } else if (wallet.usingTor &&
+            TorService.sharedInstance.status ==
+                TorConnectionStatus.connecting ||
+        !wallet.hasAttemptedConnection ||
+        wallet.isConnected && !wallet.isSynced) {
+      connectionStatus = LwsConnectionStatus.connecting;
+    }
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
@@ -123,9 +133,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                           child: Column(
                             spacing: 10,
                             children: [
-                              if (wallet.isConnected &&
-                                  wallet.isSynced &&
-                                  wallet.syncedHeight != 0)
+                              if (connectionStatus ==
+                                  LwsConnectionStatus.connected)
                                 SizedBox(
                                   width: 26,
                                   height: 26,
@@ -136,13 +145,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              // TODO: make dis better
-                              if ((wallet.usingTor &&
-                                      TorService.sharedInstance.status ==
-                                          TorConnectionStatus.connecting) ||
-                                  wallet.isConnected &&
-                                      (!wallet.isSynced ||
-                                          wallet.syncedHeight == 0))
+                              if (connectionStatus ==
+                                  LwsConnectionStatus.connecting)
                                 SizedBox(
                                   width: 22,
                                   height: 22,
@@ -155,11 +159,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                   ),
                                 ),
 
-                              if (wallet.usingTor
-                                  ? TorService.sharedInstance.status !=
-                                            TorConnectionStatus.connecting &&
-                                        !wallet.isConnected
-                                  : !wallet.isConnected)
+                              if (connectionStatus ==
+                                  LwsConnectionStatus.disconnected)
                                 SizedBox(
                                   width: 26,
                                   height: 26,

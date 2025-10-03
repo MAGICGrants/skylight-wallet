@@ -57,9 +57,11 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
     try {
       final height = await getCurrentBlockchainHeight();
 
-      setState(() {
-        _restoreHeight = height;
-      });
+      if (mounted) {
+        setState(() {
+          _restoreHeight = height;
+        });
+      }
     } catch (error) {
       var errorMsg = 'Sorry, something went wrong.';
 

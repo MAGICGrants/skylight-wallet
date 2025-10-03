@@ -15,6 +15,7 @@ Future<int> getCurrentBlockchainHeight() async {
 
   urls.shuffle(Random.secure());
 
+  await TorService.sharedInstance.waitUntilConnected();
   final proxyInfo = TorService.sharedInstance.getProxyInfo();
 
   for (String url in urls) {

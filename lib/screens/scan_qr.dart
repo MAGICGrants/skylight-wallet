@@ -28,14 +28,14 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
     final uri = Uri.tryParse(scanResult);
 
     if (uri != null && uri.scheme == 'monero') {
-      if (!wallet.wallet.addressValid(uri.path, 0)) return;
+      if (!wallet.w2Wallet!.addressValid(uri.path, 0)) return;
 
       address = uri.path;
 
       if (uri.queryParameters.containsKey('tx_amount')) {
         amount = double.tryParse(uri.queryParameters['tx_amount']!);
       }
-    } else if (wallet.wallet.addressValid(scanResult, 0)) {
+    } else if (wallet.w2Wallet!.addressValid(scanResult, 0)) {
       address = scanResult;
     } else {
       return;

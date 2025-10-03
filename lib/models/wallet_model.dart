@@ -1,11 +1,15 @@
 // ignore_for_file: implementation_imports
 
+// import 'dart:async';
+// import 'dart:async' show Timer;
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
@@ -17,7 +21,6 @@ import 'package:monero_light_wallet/util/wallet.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -125,15 +128,104 @@ class WalletModel with ChangeNotifier {
       .walletManagerFactory()
       .getLWSFWalletManager();
 
-  late Wallet2Wallet _w2Wallet;
-  late Wallet2TransactionHistory _w2TxHistory;
+  Wallet2Wallet? _w2Wallet;
+
+  Wallet2TransactionHistory? _w2TxHistory;
+
   late String _connectionAddress;
   late String _connectionProxyPort;
   late bool _connectionUseTor;
   late bool _connectionUseSsl;
 
-  Wallet2Wallet get wallet => _w2Wallet;
-  Wallet2WalletManager get walletManager => _w2WalletManager;
+  var _hasAttemptedConnection = false;
+  var _isConnected = false;
+  var _isSynced = false;
+  int? _syncedHeight;
+  double? _unlockedBalance;
+  double? _totalBalance;
+  List<TxDetails>? _txHistory = [];
+
+  Wallet2Wallet? get w2Wallet => _w2Wallet;
+  bool get hasAttemptedConnection => _hasAttemptedConnection;
+  bool get isConnected => _isConnected;
+  bool get isSynced => _isSynced;
+  int? get syncedHeight => _syncedHeight;
+  double? get unlockedBalance => _unlockedBalance;
+  double? get totalBalance => _totalBalance;
+  List<TxDetails>? get txHistory => _txHistory;
+  bool get usingTor => _connectionUseTor;
+
+  WalletModel() {
+    _startTimers();
+  }
+
+  void notifyListenersFromOutside() {
+    notifyListeners();
+  }
+
+  void _startTimers() {
+    log(LogLevel.info, "Starting timers");
+
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      _runCheckConnectionTimerTask();
+    });
+
+    Timer.periodic(Duration(seconds: 20), (timer) {
+      _runRefreshTimerTask();
+    });
+  }
+
+  Future<void> _runCheckConnectionTimerTask() async {
+    if (_w2Wallet == null) {
+      return;
+    }
+
+    print('im still alive 1');
+
+    final isConnected = await getIsConnected();
+
+    if (isConnected != _isConnected) {
+      _isConnected = isConnected;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _runRefreshTimerTask() async {
+    if (_w2Wallet == null) {
+      return;
+    }
+
+    print('im still alive 2');
+
+    await refresh();
+    await loadAllStats().timeout(Duration(seconds: 20));
+
+    final txCount = _w2TxHistory!.count();
+
+    if (_isConnected && _isSynced && txCount > 0) {
+      await store();
+    }
+  }
+
+  Future<void> loadAllStats() async {
+    await Future.wait([
+      loadIsSynced(),
+      loadSyncedHeight(),
+      loadUnlockedBalance(),
+      loadTotalBalance(),
+      _loadTxHistory(),
+    ]);
+
+    notifyListeners();
+  }
+
+  Future<void> _loadTxHistory() async {
+    final txCount = _w2TxHistory!.count();
+
+    if (_txHistory == null || txCount > _txHistory!.length) {
+      _txHistory = await _getFullTxHistory();
+    }
+  }
 
   Future<void> persistCurrentConnection() async {
     await SharedPreferencesService.set(
@@ -189,19 +281,20 @@ class WalletModel with ChangeNotifier {
     );
   }
 
-  Future persistTxHistoryCount() async {
-    final count = await getTxHistoryCount();
+  Future<void> persistTxHistoryCount() async {
+    if (_txHistory == null) {
+      throw Exception(
+        "Should not attempt to persist tx history count when tx history is null",
+      );
+    }
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt('txHistoryCount', count);
+    prefs.setInt('txHistoryCount', _txHistory!.length);
   }
 
   Future<int> getPersistedTxHistoryCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt('txHistoryCount') ?? 0;
-  }
-
-  Future<int> getTxHistoryCount() async {
-    return _w2TxHistory.count();
   }
 
   void setConnection({
@@ -218,28 +311,79 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<void> connectToDaemon() async {
+    if (_w2Wallet == null) throw Exception("w2wallet is null");
+
     String? torProxyPort;
 
     if (_connectionUseTor) {
+      await TorService.sharedInstance.waitUntilConnected();
       torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
     }
 
     final proxyPort = torProxyPort ?? _connectionProxyPort;
 
-    _w2Wallet.init(
-      daemonAddress: _connectionAddress,
-      proxyAddress: proxyPort != '' ? '127.0.0.1:$proxyPort' : '',
+    await _connectToDaemon(
+      address: _connectionAddress,
+      proxyPort: proxyPort,
       useSsl: _connectionUseSsl,
-      lightWallet: true,
     );
 
-    _w2Wallet.connectToDaemon();
+    _hasAttemptedConnection = true;
+
+    notifyListeners();
   }
 
-  void refresh() {
-    _w2Wallet.startRefresh();
-    _w2Wallet.refresh();
-    _w2TxHistory.refresh();
+  Future<void> _connectToDaemon({
+    required String address,
+    String? proxyPort,
+    bool useSsl = false,
+  }) async {
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+    final proxyAddress = proxyPort != '' ? '127.0.0.1:$proxyPort' : '';
+
+    await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_init(
+        Pointer.fromAddress(walletFfiAddr),
+        daemonAddress: '${useSsl ? 'https://' : 'http://'}$address',
+        proxyAddress: proxyAddress,
+        useSsl: useSsl,
+        lightWallet: true,
+      ),
+    );
+
+    await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_connectToDaemon(Pointer.fromAddress(walletFfiAddr)),
+    );
+
+    final connectError = _w2Wallet!.errorString();
+
+    if (connectError != '') {
+      log(LogLevel.warn, connectError);
+    }
+  }
+
+  Future<void> refresh() async {
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+    final historyFfiAddr = _w2TxHistory!.ffiAddress();
+
+    await Future.wait([
+      Isolate.run(
+        // ignore: deprecated_member_use
+        () => monero.Wallet_startRefresh(Pointer.fromAddress(walletFfiAddr)),
+      ),
+      Isolate.run(
+        // ignore: deprecated_member_use
+        () => monero.Wallet_refresh(Pointer.fromAddress(walletFfiAddr)),
+      ),
+      Isolate.run(
+        // ignore: deprecated_member_use
+        () => monero.TransactionHistory_refresh(
+          Pointer.fromAddress(historyFfiAddr),
+        ),
+      ),
+    ]);
   }
 
   Future<String> create() async {
@@ -247,7 +391,7 @@ class WalletModel with ChangeNotifier {
     final polyseed = await Isolate.run(() => monero.Wallet_createPolyseed());
     final currentHeight = await getCurrentBlockchainHeight();
     await restoreFromMnemonic(polyseed, currentHeight);
-    refresh();
+    await refresh();
     await connectToDaemon();
     store();
 
@@ -255,7 +399,62 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<int> getCurrentHeight() {
-    return _w2WalletManager.blockchainHeight();
+    final wmFfiAddr = _w2WalletManager.ffiAddress();
+
+    return Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.WalletManager_blockchainHeight(
+        Pointer.fromAddress(wmFfiAddr),
+      );
+    });
+  }
+
+  Future<MoneroWallet> _getWalletFromLegacySeed(
+    String mnemonic,
+    int restoreHeight, {
+    bool isDummy = false,
+  }) async {
+    final wmFfiAddr = _w2WalletManager.ffiAddress();
+    final walletPath = await getWalletPath();
+
+    final walletFfiAddr = await Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.WalletManager_recoveryWallet(
+        Pointer.fromAddress(wmFfiAddr),
+        mnemonic: mnemonic,
+        seedOffset: '',
+        restoreHeight: restoreHeight,
+        password: 'pass',
+        path: isDummy ? '' : walletPath,
+      ).address;
+    });
+
+    return MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
+  }
+
+  Future<MoneroWallet> _getWalletFromPolyseed(
+    String mnemonic,
+    int restoreHeight, {
+    bool isDummy = false,
+  }) async {
+    final wmFfiAddr = _w2WalletManager.ffiAddress();
+    final walletPath = await getWalletPath();
+
+    final walletFfiAddr = await Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.WalletManager_createWalletFromPolyseed(
+        Pointer.fromAddress(wmFfiAddr),
+        mnemonic: mnemonic,
+        seedOffset: '',
+        restoreHeight: restoreHeight,
+        path: isDummy ? '' : walletPath,
+        password: 'pass',
+        newWallet: true,
+        kdfRounds: 1,
+      ).address;
+    });
+
+    return MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
   }
 
   Future<void> restoreFromMnemonic(
@@ -263,95 +462,32 @@ class WalletModel with ChangeNotifier {
     int restoreHeight, [
     String passphrase = '',
   ]) async {
-    final wmFfiAddr = _w2WalletManager.ffiAddress();
-
-    final legacyWalletPtr = Pointer<Void>.fromAddress(
-      await Isolate.run(() {
-        // ignore: deprecated_member_use
-        return monero.WalletManager_recoveryWallet(
-          Pointer.fromAddress(wmFfiAddr),
-          mnemonic: mnemonic,
-          password: 'pass',
-          path: '',
-          restoreHeight: restoreHeight,
-          seedOffset: passphrase,
-        ).address;
-      }),
+    final legacyWallet = await _getWalletFromLegacySeed(
+      mnemonic,
+      restoreHeight,
+      isDummy: true,
     );
 
-    final legacyWallet = MoneroWallet(legacyWalletPtr);
-
-    final polyseedWalletPtr = Pointer<Void>.fromAddress(
-      await Isolate.run(() {
-        // ignore: deprecated_member_use
-        return monero.WalletManager_createWalletFromPolyseed(
-          Pointer.fromAddress(wmFfiAddr),
-          path: '',
-          password: 'pass',
-          mnemonic: mnemonic,
-          seedOffset: '',
-          newWallet: true,
-          restoreHeight: restoreHeight,
-          kdfRounds: 1,
-        ).address;
-      }),
+    final polyseedWallet = await _getWalletFromPolyseed(
+      mnemonic,
+      restoreHeight,
+      isDummy: true,
     );
-
-    final polyseedWallet = MoneroWallet(polyseedWalletPtr);
 
     final legacyError = legacyWallet.errorString();
     final polyseedError = polyseedWallet.errorString();
 
-    final walletPath = await getWalletPath();
-
     if (!legacyError.contains('word list failed verification')) {
-      final walletPtr = Pointer<Void>.fromAddress(
-        await Isolate.run(() {
-          // ignore: deprecated_member_use
-          return monero.WalletManager_recoveryWallet(
-            Pointer.fromAddress(wmFfiAddr),
-            mnemonic: mnemonic,
-            password: 'pass',
-            path: walletPath,
-            restoreHeight: restoreHeight,
-            seedOffset: passphrase,
-          ).address;
-        }),
-      );
-
-      _w2Wallet = MoneroWallet(walletPtr);
+      _w2Wallet = await _getWalletFromLegacySeed(mnemonic, restoreHeight);
     } else if (polyseedError != 'Failed polyseed decode') {
-      final walletPtr = Pointer<Void>.fromAddress(
-        await Isolate.run(() {
-          // ignore: deprecated_member_use
-          return monero.WalletManager_createWalletFromPolyseed(
-            Pointer.fromAddress(wmFfiAddr),
-            path: walletPath,
-            password: 'pass',
-            mnemonic: mnemonic,
-            seedOffset: passphrase,
-            newWallet: true,
-            restoreHeight: restoreHeight,
-            kdfRounds: 1,
-          ).address;
-        }),
-      );
-
-      _w2Wallet = MoneroWallet(walletPtr);
+      _w2Wallet = await _getWalletFromPolyseed(mnemonic, restoreHeight);
     }
 
-    final walletFfiAddr = _w2Wallet.ffiAddress();
+    if (_w2Wallet == null) {
+      throw Exception("Something went wrong when generating seed");
+    }
 
-    _w2TxHistory = MoneroTransactionHistory(
-      Pointer<Void>.fromAddress(
-        await Isolate.run(
-          // ignore: deprecated_member_use
-          () => monero.Wallet_history(
-            Pointer<Void>.fromAddress(walletFfiAddr),
-          ).address,
-        ),
-      ),
-    );
+    _w2TxHistory = _w2Wallet!.history();
 
     store();
     notifyListeners();
@@ -367,13 +503,13 @@ class WalletModel with ChangeNotifier {
       log(LogLevel.error, 'Failed to open existing wallet: $errorString');
     }
 
-    _w2TxHistory = _w2Wallet.history();
+    _w2TxHistory = _w2Wallet!.history();
 
     notifyListeners();
   }
 
   Future<bool> store() async {
-    final walletFfiAddr = _w2Wallet.ffiAddress();
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
     return Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_store(Pointer<Void>.fromAddress(walletFfiAddr)),
@@ -381,10 +517,10 @@ class WalletModel with ChangeNotifier {
   }
 
   Future delete() async {
-    _w2WalletManager.closeWallet(_w2Wallet, false);
+    _w2WalletManager.closeWallet(_w2Wallet!, false);
+    _w2Wallet = null;
     final path = await getWalletPath();
-    final walletFile = File(path);
-    await walletFile.delete();
+    await File(path).delete();
 
     final prefs = await SharedPreferences.getInstance();
     prefs.remove('txHistoryCount');
@@ -401,20 +537,68 @@ class WalletModel with ChangeNotifier {
     return exists;
   }
 
-  bool isConnected() {
-    return _w2Wallet.connected() != 0;
+  Future<bool> getIsConnected() async {
+    final w2WalletFfiAddr = _w2Wallet!.ffiAddress();
+
+    final connected = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_connected(Pointer<Void>.fromAddress(w2WalletFfiAddr)),
+    );
+
+    return connected != 0;
   }
 
-  bool isSynced() {
-    return _w2Wallet.synchronized();
+  Future<void> loadIsSynced() async {
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+    _isSynced = await Isolate.run(
+      () =>
+          // ignore: deprecated_member_use
+          monero.Wallet_synchronized(Pointer<Void>.fromAddress(walletFfiAddr)),
+    );
+  }
+
+  Future<void> loadSyncedHeight() async {
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+    _syncedHeight = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_blockChainHeight(
+        Pointer<Void>.fromAddress(walletFfiAddr),
+      ),
+    );
+  }
+
+  Future<void> loadTotalBalance() async {
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+    final amount = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_balance(
+        Pointer<Void>.fromAddress(walletFfiAddr),
+        accountIndex: 0,
+      ),
+    );
+
+    _totalBalance = doubleAmountFromInt(amount);
+  }
+
+  Future<void> loadUnlockedBalance() async {
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+    final amount = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_unlockedBalance(
+        Pointer<Void>.fromAddress(walletFfiAddr),
+        accountIndex: 0,
+      ),
+    );
+
+    _unlockedBalance = doubleAmountFromInt(amount);
   }
 
   String getPrimaryAddress() {
-    return _w2Wallet.address(accountIndex: 0);
+    return _w2Wallet!.address(accountIndex: 0);
   }
 
   Future<String> getUnusedSubaddress() async {
-    final txHistory = await getFullTxHistory();
+    final txHistory = await _getFullTxHistory();
 
     Set<int> usedIndexes = {};
 
@@ -432,19 +616,7 @@ class WalletModel with ChangeNotifier {
       nextSubaddrIndex++;
     }
 
-    return _w2Wallet.address(accountIndex: 0, addressIndex: nextSubaddrIndex);
-  }
-
-  int getSyncedHeight() {
-    return _w2Wallet.blockChainHeight();
-  }
-
-  double getTotalBalance() {
-    return doubleAmountFromInt(_w2Wallet.balance(accountIndex: 0));
-  }
-
-  double getUnlockedBalance() {
-    return doubleAmountFromInt(_w2Wallet.unlockedBalance(accountIndex: 0));
+    return _w2Wallet!.address(accountIndex: 0, addressIndex: nextSubaddrIndex);
   }
 
   Future<MoneroPendingTransaction> createTx(
@@ -452,8 +624,8 @@ class WalletModel with ChangeNotifier {
     double amount,
     bool isSweepAll,
   ) async {
-    final amountInt = _w2Wallet.amountFromDouble(amount);
-    final w2WalletFfiAddr = _w2Wallet.ffiAddress();
+    final amountInt = _w2Wallet!.amountFromDouble(amount);
+    final w2WalletFfiAddr = _w2Wallet!.ffiAddress();
 
     final txPointer = Pointer<Void>.fromAddress(
       await Isolate.run(() {
@@ -513,13 +685,13 @@ class WalletModel with ChangeNotifier {
       timestamp: (DateTime.now().millisecondsSinceEpoch / 1000).round(),
       height: 0,
       confirmations: 0,
-      key: _w2Wallet.getTxKey(txid: tx.txid('')),
+      key: _w2Wallet!.getTxKey(txid: tx.txid('')),
     );
 
     await addPendingTx(txDetails);
 
     store();
-    refresh();
+    await refresh();
   }
 
   String resolveOpenAlias(String address) {
@@ -563,7 +735,7 @@ class WalletModel with ChangeNotifier {
   }
 
   List<TxDetails> getConfirmedTxHistory() {
-    final txCount = _w2TxHistory.count();
+    final txCount = _w2TxHistory!.count();
     final List<TxDetails> confirmedTxs = [];
 
     for (int i = 0; i < txCount; i++) {
@@ -578,7 +750,7 @@ class WalletModel with ChangeNotifier {
     return confirmedTxs;
   }
 
-  Future<List<TxDetails>> getFullTxHistory() async {
+  Future<List<TxDetails>> _getFullTxHistory() async {
     final pendingTxs = await _getPendingTxs();
     final confirmedTxHistory = getConfirmedTxHistory();
 
@@ -601,15 +773,15 @@ class WalletModel with ChangeNotifier {
   }
 
   TxDetails getTxDetails(int txIndex) {
-    final tx = _w2TxHistory.transaction(txIndex);
+    final tx = _w2TxHistory!.transaction(txIndex);
     final direction = tx.direction();
     final hash = tx.hash();
     final amountSent = doubleAmountFromInt(tx.amount());
     final fee = doubleAmountFromInt(tx.fee());
     final timestamp = tx.timestamp();
     final height = tx.blockHeight();
-    final confirmations = _w2Wallet.blockChainHeight() - height + 1;
-    final key = _w2Wallet.getTxKey(txid: hash);
+    final confirmations = _w2Wallet!.blockChainHeight() - height + 1;
+    final key = _w2Wallet!.getTxKey(txid: hash);
 
     List<TxRecipient> recipients = [];
     final recipientsCount = tx.transfers_count();

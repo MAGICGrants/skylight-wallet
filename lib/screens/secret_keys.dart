@@ -12,11 +12,11 @@ class SecretKeysScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
-    final legacySeed = wallet.wallet.seed(seedOffset: '');
-    final polyseed = wallet.wallet.getPolyseed(passphrase: '');
-    final secretSpendKey = wallet.wallet.secretSpendKey();
-    final publicSpendKey = wallet.wallet.publicSpendKey();
-    final publicViewKey = wallet.wallet.publicViewKey();
+    final legacySeed = wallet.w2Wallet!.seed(seedOffset: '');
+    final polyseed = wallet.w2Wallet!.getPolyseed(passphrase: '');
+    final secretSpendKey = wallet.w2Wallet!.secretSpendKey();
+    final publicSpendKey = wallet.w2Wallet!.publicSpendKey();
+    final publicViewKey = wallet.w2Wallet!.publicViewKey();
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.secretKeysTitle)),

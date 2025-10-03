@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:monero_light_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
@@ -46,6 +47,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       }
       return;
     } catch (error) {
+      log(LogLevel.error, error.toString());
       if (mounted) {
         final i18n = AppLocalizations.of(context)!;
 

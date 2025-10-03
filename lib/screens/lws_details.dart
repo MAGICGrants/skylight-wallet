@@ -12,7 +12,7 @@ class LwsDetailsScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
     final primaryAddress = wallet.getPrimaryAddress();
-    final secretViewKey = wallet.wallet.secretViewKey();
+    final secretViewKey = wallet.w2Wallet!.secretViewKey();
     final restoreHeight = ModalRoute.of(context)!.settings.arguments as int;
 
     return Scaffold(

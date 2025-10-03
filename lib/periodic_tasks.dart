@@ -20,17 +20,17 @@ void callbackDispatcher() {
 
         await wallet.openExisting();
         await wallet.loadPersistedConnection();
-        wallet.connectToDaemon();
-        wallet.refresh();
+        await wallet.refresh();
+        await wallet.connectToDaemon();
 
-        if (!wallet.isConnected()) {
+        if (wallet.isConnected) {
           return false;
         }
 
         int itersBeforeSynced = 0;
 
         while (true) {
-          if (wallet.isSynced()) {
+          if (wallet.isSynced) {
             break;
           }
 
@@ -43,8 +43,12 @@ void callbackDispatcher() {
           }
         }
 
+        if (wallet.txHistory == null) {
+          return true;
+        }
+
         final persistedTxCount = await wallet.getPersistedTxHistoryCount();
-        final currentTxCount = await wallet.getTxHistoryCount();
+        final currentTxCount = wallet.txHistory!.length;
         final newTxCount = currentTxCount - persistedTxCount;
 
         if (newTxCount > 0 && currentTxCount != 0) {

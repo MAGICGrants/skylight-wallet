@@ -90,7 +90,7 @@ class _SendScreenState extends State<SendScreen> {
       }
 
       destinationOpenAlias = unresolvedDestinationAddress;
-    } else if (wallet.wallet.addressValid(unresolvedDestinationAddress, 0)) {
+    } else if (wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
       // check for address
       destinationAddress = unresolvedDestinationAddress;
     } else {
@@ -101,7 +101,7 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
-    if (amount > wallet.getTotalBalance()) {
+    if (amount > (wallet.totalBalance ?? 0)) {
       setState(() {
         _amountError = i18n.sendInsufficientBalanceError;
         _isLoading = false;
@@ -142,8 +142,7 @@ class _SendScreenState extends State<SendScreen> {
 
   void _setBalanceAsSendAmount() {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final unlockedBalance = wallet.getUnlockedBalance();
-    _amountController.text = unlockedBalance.toString();
+    _amountController.text = (wallet.unlockedBalance ?? 0).toString();
 
     setState(() {
       _isSweepAll = true;
@@ -163,7 +162,6 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     final wallet = context.watch<WalletModel>();
-    final unlockedBalance = wallet.getUnlockedBalance();
 
     return Scaffold(
       body: Center(
@@ -229,7 +227,7 @@ class _SendScreenState extends State<SendScreen> {
                               height: 18,
                             ),
                             MoneroAmount(
-                              amount: unlockedBalance,
+                              amount: wallet.unlockedBalance ?? 0,
                               maxFontSize: 18,
                             ),
                           ],

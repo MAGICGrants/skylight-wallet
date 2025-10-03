@@ -180,8 +180,6 @@ class WalletModel with ChangeNotifier {
       return;
     }
 
-    print('im still alive 1');
-
     final isConnected = await getIsConnected();
 
     if (isConnected != _isConnected) {
@@ -194,8 +192,6 @@ class WalletModel with ChangeNotifier {
     if (_w2Wallet == null) {
       return;
     }
-
-    print('im still alive 2');
 
     await refresh();
     await loadAllStats().timeout(Duration(seconds: 20));

@@ -106,7 +106,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
             TorService.sharedInstance.status ==
                 TorConnectionStatus.connecting ||
         !wallet.hasAttemptedConnection ||
-        wallet.isConnected && !wallet.isSynced) {
+        wallet.isConnected && !wallet.isSynced ||
+        wallet.isConnected &&
+            wallet.isSynced &&
+            (wallet.syncedHeight ?? 0) == 0) {
       connectionStatus = LwsConnectionStatus.connecting;
     }
 

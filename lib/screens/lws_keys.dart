@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/util/height.dart';
 
 class LwsKeysScreen extends StatefulWidget {
   const LwsKeysScreen({super.key});
@@ -24,18 +23,11 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> {
 
   Future<void> _loadRestoreHeight() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final restoreHeight = wallet.w2Wallet!.getRefreshFromBlockHeight();
+    final restoreHeight = await wallet.getRestoreHeight();
 
-    if (restoreHeight > 0) {
-      setState(() {
-        _restoreHeight = _restoreHeight;
-      });
-    } else {
-      final currentHeight = await getCurrentBlockchainHeight();
-      setState(() {
-        _restoreHeight = currentHeight;
-      });
-    }
+    setState(() {
+      _restoreHeight = restoreHeight;
+    });
   }
 
   @override

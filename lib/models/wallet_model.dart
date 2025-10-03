@@ -284,13 +284,17 @@ class WalletModel with ChangeNotifier {
       );
     }
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt('txHistoryCount', _txHistory!.length);
+    await SharedPreferencesService.set<int>(
+      SharedPreferencesKeys.txHistoryCount,
+      _txHistory!.length,
+    );
   }
 
   Future<int> getPersistedTxHistoryCount() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('txHistoryCount') ?? 0;
+    return await SharedPreferencesService.get<int>(
+          SharedPreferencesKeys.txHistoryCount,
+        ) ??
+        0;
   }
 
   void setConnection({
@@ -387,11 +391,28 @@ class WalletModel with ChangeNotifier {
     final polyseed = await Isolate.run(() => monero.Wallet_createPolyseed());
     final currentHeight = await getCurrentBlockchainHeight();
     await restoreFromMnemonic(polyseed, currentHeight);
+    await SharedPreferencesService.set<int>(
+      SharedPreferencesKeys.walletRestoreHeight,
+      currentHeight,
+    );
     await refresh();
     await connectToDaemon();
-    store();
+    await store();
 
     return polyseed;
+  }
+
+  Future<int> getRestoreHeight() async {
+    var w2RestoreHeight = _w2Wallet!.getRefreshFromBlockHeight();
+
+    if (w2RestoreHeight > 0) {
+      return w2RestoreHeight;
+    }
+
+    return await SharedPreferencesService.get<int>(
+          SharedPreferencesKeys.walletRestoreHeight,
+        ) ??
+        0;
   }
 
   Future<int> getCurrentHeight() {
@@ -518,8 +539,10 @@ class WalletModel with ChangeNotifier {
     final path = await getWalletPath();
     await File(path).delete();
 
-    final prefs = await SharedPreferences.getInstance();
-    prefs.remove('txHistoryCount');
+    await SharedPreferencesService.remove(SharedPreferencesKeys.txHistoryCount);
+    await SharedPreferencesService.remove(
+      SharedPreferencesKeys.walletRestoreHeight,
+    );
   }
 
   Future<bool> hasExistingWallet() async {

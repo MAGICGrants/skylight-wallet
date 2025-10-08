@@ -55,6 +55,14 @@ class _SendScreenState extends State<SendScreen> {
     }
   }
 
+  void _pasteAddressFromClipboard() async {
+    ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+
+    if (data != null) {
+      _destinationAddressController.text = data.text ?? '';
+    }
+  }
+
   Future<void> _send() async {
     final amount = double.parse(_amountController.text);
 
@@ -197,15 +205,27 @@ class _SendScreenState extends State<SendScreen> {
               ),
               TextField(
                 controller: _destinationAddressController,
+                maxLines: null,
                 decoration: InputDecoration(
                   labelText: i18n.address,
                   border: OutlineInputBorder(),
                   errorText: _destinationAddressError != ''
                       ? _destinationAddressError
                       : null,
-                  suffixIcon: IconButton(
-                    onPressed: () => Navigator.pushNamed(context, '/scan_qr'),
-                    icon: Icon(Icons.qr_code),
+                  suffixIcon: Row(
+                    spacing: 0,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: _pasteAddressFromClipboard,
+                        icon: Icon(Icons.paste),
+                      ),
+                      IconButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/scan_qr'),
+                        icon: Icon(Icons.qr_code),
+                      ),
+                    ],
                   ),
                 ),
               ),

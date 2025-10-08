@@ -68,6 +68,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     if (_useTor) {
       await TorService.sharedInstance.start();
+      await TorService.sharedInstance.waitUntilConnected();
       torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
     }
 

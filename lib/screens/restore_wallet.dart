@@ -83,7 +83,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
                 i18n.restoreWalletDescription,
                 textAlign: TextAlign.center,
@@ -105,7 +105,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: TextFormField(
                 controller: _restoreHeightController,
                 keyboardType: TextInputType.number,

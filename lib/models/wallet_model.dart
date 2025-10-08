@@ -21,6 +21,7 @@ import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/height.dart';
 import 'package:monero_light_wallet/util/logging.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
+import 'package:monero_light_wallet/util/wallet_password.dart';
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -438,11 +439,16 @@ class WalletModel with ChangeNotifier {
     });
   }
 
-  Future<MoneroWallet> _getWalletFromLegacySeed(
-    String mnemonic,
-    int restoreHeight, {
+  Future<MoneroWallet> _getWalletFromLegacySeed({
+    required String mnemonic,
+    required int restoreHeight,
+    required String password,
     bool isDummy = false,
   }) async {
+    if (!isDummy && password == '') {
+      throw Exception('Password should not be empty.');
+    }
+
     final wmFfiAddr = _w2WalletManager.ffiAddress();
     final walletPath = await getWalletPath();
 
@@ -453,7 +459,7 @@ class WalletModel with ChangeNotifier {
         mnemonic: mnemonic,
         seedOffset: '',
         restoreHeight: restoreHeight,
-        password: 'pass',
+        password: password,
         path: isDummy ? '' : walletPath,
       ).address;
     });
@@ -461,11 +467,16 @@ class WalletModel with ChangeNotifier {
     return MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
   }
 
-  Future<MoneroWallet> _getWalletFromPolyseed(
-    String mnemonic,
-    int restoreHeight, {
+  Future<MoneroWallet> _getWalletFromPolyseed({
+    required String mnemonic,
+    required int restoreHeight,
+    required String password,
     bool isDummy = false,
   }) async {
+    if (!isDummy && password == '') {
+      throw Exception('Password should not be empty.');
+    }
+
     final wmFfiAddr = _w2WalletManager.ffiAddress();
     final walletPath = await getWalletPath();
 
@@ -477,7 +488,7 @@ class WalletModel with ChangeNotifier {
         seedOffset: '',
         restoreHeight: restoreHeight,
         path: isDummy ? '' : walletPath,
-        password: 'pass',
+        password: password,
         newWallet: true,
         kdfRounds: 1,
       ).address;
@@ -492,44 +503,69 @@ class WalletModel with ChangeNotifier {
     String passphrase = '',
   ]) async {
     final legacyWallet = await _getWalletFromLegacySeed(
-      mnemonic,
-      restoreHeight,
+      mnemonic: mnemonic,
+      restoreHeight: restoreHeight,
+      password: '',
       isDummy: true,
     );
 
     final polyseedWallet = await _getWalletFromPolyseed(
-      mnemonic,
-      restoreHeight,
+      mnemonic: mnemonic,
+      restoreHeight: restoreHeight,
+      password: '',
       isDummy: true,
     );
 
     final legacyError = legacyWallet.errorString();
     final polyseedError = polyseedWallet.errorString();
 
+    final walletPassword = genWalletPassword();
+
     if (!legacyError.contains('word list failed verification')) {
-      _w2Wallet = await _getWalletFromLegacySeed(mnemonic, restoreHeight);
+      _w2Wallet = await _getWalletFromLegacySeed(
+        mnemonic: mnemonic,
+        restoreHeight: restoreHeight,
+        password: walletPassword,
+      );
     } else if (polyseedError != 'Failed polyseed decode') {
-      _w2Wallet = await _getWalletFromPolyseed(mnemonic, restoreHeight);
+      _w2Wallet = await _getWalletFromPolyseed(
+        mnemonic: mnemonic,
+        restoreHeight: restoreHeight,
+        password: walletPassword,
+      );
     }
 
     if (_w2Wallet == null) {
       throw Exception("Something went wrong when generating seed");
     }
 
+    await storeWalletPassword(walletPassword);
+
     _w2TxHistory = _w2Wallet!.history();
 
-    store();
+    await store();
     notifyListeners();
   }
 
-  Future openExisting() async {
+  Future<void> openExisting() async {
     final path = await getWalletPath();
 
-    _w2Wallet = _w2WalletManager.openWallet(path: path, password: 'pass');
+    final password = await getWalletPassword();
+
+    if (password == null) {
+      final errorMsg =
+          'Failed to open existing wallet: could not get password.';
+      log(LogLevel.error, errorMsg);
+      throw Exception(errorMsg);
+    }
+
+    _w2Wallet = _w2WalletManager.openWallet(path: path, password: password);
     final errorString = _w2WalletManager.errorString();
 
     if (errorString != '') {
-      log(LogLevel.error, 'Failed to open existing wallet: $errorString');
+      final errorMsg = 'Failed to open existing wallet: $errorString';
+      log(LogLevel.error, errorMsg);
+      throw Exception(errorMsg);
     }
 
     _w2TxHistory = _w2Wallet!.history();

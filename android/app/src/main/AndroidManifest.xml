@@ -6,7 +6,9 @@
     <application
         android:label="monero_light_wallet"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
+        
         
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

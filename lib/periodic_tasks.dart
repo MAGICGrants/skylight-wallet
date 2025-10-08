@@ -52,7 +52,7 @@ Future<bool> runTxNotifier() async {
 
   final persistedTxCount = await wallet.getPersistedTxHistoryCount();
   final currentTxCount = wallet.txHistory.length;
-  final countOfNewTxs = currentTxCount - persistedTxCount + 1; // REMOVE THIS
+  final countOfNewTxs = currentTxCount - persistedTxCount;
 
   if (countOfNewTxs > 0 && currentTxCount != 0) {
     log(LogLevel.info, '[TX Notifier] Found new transactions');

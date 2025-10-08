@@ -500,6 +500,12 @@ abstract class AppLocalizations {
   /// **'Insufficient balance.'**
   String get sendInsufficientBalanceError;
 
+  /// No description provided for @sendInsufficientBalanceToCoverFeeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient balance to cover the network fee.'**
+  String get sendInsufficientBalanceToCoverFeeError;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:

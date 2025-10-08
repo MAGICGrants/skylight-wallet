@@ -221,6 +221,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInsufficientBalanceError => 'Insufficient balance.';
 
   @override
+  String get sendInsufficientBalanceToCoverFeeError =>
+      'Insufficient balance to cover the network fee.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

@@ -55,18 +55,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final isAllowed = await NotificationService().promptPermission();
 
       if (isAllowed) {
-        startNewTransactionsCheckTask();
         await SharedPreferencesService.set<bool>(
           SharedPreferencesKeys.notificationsEnabled,
           true,
         );
+        await registerTxNotifierTaskIfEnabled();
       }
     } else {
-      cancelNewTransactionsCheckTask();
       await SharedPreferencesService.set<bool>(
         SharedPreferencesKeys.notificationsEnabled,
         false,
       );
+      await unregisterTxNotifierTask();
     }
   }
 

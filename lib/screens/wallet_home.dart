@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,11 +8,8 @@ import 'package:monero_light_wallet/widgets/monero_amount.dart';
 import 'package:monero_light_wallet/widgets/status_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:workmanager/workmanager.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
-import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/consts.dart' as consts;
 import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
@@ -31,9 +27,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void initState() {
     super.initState();
-
-    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
-    _initNewTxsCheckIfNeeded();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final Map<String, dynamic>? args =
@@ -59,22 +52,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     Navigator.pushNamed(context, '/tx_details', arguments: txDetails);
   }
 
-  Future<void> _initNewTxsCheckIfNeeded() async {
-    final notificationsEnabled =
-        await SharedPreferencesService.get<bool>(
-          SharedPreferencesKeys.notificationsEnabled,
-        ) ??
-        false;
-
-    final taskIsRunning = await Workmanager().isScheduledByUniqueName(
-      PeriodicTasks.newTransactionsCheck,
-    );
-
-    if (notificationsEnabled && !taskIsRunning) {
-      await startNewTransactionsCheckTask();
-    }
-  }
-
   void _showTxSuccessToast() {
     final i18n = AppLocalizations.of(context)!;
 
@@ -96,12 +73,13 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final lockedBalance =
         (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
-    var connectionStatus = LwsConnectionStatus.disconnected;
+    var lwsConnectionIconStatus = StatusIconStatus.fail;
+    var fiatApiIconStatus = StatusIconStatus.loading;
 
     if (wallet.isConnected &&
         wallet.isSynced &&
         (wallet.syncedHeight ?? 0) > 0) {
-      connectionStatus = LwsConnectionStatus.connected;
+      lwsConnectionIconStatus = StatusIconStatus.complete;
     } else if (wallet.usingTor &&
             TorService.sharedInstance.status ==
                 TorConnectionStatus.connecting ||
@@ -110,7 +88,15 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         wallet.isConnected &&
             wallet.isSynced &&
             (wallet.syncedHeight ?? 0) == 0) {
-      connectionStatus = LwsConnectionStatus.connecting;
+      lwsConnectionIconStatus = StatusIconStatus.loading;
+    }
+
+    if (fiatRate.rate is double &&
+        !fiatRate.hasFailed &&
+        TorService.sharedInstance.status == TorConnectionStatus.connected) {
+      fiatApiIconStatus = StatusIconStatus.complete;
+    } else if (fiatRate.hasFailed) {
+      fiatApiIconStatus = StatusIconStatus.fail;
     }
 
     return Scaffold(
@@ -136,8 +122,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                           child: Column(
                             spacing: 10,
                             children: [
-                              if (connectionStatus ==
-                                  LwsConnectionStatus.connected)
+                              // TODO: this can be made better
+                              if (!wallet.usingTor &&
+                                  lwsConnectionIconStatus ==
+                                      StatusIconStatus.complete)
                                 SizedBox(
                                   width: 26,
                                   height: 26,
@@ -147,9 +135,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                     color: Colors.teal,
                                   ),
                                 ),
-
-                              if (connectionStatus ==
-                                  LwsConnectionStatus.connecting)
+                              if (!wallet.usingTor &&
+                                  lwsConnectionIconStatus ==
+                                      StatusIconStatus.loading)
                                 SizedBox(
                                   width: 22,
                                   height: 22,
@@ -161,25 +149,25 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                                     strokeWidth: 2,
                                   ),
                                 ),
-
-                              if (connectionStatus ==
-                                  LwsConnectionStatus.disconnected)
+                              if (!wallet.usingTor &&
+                                  lwsConnectionIconStatus ==
+                                      StatusIconStatus.fail)
                                 SizedBox(
                                   width: 26,
                                   height: 26,
                                   child: Icon(Icons.cancel, color: Colors.red),
                                 ),
-
+                              if (wallet.usingTor)
+                                StatusIcon(
+                                  status: lwsConnectionIconStatus,
+                                  child: SvgPicture.asset(
+                                    'assets/icons/tor.svg',
+                                    width: 22,
+                                    height: 22,
+                                  ),
+                                ),
                               StatusIcon(
-                                status:
-                                    fiatRate.rate is double &&
-                                        !fiatRate.hasFailed &&
-                                        TorService.sharedInstance.status ==
-                                            TorConnectionStatus.connected
-                                    ? StatusIconStatus.complete
-                                    : fiatRate.hasFailed
-                                    ? StatusIconStatus.fail
-                                    : StatusIconStatus.loading,
+                                status: fiatApiIconStatus,
                                 child: SvgPicture.asset(
                                   'assets/icons/tor.svg',
                                   width: 22,
@@ -269,14 +257,14 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 ),
               ),
             ),
-            if (wallet.txHistory != null && wallet.txHistory!.isNotEmpty)
+            if (wallet.txHistory.isNotEmpty)
               Expanded(
                 child: SizedBox(
                   child: ListView.separated(
                     separatorBuilder: (context, index) => Divider(),
-                    itemCount: wallet.txHistory!.length,
+                    itemCount: wallet.txHistory.length,
                     itemBuilder: (BuildContext context, int index) {
-                      final tx = wallet.txHistory![index];
+                      final tx = wallet.txHistory[index];
                       final amountFiat = fiatRate.rate is double
                           ? tx.amount * fiatRate.rate!
                           : null;
@@ -379,9 +367,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                   ),
                 ),
               ),
-            if (wallet.txHistory != null && wallet.txHistory!.isEmpty)
-              Text(i18n.homeNoTransactions),
-            if (wallet.txHistory == null) CircularProgressIndicator(),
+            if (wallet.txHistory.isEmpty) Text(i18n.homeNoTransactions),
           ],
         ),
       ),

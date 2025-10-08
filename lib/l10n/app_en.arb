@@ -67,6 +67,7 @@
   "sendOpenAliasResolveError": "Invalid OpenAlias.",
   "sendInvalidAddressError": "Invalid address.",
   "sendInsufficientBalanceError": "Insufficient balance.",
+  "sendInsufficientBalanceToCoverFeeError": "Insufficient balance to cover the network fee.",
   "settingsTitle": "Settings",
   "settingsNotifyNewTxs": "Notify New Transactions",
   "settingsLanguageLabel": "Language",

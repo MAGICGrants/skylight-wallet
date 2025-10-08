@@ -67,6 +67,7 @@
   "sendOpenAliasResolveError": "OpenAlias inválido.",
   "sendInvalidAddressError": "Endereço inválido.",
   "sendInsufficientBalanceError": "Saldo insuficiente.",
+  "sendInsufficientBalanceToCoverFeeError": "Saldo insuficiente para cobrir a taxa da rede.",
   "settingsTitle": "Configurações",
   "settingsNotifyNewTxs": "Notificar Novas Transações",
   "settingsLanguageLabel": "Idioma",

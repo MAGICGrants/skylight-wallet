@@ -20,11 +20,7 @@ Future<int> getCurrentBlockchainHeight() async {
 
   for (String url in urls) {
     try {
-      final response = await makeSocksHttpRequest(
-        'GET',
-        url,
-        proxyInfo,
-      ).timeout(Duration(seconds: 30));
+      final response = await makeSocksHttpRequest('GET', url, proxyInfo);
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);

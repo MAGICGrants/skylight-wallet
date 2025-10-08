@@ -5,6 +5,7 @@ import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/fiat_rate_model.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 import 'package:monero_light_wallet/util/formatting.dart';
+import 'package:monero_light_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 
 class ConfirmSendScreenArgs {
@@ -105,16 +106,20 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
         );
       }
     } on FormatException catch (error) {
+      var errorMsg = error.toString().replaceFirst('FormatException: ', '');
+
+      if (error.toString().contains('HTTP error code 500')) {
+        errorMsg =
+            'Failed to send transaction. You might have insufficient unlocked balance.';
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              error.toString().replaceFirst('FormatException: ', ''),
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     } catch (error) {
+      log(LogLevel.error, error.toString());
       if (mounted) {
         ScaffoldMessenger.of(
           context,

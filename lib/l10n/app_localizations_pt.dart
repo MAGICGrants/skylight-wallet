@@ -221,6 +221,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendInsufficientBalanceError => 'Saldo insuficiente.';
 
   @override
+  String get sendInsufficientBalanceToCoverFeeError =>
+      'Saldo insuficiente para cobrir a taxa da rede.';
+
+  @override
   String get settingsTitle => 'Configurações';
 
   @override

@@ -10,6 +10,9 @@ import 'dart:isolate';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:monero/monero.dart' as monero;
+import 'package:monero/src/monero.dart';
+import 'package:monero/src/wallet2.dart';
 
 import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
@@ -18,9 +21,6 @@ import 'package:monero_light_wallet/util/formatting.dart';
 import 'package:monero_light_wallet/util/height.dart';
 import 'package:monero_light_wallet/util/logging.dart';
 import 'package:monero_light_wallet/util/wallet.dart';
-import 'package:monero/monero.dart' as monero;
-import 'package:monero/src/monero.dart';
-import 'package:monero/src/wallet2.dart';
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -143,7 +143,7 @@ class WalletModel with ChangeNotifier {
   int? _syncedHeight;
   double? _unlockedBalance;
   double? _totalBalance;
-  List<TxDetails>? _txHistory = [];
+  List<TxDetails> _txHistory = [];
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
@@ -152,7 +152,7 @@ class WalletModel with ChangeNotifier {
   int? get syncedHeight => _syncedHeight;
   double? get unlockedBalance => _unlockedBalance;
   double? get totalBalance => _totalBalance;
-  List<TxDetails>? get txHistory => _txHistory;
+  List<TxDetails> get txHistory => _txHistory;
   bool get usingTor => _connectionUseTor;
 
   WalletModel() {
@@ -164,8 +164,6 @@ class WalletModel with ChangeNotifier {
   }
 
   void _startTimers() {
-    log(LogLevel.info, "Starting timers");
-
     Timer.periodic(Duration(seconds: 1), (timer) {
       _runCheckConnectionTimerTask();
     });
@@ -209,17 +207,33 @@ class WalletModel with ChangeNotifier {
       loadSyncedHeight(),
       loadUnlockedBalance(),
       loadTotalBalance(),
-      _loadTxHistory(),
+      loadTxHistory(),
     ]);
 
     notifyListeners();
   }
 
-  Future<void> _loadTxHistory() async {
+  Future<void> loadTxHistory({bool persistCount = true}) async {
     final txCount = _w2TxHistory!.count();
+    var hasPendingTx = false;
+    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
 
-    if (_txHistory == null || txCount > _txHistory!.length) {
+    if (pendingOutgoingTxs.isNotEmpty) {
+      hasPendingTx = true;
+    } else if (_txHistory.isNotEmpty) {
+      final lastTx = txHistory[0];
+
+      if (lastTx.confirmations < 10) {
+        hasPendingTx = true;
+      }
+    }
+
+    if (txCount > _txHistory.length || hasPendingTx) {
       _txHistory = await _getFullTxHistory();
+
+      if (persistCount) {
+        await persistTxHistoryCount();
+      }
     }
   }
 
@@ -278,15 +292,13 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<void> persistTxHistoryCount() async {
-    if (_txHistory == null) {
-      throw Exception(
-        "Should not attempt to persist tx history count when tx history is null",
-      );
+    if (_txHistory.isEmpty) {
+      return;
     }
 
     await SharedPreferencesService.set<int>(
       SharedPreferencesKeys.txHistoryCount,
-      _txHistory!.length,
+      _txHistory.length,
     );
   }
 
@@ -536,6 +548,13 @@ class WalletModel with ChangeNotifier {
   Future delete() async {
     _w2WalletManager.closeWallet(_w2Wallet!, false);
     _w2Wallet = null;
+    _hasAttemptedConnection = false;
+    _isConnected = false;
+    _isSynced = false;
+    _syncedHeight = null;
+    _unlockedBalance = null;
+    _totalBalance = null;
+    _txHistory = [];
     final path = await getWalletPath();
     await File(path).delete();
 
@@ -661,7 +680,13 @@ class WalletModel with ChangeNotifier {
       }),
     );
 
-    return MoneroPendingTransaction(txPointer);
+    final pendingTx = MoneroPendingTransaction(txPointer);
+
+    if (pendingTx.errorString() != '') {
+      throw Exception(pendingTx.errorString());
+    }
+
+    return pendingTx;
   }
 
   Future<void> commitTx(
@@ -707,10 +732,9 @@ class WalletModel with ChangeNotifier {
       key: _w2Wallet!.getTxKey(txid: tx.txid('')),
     );
 
-    await addPendingTx(txDetails);
-
-    store();
+    await addPendingOutgoingTx(txDetails);
     await refresh();
+    await loadTxHistory();
   }
 
   String resolveOpenAlias(String address) {
@@ -720,29 +744,33 @@ class WalletModel with ChangeNotifier {
     );
   }
 
-  Future<void> addPendingTx(TxDetails tx) async {
-    final pendingTxs = await _getPendingTxs();
-    pendingTxs.add(tx);
-    _persistPendingTxs(pendingTxs);
+  Future<void> addPendingOutgoingTx(TxDetails tx) async {
+    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
+    pendingOutgoingTxs.add(tx);
+    await _persistPendingOutgoingTxs(pendingOutgoingTxs);
   }
 
-  Future<void> _removePendingTx(String hash) async {
-    final pendingTxs = await _getPendingTxs();
-    pendingTxs.removeWhere((tx) => tx.hash == hash);
-    _persistPendingTxs(pendingTxs);
+  Future<void> _removePendingOutgoingTx(String hash) async {
+    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
+    pendingOutgoingTxs.removeWhere((tx) => tx.hash == hash);
+    _persistPendingOutgoingTxs(pendingOutgoingTxs);
   }
 
-  Future<void> _persistPendingTxs(List<TxDetails> pendingTxs) async {
+  Future<void> _persistPendingOutgoingTxs(List<TxDetails> txs) async {
+    final txsJson = txs.map((tx) => json.encode(tx)).toList();
     final prefs = await SharedPreferences.getInstance();
-    final txsJson = pendingTxs.map((tx) => json.encode(tx)).toList();
-    await prefs.setStringList('pendingTxs', txsJson);
+    await prefs.setStringList(
+      SharedPreferencesKeys.pendingOutgoingTxs,
+      txsJson,
+    );
   }
 
-  Future<List<TxDetails>> _getPendingTxs() async {
+  Future<List<TxDetails>> _getPendingOutgoingTxs() async {
     final prefs = await SharedPreferences.getInstance();
-    final txsJson = prefs.getStringList('pendingTxs') ?? [];
+    final txsJson =
+        prefs.getStringList(SharedPreferencesKeys.pendingOutgoingTxs) ?? [];
 
-    final pendingTxs = txsJson
+    final txs = txsJson
         .map(
           (jsonString) => TxDetails.fromJson(
             json.decode(jsonString) as Map<String, dynamic>,
@@ -750,10 +778,20 @@ class WalletModel with ChangeNotifier {
         )
         .toList();
 
-    return pendingTxs;
+    return txs;
   }
 
-  List<TxDetails> getConfirmedTxHistory() {
+  Future<double> getPendingOutgoingTxsAmountSum() async {
+    final txs = await _getPendingOutgoingTxs();
+
+    final amountSum = txs
+        .map((tx) => tx.amount + tx.fee)
+        .reduce((value, el) => value + el);
+
+    return amountSum;
+  }
+
+  List<TxDetails> _getConfirmedTxHistory() {
     final txCount = _w2TxHistory!.count();
     final List<TxDetails> confirmedTxs = [];
 
@@ -770,19 +808,19 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<List<TxDetails>> _getFullTxHistory() async {
-    final pendingTxs = await _getPendingTxs();
-    final confirmedTxHistory = getConfirmedTxHistory();
+    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
+    final confirmedTxHistory = _getConfirmedTxHistory();
 
     final confirmedTxMap = {for (var tx in confirmedTxHistory) tx.hash: tx};
     final fullTxHistory = <TxDetails>[];
 
     fullTxHistory.addAll(confirmedTxHistory);
 
-    for (final pendingTx in pendingTxs) {
-      if (confirmedTxMap.containsKey(pendingTx.hash)) {
-        _removePendingTx(pendingTx.hash);
+    for (final pendingOutgoingTx in pendingOutgoingTxs) {
+      if (confirmedTxMap.containsKey(pendingOutgoingTx.hash)) {
+        _removePendingOutgoingTx(pendingOutgoingTx.hash);
       } else {
-        fullTxHistory.add(pendingTx);
+        fullTxHistory.add(pendingOutgoingTx);
       }
     }
 

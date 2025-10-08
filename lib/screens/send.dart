@@ -101,7 +101,7 @@ class _SendScreenState extends State<SendScreen> {
       return;
     }
 
-    if (amount > (wallet.totalBalance ?? 0)) {
+    if (amount > (wallet.unlockedBalance ?? 0)) {
       setState(() {
         _amountError = i18n.sendInsufficientBalanceError;
         _isLoading = false;
@@ -128,10 +128,22 @@ class _SendScreenState extends State<SendScreen> {
         );
       }
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+      if (error.toString().contains('Unlocked funds too low')) {
+        if (wallet.unlockedBalance! > amount) {
+          setState(() {
+            _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
+          });
+        } else {
+          setState(() {
+            _amountError = i18n.sendInsufficientBalanceError;
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+        }
       }
     }
 
@@ -149,8 +161,16 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
-  void _onSendAmountChanged() {
-    if (_isSweepAll) {
+  void _onSendAmountChanged(double amount) {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+
+    if (amount == wallet.unlockedBalance! && !_isSweepAll) {
+      setState(() {
+        _isSweepAll = true;
+      });
+    }
+
+    if (amount != wallet.unlockedBalance! && _isSweepAll) {
       setState(() {
         _isSweepAll = false;
       });
@@ -194,7 +214,8 @@ class _SendScreenState extends State<SendScreen> {
                 children: [
                   TextField(
                     controller: _amountController,
-                    onChanged: (value) => _onSendAmountChanged(),
+                    onChanged: (value) =>
+                        _onSendAmountChanged(double.parse(value)),
                     keyboardType: TextInputType.numberWithOptions(
                       decimal: true,
                     ),

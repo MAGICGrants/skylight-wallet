@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/screens/confirm_send.dart';
 import 'package:monero_light_wallet/widgets/monero_amount.dart';
-import 'package:provider/provider.dart';
 import 'package:monero_light_wallet/models/wallet_model.dart';
 
 class SendScreenArgs {

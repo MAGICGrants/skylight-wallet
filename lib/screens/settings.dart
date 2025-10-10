@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:monero_light_wallet/util/logging.dart';
+import 'package:provider/provider.dart';
+import 'package:local_auth/local_auth.dart';
+
 import 'package:monero_light_wallet/consts.dart';
 import 'package:monero_light_wallet/l10n/app_localizations.dart';
 import 'package:monero_light_wallet/models/fiat_rate_model.dart';
@@ -8,7 +12,6 @@ import 'package:monero_light_wallet/periodic_tasks.dart';
 import 'package:monero_light_wallet/services/notifications_service.dart';
 import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
-import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
   var _fiatCurrency = 'USD';
+  var _appLockEnabled = false;
 
   @override
   void initState() {
@@ -40,13 +44,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ) ??
         'USD';
 
+    final appLockEnabled =
+        await SharedPreferencesService.get<bool>(
+          SharedPreferencesKeys.appLockEnabled,
+        ) ??
+        false;
+
     setState(() {
       _newTxNotificationsEnabled = newTxNotificationsEnabled;
       _fiatCurrency = fiatCurrency;
+      _appLockEnabled = appLockEnabled;
     });
   }
 
-  void _setNewTxNotifications(bool value) async {
+  void _setTxNotificationsEnabled(bool value) async {
     setState(() {
       _newTxNotificationsEnabled = value;
     });
@@ -68,6 +79,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       await unregisterTxNotifierTask();
     }
+  }
+
+  void _setAppLockEnabled(bool value) async {
+    final i18n = AppLocalizations.of(context)!;
+
+    if (value) {
+      final auth = LocalAuthentication();
+
+      try {
+        final didAuthenticate = await auth.authenticate(
+          localizedReason: i18n.settingsAppLockUnlockReason,
+          options: AuthenticationOptions(
+            useErrorDialogs: true,
+            sensitiveTransaction: true,
+          ),
+        );
+
+        if (!didAuthenticate) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)),
+            );
+          }
+          return;
+        }
+      } catch (error) {
+        log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)),
+          );
+        }
+        return;
+      }
+    }
+
+    setState(() {
+      _appLockEnabled = value;
+    });
+
+    await SharedPreferencesService.set<bool>(
+      SharedPreferencesKeys.appLockEnabled,
+      value,
+    );
   }
 
   void _setFiatCurrency(String? value) async {
@@ -224,11 +280,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(i18n.settingsNotifyNewTxs, style: TextStyle(fontSize: 18)),
+                Text(
+                  i18n.settingsNotifyNewTxsLabel,
+                  style: TextStyle(fontSize: 18),
+                ),
                 Switch(
                   value: _newTxNotificationsEnabled,
-                  onChanged: _setNewTxNotifications,
+                  onChanged: _setTxNotificationsEnabled,
                 ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(i18n.settingsAppLockLabel, style: TextStyle(fontSize: 18)),
+                Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
               ],
             ),
             Row(

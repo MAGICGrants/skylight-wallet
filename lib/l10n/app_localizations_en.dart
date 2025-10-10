@@ -152,6 +152,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navigationBarKeys => 'Keys';
 
   @override
+  String get unlockButton => 'Unlock';
+
+  @override
+  String get unlockReason => 'Unlock wallet';
+
+  @override
+  String get unlockUnableToAuthError => 'Unable to authenticate.';
+
+  @override
   String get homeConnecting => 'Connecting';
 
   @override
@@ -228,7 +237,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get settingsNotifyNewTxs => 'Notify New Transactions';
+  String get settingsNotifyNewTxsLabel => 'Notify New Transactions';
+
+  @override
+  String get settingsAppLockLabel => 'App Lock';
+
+  @override
+  String get settingsAppLockUnlockReason => 'Unlock wallet';
+
+  @override
+  String get settingsAppLockUnableToAuthError => 'Unable to authenticate.';
 
   @override
   String get settingsLanguageLabel => 'Language';

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monero_light_wallet/periodic_tasks.dart';
+import 'package:monero_light_wallet/screens/unlock.dart';
+import 'package:monero_light_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -73,8 +75,22 @@ class MyApp extends StatelessWidget {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done &&
                   snapshot.data != null) {
+                final sharedPreferences =
+                    snapshot.data![0] as SharedPreferences;
                 final walletExists = snapshot.data![1] as bool;
-                final initialRoute = walletExists ? '/wallet_home' : '/welcome';
+
+                final appLockEnabled =
+                    sharedPreferences.getBool(
+                      SharedPreferencesKeys.appLockEnabled,
+                    ) ??
+                    false;
+
+                final initialRoute = walletExists
+                    ? appLockEnabled
+                          ? '/unlock'
+                          : '/wallet_home'
+                    : '/welcome';
+
                 TorService.sharedInstance.start();
 
                 if (walletExists) {
@@ -105,6 +121,7 @@ class MyApp extends StatelessWidget {
                     '/lws_details': (context) => LwsDetailsScreen(),
                     '/restore_warning': (context) => RestoreWarningScreen(),
                     '/restore_wallet': (context) => RestoreWalletScreen(),
+                    '/unlock': (context) => UnlockScreen(),
                     '/wallet_home': (context) => WalletHomeScreen(),
                     '/settings': (context) => SettingsScreen(),
                     '/lws_keys': (context) => LwsKeysScreen(),

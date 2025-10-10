@@ -368,6 +368,24 @@ abstract class AppLocalizations {
   /// **'Keys'**
   String get navigationBarKeys;
 
+  /// No description provided for @unlockButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get unlockButton;
+
+  /// No description provided for @unlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock wallet'**
+  String get unlockReason;
+
+  /// No description provided for @unlockUnableToAuthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to authenticate.'**
+  String get unlockUnableToAuthError;
+
   /// No description provided for @homeConnecting.
   ///
   /// In en, this message translates to:
@@ -512,11 +530,29 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
-  /// No description provided for @settingsNotifyNewTxs.
+  /// No description provided for @settingsNotifyNewTxsLabel.
   ///
   /// In en, this message translates to:
   /// **'Notify New Transactions'**
-  String get settingsNotifyNewTxs;
+  String get settingsNotifyNewTxsLabel;
+
+  /// No description provided for @settingsAppLockLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'App Lock'**
+  String get settingsAppLockLabel;
+
+  /// No description provided for @settingsAppLockUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock wallet'**
+  String get settingsAppLockUnlockReason;
+
+  /// No description provided for @settingsAppLockUnableToAuthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to authenticate.'**
+  String get settingsAppLockUnableToAuthError;
 
   /// No description provided for @settingsLanguageLabel.
   ///

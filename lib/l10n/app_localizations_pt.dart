@@ -152,6 +152,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navigationBarKeys => 'Chaves';
 
   @override
+  String get unlockButton => 'Desbloquear';
+
+  @override
+  String get unlockReason => 'Desbloquear carteira';
+
+  @override
+  String get unlockUnableToAuthError => 'Não foi possível autenticar.';
+
+  @override
   String get homeConnecting => 'Conectando';
 
   @override
@@ -228,7 +237,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsTitle => 'Configurações';
 
   @override
-  String get settingsNotifyNewTxs => 'Notificar Novas Transações';
+  String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
+
+  @override
+  String get settingsAppLockLabel => 'Desbloqueio com PIN/Biometria';
+
+  @override
+  String get settingsAppLockUnlockReason => 'Desbloquear carteira';
+
+  @override
+  String get settingsAppLockUnableToAuthError => 'Não foi possível autenticar.';
 
   @override
   String get settingsLanguageLabel => 'Idioma';

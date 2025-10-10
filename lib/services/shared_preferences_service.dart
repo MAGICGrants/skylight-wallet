@@ -5,6 +5,7 @@ class SharedPreferencesKeys {
   static const String fiatCurrency = 'fiatCurrency';
   static const String fiatRate = 'fiatRate';
   static const String notificationsEnabled = 'notificationsEnabled';
+  static const String appLockEnabled = 'appLockEnabled';
   static const String connectionAddress = 'connectionAddress';
   static const String connectionProxyPort = 'connectionProxyPort';
   static const String connectionUseTor = 'connectionUseTor';

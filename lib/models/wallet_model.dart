@@ -598,6 +598,7 @@ class WalletModel with ChangeNotifier {
     await SharedPreferencesService.remove(
       SharedPreferencesKeys.walletRestoreHeight,
     );
+    await SharedPreferencesService.remove(SharedPreferencesKeys.appLockEnabled);
   }
 
   Future<bool> hasExistingWallet() async {

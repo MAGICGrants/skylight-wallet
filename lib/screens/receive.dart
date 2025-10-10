@@ -86,6 +86,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
+      appBar: AppBar(title: Text(i18n.receiveTitle)),
       body: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),

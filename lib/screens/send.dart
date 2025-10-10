@@ -188,10 +188,10 @@ class _SendScreenState extends State<SendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-
     final wallet = context.watch<WalletModel>();
 
     return Scaffold(
+      appBar: AppBar(title: Text(i18n.sendTitle)),
       body: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
@@ -199,10 +199,10 @@ class _SendScreenState extends State<SendScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 20,
             children: [
-              Text(
-                i18n.sendTitle,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              // Text(
+              //   i18n.sendTitle,
+              //   style: Theme.of(context).textTheme.headlineMedium,
+              // ),
               TextField(
                 controller: _destinationAddressController,
                 maxLines: null,

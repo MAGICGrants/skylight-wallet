@@ -59,6 +59,7 @@
   "homeIncomingTxSemanticLabel": "Incoming Transaction",
   "homeTransactionConfirmed": "Confirmed",
   "homeNoTransactions": "No transactions",
+  "receiveTitle": "Receive",
   "receivePrimaryAddressWarn": "Warning: For better privacy, consider using subaddresses if supported by your light wallet server.",
   "receiveSubaddressWarn": "Warning: Make sure your light wallet server supports subaddresses, otherwise, you will not be able to see incoming transactions.",
   "receiveShareButton": "Share",

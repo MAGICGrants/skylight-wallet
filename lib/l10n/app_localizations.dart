@@ -452,6 +452,12 @@ abstract class AppLocalizations {
   /// **'No transactions'**
   String get homeNoTransactions;
 
+  /// No description provided for @receiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive'**
+  String get receiveTitle;
+
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:

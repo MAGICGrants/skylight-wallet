@@ -194,6 +194,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeNoTransactions => 'Sem transações';
 
   @override
+  String get receiveTitle => 'Receber';
+
+  @override
   String get receivePrimaryAddressWarn =>
       'Aviso: Para maior privacidade, considere usar subendereços se o seu servidor de light wallet os suportar.';
 

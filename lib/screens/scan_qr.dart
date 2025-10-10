@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/screens/send.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/screens/send.dart';
 import 'package:provider/provider.dart';
 
 class ScanQrScreen extends StatefulWidget {

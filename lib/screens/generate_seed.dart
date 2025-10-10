@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/screens/create_wallet.dart';
-import 'package:monero_light_wallet/util/height.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/screens/create_wallet.dart';
+import 'package:skylight_wallet/util/height.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 
 class GenerateSeedScreen extends StatefulWidget {
@@ -114,7 +114,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                   }).toList(),
                 ),
               if (_seed.isNotEmpty && _restoreHeight > 0)
-                ElevatedButton(
+                FilledButton(
                   onPressed: () => Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/lws_details',

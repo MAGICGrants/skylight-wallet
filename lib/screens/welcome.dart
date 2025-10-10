@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:provider/provider.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -41,7 +41,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Monero Light Wallet')),
+      appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -59,7 +59,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () =>
                   Navigator.pushNamed(context, '/connection_setup'),
               child: Text(i18n.welcomeGetStarted),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
 
 class RestoreWarningScreen extends StatelessWidget {
   const RestoreWarningScreen({super.key});
@@ -9,7 +9,7 @@ class RestoreWarningScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Monero Light Wallet')),
+      appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -36,7 +36,7 @@ class RestoreWarningScreen extends StatelessWidget {
                       Navigator.pushNamed(context, '/restore_wallet'),
                   child: Text(i18n.restoreWarningContinueButton),
                 ),
-                ElevatedButton(
+                FilledButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(i18n.cancel),
                 ),

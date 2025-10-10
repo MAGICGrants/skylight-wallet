@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
 
 class CreateWalletScreenArgs {
   String toastMessage;
@@ -39,7 +39,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Monero Light Wallet')),
+      appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -66,7 +66,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                       Navigator.pushNamed(context, '/restore_warning'),
                   child: Text(i18n.createWalletRestoreExistingButton),
                 ),
-                ElevatedButton(
+                FilledButton(
                   onPressed: () => Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/generate_seed',

@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:monero_light_wallet/util/logging.dart';
-import 'package:monero_light_wallet/util/socks_http.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/socks_http.dart';
 
 class FiatRateModel with ChangeNotifier {
   double? _rate;

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:monero_light_wallet/util/logging.dart';
-import 'package:monero_light_wallet/util/socks_http.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/socks_http.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
 
 Future<int> getCurrentBlockchainHeight() async {
   final urls = [

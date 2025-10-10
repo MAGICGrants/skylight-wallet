@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.monero_light_wallet"
+    namespace = "org.magicgrants.skylight"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.1.13356709"
 
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.monero_light_wallet"
+        applicationId = "org.magicgrants.skylight"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

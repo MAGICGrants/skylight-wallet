@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:monero_light_wallet/util/socks_http.dart';
+import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:provider/provider.dart';
 
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
 
 class ConnectionSetupScreen extends StatefulWidget {
   const ConnectionSetupScreen({super.key});
@@ -252,7 +252,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                         ),
                       ),
                       if (_connectionSuccess)
-                        ElevatedButton(
+                        FilledButton(
                           onPressed: _saveConnection,
                           child: Text(i18n.connectionSetupContinueButton),
                         ),

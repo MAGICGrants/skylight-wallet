@@ -40,7 +40,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeDescription =>
-      'Light Monero Wallet is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.';
+      'Skylight is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.';
 
   @override
   String get welcomeGetStarted => 'Get Started';

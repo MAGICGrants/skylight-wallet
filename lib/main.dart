@@ -1,33 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/periodic_tasks.dart';
-import 'package:monero_light_wallet/screens/unlock.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/screens/privacy_policy.dart';
+import 'package:skylight_wallet/screens/terms_of_service.dart';
+import 'package:skylight_wallet/screens/unlock.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import 'package:monero_light_wallet/models/fiat_rate_model.dart';
-import 'package:monero_light_wallet/screens/confirm_send.dart';
-import 'package:monero_light_wallet/screens/lws_details.dart';
-import 'package:monero_light_wallet/screens/lws_keys.dart';
-import 'package:monero_light_wallet/screens/scan_qr.dart';
-import 'package:monero_light_wallet/screens/secret_keys.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:monero_light_wallet/models/language_model.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/screens/settings.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/screens/connection_setup.dart';
-import 'package:monero_light_wallet/screens/generate_seed.dart';
-import 'package:monero_light_wallet/screens/receive.dart';
-import 'package:monero_light_wallet/screens/send.dart';
-import 'package:monero_light_wallet/screens/tx_details.dart';
-import 'package:monero_light_wallet/screens/create_wallet.dart';
-import 'package:monero_light_wallet/screens/restore_wallet.dart';
-import 'package:monero_light_wallet/screens/restore_warning.dart';
-import 'package:monero_light_wallet/screens/wallet_home.dart';
-import 'package:monero_light_wallet/screens/welcome.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/screens/confirm_send.dart';
+import 'package:skylight_wallet/screens/lws_details.dart';
+import 'package:skylight_wallet/screens/lws_keys.dart';
+import 'package:skylight_wallet/screens/scan_qr.dart';
+import 'package:skylight_wallet/screens/secret_keys.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/models/language_model.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/screens/settings.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/screens/connection_setup.dart';
+import 'package:skylight_wallet/screens/generate_seed.dart';
+import 'package:skylight_wallet/screens/receive.dart';
+import 'package:skylight_wallet/screens/send.dart';
+import 'package:skylight_wallet/screens/tx_details.dart';
+import 'package:skylight_wallet/screens/create_wallet.dart';
+import 'package:skylight_wallet/screens/restore_wallet.dart';
+import 'package:skylight_wallet/screens/restore_warning.dart';
+import 'package:skylight_wallet/screens/wallet_home.dart';
+import 'package:skylight_wallet/screens/welcome.dart';
+import 'package:skylight_wallet/util/logging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,7 +104,7 @@ class MyApp extends StatelessWidget {
                 }
 
                 return MaterialApp(
-                  title: 'Monero Light Wallet',
+                  title: 'Skylight Monero Wallet',
                   localizationsDelegates:
                       AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
@@ -131,6 +133,8 @@ class MyApp extends StatelessWidget {
                     '/scan_qr': (context) => ScanQrScreen(),
                     '/receive': (context) => ReceiveScreen(),
                     '/tx_details': (context) => TxDetailsScreen(),
+                    '/terms_of_service': (context) => TermsOfService(),
+                    '/privacy_policy': (context) => PrivacyPolicy(),
                   },
                 );
               }
@@ -141,7 +145,7 @@ class MyApp extends StatelessWidget {
               }
 
               return MaterialApp(
-                title: 'Monero Light Wallet',
+                title: 'Skylight Monero Wallet',
                 theme: ThemeData(
                   colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
                 ),

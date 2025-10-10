@@ -1,6 +1,6 @@
 {
-    "name": "monero_light_wallet",
-    "short_name": "monero_light_wallet",
+    "name": "skylight_wallet",
+    "short_name": "skylight_wallet",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

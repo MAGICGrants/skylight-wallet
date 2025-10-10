@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:monero_light_wallet/util/socks_socket.dart';
+import 'package:skylight_wallet/util/socks_socket.dart';
 
 class ParsedHttpResponse {
   final String httpVersion;

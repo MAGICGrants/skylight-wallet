@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/screens/confirm_send.dart';
-import 'package:monero_light_wallet/widgets/monero_amount.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/screens/confirm_send.dart';
+import 'package:skylight_wallet/widgets/monero_amount.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
 
 class SendScreenArgs {
   String destinationAddress;
@@ -199,10 +199,6 @@ class _SendScreenState extends State<SendScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 20,
             children: [
-              // Text(
-              //   i18n.sendTitle,
-              //   style: Theme.of(context).textTheme.headlineMedium,
-              // ),
               TextField(
                 controller: _destinationAddressController,
                 maxLines: null,
@@ -286,9 +282,10 @@ class _SendScreenState extends State<SendScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(i18n.cancel),
                   ),
-                  ElevatedButton(
+                  FilledButton.icon(
                     onPressed: _send,
-                    child: Stack(
+                    icon: Icon(Icons.arrow_outward_rounded),
+                    label: Stack(
                       alignment: Alignment.center,
                       children: [
                         if (!_isLoading)

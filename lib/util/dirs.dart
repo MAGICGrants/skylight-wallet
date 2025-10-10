@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:monero_light_wallet/consts.dart' as consts;
+import 'package:skylight_wallet/consts.dart' as consts;
 
 Future<Directory> getTorDataDir() async {
   final documentsDirPath = (await getApplicationDocumentsDirectory());

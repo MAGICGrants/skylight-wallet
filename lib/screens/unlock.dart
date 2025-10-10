@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/logging.dart';
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});
@@ -50,7 +50,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Monero Light Wallet')),
+      appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: SafeArea(
         child: Center(
           child: FilledButton.icon(

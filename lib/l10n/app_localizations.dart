@@ -161,7 +161,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Light Monero Wallet is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.'**
+  /// **'Skylight is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.'**
   String get welcomeDescription;
 
   /// No description provided for @welcomeGetStarted.

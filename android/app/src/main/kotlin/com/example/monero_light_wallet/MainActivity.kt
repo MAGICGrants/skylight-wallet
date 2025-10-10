@@ -1,4 +1,4 @@
-package com.example.monero_light_wallet
+package org.magicgrants.skylight
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

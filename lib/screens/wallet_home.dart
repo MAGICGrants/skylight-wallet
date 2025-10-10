@@ -1,18 +1,18 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:monero_light_wallet/models/fiat_rate_model.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:monero_light_wallet/widgets/fiat_amount.dart';
-import 'package:monero_light_wallet/widgets/monero_amount.dart';
-import 'package:monero_light_wallet/widgets/status_icon.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/widgets/fiat_amount.dart';
+import 'package:skylight_wallet/widgets/monero_amount.dart';
+import 'package:skylight_wallet/widgets/status_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/consts.dart' as consts;
-import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/consts.dart' as consts;
+import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
 enum LwsConnectionStatus { disconnected, connecting, connected }
 
@@ -121,8 +121,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                           right: 0,
                           child: Column(
                             spacing: 10,
+                            // TODO: this can be made better
                             children: [
-                              // TODO: this can be made better
                               if (!wallet.usingTor &&
                                   lwsConnectionIconStatus ==
                                       StatusIconStatus.complete)
@@ -226,7 +226,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     spacing: 10,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ElevatedButton.icon(
+                      FilledButton.icon(
                         style: ButtonStyle(),
                         label: Text(i18n.homeReceive),
                         icon: Transform.rotate(
@@ -236,7 +236,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                         onPressed: () =>
                             Navigator.pushNamed(context, '/receive'),
                       ),
-                      ElevatedButton.icon(
+                      FilledButton.icon(
                         label: Text(i18n.homeSend),
                         icon: Icon(Icons.arrow_outward_rounded),
                         onPressed: () => Navigator.pushNamed(context, '/send'),

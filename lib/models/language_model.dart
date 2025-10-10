@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
 
 class LanguageModel with ChangeNotifier {
   String _language = PlatformDispatcher.instance.locale.languageCode;

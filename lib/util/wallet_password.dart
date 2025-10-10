@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:monero_light_wallet/consts.dart';
+import 'package:skylight_wallet/consts.dart';
 
 String genWalletPassword() {
   final byteLength = 16;

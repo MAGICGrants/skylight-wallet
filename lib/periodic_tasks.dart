@@ -1,10 +1,10 @@
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/services/notifications_service.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:monero_light_wallet/consts.dart' as consts;
+import 'package:skylight_wallet/consts.dart' as consts;
 
 class PeriodicTasks {
   static const txNotifier = 'txNotifier';

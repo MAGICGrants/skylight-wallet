@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:monero_light_wallet/consts.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/fiat_rate_model.dart';
-import 'package:monero_light_wallet/models/language_model.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/periodic_tasks.dart';
-import 'package:monero_light_wallet/services/notifications_service.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
-import 'package:monero_light_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:skylight_wallet/consts.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/models/language_model.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -384,6 +384,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: ButtonStyle(
                 foregroundColor: WidgetStateProperty.all(Colors.red),
               ),
+            ),
+            Spacer(),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/terms_of_service'),
+              child: Text('Terms of Service'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/privacy_policy'),
+              child: Text('Privacy Policy'),
             ),
           ],
         ),

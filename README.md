@@ -1,4 +1,4 @@
-# monero_light_wallet
+# skylight_wallet
 
 A new Flutter project.
 

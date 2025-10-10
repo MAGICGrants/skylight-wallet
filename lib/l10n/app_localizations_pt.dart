@@ -40,7 +40,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get welcomeDescription =>
-      'A Light Monero Wallet é uma das carteiras Monero mais simples. Nós o ajudaremos a configurar uma carteira e se conectar a um servidor.';
+      'A Skylight é uma das mais simples carteiras de Monero. Nós o ajudaremos a configurar uma carteira e se conectar à um servidor.';
 
   @override
   String get welcomeGetStarted => 'Começar';

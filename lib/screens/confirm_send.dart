@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 // ignore: implementation_imports
 import 'package:monero/src/monero.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/fiat_rate_model.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/util/formatting.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/util/formatting.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 
 class ConfirmSendScreenArgs {
@@ -256,9 +256,10 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                 ),
               ],
             ),
-            ElevatedButton(
+            FilledButton.icon(
               onPressed: _confirmSend,
-              child: Stack(
+              icon: Icon(Icons.arrow_outward_rounded),
+              label: Stack(
                 alignment: Alignment.center,
                 children: [
                   if (!_isLoading)

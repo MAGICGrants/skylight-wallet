@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
     
     <application
-        android:label="monero_light_wallet"
+        android:label="Skylight Wallet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false">

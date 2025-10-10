@@ -14,14 +14,14 @@ import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
 
-import 'package:monero_light_wallet/consts.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
-import 'package:monero_light_wallet/services/tor_service.dart';
-import 'package:monero_light_wallet/util/formatting.dart';
-import 'package:monero_light_wallet/util/height.dart';
-import 'package:monero_light_wallet/util/logging.dart';
-import 'package:monero_light_wallet/util/wallet.dart';
-import 'package:monero_light_wallet/util/wallet_password.dart';
+import 'package:skylight_wallet/consts.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/formatting.dart';
+import 'package:skylight_wallet/util/height.dart';
+import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/wallet.dart';
+import 'package:skylight_wallet/util/wallet_password.dart';
 
 String generateHexString(int length) {
   final Random random = Random.secure();

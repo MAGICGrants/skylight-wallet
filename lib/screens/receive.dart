@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
-import 'package:monero_light_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -121,7 +121,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                 spacing: 20,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
+                  FilledButton.icon(
                     onPressed: () =>
                         SharePlus.instance.share(ShareParams(text: _address)),
                     icon: Icon(Icons.share),

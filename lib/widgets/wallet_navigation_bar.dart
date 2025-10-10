@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
 
 class WalletNavigationBar extends StatelessWidget {
   final int selectedIndex;

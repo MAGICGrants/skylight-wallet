@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:monero_light_wallet/l10n/app_localizations.dart';
-import 'package:monero_light_wallet/util/logging.dart';
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
-import 'package:monero_light_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});
@@ -72,7 +72,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Monero Light Wallet')),
+      appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -133,7 +133,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(i18n.cancel),
                 ),
-                ElevatedButton(
+                FilledButton(
                   onPressed: _restore,
                   child: Text(i18n.restoreWalletRestoreButton),
                 ),

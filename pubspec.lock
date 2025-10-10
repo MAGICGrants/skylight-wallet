@@ -878,9 +878,11 @@ packages:
   tor_ffi_plugin:
     dependency: "direct main"
     description:
-      path: "external/tor"
-      relative: true
-    source: path
+      path: "."
+      ref: main
+      resolved-ref: "21077186e6bf773ec8a7cd57ef149b2cee5daa7b"
+      url: "https://github.com/cypherstack/tor"
+    source: git
     version: "0.0.1"
   tuple:
     dependency: transitive

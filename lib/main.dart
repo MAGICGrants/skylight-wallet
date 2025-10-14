@@ -1,9 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
-import 'package:skylight_wallet/screens/privacy_policy.dart';
-import 'package:skylight_wallet/screens/terms_of_service.dart';
-import 'package:skylight_wallet/screens/unlock.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -30,11 +25,19 @@ import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/screens/privacy_policy.dart';
+import 'package:skylight_wallet/screens/terms_of_service.dart';
+import 'package:skylight_wallet/screens/unlock.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/util/cacert.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   registerPeriodicTasks();
   timeago.setLocaleMessages('pt', timeago.PtBrMessages());
+  TorService.sharedInstance.start();
+  copyCacertToAppDocumentsDir();
 
   runApp(MyApp());
 }
@@ -92,8 +95,6 @@ class MyApp extends StatelessWidget {
                           ? '/unlock'
                           : '/wallet_home'
                     : '/welcome';
-
-                TorService.sharedInstance.start();
 
                 if (walletExists) {
                   (() async {

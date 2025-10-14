@@ -464,11 +464,9 @@ packages:
   monero:
     dependency: "direct main"
     description:
-      path: "impls/monero.dart"
-      ref: lwsf
-      resolved-ref: "3f327c26ba1168af7423c66a892ff49310505c21"
-      url: "https://github.com/vtnerd/monero_c"
-    source: git
+      path: "../monero_c/impls/monero.dart"
+      relative: true
+    source: path
     version: "0.0.0"
   nested:
     dependency: transitive

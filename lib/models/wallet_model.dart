@@ -17,6 +17,7 @@ import 'package:monero/src/wallet2.dart';
 import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
@@ -334,6 +335,9 @@ class WalletModel with ChangeNotifier {
     }
 
     final proxyPort = torProxyPort ?? _connectionProxyPort;
+
+    final cacertFile = await getCacertFile();
+    _w2Wallet!.setCaFilePath(cacertFile.path);
 
     await _connectToDaemon(
       address: _connectionAddress,

@@ -252,6 +252,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsAppLockUnableToAuthError => 'Não foi possível autenticar.';
 
   @override
+  String get settingsVerboseLoggingLabel => 'Logs Detalhados';
+
+  @override
+  String get settingsVerboseLoggingDescription =>
+      'Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
+
+  @override
   String get settingsLanguageLabel => 'Idioma';
 
   @override

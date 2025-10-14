@@ -24,6 +24,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
   var _fiatCurrency = 'USD';
   var _appLockEnabled = false;
+  var _verboseLoggingEnabled = false;
 
   @override
   void initState() {
@@ -50,10 +51,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ) ??
         false;
 
+    final verboseLoggingEnabled =
+        await SharedPreferencesService.get<bool>(
+          SharedPreferencesKeys.verboseLoggingEnabled,
+        ) ??
+        false;
+
     setState(() {
       _newTxNotificationsEnabled = newTxNotificationsEnabled;
       _fiatCurrency = fiatCurrency;
       _appLockEnabled = appLockEnabled;
+      _verboseLoggingEnabled = verboseLoggingEnabled;
     });
   }
 
@@ -122,6 +130,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     await SharedPreferencesService.set<bool>(
       SharedPreferencesKeys.appLockEnabled,
+      value,
+    );
+  }
+
+  void _setVerboseLoggingEnabled(bool value) async {
+    setState(() {
+      _verboseLoggingEnabled = value;
+    });
+
+    await SharedPreferencesService.set<bool>(
+      SharedPreferencesKeys.verboseLoggingEnabled,
       value,
     );
   }
@@ -332,6 +351,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Text(fiatCode),
                     );
                   }).toList(),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        i18n.settingsVerboseLoggingLabel,
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        i18n.settingsVerboseLoggingDescription,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _verboseLoggingEnabled,
+                  onChanged: _setVerboseLoggingEnabled,
                 ),
               ],
             ),

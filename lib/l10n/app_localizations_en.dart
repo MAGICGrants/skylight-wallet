@@ -252,6 +252,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppLockUnableToAuthError => 'Unable to authenticate.';
 
   @override
+  String get settingsVerboseLoggingLabel => 'Verbose Logging';
+
+  @override
+  String get settingsVerboseLoggingDescription =>
+      'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.';
+
+  @override
   String get settingsLanguageLabel => 'Language';
 
   @override

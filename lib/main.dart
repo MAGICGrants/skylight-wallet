@@ -33,8 +33,10 @@ import 'package:skylight_wallet/util/logging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  registerPeriodicTasks();
   timeago.setLocaleMessages('pt', timeago.PtBrMessages());
+  TorService.sharedInstance.start();
+  registerPeriodicTasks();
+  cleanOldLogFiles();
 
   runApp(MyApp());
 }
@@ -92,8 +94,6 @@ class MyApp extends StatelessWidget {
                           ? '/unlock'
                           : '/wallet_home'
                     : '/welcome';
-
-                TorService.sharedInstance.start();
 
                 if (walletExists) {
                   (() async {

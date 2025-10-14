@@ -77,6 +77,8 @@
   "settingsAppLockLabel": "Desbloqueio com PIN/Biometria",
   "settingsAppLockUnlockReason": "Desbloquear carteira",
   "settingsAppLockUnableToAuthError": "Não foi possível autenticar.",
+  "settingsVerboseLoggingLabel": "Logs Detalhados",
+  "settingsVerboseLoggingDescription": "Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.",
   "settingsLanguageLabel": "Idioma",
   "settingsDisplayCurrencyLabel": "Moeda Local",
   "settingsLwsViewKeysLabel": "Chaves de Visualização do LWS",

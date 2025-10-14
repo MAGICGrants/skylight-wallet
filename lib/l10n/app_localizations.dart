@@ -560,6 +560,18 @@ abstract class AppLocalizations {
   /// **'Unable to authenticate.'**
   String get settingsAppLockUnableToAuthError;
 
+  /// No description provided for @settingsVerboseLoggingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verbose Logging'**
+  String get settingsVerboseLoggingLabel;
+
+  /// No description provided for @settingsVerboseLoggingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.'**
+  String get settingsVerboseLoggingDescription;
+
   /// No description provided for @settingsLanguageLabel.
   ///
   /// In en, this message translates to:

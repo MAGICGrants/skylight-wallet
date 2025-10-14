@@ -79,7 +79,15 @@ class FiatRateModel with ChangeNotifier {
     final proxyInfo = TorService.sharedInstance.getProxyInfo();
 
     try {
+      log(LogLevel.info, 'Fetching rate from fiat api:');
+      log(LogLevel.info, '  url: $url');
+      log(LogLevel.info, '  proxyInfo: $proxyInfo');
+
       final response = await makeSocksHttpRequest('GET', url, proxyInfo);
+
+      log(LogLevel.info, 'Fiat api response:');
+      log(LogLevel.info, '  statusCode: ${response.statusCode}');
+      log(LogLevel.info, '  jsonBody: ${response.jsonBody}');
 
       if (response.statusCode == 200) {
         final rate = response.jsonBody['result']?[pair]?['o'];
@@ -97,8 +105,7 @@ class FiatRateModel with ChangeNotifier {
         _hasFailed = true;
       }
     } catch (error) {
-      log(LogLevel.error, 'Failed to get fiat rate.');
-      log(LogLevel.error, error.toString());
+      log(LogLevel.error, 'Failed to get fiat rate: ${error.toString()}');
       _hasFailed = true;
     }
 

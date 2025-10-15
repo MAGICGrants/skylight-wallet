@@ -7,6 +7,7 @@ import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/language_model.dart';
+import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -287,6 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final language = context.watch<LanguageModel>();
+    final theme = context.watch<ThemeModel>();
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 1),
@@ -299,21 +301,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  i18n.settingsNotifyNewTxsLabel,
-                  style: TextStyle(fontSize: 18),
+                Text(i18n.settingsThemeLabel, style: TextStyle(fontSize: 18)),
+                DropdownButton<String>(
+                  value: theme.theme,
+                  onChanged: theme.setTheme,
+                  items: [
+                    DropdownMenuItem<String>(
+                      value: 'system',
+                      child: Text(i18n.settingsThemeSystem),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'light',
+                      child: Text(i18n.settingsThemeLight),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'dark',
+                      child: Text(i18n.settingsThemeDark),
+                    ),
+                  ],
                 ),
-                Switch(
-                  value: _newTxNotificationsEnabled,
-                  onChanged: _setTxNotificationsEnabled,
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(i18n.settingsAppLockLabel, style: TextStyle(fontSize: 18)),
-                Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
               ],
             ),
             Row(
@@ -357,6 +363,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Text(i18n.settingsAppLockLabel, style: TextStyle(fontSize: 18)),
+                Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  i18n.settingsNotifyNewTxsLabel,
+                  style: TextStyle(fontSize: 18),
+                ),
+                Switch(
+                  value: _newTxNotificationsEnabled,
+                  onChanged: _setTxNotificationsEnabled,
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Text(
                         i18n.settingsVerboseLoggingDescription,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),

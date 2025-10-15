@@ -259,6 +259,18 @@ class AppLocalizationsPt extends AppLocalizations {
       'Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
 
   @override
+  String get settingsThemeLabel => 'Tema';
+
+  @override
+  String get settingsThemeSystem => 'Sistema';
+
+  @override
+  String get settingsThemeLight => 'Claro';
+
+  @override
+  String get settingsThemeDark => 'Escuro';
+
+  @override
   String get settingsLanguageLabel => 'Idioma';
 
   @override

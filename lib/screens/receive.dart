@@ -84,6 +84,8 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final brightness = Theme.of(context).brightness;
+    final isDarkTheme = brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.receiveTitle)),
@@ -94,7 +96,17 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             spacing: 20,
             children: [
-              QrImageView(data: _address),
+              QrImageView(
+                data: _address,
+                eyeStyle: QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
+                  color: isDarkTheme ? Colors.grey[300] : Colors.black,
+                ),
+                dataModuleStyle: QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: isDarkTheme ? Colors.grey[300] : Colors.black,
+                ),
+              ),
               if (_showSubaddress)
                 Text(
                   i18n.receiveSubaddressWarn,

@@ -4,6 +4,7 @@ class SharedPreferencesKeys {
   static const String language = 'language';
   static const String fiatCurrency = 'fiatCurrency';
   static const String fiatRate = 'fiatRate';
+  static const String theme = 'theme';
   static const String notificationsEnabled = 'notificationsEnabled';
   static const String appLockEnabled = 'appLockEnabled';
   static const String verboseLoggingEnabled = 'verboseLoggingEnabled';

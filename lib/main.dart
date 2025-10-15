@@ -16,6 +16,7 @@ import 'package:skylight_wallet/screens/scan_qr.dart';
 import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/models/language_model.dart';
+import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
@@ -60,18 +61,16 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => WalletModel()),
         ChangeNotifierProvider(create: (context) => LanguageModel()),
+        ChangeNotifierProvider(create: (context) => ThemeModel()),
         ChangeNotifierProvider(create: (context) => FiatRateModel()),
       ],
-      child: Consumer<LanguageModel>(
-        builder: (context, languageProvider, child) {
+      child: Consumer2<LanguageModel, ThemeModel>(
+        builder: (context, languageProvider, themeProvider, child) {
           final wallet = Provider.of<WalletModel>(context, listen: false);
 
           return FutureBuilder(
-            // Since LanguageModel loads the user's language from
-            // SharedPreferences, we need to wait until an instance is loaded.
-            // We also need to wait until it is determined whether or not a
-            // wallet already exists, so we know which screen to send the user
-            // to initially.
+            // We need to check for wallet existence to determine the correct initial route,
+            // but we'll do this quickly without loading the wallet to avoid startup delay.
             future: Future.wait([
               SharedPreferences.getInstance(),
               loadExistingWalletIfExists(wallet),
@@ -82,6 +81,10 @@ class MyApp extends StatelessWidget {
                 final sharedPreferences =
                     snapshot.data![0] as SharedPreferences;
                 final walletExists = snapshot.data![1] as bool;
+
+                final theme =
+                    sharedPreferences.getString(SharedPreferencesKeys.theme) ??
+                    'system';
 
                 final appLockEnabled =
                     sharedPreferences.getBool(
@@ -111,6 +114,17 @@ class MyApp extends StatelessWidget {
                   theme: ThemeData(
                     colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
                   ),
+                  darkTheme: ThemeData(
+                    colorScheme: ColorScheme.fromSeed(
+                      seedColor: Colors.blue,
+                      brightness: Brightness.dark,
+                    ),
+                  ),
+                  themeMode: theme == 'dark'
+                      ? ThemeMode.dark
+                      : theme == 'light'
+                      ? ThemeMode.light
+                      : ThemeMode.system,
                   initialRoute: initialRoute,
                   locale: Locale.fromSubtags(
                     languageCode: languageProvider.language,
@@ -149,6 +163,13 @@ class MyApp extends StatelessWidget {
                 theme: ThemeData(
                   colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
                 ),
+                darkTheme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: Colors.blue,
+                    brightness: Brightness.dark,
+                  ),
+                ),
+                themeMode: ThemeMode.system,
                 builder: (context, child) => Scaffold(),
               );
             },

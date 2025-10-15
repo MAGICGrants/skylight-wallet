@@ -259,6 +259,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.';
 
   @override
+  String get settingsThemeLabel => 'Theme';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
   String get settingsLanguageLabel => 'Language';
 
   @override

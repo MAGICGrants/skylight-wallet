@@ -559,18 +559,16 @@ class WalletModel with ChangeNotifier {
       isDummy: true,
     );
 
-    final legacyError = legacyWallet.errorString();
-    final polyseedError = polyseedWallet.errorString();
-
     final walletPassword = genWalletPassword();
 
-    if (!legacyError.contains('word list failed verification')) {
+    if (legacyWallet.errorString() == '' && legacyWallet.status() == 0) {
       _w2Wallet = await _getWalletFromLegacySeed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
         password: walletPassword,
       );
-    } else if (polyseedError != 'Failed polyseed decode') {
+    } else if (polyseedWallet.errorString() == '' &&
+        polyseedWallet.status() == 0) {
       _w2Wallet = await _getWalletFromPolyseed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
@@ -578,8 +576,18 @@ class WalletModel with ChangeNotifier {
       );
     }
 
-    if (_w2Wallet == null) {
-      throw Exception("Something went wrong when generating seed");
+    if (_w2Wallet == null &&
+        legacyWallet.errorString().contains('word list failed verification') &&
+        polyseedWallet.errorString().contains('Failed polyseed decode')) {
+      throw Exception('Invalid mnemonic.');
+    } else if (_w2Wallet == null) {
+      log(LogLevel.error, 'Something went wrong when restoring from mnemonic.');
+      log(LogLevel.error, 'Legacy wallet error: ${legacyWallet.errorString()}');
+      log(
+        LogLevel.error,
+        'Polyseed wallet error: ${polyseedWallet.errorString()}',
+      );
+      throw Exception('Something went wrong.');
     }
 
     await storeWalletPassword(walletPassword);

@@ -347,7 +347,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletInvalidMnemonic.
   ///
   /// In en, this message translates to:
-  /// **'Invalid mnemonic.'**
+  /// **'Invalid seed.'**
   String get restoreWalletInvalidMnemonic;
 
   /// No description provided for @navigationBarWallet.

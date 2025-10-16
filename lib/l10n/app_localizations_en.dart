@@ -140,7 +140,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletRestoreButton => 'Restore';
 
   @override
-  String get restoreWalletInvalidMnemonic => 'Invalid mnemonic.';
+  String get restoreWalletInvalidMnemonic => 'Invalid seed.';
 
   @override
   String get navigationBarWallet => 'Wallet';

@@ -41,7 +41,7 @@
   "restoreWalletSeedLabel": "Seed",
   "restoreWalletRestoreHeightLabel": "Restore Height",
   "restoreWalletRestoreButton": "Restore",
-  "restoreWalletInvalidMnemonic": "Invalid mnemonic.",
+  "restoreWalletInvalidMnemonic": "Invalid seed.",
   "navigationBarWallet": "Wallet",
   "navigationBarSettings": "Settings",
   "navigationBarKeys": "Keys",

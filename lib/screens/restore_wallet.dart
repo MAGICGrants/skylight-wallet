@@ -16,11 +16,29 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   final _mnemonicController = TextEditingController();
   final _restoreHeightController = TextEditingController();
   String? _mnemonicError;
+  String? _restoreHeightError;
 
   Future<void> _restore() async {
+    final i18n = AppLocalizations.of(context)!;
+
     setState(() {
       _mnemonicError = null;
+      _restoreHeightError = null;
     });
+
+    if (_mnemonicController.text.isEmpty) {
+      setState(() {
+        _mnemonicError = i18n.fieldEmptyError;
+      });
+      return;
+    }
+
+    if (_restoreHeightController.text.isEmpty) {
+      setState(() {
+        _restoreHeightError = i18n.fieldEmptyError;
+      });
+      return;
+    }
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
@@ -34,9 +52,14 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
 
       if (errorMsg == 'Invalid mnemonic.') {
         setState(() {
-          _mnemonicError = errorMsg;
+          _mnemonicError = i18n.restoreWalletInvalidMnemonic;
         });
 
+        return;
+      } else if (errorMsg != '') {
+        setState(() {
+          _mnemonicError = i18n.unknownError;
+        });
         return;
       }
 
@@ -114,15 +137,9 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 ],
                 decoration: InputDecoration(
                   labelText: i18n.restoreWalletRestoreHeightLabel,
+                  errorText: _restoreHeightError,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return i18n.fieldEmptyError;
-                  }
-
-                  return null;
-                },
               ),
             ),
             Row(

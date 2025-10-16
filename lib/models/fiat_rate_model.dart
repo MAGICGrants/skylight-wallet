@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:skylight_wallet/consts.dart';
 
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
@@ -26,14 +27,15 @@ class FiatRateModel with ChangeNotifier {
       if (TorService.sharedInstance.status == TorConnectionStatus.connected &&
           _rateFetchTimer == null) {
         _startRateFetchTimer();
+        _loadRate();
       }
     });
   }
 
   void _startRateFetchTimer() {
-    _rateFetchTimer = Timer.periodic(Duration(minutes: 1), (timer) async {
+    _rateFetchTimer = Timer.periodic(Duration(minutes: 10), (timer) async {
       if (TorService.sharedInstance.status == TorConnectionStatus.connected) {
-        await _fetch();
+        await _loadRate();
       } else {
         timer.cancel();
         _rateFetchTimer = null;
@@ -64,7 +66,28 @@ class FiatRateModel with ChangeNotifier {
     );
   }
 
-  Future<void> _fetch() async {
+  Future<double> _requestPairRate(String pair) async {
+    final url = 'https://api.kraken.com/0/public/Ticker?pair=$pair';
+    final proxyInfo = TorService.sharedInstance.getProxyInfo();
+
+    log(LogLevel.info, 'Fetching rate from fiat api:');
+    log(LogLevel.info, '  url: $url');
+    log(LogLevel.info, '  proxyInfo: $proxyInfo');
+
+    final response = await makeSocksHttpRequest('GET', url, proxyInfo);
+
+    if (response.statusCode == 200) {
+      final rate = response.jsonBody['result']?[pair]?['o'];
+      if (rate is! String) {
+        throw Exception('Could not find rate for $pair');
+      }
+      return double.parse(rate);
+    } else {
+      throw Exception('Status code: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _loadRate() async {
     final fiatCode =
         await SharedPreferencesService.get<String>(
           SharedPreferencesKeys.fiatCurrency,
@@ -73,39 +96,27 @@ class FiatRateModel with ChangeNotifier {
 
     _fiatCode = fiatCode;
 
-    final pair = 'XXMRZ$fiatCode';
-    final url = 'https://api.kraken.com/0/public/Ticker?pair=$pair';
+    final pair1 = indirectPairCurrencies.contains(fiatCode)
+        ? 'XXMRZUSD'
+        : 'XXMRZ$fiatCode';
 
-    final proxyInfo = TorService.sharedInstance.getProxyInfo();
+    final pair2 = indirectPairCurrencies.contains(fiatCode)
+        ? 'USDT$fiatCode'
+        : null;
 
     try {
-      log(LogLevel.info, 'Fetching rate from fiat api:');
-      log(LogLevel.info, '  url: $url');
-      log(LogLevel.info, '  proxyInfo: $proxyInfo');
+      final rates = await Future.wait([
+        _requestPairRate(pair1),
+        pair2 != null ? _requestPairRate(pair2) : Future.value(null),
+      ]);
 
-      final response = await makeSocksHttpRequest('GET', url, proxyInfo);
-
-      log(LogLevel.info, 'Fiat api response:');
-      log(LogLevel.info, '  statusCode: ${response.statusCode}');
-      log(LogLevel.info, '  jsonBody: ${response.jsonBody}');
-
-      if (response.statusCode == 200) {
-        final rate = response.jsonBody['result']?[pair]?['o'];
-
-        if (rate is String) {
-          _rate = double.parse(rate);
-          _persist(double.parse(rate));
-          _hasFailed = false;
-        } else {
-          log(LogLevel.error, 'Failed to get fiat rate.', response.jsonBody);
-          _hasFailed = true;
-        }
-      } else {
-        log(LogLevel.error, 'Failed to get fiat rate.', response.jsonBody);
-        _hasFailed = true;
-      }
+      final finalRate = rates[0]! * (rates[1] ?? 1);
+      _rate = finalRate;
+      _persist(finalRate);
+      _hasFailed = false;
+      log(LogLevel.info, '$fiatCode rate: $finalRate');
     } catch (error) {
-      log(LogLevel.error, 'Failed to get fiat rate: ${error.toString()}');
+      log(LogLevel.error, 'Failed to get fiat rate. ${error.toString()}');
       _hasFailed = true;
     }
 
@@ -113,10 +124,10 @@ class FiatRateModel with ChangeNotifier {
   }
 
   Future<void> reset() async {
-    _loadPersisted();
+    await _loadPersisted();
 
     if (TorService.sharedInstance.status == TorConnectionStatus.connected) {
-      await _fetch();
+      await _loadRate();
     }
   }
 }

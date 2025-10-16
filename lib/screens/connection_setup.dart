@@ -50,14 +50,56 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     });
   }
 
-  void _setUseTor(bool? newValue) {
+  void onAddressChange(String value) {
+    final ipAddressRegex = RegExp(
+      r'^(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
+    );
+    final onionAddressRegex = RegExp(
+      r'^[a-z2-7]{56}|[a-z2-7]{16}.onion(:\d{1,5})?$',
+    );
+    final domainAddressRegex = RegExp(
+      r'^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
+    );
+
+    if (ipAddressRegex.hasMatch(value)) {
+      setUseTor(false);
+      setUseSsl(false);
+    } else if (onionAddressRegex.hasMatch(value)) {
+      setUseSsl(false);
+      setUseTor(true);
+    } else if (domainAddressRegex.hasMatch(value)) {
+      setUseTor(false);
+      setUseSsl(true);
+    }
+
     setState(() {
-      _useTor = newValue ?? false;
+      _hasTested = false;
+    });
+  }
+
+  void onProxyPortChange(String value) {
+    setState(() {
+      _hasTested = false;
+    });
+  }
+
+  void setUseTor(bool? value) {
+    setState(() {
+      _useTor = value ?? false;
+      _useSsl = false;
+      _hasTested = false;
     });
 
-    if (newValue == true) {
+    if (value == true) {
       _customProxyPortController.text = '';
     }
+  }
+
+  void setUseSsl(bool? value) {
+    setState(() {
+      _useSsl = value ?? false;
+      _hasTested = false;
+    });
   }
 
   Future _testConnection() async {
@@ -87,7 +129,11 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     try {
       if (_useTor) {
         final proxyInfo = TorService.sharedInstance.getProxyInfo();
-        final response = await makeSocksHttpRequest('POST', url, proxyInfo);
+        final response = await makeSocksHttpRequest(
+          'POST',
+          url,
+          proxyInfo,
+        ).timeout(Duration(seconds: 10));
 
         setState(() {
           _connectionSuccess =
@@ -170,6 +216,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                 children: [
                   TextFormField(
                     controller: _addressController,
+                    onChanged: onAddressChange,
                     decoration: InputDecoration(
                       labelText: i18n.address,
                       hintText: i18n.connectionSetupAddressHint,
@@ -189,37 +236,33 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                     ),
                     keyboardType: TextInputType.url,
                   ),
-                  if (!_useTor)
-                    TextFormField(
-                      controller: _customProxyPortController,
-                      decoration: InputDecoration(
-                        labelText: i18n.connectionSetupProxyPortLabel,
-                        hintText: i18n.connectionSetupProxyPortHint,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
+                  TextFormField(
+                    controller: _customProxyPortController,
+                    onChanged: onProxyPortChange,
+                    enabled: !_useTor,
+                    decoration: InputDecoration(
+                      labelText: i18n.connectionSetupProxyPortLabel,
+                      hintText: i18n.connectionSetupProxyPortHint,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
                     ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
                   CheckboxListTile(
                     title: Text(i18n.connectionSetupUseTorLabel),
                     value: _useTor,
-                    onChanged: _setUseTor,
+                    onChanged: !_useSsl ? setUseTor : null,
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),
-
                   CheckboxListTile(
                     title: Text(i18n.connectionSetupUseSslLabel),
                     value: _useSsl,
-                    onChanged: (bool? newValue) {
-                      setState(() {
-                        _useSsl = newValue ?? false;
-                      });
-                    },
+                    onChanged: !_useTor ? setUseSsl : null,
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -251,7 +294,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                           ],
                         ),
                       ),
-                      if (_connectionSuccess)
+                      if (_connectionSuccess && _hasTested && !_isLoading)
                         FilledButton(
                           onPressed: _saveConnection,
                           child: Text(i18n.connectionSetupContinueButton),

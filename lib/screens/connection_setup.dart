@@ -50,7 +50,13 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     });
   }
 
+  String cleanAddress(String value) {
+    return value.trim().replaceAll(r'https?:\/\/', '');
+  }
+
   void onAddressChange(String value) {
+    value = cleanAddress(value);
+
     final ipAddressRegex = RegExp(
       r'^(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
     );
@@ -104,7 +110,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
   Future _testConnection() async {
     final proto = _useSsl ? 'https' : 'http';
-    final daemonAddress = _addressController.text;
+    final daemonAddress = cleanAddress(_addressController.text);
     final customProxyPort = _customProxyPortController.text;
     String torProxyPort = '';
 
@@ -169,7 +175,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   }
 
   void _saveConnection() {
-    final daemonAddress = _addressController.text;
+    final daemonAddress = cleanAddress(_addressController.text);
     final proxyAddress = _customProxyPortController.text;
 
     final wallet = Provider.of<WalletModel>(context, listen: false);

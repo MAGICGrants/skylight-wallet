@@ -139,6 +139,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final fiatRate = context.watch<FiatRateModel>();
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
     final amountFiat = fiatRate.rate is double
@@ -271,24 +272,19 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
             ),
             FilledButton.icon(
               onPressed: _confirmSend,
-              icon: Icon(Icons.arrow_outward_rounded),
-              label: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (!_isLoading)
-                    AnimatedOpacity(
-                      opacity: _isLoading ? 0.0 : 1.0,
-                      duration: Duration(milliseconds: 300),
-                      child: Text(i18n.sendSendButton),
+              icon: !_isLoading
+                  ? Icon(Icons.arrow_outward_rounded)
+                  : SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDarkTheme
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Colors.white,
+                      ),
                     ),
-                  if (_isLoading)
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                ],
-              ),
+              label: Text(i18n.sendSendButton),
             ),
           ],
         ),

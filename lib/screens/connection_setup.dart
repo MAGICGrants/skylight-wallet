@@ -291,8 +291,8 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                               ),
                             if (_isLoading)
                               SizedBox(
-                                width: 24,
-                                height: 24,
+                                width: 16,
+                                height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),

@@ -369,6 +369,7 @@ class _ContactDialogState extends State<_ContactDialog> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final isEditing = widget.contact != null;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
       title: Text(
@@ -416,7 +417,12 @@ class _ContactDialogState extends State<_ContactDialog> {
               ? SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isDarkTheme
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Colors.white,
+                  ),
                 )
               : Text(isEditing ? i18n.addressBookUpdate : i18n.addressBookSave),
         ),

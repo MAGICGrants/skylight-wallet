@@ -176,6 +176,10 @@ class WalletModel with ChangeNotifier {
 
   Future<void> _runCheckConnectionTimerTask() async {
     if (_w2Wallet == null) {
+      log(
+        LogLevel.warn,
+        'Attempted to run check connection timer task but there is no wallet open.',
+      );
       return;
     }
 
@@ -189,11 +193,20 @@ class WalletModel with ChangeNotifier {
 
   Future<void> _runRefreshTimerTask() async {
     if (_w2Wallet == null) {
+      log(
+        LogLevel.warn,
+        'Attempted to run refresh timer task but there is no wallet open.',
+      );
       return;
     }
 
     await refresh();
-    await loadAllStats().timeout(Duration(seconds: 20));
+
+    try {
+      await loadAllStats().timeout(Duration(seconds: 20));
+    } catch (e) {
+      log(LogLevel.error, 'Error loading all stats: $e');
+    }
 
     final txCount = _w2TxHistory!.count();
 
@@ -203,6 +216,14 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<void> loadAllStats() async {
+    if (_w2Wallet == null) {
+      log(
+        LogLevel.warn,
+        'Attempted to load all stats but there is no wallet open.',
+      );
+      return;
+    }
+
     await Future.wait([
       loadIsSynced(),
       loadSyncedHeight(),

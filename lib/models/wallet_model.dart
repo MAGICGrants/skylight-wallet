@@ -663,6 +663,10 @@ class WalletModel with ChangeNotifier {
       SharedPreferencesKeys.walletRestoreHeight,
     );
     await SharedPreferencesService.remove(SharedPreferencesKeys.appLockEnabled);
+    await SharedPreferencesService.remove(
+      SharedPreferencesKeys.pendingOutgoingTxs,
+    );
+    await SharedPreferencesService.remove(SharedPreferencesKeys.contacts);
   }
 
   Future<bool> hasExistingWallet() async {

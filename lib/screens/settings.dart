@@ -291,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = context.watch<ThemeModel>();
 
     return Scaffold(
-      bottomNavigationBar: WalletNavigationBar(selectedIndex: 1),
+      bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
       appBar: AppBar(title: Text(i18n.settingsTitle)),
       body: Padding(
         padding: EdgeInsets.all(20),

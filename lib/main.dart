@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
 import 'package:skylight_wallet/screens/lws_details.dart';
 import 'package:skylight_wallet/screens/lws_keys.dart';
@@ -30,6 +31,7 @@ import 'package:skylight_wallet/screens/restore_wallet.dart';
 import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
+import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/util/logging.dart';
 
 void main() async {
@@ -63,6 +65,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => LanguageModel()),
         ChangeNotifierProvider(create: (context) => ThemeModel()),
         ChangeNotifierProvider(create: (context) => FiatRateModel()),
+        ChangeNotifierProvider(create: (context) => ContactModel()),
       ],
       child: Consumer2<LanguageModel, ThemeModel>(
         builder: (context, languageProvider, themeProvider, child) {
@@ -147,6 +150,7 @@ class MyApp extends StatelessWidget {
                     '/scan_qr': (context) => ScanQrScreen(),
                     '/receive': (context) => ReceiveScreen(),
                     '/tx_details': (context) => TxDetailsScreen(),
+                    '/address_book': (context) => AddressBookScreen(),
                     '/terms_of_service': (context) => TermsOfService(),
                     '/privacy_policy': (context) => PrivacyPolicy(),
                   },

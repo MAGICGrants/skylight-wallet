@@ -113,6 +113,33 @@
   "secretKeysSecretSpendKey": "Chave Privada de Gasto",
   "secretKeysPublicViewKey": "Chave Pública de Visualização",
   "scanQrTitle": "Escanear QR Code",
-  "confirmSendTitle": "Confirm Send",
-  "confirmSendDescription": "Transactions are irreversible, so make sure that these details match exactly."
+  "confirmSendTitle": "Confirmar Envio",
+  "confirmSendDescription": "As transações são irreversíveis, então certifique-se de que estes detalhes correspondem exatamente.",
+  "addressBookTitle": "Lista de Contatos",
+  "addressBookAddContact": "Adicionar Contato",
+  "addressBookEditContact": "Editar Contato",
+  "addressBookDeleteContact": "Excluir Contato",
+  "addressBookDeleteContactConfirmation": "Tem certeza que deseja excluir \"{contactName}\"?",
+  "@addressBookDeleteContactConfirmation": {
+    "placeholders": {
+      "contactName": {
+        "type": "String"
+      }
+    }
+  },
+  "addressBookDelete": "Excluir",
+  "addressBookSearchHint": "Pesquisar contatos...",
+  "addressBookNoContacts": "Nenhum contato ainda",
+  "addressBookNoContactsDescription": "Adicione seu primeiro contato tocando no botão +",
+  "addressBookNoSearchResults": "Nenhum contato encontrado",
+  "addressBookCopyAddress": "Copiar Endereço",
+  "addressBookEdit": "Editar",
+  "addressBookContactName": "Nome do Contato",
+  "addressBookUpdate": "Atualizar",
+  "addressBookSave": "Salvar",
+  "addressBookAddressCopied": "Endereço copiado para a área de transferência",
+  "sendSelectFromAddressBook": "Selecionar da Lista de Contatos",
+  "sendSelectedContact": "Contato selecionado",
+  "sendClearSelectedContact": "Limpar contato selecionado",
+  "sendEditAddress": "Editar Endereço"
 }

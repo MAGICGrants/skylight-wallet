@@ -369,4 +369,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get confirmSendDescription =>
       'Transactions are irreversible, so make sure that these details match exactly.';
+
+  @override
+  String get addressBookTitle => 'Address Book';
+
+  @override
+  String get addressBookAddContact => 'Add Contact';
+
+  @override
+  String get addressBookEditContact => 'Edit Contact';
+
+  @override
+  String get addressBookDeleteContact => 'Delete Contact';
+
+  @override
+  String addressBookDeleteContactConfirmation(String contactName) {
+    return 'Are you sure you want to delete \"$contactName\"?';
+  }
+
+  @override
+  String get addressBookDelete => 'Delete';
+
+  @override
+  String get addressBookSearchHint => 'Search contacts...';
+
+  @override
+  String get addressBookNoContacts => 'No contacts yet';
+
+  @override
+  String get addressBookNoContactsDescription =>
+      'Add your first contact by tapping the + button';
+
+  @override
+  String get addressBookNoSearchResults => 'No contacts found';
+
+  @override
+  String get addressBookCopyAddress => 'Copy Address';
+
+  @override
+  String get addressBookEdit => 'Edit';
+
+  @override
+  String get addressBookContactName => 'Contact Name';
+
+  @override
+  String get addressBookUpdate => 'Update';
+
+  @override
+  String get addressBookSave => 'Save';
+
+  @override
+  String get addressBookAddressCopied => 'Address copied to clipboard';
+
+  @override
+  String get sendSelectFromAddressBook => 'Select from Address Book';
+
+  @override
+  String get sendSelectedContact => 'Selected contact';
+
+  @override
+  String get sendClearSelectedContact => 'Clear selected contact';
+
+  @override
+  String get sendEditAddress => 'Edit Address';
 }

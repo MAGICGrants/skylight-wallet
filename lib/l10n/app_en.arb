@@ -114,5 +114,32 @@
   "secretKeysPublicViewKey": "Public View Key",
   "scanQrTitle": "Scan QR Code",
   "confirmSendTitle": "Confirm Send",
-  "confirmSendDescription": "Transactions are irreversible, so make sure that these details match exactly."
+  "confirmSendDescription": "Transactions are irreversible, so make sure that these details match exactly.",
+  "addressBookTitle": "Address Book",
+  "addressBookAddContact": "Add Contact",
+  "addressBookEditContact": "Edit Contact",
+  "addressBookDeleteContact": "Delete Contact",
+  "addressBookDeleteContactConfirmation": "Are you sure you want to delete \"{contactName}\"?",
+  "@addressBookDeleteContactConfirmation": {
+    "placeholders": {
+      "contactName": {
+        "type": "String"
+      }
+    }
+  },
+  "addressBookDelete": "Delete",
+  "addressBookSearchHint": "Search contacts...",
+  "addressBookNoContacts": "No contacts yet",
+  "addressBookNoContactsDescription": "Add your first contact by tapping the + button",
+  "addressBookNoSearchResults": "No contacts found",
+  "addressBookCopyAddress": "Copy Address",
+  "addressBookEdit": "Edit",
+  "addressBookContactName": "Contact Name",
+  "addressBookUpdate": "Update",
+  "addressBookSave": "Save",
+  "addressBookAddressCopied": "Address copied to clipboard",
+  "sendSelectFromAddressBook": "Select from Address Book",
+  "sendSelectedContact": "Selected contact",
+  "sendClearSelectedContact": "Clear selected contact",
+  "sendEditAddress": "Edit Address"
 }

@@ -364,9 +364,73 @@ class AppLocalizationsPt extends AppLocalizations {
   String get scanQrTitle => 'Escanear QR Code';
 
   @override
-  String get confirmSendTitle => 'Confirm Send';
+  String get confirmSendTitle => 'Confirmar Envio';
 
   @override
   String get confirmSendDescription =>
-      'Transactions are irreversible, so make sure that these details match exactly.';
+      'As transações são irreversíveis, então certifique-se de que estes detalhes correspondem exatamente.';
+
+  @override
+  String get addressBookTitle => 'Lista de Contatos';
+
+  @override
+  String get addressBookAddContact => 'Adicionar Contato';
+
+  @override
+  String get addressBookEditContact => 'Editar Contato';
+
+  @override
+  String get addressBookDeleteContact => 'Excluir Contato';
+
+  @override
+  String addressBookDeleteContactConfirmation(String contactName) {
+    return 'Tem certeza que deseja excluir \"$contactName\"?';
+  }
+
+  @override
+  String get addressBookDelete => 'Excluir';
+
+  @override
+  String get addressBookSearchHint => 'Pesquisar contatos...';
+
+  @override
+  String get addressBookNoContacts => 'Nenhum contato ainda';
+
+  @override
+  String get addressBookNoContactsDescription =>
+      'Adicione seu primeiro contato tocando no botão +';
+
+  @override
+  String get addressBookNoSearchResults => 'Nenhum contato encontrado';
+
+  @override
+  String get addressBookCopyAddress => 'Copiar Endereço';
+
+  @override
+  String get addressBookEdit => 'Editar';
+
+  @override
+  String get addressBookContactName => 'Nome do Contato';
+
+  @override
+  String get addressBookUpdate => 'Atualizar';
+
+  @override
+  String get addressBookSave => 'Salvar';
+
+  @override
+  String get addressBookAddressCopied =>
+      'Endereço copiado para a área de transferência';
+
+  @override
+  String get sendSelectFromAddressBook => 'Selecionar da Lista de Contatos';
+
+  @override
+  String get sendSelectedContact => 'Contato selecionado';
+
+  @override
+  String get sendClearSelectedContact => 'Limpar contato selecionado';
+
+  @override
+  String get sendEditAddress => 'Editar Endereço';
 }

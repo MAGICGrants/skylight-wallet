@@ -10,13 +10,15 @@ import 'package:provider/provider.dart';
 
 class ConfirmSendScreenArgs {
   MoneroPendingTransaction tx;
-  String? destinationOpenAlias;
   String destinationAddress;
+  String? destinationOpenAlias;
+  String? destinationContactName;
 
   ConfirmSendScreenArgs({
     required this.tx,
     required this.destinationAddress,
     this.destinationOpenAlias,
+    this.destinationContactName,
   });
 }
 
@@ -35,6 +37,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   String? _destinationOpenAlias;
   String _destinationAddress = '';
   List<String> _destinationAddressSliced = [];
+  String? _destinationContactName;
 
   @override
   void initState() {
@@ -63,6 +66,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
       _destinationOpenAlias = args.destinationOpenAlias;
       _destinationAddress = args.destinationAddress;
       _destinationAddressSliced = _sliceAddress(args.destinationAddress);
+      _destinationContactName = args.destinationContactName;
     });
   }
 
@@ -227,31 +231,40 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                 ),
 
                 Expanded(
-                  child: Container(
-                    margin: EdgeInsetsGeometry.only(left: 40),
-                    child: Wrap(
-                      spacing: 4,
-                      alignment: WrapAlignment.end,
-                      children: _destinationAddressSliced
-                          .asMap()
-                          .entries
-                          .map(
-                            (item) => Text(
-                              item.value,
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                // highlight start and end slices of address
-                                fontWeight:
-                                    item.key == 0 ||
-                                        item.key ==
-                                            _destinationAddressSliced.length - 1
-                                    ? FontWeight.w700
-                                    : FontWeight.w300,
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        margin: EdgeInsetsGeometry.only(left: 40),
+                        child: Wrap(
+                          spacing: 4,
+                          alignment: WrapAlignment.end,
+                          children: _destinationAddressSliced
+                              .asMap()
+                              .entries
+                              .map(
+                                (item) => Text(
+                                  item.value,
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    // highlight start and end slices of address
+                                    fontWeight:
+                                        item.key == 0 ||
+                                            item.key ==
+                                                _destinationAddressSliced
+                                                        .length -
+                                                    1
+                                        ? FontWeight.w700
+                                        : FontWeight.w300,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                      if (_destinationContactName is String)
+                        Text('($_destinationContactName)'),
+                    ],
                   ),
                 ),
               ],

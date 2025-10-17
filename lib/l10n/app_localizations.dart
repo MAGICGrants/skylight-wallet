@@ -787,6 +787,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transactions are irreversible, so make sure that these details match exactly.'**
   String get confirmSendDescription;
+
+  /// No description provided for @addressBookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Address Book'**
+  String get addressBookTitle;
+
+  /// No description provided for @addressBookAddContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Contact'**
+  String get addressBookAddContact;
+
+  /// No description provided for @addressBookEditContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Contact'**
+  String get addressBookEditContact;
+
+  /// No description provided for @addressBookDeleteContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Contact'**
+  String get addressBookDeleteContact;
+
+  /// No description provided for @addressBookDeleteContactConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{contactName}\"?'**
+  String addressBookDeleteContactConfirmation(String contactName);
+
+  /// No description provided for @addressBookDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get addressBookDelete;
+
+  /// No description provided for @addressBookSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contacts...'**
+  String get addressBookSearchHint;
+
+  /// No description provided for @addressBookNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get addressBookNoContacts;
+
+  /// No description provided for @addressBookNoContactsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first contact by tapping the + button'**
+  String get addressBookNoContactsDescription;
+
+  /// No description provided for @addressBookNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts found'**
+  String get addressBookNoSearchResults;
+
+  /// No description provided for @addressBookCopyAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Address'**
+  String get addressBookCopyAddress;
+
+  /// No description provided for @addressBookEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get addressBookEdit;
+
+  /// No description provided for @addressBookContactName.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Name'**
+  String get addressBookContactName;
+
+  /// No description provided for @addressBookUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get addressBookUpdate;
+
+  /// No description provided for @addressBookSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get addressBookSave;
+
+  /// No description provided for @addressBookAddressCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Address copied to clipboard'**
+  String get addressBookAddressCopied;
+
+  /// No description provided for @sendSelectFromAddressBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from Address Book'**
+  String get sendSelectFromAddressBook;
+
+  /// No description provided for @sendSelectedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected contact'**
+  String get sendSelectedContact;
+
+  /// No description provided for @sendClearSelectedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selected contact'**
+  String get sendClearSelectedContact;
+
+  /// No description provided for @sendEditAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Address'**
+  String get sendEditAddress;
 }
 
 class _AppLocalizationsDelegate

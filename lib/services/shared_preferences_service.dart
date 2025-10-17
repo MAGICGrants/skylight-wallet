@@ -16,6 +16,7 @@ class SharedPreferencesKeys {
   static const String walletRestoreHeight = 'walletRestoreHeight';
   static const String txHistoryCount = 'txHistoryCount';
   static const String pendingOutgoingTxs = 'pendingOutgoingTxs';
+  static const String contacts = 'contacts';
 }
 
 class SharedPreferencesService {

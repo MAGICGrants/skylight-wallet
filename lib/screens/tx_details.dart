@@ -26,7 +26,7 @@ class TxDetailsScreen extends StatelessWidget {
       appBar: AppBar(title: Text(i18n.txDetailsTitle)),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             spacing: 10,
             crossAxisAlignment: CrossAxisAlignment.start,

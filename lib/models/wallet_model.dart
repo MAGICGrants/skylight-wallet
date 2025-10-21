@@ -176,10 +176,6 @@ class WalletModel with ChangeNotifier {
 
   Future<void> _runCheckConnectionTimerTask() async {
     if (_w2Wallet == null) {
-      log(
-        LogLevel.warn,
-        'Attempted to run check connection timer task but there is no wallet open.',
-      );
       return;
     }
 
@@ -193,10 +189,6 @@ class WalletModel with ChangeNotifier {
 
   Future<void> _runRefreshTimerTask() async {
     if (_w2Wallet == null) {
-      log(
-        LogLevel.warn,
-        'Attempted to run refresh timer task but there is no wallet open.',
-      );
       return;
     }
 

@@ -8,6 +8,8 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 
+const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
+
 class ConnectionSetupScreen extends StatefulWidget {
   const ConnectionSetupScreen({super.key});
 
@@ -114,6 +116,17 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     final customProxyPort = _customProxyPortController.text;
     String torProxyPort = '';
 
+    // Handle demo mode
+    if (isDemoMode) {
+      if (daemonAddress == 'demo') {
+        setState(() {
+          _hasTested = true;
+          _connectionSuccess = true;
+        });
+        return;
+      }
+    }
+
     if (_useTor) {
       await TorService.sharedInstance.start();
       await TorService.sharedInstance.waitUntilConnected();
@@ -124,13 +137,10 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     setState(() {
       _hasTested = true;
+      _isLoading = true;
     });
 
     final url = '$proto://$daemonAddress/get_address_info';
-
-    setState(() {
-      _isLoading = true;
-    });
 
     try {
       if (_useTor) {

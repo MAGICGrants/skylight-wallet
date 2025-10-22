@@ -47,6 +47,9 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
 
     try {
       await wallet.restoreFromMnemonic(mnemonic, restoreHeight);
+      await wallet.refresh();
+      await wallet.loadAllStats();
+      await wallet.connectToDaemon();
     } on Exception catch (error) {
       final errorMsg = error.toString().replaceFirst('Exception: ', '');
 

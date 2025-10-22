@@ -72,7 +72,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         : null;
     final lockedBalance =
         (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
-    final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
+    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
     var lwsConnectionIconStatus = StatusIconStatus.fail;
     var fiatApiIconStatus = StatusIconStatus.loading;
 

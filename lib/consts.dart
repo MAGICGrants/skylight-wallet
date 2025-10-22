@@ -12,4 +12,13 @@ const supportedFiatCurrencies = [
   'JPY',
 ];
 const indirectPairCurrencies = ['CAD', 'AUD', 'GBP', 'CHF', 'JPY'];
+const currencySymbols = {
+  'USD': '\$',
+  'EUR': '€',
+  'CAD': 'C\$',
+  'AUD': 'A\$',
+  'GBP': '£',
+  'CHF': 'Fr',
+  'JPY': '¥',
+};
 const walletPasswordStorageKey = 'walletPassword';

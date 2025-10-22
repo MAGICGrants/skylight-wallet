@@ -8,7 +8,7 @@
 PRODUCT_NAME = skylight_wallet
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.moneroLightWallet
+PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.

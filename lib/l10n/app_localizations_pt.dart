@@ -433,4 +433,28 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sendEditAddress => 'Editar Endereço';
+
+  @override
+  String get sendPriorityLow => 'Baixa';
+
+  @override
+  String get sendPriorityNormal => 'Normal';
+
+  @override
+  String get sendPriorityHigh => 'Alta';
+
+  @override
+  String get sendPriorityLabel => 'prioridade';
+
+  @override
+  String get sendTransactionPriority => 'Prioridade da Transação';
+
+  @override
+  String get sendFeeLabel => 'Taxa';
+
+  @override
+  String get sendBalanceLabel => 'Saldo';
+
+  @override
+  String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
 }

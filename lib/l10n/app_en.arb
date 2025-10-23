@@ -141,5 +141,13 @@
   "sendSelectFromAddressBook": "Select from Address Book",
   "sendSelectedContact": "Selected contact",
   "sendClearSelectedContact": "Clear selected contact",
-  "sendEditAddress": "Edit Address"
+  "sendEditAddress": "Edit Address",
+  "sendPriorityLow": "Low",
+  "sendPriorityNormal": "Normal",
+  "sendPriorityHigh": "High",
+  "sendPriorityLabel": "priority",
+  "sendTransactionPriority": "Transaction Priority",
+  "sendFeeLabel": "Fee",
+  "sendBalanceLabel": "Balance",
+  "sendFailedToGetFeesError": "Failed to get fees."
 }

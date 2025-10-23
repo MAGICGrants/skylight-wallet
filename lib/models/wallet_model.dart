@@ -834,15 +834,15 @@ class WalletModel with ChangeNotifier {
   Future<MoneroPendingTransaction> createTx(
     String destinationAddress,
     double amount,
-    bool isSweepAll,
-  ) async {
+    bool isSweepAll, {
+    int priority = 0,
+  }) async {
     final amountInt = _w2Wallet!.amountFromDouble(amount);
     final w2WalletFfiAddr = _w2Wallet!.ffiAddress();
 
     final dstAddr = [destinationAddress];
     final amounts = [amountInt];
     final mixinCount = 15;
-    final pendingTransactionPriority = 0;
     final subaddrAccount = 0;
 
     log(
@@ -854,10 +854,7 @@ class WalletModel with ChangeNotifier {
     log(LogLevel.info, '  dstAddr: $dstAddr');
     log(LogLevel.info, '  amounts: $amounts');
     log(LogLevel.info, '  mixinCount: $mixinCount');
-    log(
-      LogLevel.info,
-      '  pendingTransactionPriority: $pendingTransactionPriority',
-    );
+    log(LogLevel.info, '  pendingTransactionPriority: $priority');
     log(LogLevel.info, '  subaddr_account: $subaddrAccount');
 
     final txPointer = Pointer<Void>.fromAddress(
@@ -869,7 +866,7 @@ class WalletModel with ChangeNotifier {
           dstAddr: dstAddr,
           amounts: amounts,
           mixinCount: mixinCount,
-          pendingTransactionPriority: pendingTransactionPriority,
+          pendingTransactionPriority: priority,
           subaddr_account: subaddrAccount,
         ).address;
       }),
@@ -946,7 +943,7 @@ class WalletModel with ChangeNotifier {
     await loadTxHistory();
   }
 
-  String resolveOpenAlias(String address) {
+  Future<String> resolveOpenAlias(String address) async {
     final dnssecValid = true;
 
     log(
@@ -956,9 +953,15 @@ class WalletModel with ChangeNotifier {
     log(LogLevel.info, '  address: $address');
     log(LogLevel.info, '  dnssecValid: $dnssecValid');
 
-    final resolvedAddress = _w2WalletManager.resolveOpenAlias(
-      address: address,
-      dnssecValid: dnssecValid,
+    final w2WalletManagerFfiAddr = _w2WalletManager.ffiAddress();
+
+    final resolvedAddress = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.WalletManager_resolveOpenAlias(
+        Pointer.fromAddress(w2WalletManagerFfiAddr),
+        address: address,
+        dnssecValid: dnssecValid,
+      ),
     );
 
     log(

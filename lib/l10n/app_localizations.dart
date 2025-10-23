@@ -907,6 +907,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit Address'**
   String get sendEditAddress;
+
+  /// No description provided for @sendPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get sendPriorityLow;
+
+  /// No description provided for @sendPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get sendPriorityNormal;
+
+  /// No description provided for @sendPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get sendPriorityHigh;
+
+  /// No description provided for @sendPriorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'priority'**
+  String get sendPriorityLabel;
+
+  /// No description provided for @sendTransactionPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Priority'**
+  String get sendTransactionPriority;
+
+  /// No description provided for @sendFeeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get sendFeeLabel;
+
+  /// No description provided for @sendBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get sendBalanceLabel;
+
+  /// No description provided for @sendFailedToGetFeesError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get fees.'**
+  String get sendFailedToGetFeesError;
 }
 
 class _AppLocalizationsDelegate

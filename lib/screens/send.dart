@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
+import 'package:skylight_wallet/util/formatting.dart';
+import 'package:skylight_wallet/widgets/fiat_amount.dart';
 import 'package:skylight_wallet/widgets/monero_amount.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
@@ -22,12 +26,18 @@ class SendScreen extends StatefulWidget {
   State<SendScreen> createState() => _SendScreenState();
 }
 
+final domainRegex = RegExp(r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$');
+
 class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
+  bool _isLoadingFees = false;
   final _destinationAddressController = TextEditingController(text: '');
   final _amountController = TextEditingController(text: '');
   bool _isSweepAll = false;
   Contact? _selectedContact;
+  List<double>? _fees;
+  int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
+  int _feeCalculationCounter = 0; // Track the latest fee calculation request
 
   String _destinationAddressError = '';
   String _amountError = '';
@@ -35,6 +45,7 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void dispose() {
     _destinationAddressController.removeListener(_onAddressChanged);
+    _amountController.removeListener(_onAmountChanged);
     _destinationAddressController.dispose();
     _amountController.dispose();
     super.dispose();
@@ -46,16 +57,7 @@ class _SendScreenState extends State<SendScreen> {
 
     _loadFormFromArgs();
     _destinationAddressController.addListener(_onAddressChanged);
-  }
-
-  void _onAddressChanged() {
-    // Clear selected contact if user manually types in address field
-    if (_selectedContact != null &&
-        _destinationAddressController.text != _selectedContact!.address) {
-      setState(() {
-        _selectedContact = null;
-      });
-    }
+    _amountController.addListener(_onAmountChanged);
   }
 
   void _loadFormFromArgs() {
@@ -100,9 +102,138 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
-  Future<void> _send() async {
-    final amount = double.parse(_amountController.text);
+  Future<String> _resolveDestinationAddress() async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final unresolvedDestinationAddress = _destinationAddressController.text;
+    String destinationAddress = '';
 
+    if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
+      destinationAddress = await wallet.resolveOpenAlias(
+        unresolvedDestinationAddress,
+      );
+    } else {
+      destinationAddress = unresolvedDestinationAddress;
+    }
+
+    return destinationAddress;
+  }
+
+  Future<bool> _validateForm({bool setErrors = true}) async {
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    final unresolvedDestinationAddress = _destinationAddressController.text;
+    String destinationAddress = '';
+
+    if (amount == 0) {
+      return false;
+    }
+
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final i18n = AppLocalizations.of(context)!;
+
+    if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
+      // check for openalias
+      destinationAddress = await wallet.resolveOpenAlias(
+        unresolvedDestinationAddress,
+      );
+
+      if (destinationAddress == '') {
+        if (setErrors) {
+          setState(() {
+            _destinationAddressError = i18n.sendOpenAliasResolveError;
+          });
+        }
+        return false;
+      }
+    } else if (wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
+      // check for address
+      destinationAddress = unresolvedDestinationAddress;
+    } else {
+      if (setErrors) {
+        setState(() {
+          _destinationAddressError = i18n.sendInvalidAddressError;
+        });
+      }
+      return false;
+    }
+
+    if (amount > (wallet.unlockedBalance ?? 0)) {
+      if (setErrors) {
+        setState(() {
+          _amountError = i18n.sendInsufficientBalanceError;
+        });
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  Future<double> _getTxFee(
+    String destinationAddress,
+    double amount,
+    int priority,
+  ) async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final tx = await wallet.createTx(
+      destinationAddress,
+      amount,
+      _isSweepAll,
+      priority: priority,
+    );
+    return doubleAmountFromInt(tx.fee());
+  }
+
+  Future<void> _calculateFees() async {
+    final i18n = AppLocalizations.of(context)!;
+
+    // Increment counter to mark this as the latest request
+    _feeCalculationCounter++;
+    final currentRequest = _feeCalculationCounter;
+
+    setState(() {
+      _isLoadingFees = true;
+    });
+
+    final destinationAddress = await _resolveDestinationAddress();
+    final amount = double.parse(_amountController.text);
+    const maxRetries = 10;
+
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        final fees = await Future.wait([
+          _getTxFee(destinationAddress, amount, 1),
+          _getTxFee(destinationAddress, amount, 2),
+          _getTxFee(destinationAddress, amount, 3),
+        ]);
+
+        // Only update state if this is still the latest request
+        if (currentRequest == _feeCalculationCounter && mounted) {
+          setState(() {
+            _fees = fees;
+            _isLoadingFees = false;
+          });
+        }
+        break;
+      } catch (error) {
+        if (i == maxRetries - 1) {
+          // Only update state if this is still the latest request
+          if (currentRequest == _feeCalculationCounter && mounted) {
+            setState(() {
+              _isLoadingFees = false;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(i18n.sendFailedToGetFeesError)),
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> _send() async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
     final i18n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -111,51 +242,37 @@ class _SendScreenState extends State<SendScreen> {
       _amountError = '';
     });
 
-    final unresolvedDestinationAddress = _destinationAddressController.text;
-    String? destinationOpenAlias;
-    String destinationAddress = '';
+    final isValid = await _validateForm();
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    final domainRegex = RegExp(
-      r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$',
-    );
-
-    if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      // check for openalias
-      destinationAddress = wallet.resolveOpenAlias(
-        unresolvedDestinationAddress,
-      );
-
-      if (destinationAddress == '') {
-        setState(() {
-          _destinationAddressError = i18n.sendOpenAliasResolveError;
-          _isLoading = false;
-        });
-        return;
-      }
-
-      destinationOpenAlias = unresolvedDestinationAddress;
-    } else if (wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
-      // check for address
-      destinationAddress = unresolvedDestinationAddress;
-    } else {
+    if (!isValid) {
       setState(() {
-        _destinationAddressError = i18n.sendInvalidAddressError;
         _isLoading = false;
       });
       return;
     }
 
-    if (amount > (wallet.unlockedBalance ?? 0)) {
-      setState(() {
-        _amountError = i18n.sendInsufficientBalanceError;
-        _isLoading = false;
-      });
-      return;
+    final destinationAddressUnresolved = _destinationAddressController.text;
+    final amount = double.parse(_amountController.text);
+    String destinationAddress = '';
+    String? destinationOpenAlias;
+
+    // Resolve openalias if it is a domain
+    if (domainRegex.hasMatch(destinationAddressUnresolved)) {
+      destinationAddress = await wallet.resolveOpenAlias(
+        destinationAddressUnresolved,
+      );
+      destinationOpenAlias = destinationAddressUnresolved;
+    } else {
+      destinationAddress = destinationAddressUnresolved;
     }
 
     try {
-      final tx = await wallet.createTx(destinationAddress, amount, _isSweepAll);
+      final tx = await wallet.createTx(
+        destinationAddress,
+        amount,
+        _isSweepAll,
+        priority: _selectedPriority + 1,
+      );
 
       setState(() {
         _isLoading = false;
@@ -207,8 +324,85 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
-  void _onSendAmountChanged(double amount) {
+  void _showPrioritySelector() {
+    final i18n = AppLocalizations.of(context)!;
+    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                i18n.sendTransactionPriority,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              SizedBox(height: 20),
+              _PriorityOption(
+                label: i18n.sendPriorityLow,
+                priority: 0,
+                fee: _fees != null && _fees!.isNotEmpty ? _fees![0] : null,
+                fiatSymbol: fiatSymbol,
+                fiatRate: fiatRate.rate,
+                isSelected: _selectedPriority == 0,
+                onTap: () {
+                  setState(() {
+                    _selectedPriority = 0;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              SizedBox(height: 12),
+              _PriorityOption(
+                label: i18n.sendPriorityNormal,
+                priority: 1,
+                fee: _fees != null && _fees!.length > 1 ? _fees![1] : null,
+                fiatSymbol: fiatSymbol,
+                fiatRate: fiatRate.rate,
+                isSelected: _selectedPriority == 1,
+                onTap: () {
+                  setState(() {
+                    _selectedPriority = 1;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              SizedBox(height: 12),
+              _PriorityOption(
+                label: i18n.sendPriorityHigh,
+                priority: 2,
+                fee: _fees != null && _fees!.length > 2 ? _fees![2] : null,
+                fiatSymbol: fiatSymbol,
+                fiatRate: fiatRate.rate,
+                isSelected: _selectedPriority == 2,
+                onTap: () {
+                  setState(() {
+                    _selectedPriority = 2;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onAddressChanged() async {
+    if (await _validateForm(setErrors: false)) {
+      _calculateFees();
+    }
+  }
+
+  Future<void> _onAmountChanged() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
+    final amount = double.tryParse(_amountController.text) ?? 0;
 
     if (amount == wallet.unlockedBalance! && !_isSweepAll) {
       setState(() {
@@ -220,6 +414,10 @@ class _SendScreenState extends State<SendScreen> {
       setState(() {
         _isSweepAll = false;
       });
+    }
+
+    if (await _validateForm(setErrors: false)) {
+      _calculateFees();
     }
   }
 
@@ -339,55 +537,120 @@ class _SendScreenState extends State<SendScreen> {
                     ],
                   ),
                 ),
-              Column(
-                spacing: 10,
-                children: [
-                  TextField(
-                    controller: _amountController,
-                    onChanged: (value) =>
-                        _onSendAmountChanged(double.parse(value)),
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d+(\.\d*)?'),
-                      ),
-                    ],
-                    decoration: InputDecoration(
-                      labelText: i18n.amount,
-                      border: OutlineInputBorder(),
-                      errorText: _amountError != '' ? _amountError : null,
-                      suffixIcon: TextButton(
-                        onPressed: _setBalanceAsSendAmount,
-                        child: Text('Max'),
-                      ),
-                    ),
+              TextField(
+                controller: _amountController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?')),
+                ],
+                decoration: InputDecoration(
+                  labelText: i18n.amount,
+                  border: OutlineInputBorder(),
+                  errorText: _amountError != '' ? _amountError : null,
+                  suffixIcon: TextButton(
+                    onPressed: _setBalanceAsSendAmount,
+                    child: Text('Max'),
                   ),
-                  Row(
+                ),
+              ),
+              GestureDetector(
+                onTap: _showPrioritySelector,
+                child: Container(
+                  height: 40,
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
                     children: [
-                      Spacer(),
-                      GestureDetector(
-                        onTap: _setBalanceAsSendAmount,
-                        child: Row(
-                          spacing: 6,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icons/monero.svg',
-                              width: 18,
-                              height: 18,
-                            ),
-                            MoneroAmount(
-                              amount: wallet.unlockedBalance ?? 0,
-                              maxFontSize: 18,
-                            ),
-                          ],
+                      Icon(Icons.speed, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        _selectedPriority == 0
+                            ? i18n.sendPriorityLow
+                            : _selectedPriority == 1
+                            ? i18n.sendPriorityNormal
+                            : i18n.sendPriorityHigh,
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      Text(
+                        ' ${i18n.sendPriorityLabel}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
+                      Spacer(),
+                      if (_isLoadingFees)
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else if (_fees != null &&
+                          _fees!.length > _selectedPriority)
+                        Row(
+                          spacing: 8,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              spacing: 4,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/icons/monero.svg',
+                                  width: 14,
+                                  height: 14,
+                                ),
+                                MoneroAmount(
+                                  amount: _fees![_selectedPriority],
+                                  maxFontSize: 14,
+                                ),
+                              ],
+                            ),
+                            Icon(Icons.arrow_drop_down),
+                          ],
+                        )
+                      else
+                        Icon(Icons.arrow_drop_down),
                     ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Spacer(),
+                  GestureDetector(
+                    onTap: _setBalanceAsSendAmount,
+                    child: Row(
+                      spacing: 6,
+                      children: [
+                        Text(
+                          '${i18n.sendBalanceLabel}:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        SvgPicture.asset(
+                          'assets/icons/monero.svg',
+                          width: 18,
+                          height: 18,
+                        ),
+                        MoneroAmount(
+                          amount: wallet.unlockedBalance ?? 0,
+                          maxFontSize: 18,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
+
               Row(
                 spacing: 20,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -538,6 +801,105 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
           child: Text(i18n.cancel),
         ),
       ],
+    );
+  }
+}
+
+class _PriorityOption extends StatelessWidget {
+  final String label;
+  final int priority;
+  final double? fee;
+  final String fiatSymbol;
+  final double? fiatRate;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PriorityOption({
+    required this.label,
+    required this.priority,
+    required this.fee,
+    required this.fiatSymbol,
+    required this.fiatRate,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected
+              ? Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withValues(alpha: 0.3)
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            Spacer(),
+            if (fee != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 4,
+                    children: [
+                      Text(
+                        '${i18n.sendFeeLabel}:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      SvgPicture.asset(
+                        'assets/icons/monero.svg',
+                        width: 14,
+                        height: 14,
+                      ),
+                      MoneroAmount(amount: fee!, maxFontSize: 14),
+                    ],
+                  ),
+                  if (fiatRate is double)
+                    FiatAmount(
+                      prefix: fiatSymbol,
+                      amount: fee! * fiatRate!,
+                      maxFontSize: 12,
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

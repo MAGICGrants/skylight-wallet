@@ -432,4 +432,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendEditAddress => 'Edit Address';
+
+  @override
+  String get sendPriorityLow => 'Low';
+
+  @override
+  String get sendPriorityNormal => 'Normal';
+
+  @override
+  String get sendPriorityHigh => 'High';
+
+  @override
+  String get sendPriorityLabel => 'priority';
+
+  @override
+  String get sendTransactionPriority => 'Transaction Priority';
+
+  @override
+  String get sendFeeLabel => 'Fee';
+
+  @override
+  String get sendBalanceLabel => 'Balance';
+
+  @override
+  String get sendFailedToGetFeesError => 'Failed to get fees.';
 }

@@ -141,5 +141,13 @@
   "sendSelectFromAddressBook": "Selecionar da Lista de Contatos",
   "sendSelectedContact": "Contato selecionado",
   "sendClearSelectedContact": "Limpar contato selecionado",
-  "sendEditAddress": "Editar Endereço"
+  "sendEditAddress": "Editar Endereço",
+  "sendPriorityLow": "Baixa",
+  "sendPriorityNormal": "Normal",
+  "sendPriorityHigh": "Alta",
+  "sendPriorityLabel": "prioridade",
+  "sendTransactionPriority": "Prioridade da Transação",
+  "sendFeeLabel": "Taxa",
+  "sendBalanceLabel": "Saldo",
+  "sendFailedToGetFeesError": "Não foi possível carregar taxas."
 }

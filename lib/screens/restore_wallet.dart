@@ -15,13 +15,17 @@ class RestoreWalletScreen extends StatefulWidget {
 class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   final _mnemonicController = TextEditingController();
   final _restoreHeightController = TextEditingController();
+  bool _isLoading = false;
   String? _mnemonicError;
   String? _restoreHeightError;
 
   Future<void> _restore() async {
+    if (_isLoading) return;
+
     final i18n = AppLocalizations.of(context)!;
 
     setState(() {
+      _isLoading = true;
       _mnemonicError = null;
       _restoreHeightError = null;
     });
@@ -50,8 +54,16 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       await wallet.refresh();
       await wallet.loadAllStats();
       await wallet.connectToDaemon();
+
+      setState(() {
+        _isLoading = false;
+      });
     } on Exception catch (error) {
       final errorMsg = error.toString().replaceFirst('Exception: ', '');
+
+      setState(() {
+        _isLoading = false;
+      });
 
       if (errorMsg == 'Invalid mnemonic.') {
         setState(() {
@@ -74,6 +86,9 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       return;
     } catch (error) {
       log(LogLevel.error, error.toString());
+      setState(() {
+        _isLoading = false;
+      });
       if (mounted) {
         final i18n = AppLocalizations.of(context)!;
 
@@ -96,6 +111,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Monero Wallet')),
@@ -153,9 +169,21 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(i18n.cancel),
                 ),
-                FilledButton(
+                FilledButton.icon(
                   onPressed: _restore,
-                  child: Text(i18n.restoreWalletRestoreButton),
+                  label: Text(i18n.restoreWalletRestoreButton),
+                  icon: _isLoading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: isDarkTheme
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Colors.white,
+                          ),
+                        )
+                      : null,
                 ),
               ],
             ),

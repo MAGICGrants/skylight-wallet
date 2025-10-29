@@ -106,6 +106,7 @@ class MyApp extends StatelessWidget {
                     await wallet.refresh();
                     await wallet.loadAllStats();
                     await wallet.connectToDaemon();
+                    await wallet.checkSubaddressSupport();
                   })();
                 }
 

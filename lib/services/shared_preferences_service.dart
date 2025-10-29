@@ -12,7 +12,6 @@ class SharedPreferencesKeys {
   static const String connectionProxyPort = 'connectionProxyPort';
   static const String connectionUseTor = 'connectionUseTor';
   static const String connectionUseSsl = 'connectionUseSsl';
-  static const String showReceiveSubaddress = 'showReceiveSubaddress';
   static const String walletRestoreHeight = 'walletRestoreHeight';
   static const String txHistoryCount = 'txHistoryCount';
   static const String pendingOutgoingTxs = 'pendingOutgoingTxs';

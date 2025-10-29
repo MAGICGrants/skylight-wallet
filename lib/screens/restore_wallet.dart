@@ -54,6 +54,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       await wallet.refresh();
       await wallet.loadAllStats();
       await wallet.connectToDaemon();
+      wallet.checkSubaddressSupport();
 
       setState(() {
         _isLoading = false;

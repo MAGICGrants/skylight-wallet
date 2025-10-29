@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -20,6 +21,7 @@ import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
 
@@ -145,6 +147,7 @@ class WalletModel with ChangeNotifier {
   double? _unlockedBalance;
   double? _totalBalance;
   List<TxDetails> _txHistory = [];
+  bool? _serverSupportsSubaddresses;
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
@@ -155,13 +158,10 @@ class WalletModel with ChangeNotifier {
   double? get totalBalance => _totalBalance;
   List<TxDetails> get txHistory => _txHistory;
   bool get usingTor => _connectionUseTor;
+  bool? get serverSupportsSubaddresses => _serverSupportsSubaddresses;
 
   WalletModel() {
     _startTimers();
-  }
-
-  void notifyListenersFromOutside() {
-    notifyListeners();
   }
 
   void _startTimers() {
@@ -400,6 +400,84 @@ class WalletModel with ChangeNotifier {
     if (connectError != '') {
       log(LogLevel.warn, 'Wallet_connectToDaemon error: $connectError');
     }
+  }
+
+  Future<void> checkSubaddressSupport() async {
+    final protocol = _connectionUseSsl ? 'https' : 'http';
+    final url = Uri.parse('$protocol://$_connectionAddress/upsert_subaddrs');
+    final primaryAddress = getPrimaryAddress();
+    final viewKey = _w2Wallet!.secretViewKey();
+    final subaddrs = [
+      {
+        "key": 0,
+        "value": [
+          [0, 1],
+        ],
+      },
+    ];
+    final getAll = false;
+
+    final body = json.encode({
+      'address': primaryAddress,
+      'view_key': viewKey,
+      'subaddrs': subaddrs,
+      'get_all': getAll,
+    });
+
+    log(LogLevel.info, 'Checking subaddress support:');
+    log(LogLevel.info, '  url: $url');
+    log(LogLevel.info, '  primaryAddress: $primaryAddress');
+    log(LogLevel.info, '  viewKey: <hidden>');
+    log(LogLevel.info, '  subaddrs: $subaddrs');
+    log(LogLevel.info, '  getAll: $getAll');
+
+    var httpStatus = 0;
+
+    for (int i = 0; i < 3; i++) {
+      try {
+        if (_connectionUseTor) {
+          await TorService.sharedInstance.waitUntilConnected();
+          final proxyInfo = TorService.sharedInstance.getProxyInfo();
+          final response = await makeSocksHttpRequest(
+            'POST',
+            url.toString(),
+            proxyInfo,
+            body: body,
+          ).timeout(Duration(seconds: 20));
+
+          httpStatus = response.statusCode;
+        } else {
+          final response = await http
+              .post(
+                url,
+                headers: {'Content-Type': 'application/json'},
+                body: body,
+              )
+              .timeout(Duration(seconds: 5));
+
+          httpStatus = response.statusCode;
+        }
+
+        break;
+      } catch (e) {
+        if (i == 2) {
+          log(
+            LogLevel.warn,
+            'Failed to check subaddress support after ${i + 1} attempts.',
+          );
+          log(LogLevel.warn, 'Error: $e');
+        }
+      }
+    }
+
+    _serverSupportsSubaddresses = httpStatus == 200;
+
+    log(
+      LogLevel.info,
+      'Subaddress support check result: $_serverSupportsSubaddresses (status: $httpStatus)',
+    );
+
+    notifyListeners();
   }
 
   Future<void> refresh() async {

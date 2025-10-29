@@ -461,14 +461,8 @@ abstract class AppLocalizations {
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: For better privacy, consider using subaddresses if supported by your light wallet server.'**
+  /// **'Warning: Unless you know what you\'re doing, please consider using subaddresses for better privacy.'**
   String get receivePrimaryAddressWarn;
-
-  /// No description provided for @receiveSubaddressWarn.
-  ///
-  /// In en, this message translates to:
-  /// **'Warning: Make sure your light wallet server supports subaddresses, otherwise, you will not be able to see incoming transactions.'**
-  String get receiveSubaddressWarn;
 
   /// No description provided for @receiveShareButton.
   ///
@@ -487,6 +481,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show Primary Address'**
   String get receiveShowPrimaryAddressButton;
+
+  /// No description provided for @receiveServerNoSubaddressesWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.'**
+  String get receiveServerNoSubaddressesWarn;
 
   /// No description provided for @sendTitle.
   ///

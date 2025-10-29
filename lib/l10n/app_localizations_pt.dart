@@ -198,11 +198,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Aviso: Para maior privacidade, considere usar subendereços se o seu servidor de light wallet os suportar.';
-
-  @override
-  String get receiveSubaddressWarn =>
-      'Aviso: Certifique-se de que seu servidor de light wallet suporta subendereços, caso contrário, você não conseguirá ver as transações recebidas.';
+      'Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.';
 
   @override
   String get receiveShareButton => 'Compartilhar';
@@ -212,6 +208,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receiveShowPrimaryAddressButton => 'Mostrar Endereço Primário';
+
+  @override
+  String get receiveServerNoSubaddressesWarn =>
+      'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.';
 
   @override
   String get sendTitle => 'Enviar';

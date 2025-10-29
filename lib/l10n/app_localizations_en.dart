@@ -198,11 +198,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Warning: For better privacy, consider using subaddresses if supported by your light wallet server.';
-
-  @override
-  String get receiveSubaddressWarn =>
-      'Warning: Make sure your light wallet server supports subaddresses, otherwise, you will not be able to see incoming transactions.';
+      'Warning: Unless you know what you\'re doing, please consider using subaddresses for better privacy.';
 
   @override
   String get receiveShareButton => 'Share';
@@ -212,6 +208,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receiveShowPrimaryAddressButton => 'Show Primary Address';
+
+  @override
+  String get receiveServerNoSubaddressesWarn =>
+      'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.';
 
   @override
   String get sendTitle => 'Send';

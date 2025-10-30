@@ -21,11 +21,13 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _customProxyPortController =
       TextEditingController();
+
   bool _useTor = false;
   bool _useSsl = false;
   bool _hasTested = false;
-  bool _isLoading = false;
+  bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
+  bool _connectionSaveIsLoading = false;
 
   @override
   void initState() {
@@ -137,7 +139,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     setState(() {
       _hasTested = true;
-      _isLoading = true;
+      _connectionTestIsLoading = true;
     });
 
     final url = '$proto://$daemonAddress/get_address_info';
@@ -179,12 +181,16 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
       });
     } finally {
       setState(() {
-        _isLoading = false;
+        _connectionTestIsLoading = false;
       });
     }
   }
 
-  void _saveConnection() {
+  Future<void> _saveConnection() async {
+    setState(() {
+      _connectionSaveIsLoading = true;
+    });
+
     final daemonAddress = cleanAddress(_addressController.text);
     final proxyAddress = _customProxyPortController.text;
 
@@ -197,13 +203,21 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
       useSsl: _useSsl,
     );
 
-    wallet.persistCurrentConnection();
-    Navigator.pushNamed(context, '/create_wallet');
+    await wallet.persistCurrentConnection();
+
+    setState(() {
+      _connectionSaveIsLoading = false;
+    });
+
+    if (mounted) {
+      Navigator.pushNamed(context, '/create_wallet');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Center(
@@ -239,7 +253,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
-                      suffixIcon: _hasTested && !_isLoading
+                      suffixIcon: _hasTested && !_connectionTestIsLoading
                           ? Icon(
                               _connectionSuccess
                                   ? Icons.check
@@ -286,34 +300,39 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     spacing: 10,
                     children: [
-                      TextButton(
+                      TextButton.icon(
+                        label: Text(i18n.connectionSetupTestConnectionButton),
                         onPressed: () => _testConnection(),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            if (!_isLoading)
-                              AnimatedOpacity(
-                                opacity: _isLoading ? 0.0 : 1.0,
-                                duration: Duration(milliseconds: 300),
-                                child: Text(
-                                  i18n.connectionSetupTestConnectionButton,
-                                ),
-                              ),
-                            if (_isLoading)
-                              SizedBox(
+                        icon: !_connectionTestIsLoading
+                            ? Icon(Icons.network_check)
+                            : SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),
                               ),
-                          ],
-                        ),
                       ),
-                      if (_connectionSuccess && _hasTested && !_isLoading)
-                        FilledButton(
+                      if (_connectionSuccess &&
+                          _hasTested &&
+                          !_connectionTestIsLoading)
+                        FilledButton.icon(
                           onPressed: _saveConnection,
-                          child: Text(i18n.connectionSetupContinueButton),
+                          icon: !_connectionSaveIsLoading
+                              ? Icon(Icons.arrow_outward_rounded)
+                              : SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: isDarkTheme
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary
+                                        : Colors.white,
+                                  ),
+                                ),
+                          label: Text(i18n.connectionSetupContinueButton),
                         ),
                     ],
                   ),

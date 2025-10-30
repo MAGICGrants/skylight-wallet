@@ -31,6 +31,8 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
     try {
       final seed = await wallet.create();
+      await wallet.load();
+
       setState(() {
         _seed = seed.split(' ');
       });

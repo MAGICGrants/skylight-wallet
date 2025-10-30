@@ -25,7 +25,6 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     setState(() {
-      _isLoading = true;
       _mnemonicError = null;
       _restoreHeightError = null;
     });
@@ -49,16 +48,12 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     final mnemonic = _mnemonicController.text;
     final restoreHeight = int.parse(_restoreHeightController.text);
 
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       await wallet.restoreFromMnemonic(mnemonic, restoreHeight);
-      await wallet.refresh();
-      await wallet.loadAllStats();
-      await wallet.connectToDaemon();
-      wallet.checkSubaddressSupport();
-
-      setState(() {
-        _isLoading = false;
-      });
     } on Exception catch (error) {
       final errorMsg = error.toString().replaceFirst('Exception: ', '');
 
@@ -99,6 +94,12 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       }
       return;
     }
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    wallet.load();
 
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(

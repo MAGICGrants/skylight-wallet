@@ -207,6 +207,18 @@ class WalletModel with ChangeNotifier {
     }
   }
 
+  Future<void> load() async {
+    if (_w2Wallet == null) {
+      return;
+    }
+
+    loadPersistedSubaddressSupport();
+    await refresh();
+    await loadAllStats();
+    await connectToDaemon();
+    await checkSubaddressSupport();
+  }
+
   Future<void> loadAllStats() async {
     if (_w2Wallet == null) {
       log(
@@ -402,6 +414,12 @@ class WalletModel with ChangeNotifier {
     }
   }
 
+  Future<void> loadPersistedSubaddressSupport() async {
+    _serverSupportsSubaddresses = await SharedPreferencesService.get<bool>(
+      SharedPreferencesKeys.serverSupportsSubaddresses,
+    );
+  }
+
   Future<void> checkSubaddressSupport() async {
     final protocol = _connectionUseSsl ? 'https' : 'http';
     final url = Uri.parse('$protocol://$_connectionAddress/upsert_subaddrs');
@@ -466,11 +484,18 @@ class WalletModel with ChangeNotifier {
             'Failed to check subaddress support after ${i + 1} attempts.',
           );
           log(LogLevel.warn, 'Error: $e');
+
+          rethrow;
         }
       }
     }
 
     _serverSupportsSubaddresses = httpStatus == 200;
+
+    await SharedPreferencesService.set<bool>(
+      SharedPreferencesKeys.serverSupportsSubaddresses,
+      _serverSupportsSubaddresses!,
+    );
 
     log(
       LogLevel.info,
@@ -756,6 +781,9 @@ class WalletModel with ChangeNotifier {
     await SharedPreferencesService.remove(SharedPreferencesKeys.appLockEnabled);
     await SharedPreferencesService.remove(
       SharedPreferencesKeys.pendingOutgoingTxs,
+    );
+    await SharedPreferencesService.remove(
+      SharedPreferencesKeys.serverSupportsSubaddresses,
     );
     await SharedPreferencesService.remove(SharedPreferencesKeys.contacts);
   }

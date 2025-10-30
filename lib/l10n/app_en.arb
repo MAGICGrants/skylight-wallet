@@ -24,7 +24,7 @@
   "connectionSetupUseSslLabel": "Use SSL",
   "connectionSetupTestConnectionButton": "Test Connection",
   "connectionSetupContinueButton": "Continue",
-  "createWalletTitle": "Create Wallet",
+    "createWalletTitle": "Create Wallet",
   "createWalletDescription": "Do you already have a Monero wallet seed, or do you need to make a new one?",
   "createWalletRestoreExistingButton": "Restore Existing",
   "createWalletCreateNewButton": "Create New",

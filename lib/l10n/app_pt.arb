@@ -24,7 +24,7 @@
   "connectionSetupUseSslLabel": "Usar SSL",
   "connectionSetupTestConnectionButton": "Testar Conexão",
   "connectionSetupContinueButton": "Continuar",
-  "createWalletTitle": "Criar Carteira",
+    "createWalletTitle": "Criar Carteira",
   "createWalletDescription": "Você já possui uma semente de carteira Monero ou precisa criar uma nova?",
   "createWalletRestoreExistingButton": "Restaurar Existente",
   "createWalletCreateNewButton": "Criar Nova",

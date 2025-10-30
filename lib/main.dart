@@ -102,12 +102,7 @@ class MyApp extends StatelessWidget {
                     : '/welcome';
 
                 if (walletExists) {
-                  (() async {
-                    await wallet.refresh();
-                    await wallet.loadAllStats();
-                    await wallet.connectToDaemon();
-                    await wallet.checkSubaddressSupport();
-                  })();
+                  wallet.load();
                 }
 
                 return MaterialApp(

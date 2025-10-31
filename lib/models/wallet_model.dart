@@ -186,7 +186,7 @@ class WalletModel with ChangeNotifier {
 
     final isConnected = await getIsConnected();
 
-    if (isConnected != _isConnected) {
+    if (isConnected != _isConnected && _w2Wallet != null) {
       _isConnected = isConnected;
       notifyListeners();
     }

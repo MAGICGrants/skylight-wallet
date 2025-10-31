@@ -214,6 +214,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.';
 
   @override
+  String get receiveMaxSubaddressesReachedWarn =>
+      'Você atingiu o número máximo de subendereços suportados por este servidor. Este é um subendereço já usado.';
+
+  @override
   String get sendTitle => 'Enviar';
 
   @override

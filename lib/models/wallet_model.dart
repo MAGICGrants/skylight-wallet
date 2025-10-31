@@ -148,6 +148,8 @@ class WalletModel with ChangeNotifier {
   double? _totalBalance;
   List<TxDetails> _txHistory = [];
   bool? _serverSupportsSubaddresses;
+  int? _unusedSubaddressIndex;
+  bool? _unusedSubaddressIndexIsSupported;
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
@@ -159,6 +161,9 @@ class WalletModel with ChangeNotifier {
   List<TxDetails> get txHistory => _txHistory;
   bool get usingTor => _connectionUseTor;
   bool? get serverSupportsSubaddresses => _serverSupportsSubaddresses;
+  int? get unusedSubaddressIndex => _unusedSubaddressIndex;
+  bool? get unusedSubaddressIndexIsSupported =>
+      _unusedSubaddressIndexIsSupported;
 
   WalletModel() {
     _startTimers();
@@ -212,11 +217,13 @@ class WalletModel with ChangeNotifier {
       return;
     }
 
-    loadPersistedSubaddressSupport();
+    await loadPersistedSubaddressSupport();
+    await loadPersistedUnusedSubaddressIndex();
     await refresh();
     await loadAllStats();
     await connectToDaemon();
-    await checkSubaddressSupport();
+    await loadSubaddressSupport();
+    await loadUnusedSubaddressIndex();
   }
 
   Future<void> loadAllStats() async {
@@ -260,6 +267,10 @@ class WalletModel with ChangeNotifier {
       if (persistCount) {
         await persistTxHistoryCount();
       }
+    }
+
+    if (txCount > _txHistory.length) {
+      await loadUnusedSubaddressIndex();
     }
   }
 
@@ -420,16 +431,84 @@ class WalletModel with ChangeNotifier {
     );
   }
 
-  Future<void> checkSubaddressSupport() async {
-    final protocol = _connectionUseSsl ? 'https' : 'http';
-    final url = Uri.parse('$protocol://$_connectionAddress/upsert_subaddrs');
+  Future<void> loadSubaddressSupport() async {
+    try {
+      final isSupported = await isSubaddressSupported(1);
+      _serverSupportsSubaddresses = isSupported;
+
+      await SharedPreferencesService.set<bool>(
+        SharedPreferencesKeys.serverSupportsSubaddresses,
+        _serverSupportsSubaddresses!,
+      );
+    } catch (e) {
+      //
+    }
+  }
+
+  Future<void> loadUnusedSubaddressIndex() async {
+    final txHistory = await _getFullTxHistory();
+
+    Set<int> usedIndexes = {};
+
+    for (final tx in txHistory) {
+      if (tx.accountIndex == 0) {
+        for (final subaddrIndex in tx.subaddrIndexList) {
+          usedIndexes.add(subaddrIndex);
+        }
+      }
+    }
+
+    int nextSubaddrIndex = 1;
+
+    while (usedIndexes.contains(nextSubaddrIndex)) {
+      nextSubaddrIndex++;
+    }
+
+    if (_unusedSubaddressIndex != nextSubaddrIndex) {
+      try {
+        final isSupported = await isSubaddressSupported(nextSubaddrIndex);
+        _unusedSubaddressIndex = nextSubaddrIndex;
+        _unusedSubaddressIndexIsSupported = isSupported;
+
+        await SharedPreferencesService.set<int>(
+          SharedPreferencesKeys.unusedSubaddressIndex,
+          _unusedSubaddressIndex!,
+        );
+        await SharedPreferencesService.set<bool>(
+          SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
+          _unusedSubaddressIndexIsSupported!,
+        );
+
+        notifyListeners();
+      } catch (e) {
+        //
+      }
+    }
+  }
+
+  Future<void> loadPersistedUnusedSubaddressIndex() async {
+    _unusedSubaddressIndex =
+        await SharedPreferencesService.get<int>(
+          SharedPreferencesKeys.unusedSubaddressIndex,
+        ) ??
+        1;
+    _unusedSubaddressIndexIsSupported =
+        await SharedPreferencesService.get<bool>(
+          SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
+        ) ??
+        false;
+  }
+
+  Future<bool> isSubaddressSupported(int subaddrIndex) async {
+    final proto = _connectionUseSsl ? 'https' : 'http';
+    final url = Uri.parse('$proto://$_connectionAddress/upsert_subaddrs');
     final primaryAddress = getPrimaryAddress();
     final viewKey = _w2Wallet!.secretViewKey();
     final subaddrs = [
       {
         "key": 0,
         "value": [
-          [0, 1],
+          [0, subaddrIndex],
         ],
       },
     ];
@@ -490,19 +569,14 @@ class WalletModel with ChangeNotifier {
       }
     }
 
-    _serverSupportsSubaddresses = httpStatus == 200;
-
-    await SharedPreferencesService.set<bool>(
-      SharedPreferencesKeys.serverSupportsSubaddresses,
-      _serverSupportsSubaddresses!,
-    );
+    final result = httpStatus == 200;
 
     log(
       LogLevel.info,
-      'Subaddress support check result: $_serverSupportsSubaddresses (status: $httpStatus)',
+      'Subaddress support check result for subaddress $subaddrIndex: $result (status: $httpStatus)',
     );
 
-    notifyListeners();
+    return result;
   }
 
   Future<void> refresh() async {
@@ -786,6 +860,12 @@ class WalletModel with ChangeNotifier {
       SharedPreferencesKeys.serverSupportsSubaddresses,
     );
     await SharedPreferencesService.remove(SharedPreferencesKeys.contacts);
+    await SharedPreferencesService.remove(
+      SharedPreferencesKeys.unusedSubaddressIndex,
+    );
+    await SharedPreferencesService.remove(
+      SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
+    );
   }
 
   Future<bool> hasExistingWallet() async {
@@ -904,37 +984,29 @@ class WalletModel with ChangeNotifier {
     return address;
   }
 
-  Future<String> getUnusedSubaddress() async {
-    final txHistory = await _getFullTxHistory();
-
-    Set<int> usedIndexes = {};
-
-    for (final tx in txHistory) {
-      if (tx.accountIndex == 0) {
-        for (final subaddrIndex in tx.subaddrIndexList) {
-          usedIndexes.add(subaddrIndex);
-        }
-      }
+  String? getUnusedSubaddress() {
+    if (_unusedSubaddressIndex == null) {
+      return null;
     }
 
-    int nextSubaddrIndex = 1;
+    var subaddrIndex = _unusedSubaddressIndex!;
 
-    while (usedIndexes.contains(nextSubaddrIndex)) {
-      nextSubaddrIndex++;
+    if (_unusedSubaddressIndexIsSupported == false) {
+      subaddrIndex -= 1;
     }
 
     log(LogLevel.info, 'Calling Wallet_address with parameters:');
     log(LogLevel.info, '  accountIndex: 0');
-    log(LogLevel.info, '  addressIndex: $nextSubaddrIndex');
+    log(LogLevel.info, '  addressIndex: $subaddrIndex');
 
-    final address = _w2Wallet!.address(
+    final subaddress = _w2Wallet!.address(
       accountIndex: 0,
-      addressIndex: nextSubaddrIndex,
+      addressIndex: subaddrIndex,
     );
 
-    log(LogLevel.info, 'Wallet_address result: $address');
+    log(LogLevel.info, 'Wallet_address result: $subaddress');
 
-    return address;
+    return subaddress;
   }
 
   Future<MoneroPendingTransaction> createTx(

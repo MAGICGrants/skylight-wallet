@@ -15,8 +15,6 @@ class ReceiveScreen extends StatefulWidget {
 }
 
 class _ReceiveScreenState extends State<ReceiveScreen> {
-  var _primaryAddress = '';
-  var _subaddress = '';
   var _showSubaddress = true;
   var _previousBrightness = 0.0;
 
@@ -24,7 +22,6 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   void initState() {
     super.initState();
 
-    _loadAddresses();
     _setBrightnessToMax();
   }
 
@@ -32,18 +29,6 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   void dispose() {
     _setBrightnessToNormal();
     super.dispose();
-  }
-
-  Future<void> _loadAddresses() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
-    final primaryAddress = wallet.getPrimaryAddress();
-    final subaddress = await wallet.getUnusedSubaddress();
-
-    setState(() {
-      _primaryAddress = primaryAddress;
-      _subaddress = subaddress;
-    });
   }
 
   void _setShowSubaddress(bool value) {
@@ -69,14 +54,16 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final brightness = Theme.of(context).brightness;
     final isDarkTheme = brightness == Brightness.dark;
     final wallet = Provider.of<WalletModel>(context);
-    var address = '';
+    final primaryAddress = wallet.getPrimaryAddress();
+    final subaddress = wallet.getUnusedSubaddress();
+    String? address;
 
     if (wallet.serverSupportsSubaddresses == false) {
-      address = _primaryAddress;
+      address = primaryAddress;
     }
 
     if (wallet.serverSupportsSubaddresses == true) {
-      address = _showSubaddress ? _subaddress : _primaryAddress;
+      address = _showSubaddress ? subaddress : primaryAddress;
     }
 
     return Scaffold(
@@ -84,7 +71,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       body: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
-          child: wallet.serverSupportsSubaddresses == null
+          child: wallet.serverSupportsSubaddresses == null || address == null
               ? CircularProgressIndicator()
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -113,6 +100,13 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.red),
                       ),
+                    if (_showSubaddress &&
+                        wallet.unusedSubaddressIndexIsSupported == false)
+                      Text(
+                        i18n.receiveMaxSubaddressesReachedWarn,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red),
+                      ),
                     GestureDetector(
                       child: Text(
                         address,
@@ -120,7 +114,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                         style: TextStyle(fontFamily: 'monospace'),
                       ),
                       onTap: () async {
-                        await Clipboard.setData(ClipboardData(text: address));
+                        await Clipboard.setData(ClipboardData(text: address!));
                       },
                     ),
                     Row(

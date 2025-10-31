@@ -214,6 +214,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.';
 
   @override
+  String get receiveMaxSubaddressesReachedWarn =>
+      'You have reached the maximum number of subaddresses supported by this server. This is a used subaddress.';
+
+  @override
   String get sendTitle => 'Send';
 
   @override

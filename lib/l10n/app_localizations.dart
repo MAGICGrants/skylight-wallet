@@ -488,6 +488,12 @@ abstract class AppLocalizations {
   /// **'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.'**
   String get receiveServerNoSubaddressesWarn;
 
+  /// No description provided for @receiveMaxSubaddressesReachedWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached the maximum number of subaddresses supported by this server. This is a used subaddress.'**
+  String get receiveMaxSubaddressesReachedWarn;
+
   /// No description provided for @sendTitle.
   ///
   /// In en, this message translates to:

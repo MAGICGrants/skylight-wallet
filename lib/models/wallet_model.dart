@@ -8,6 +8,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'package:dart_date/dart_date.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:monero/monero.dart' as monero;
@@ -15,7 +16,7 @@ import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:skylight_wallet/consts.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/formatting.dart';
@@ -24,6 +25,7 @@ import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
+import 'package:skylight_wallet/consts.dart' as consts;
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -132,7 +134,6 @@ class WalletModel with ChangeNotifier {
       .getLWSFWalletManager();
 
   Wallet2Wallet? _w2Wallet;
-
   Wallet2TransactionHistory? _w2TxHistory;
 
   late String _connectionAddress;
@@ -140,6 +141,7 @@ class WalletModel with ChangeNotifier {
   late bool _connectionUseTor;
   late bool _connectionUseSsl;
 
+  final _sessionStartedAt = DateTime.now().secondsSinceEpoch;
   var _hasAttemptedConnection = false;
   var _isConnected = false;
   var _isSynced = false;
@@ -262,7 +264,27 @@ class WalletModel with ChangeNotifier {
     }
 
     if (txCount > _txHistory.length || hasPendingTx) {
+      final txCountDiff = txCount - _txHistory.length;
+
       _txHistory = await _getFullTxHistory();
+
+      // Notify new transactions on desktop
+      if ((Platform.isLinux || Platform.isWindows) &&
+          _isConnected &&
+          _isSynced &&
+          _syncedHeight is int &&
+          _syncedHeight! > 0) {
+        for (int i = 0; i < txCountDiff; i++) {
+          final tx = _txHistory[i];
+
+          if (tx.direction == consts.txDirectionIncoming &&
+              tx.timestamp > _sessionStartedAt) {
+            NotificationService().showIncomingTxNotification(tx.amount);
+            // Only notify one new transaction
+            break;
+          }
+        }
+      }
 
       if (persistCount) {
         await persistTxHistoryCount();
@@ -1103,7 +1125,7 @@ class WalletModel with ChangeNotifier {
 
     final TxDetails txDetails = TxDetails(
       index: null,
-      direction: txDirectionOutgoing,
+      direction: consts.txDirectionOutgoing,
       hash: tx.txid(''),
       amount: doubleAmountFromInt(tx.amount()),
       fee: doubleAmountFromInt(tx.fee()),

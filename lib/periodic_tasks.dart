@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -87,10 +89,21 @@ void _callbackDispatcher() {
   });
 }
 
-Future<void> registerTxNotifierTaskIfEnabled() async {
-  final notificationsIsAllowed = await NotificationService().promptPermission();
+Future<void> registerTxNotifierTaskIfAllowed() async {
+  final notificationsEnabled =
+      await SharedPreferencesService.get<bool>(
+        SharedPreferencesKeys.notificationsEnabled,
+      ) ??
+      false;
 
-  if (!notificationsIsAllowed) {
+  if (!notificationsEnabled) {
+    return;
+  }
+
+  final notificationsAreAllowed = await NotificationService()
+      .promptPermission();
+
+  if (!notificationsAreAllowed) {
     await SharedPreferencesService.set<bool>(
       SharedPreferencesKeys.notificationsEnabled,
       false,
@@ -98,35 +111,29 @@ Future<void> registerTxNotifierTaskIfEnabled() async {
     return;
   }
 
-  final notificationsEnabled =
-      await SharedPreferencesService.get<bool>(
-        SharedPreferencesKeys.notificationsEnabled,
-      ) ??
-      false;
-
-  if (notificationsEnabled) {
-    // This will replace an existing task, so we can prevent code from eg an old
-    // release from remaining forever.
-    await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
-    await Workmanager().registerPeriodicTask(
-      "New transactions check",
-      PeriodicTasks.txNotifier,
-      frequency: Duration(minutes: 15),
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-        requiresBatteryNotLow: true,
-      ),
-    );
-  }
+  // Cancelling will replace an existing task, so we can prevent code from an
+  // old release from remaining forever.
+  await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
+  await Workmanager().registerPeriodicTask(
+    "New transactions check",
+    PeriodicTasks.txNotifier,
+    frequency: Duration(minutes: 15),
+    constraints: Constraints(
+      networkType: NetworkType.connected,
+      requiresBatteryNotLow: true,
+    ),
+  );
 }
 
-Future<void> unregisterTxNotifierTask() async {
+Future<void> unregisterPeriodicTasks() async {
   await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
 }
 
 Future<void> registerPeriodicTasks() async {
-  await NotificationService().init();
-  Workmanager().initialize(_callbackDispatcher, isInDebugMode: true);
+  if (!(Platform.isAndroid || Platform.isIOS)) {
+    return;
+  }
 
-  await registerTxNotifierTaskIfEnabled();
+  Workmanager().initialize(_callbackDispatcher, isInDebugMode: true);
+  await registerTxNotifierTaskIfAllowed();
 }

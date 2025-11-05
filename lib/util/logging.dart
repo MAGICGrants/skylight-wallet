@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/util/dirs.dart';
 
 enum LogLevel { info, warn, error }
 
@@ -13,10 +14,8 @@ Future<File> _getLogFile() async {
   // Get external storage directory for Android, or documents directory for iOS
   if (Platform.isAndroid) {
     directory = await getExternalStorageDirectory();
-  } else if (Platform.isIOS) {
-    directory = await getApplicationDocumentsDirectory();
   } else {
-    directory = await getApplicationDocumentsDirectory();
+    directory = await getAppDir();
   }
 
   if (directory == null) {
@@ -43,9 +42,9 @@ Future<void> cleanOldLogFiles() async {
     if (Platform.isAndroid) {
       directory = await getExternalStorageDirectory();
     } else if (Platform.isIOS) {
-      directory = await getApplicationDocumentsDirectory();
+      directory = await getAppDir();
     } else {
-      directory = await getApplicationDocumentsDirectory();
+      directory = await getAppDir();
     }
 
     if (directory == null) {

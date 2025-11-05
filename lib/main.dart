@@ -3,9 +3,11 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
 import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skylight_wallet/util/dirs.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -37,8 +39,11 @@ import 'package:skylight_wallet/util/logging.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   timeago.setLocaleMessages('pt', timeago.PtBrMessages());
+  await createAppDir();
   TorService.sharedInstance.start();
-  registerPeriodicTasks();
+  await registerPeriodicTasks();
+  await NotificationService().init();
+
   cleanOldLogFiles();
 
   runApp(MyApp());

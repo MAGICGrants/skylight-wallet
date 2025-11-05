@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -456,11 +458,12 @@ class _SendScreenState extends State<SendScreen> {
                             onTap: _pasteAddressFromClipboard,
                             child: Icon(Icons.paste),
                           ),
-                          GestureDetector(
-                            onTap: () =>
-                                Navigator.pushNamed(context, '/scan_qr'),
-                            child: Icon(Icons.qr_code),
-                          ),
+                          if (Platform.isAndroid || Platform.isIOS)
+                            GestureDetector(
+                              onTap: () =>
+                                  Navigator.pushNamed(context, '/scan_qr'),
+                              child: Icon(Icons.qr_code),
+                            ),
                           GestureDetector(
                             onTap: _showContactPicker,
                             child: Icon(Icons.contacts_outlined),

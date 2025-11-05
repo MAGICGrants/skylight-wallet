@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -22,7 +24,9 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   void initState() {
     super.initState();
 
-    _setBrightnessToMax();
+    if (Platform.isAndroid || Platform.isIOS) {
+      _setBrightnessToMax();
+    }
   }
 
   @override

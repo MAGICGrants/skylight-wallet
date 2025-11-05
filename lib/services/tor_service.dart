@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:tor_ffi_plugin/tor_ffi_plugin.dart';
 
 final pTorService = Provider((_) => TorService.sharedInstance);
@@ -47,7 +47,7 @@ class TorService {
   /// Returns a Future that completes when the Tor service has started.
   Future<void> start() async {
     _tor ??= Tor.instance;
-    _torDataDirPath ??= (await getApplicationDocumentsDirectory()).path;
+    _torDataDirPath ??= (await getAppDir()).path;
 
     // Start the Tor service.
     try {

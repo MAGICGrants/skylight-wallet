@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
@@ -79,14 +81,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SharedPreferencesKeys.notificationsEnabled,
           true,
         );
-        await registerTxNotifierTaskIfEnabled();
+        await registerTxNotifierTaskIfAllowed();
       }
     } else {
       await SharedPreferencesService.set<bool>(
         SharedPreferencesKeys.notificationsEnabled,
         false,
       );
-      await unregisterTxNotifierTask();
+      await unregisterPeriodicTasks();
     }
   }
 
@@ -367,19 +369,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  i18n.settingsNotifyNewTxsLabel,
-                  style: TextStyle(fontSize: 18),
-                ),
-                Switch(
-                  value: _newTxNotificationsEnabled,
-                  onChanged: _setTxNotificationsEnabled,
-                ),
-              ],
-            ),
+            if (Platform.isAndroid || Platform.isIOS)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    i18n.settingsNotifyNewTxsLabel,
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Switch(
+                    value: _newTxNotificationsEnabled,
+                    onChanged: _setTxNotificationsEnabled,
+                  ),
+                ],
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

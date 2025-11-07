@@ -67,9 +67,7 @@ class _SendScreenState extends State<SendScreen> {
 
     if (args != null) {
       _destinationAddressController.text = args.destinationAddress;
-      _amountController.text = args.amount != null
-          ? args.amount.toString()
-          : '';
+      _amountController.text = args.amount != null ? args.amount.toString() : '';
     }
   }
 
@@ -110,9 +108,7 @@ class _SendScreenState extends State<SendScreen> {
     String destinationAddress = '';
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      destinationAddress = await wallet.resolveOpenAlias(
-        unresolvedDestinationAddress,
-      );
+      destinationAddress = await wallet.resolveOpenAlias(unresolvedDestinationAddress);
     } else {
       destinationAddress = unresolvedDestinationAddress;
     }
@@ -134,9 +130,7 @@ class _SendScreenState extends State<SendScreen> {
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
       // check for openalias
-      destinationAddress = await wallet.resolveOpenAlias(
-        unresolvedDestinationAddress,
-      );
+      destinationAddress = await wallet.resolveOpenAlias(unresolvedDestinationAddress);
 
       if (destinationAddress == '') {
         if (setErrors) {
@@ -170,18 +164,9 @@ class _SendScreenState extends State<SendScreen> {
     return true;
   }
 
-  Future<double> _getTxFee(
-    String destinationAddress,
-    double amount,
-    int priority,
-  ) async {
+  Future<double> _getTxFee(String destinationAddress, double amount, int priority) async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final tx = await wallet.createTx(
-      destinationAddress,
-      amount,
-      _isSweepAll,
-      priority: priority,
-    );
+    final tx = await wallet.createTx(destinationAddress, amount, _isSweepAll, priority: priority);
     return doubleAmountFromInt(tx.fee());
   }
 
@@ -224,9 +209,9 @@ class _SendScreenState extends State<SendScreen> {
               _isLoadingFees = false;
             });
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(i18n.sendFailedToGetFeesError)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(i18n.sendFailedToGetFeesError)));
             }
           }
         }
@@ -260,9 +245,7 @@ class _SendScreenState extends State<SendScreen> {
 
     // Resolve openalias if it is a domain
     if (domainRegex.hasMatch(destinationAddressUnresolved)) {
-      destinationAddress = await wallet.resolveOpenAlias(
-        destinationAddressUnresolved,
-      );
+      destinationAddress = await wallet.resolveOpenAlias(destinationAddressUnresolved);
       destinationOpenAlias = destinationAddressUnresolved;
     } else {
       destinationAddress = destinationAddressUnresolved;
@@ -305,9 +288,7 @@ class _SendScreenState extends State<SendScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
         }
       }
     }
@@ -340,10 +321,7 @@ class _SendScreenState extends State<SendScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                i18n.sendTransactionPriority,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(i18n.sendTransactionPriority, style: Theme.of(context).textTheme.titleLarge),
               SizedBox(height: 20),
               _PriorityOption(
                 label: i18n.sendPriorityLow,
@@ -434,253 +412,221 @@ class _SendScreenState extends State<SendScreen> {
       body: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 20,
-            children: [
-              if (_selectedContact == null)
-                TextField(
-                  controller: _destinationAddressController,
-                  maxLines: null,
-                  decoration: InputDecoration(
-                    labelText: i18n.address,
-                    border: OutlineInputBorder(),
-                    errorText: _destinationAddressError != ''
-                        ? _destinationAddressError
-                        : null,
-                    suffixIcon: Container(
-                      margin: EdgeInsets.only(right: 14),
-                      child: Row(
-                        spacing: 16,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: _pasteAddressFromClipboard,
-                            child: Icon(Icons.paste),
-                          ),
-                          if (Platform.isAndroid || Platform.isIOS)
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 440),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 20,
+              children: [
+                if (_selectedContact == null)
+                  TextField(
+                    controller: _destinationAddressController,
+                    maxLines: null,
+                    decoration: InputDecoration(
+                      labelText: i18n.address,
+                      border: OutlineInputBorder(),
+                      errorText: _destinationAddressError != '' ? _destinationAddressError : null,
+                      suffixIcon: Container(
+                        margin: EdgeInsets.only(right: 14),
+                        child: Row(
+                          spacing: 16,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             GestureDetector(
-                              onTap: () =>
-                                  Navigator.pushNamed(context, '/scan_qr'),
-                              child: Icon(Icons.qr_code),
+                              onTap: _pasteAddressFromClipboard,
+                              child: Icon(Icons.paste),
                             ),
-                          GestureDetector(
-                            onTap: _showContactPicker,
-                            child: Icon(Icons.contacts_outlined),
-                          ),
-                        ],
+                            if (Platform.isAndroid || Platform.isIOS)
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, '/scan_qr'),
+                                child: Icon(Icons.qr_code),
+                              ),
+                            GestureDetector(
+                              onTap: _showContactPicker,
+                              child: Icon(Icons.contacts_outlined),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (_selectedContact != null)
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withValues(alpha: 0.2),
+                if (_selectedContact != null)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            child: Text(
-                              _selectedContact!.name.isNotEmpty
-                                  ? _selectedContact!.name[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              child: Text(
+                                _selectedContact!.name.isNotEmpty
+                                    ? _selectedContact!.name[0].toUpperCase()
+                                    : '?',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _selectedContact!.name,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedContact!.name,
+                                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
                                   ),
-                                ),
-                                Text(
-                                  i18n.sendSelectedContact,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
+                                  Text(
+                                    i18n.sendSelectedContact,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            onPressed: _clearSelectedContact,
-                            icon: Icon(Icons.close, size: 20),
-                            tooltip: i18n.sendClearSelectedContact,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              TextField(
-                controller: _amountController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?')),
-                ],
-                decoration: InputDecoration(
-                  labelText: i18n.amount,
-                  border: OutlineInputBorder(),
-                  errorText: _amountError != '' ? _amountError : null,
-                  suffixIcon: TextButton(
-                    onPressed: _setBalanceAsSendAmount,
-                    child: Text('Max'),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: _showPrioritySelector,
-                child: Container(
-                  height: 40,
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.speed, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        _selectedPriority == 0
-                            ? i18n.sendPriorityLow
-                            : _selectedPriority == 1
-                            ? i18n.sendPriorityNormal
-                            : i18n.sendPriorityHigh,
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      Text(
-                        ' ${i18n.sendPriorityLabel}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Spacer(),
-                      if (_isLoadingFees)
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else if (_fees != null &&
-                          _fees!.length > _selectedPriority)
-                        Row(
-                          spacing: 8,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              spacing: 4,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/monero.svg',
-                                  width: 14,
-                                  height: 14,
-                                ),
-                                MoneroAmount(
-                                  amount: _fees![_selectedPriority],
-                                  maxFontSize: 14,
-                                ),
-                              ],
+                            IconButton(
+                              onPressed: _clearSelectedContact,
+                              icon: Icon(Icons.close, size: 20),
+                              tooltip: i18n.sendClearSelectedContact,
                             ),
-                            Icon(Icons.arrow_drop_down),
                           ],
-                        )
-                      else
-                        Icon(Icons.arrow_drop_down),
-                    ],
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Spacer(),
-                  GestureDetector(
-                    onTap: _setBalanceAsSendAmount,
-                    child: Row(
-                      spacing: 6,
-                      children: [
-                        Text(
-                          '${i18n.sendBalanceLabel}:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/icons/monero.svg',
-                          width: 18,
-                          height: 18,
-                        ),
-                        MoneroAmount(
-                          amount: wallet.unlockedBalance ?? 0,
-                          maxFontSize: 18,
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-
-              Row(
-                spacing: 20,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(i18n.cancel),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?'))],
+                  decoration: InputDecoration(
+                    labelText: i18n.amount,
+                    border: OutlineInputBorder(),
+                    errorText: _amountError != '' ? _amountError : null,
+                    suffixIcon: TextButton(onPressed: _setBalanceAsSendAmount, child: Text('Max')),
                   ),
-                  FilledButton.icon(
-                    onPressed: _send,
-                    icon: !_isLoading
-                        ? Icon(Icons.arrow_outward_rounded)
-                        : SizedBox(
+                ),
+                GestureDetector(
+                  onTap: _showPrioritySelector,
+                  child: Container(
+                    height: 40,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.speed, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          _selectedPriority == 0
+                              ? i18n.sendPriorityLow
+                              : _selectedPriority == 1
+                              ? i18n.sendPriorityNormal
+                              : i18n.sendPriorityHigh,
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          ' ${i18n.sendPriorityLabel}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Spacer(),
+                        if (_isLoadingFees)
+                          SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isDarkTheme
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Colors.white,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else if (_fees != null && _fees!.length > _selectedPriority)
+                          Row(
+                            spacing: 8,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                spacing: 4,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/monero.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  MoneroAmount(amount: _fees![_selectedPriority], maxFontSize: 14),
+                                ],
+                              ),
+                              Icon(Icons.arrow_drop_down),
+                            ],
+                          )
+                        else
+                          Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Spacer(),
+                    GestureDetector(
+                      onTap: _setBalanceAsSendAmount,
+                      child: Row(
+                        spacing: 6,
+                        children: [
+                          Text(
+                            '${i18n.sendBalanceLabel}:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
-                    label: Text(i18n.sendSendButton),
-                  ),
-                ],
-              ),
-            ],
+                          SvgPicture.asset('assets/icons/monero.svg', width: 18, height: 18),
+                          MoneroAmount(amount: wallet.unlockedBalance ?? 0, maxFontSize: 18),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                Row(
+                  spacing: 20,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
+                    FilledButton.icon(
+                      onPressed: _send,
+                      icon: !_isLoading
+                          ? Icon(Icons.arrow_outward_rounded)
+                          : SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: isDarkTheme
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : Colors.white,
+                              ),
+                            ),
+                      label: Text(i18n.sendSendButton),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -719,6 +665,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
 
     return AlertDialog(
       title: Text(i18n.sendSelectFromAddressBook),
+      insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
       content: SizedBox(
         width: double.maxFinite,
         height: 400,
@@ -730,18 +677,14 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
               decoration: InputDecoration(
                 hintText: i18n.addressBookSearchHint,
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
               ),
             ),
             SizedBox(height: 16),
             Expanded(
               child: Consumer<ContactModel>(
                 builder: (context, contactModel, child) {
-                  final filteredContacts = contactModel.searchContacts(
-                    _searchQuery,
-                  );
+                  final filteredContacts = contactModel.searchContacts(_searchQuery);
 
                   if (filteredContacts.isEmpty) {
                     return Center(
@@ -762,29 +705,19 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
                       final contact = filteredContacts[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           child: Text(
-                            contact.name.isNotEmpty
-                                ? contact.name[0].toUpperCase()
-                                : '?',
+                            contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        title: Text(
-                          contact.name,
-                          style: TextStyle(fontWeight: FontWeight.w500),
-                        ),
+                        title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500)),
                         subtitle: Text(
                           contact.address,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(fontFamily: 'monospace', fontSize: 12),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -798,12 +731,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(i18n.cancel),
-        ),
-      ],
+      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n.cancel))],
     );
   }
 }
@@ -845,17 +773,13 @@ class _PriorityOption extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(12),
           color: isSelected
-              ? Theme.of(
-                  context,
-                ).colorScheme.primaryContainer.withValues(alpha: 0.3)
+              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
               : null,
         ),
         child: Row(
           children: [
             Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
               color: isSelected
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -884,20 +808,12 @@ class _PriorityOption extends StatelessWidget {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      SvgPicture.asset(
-                        'assets/icons/monero.svg',
-                        width: 14,
-                        height: 14,
-                      ),
+                      SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
                       MoneroAmount(amount: fee!, maxFontSize: 14),
                     ],
                   ),
                   if (fiatRate is double)
-                    FiatAmount(
-                      prefix: fiatSymbol,
-                      amount: fee! * fiatRate!,
-                      maxFontSize: 12,
-                    ),
+                    FiatAmount(prefix: fiatSymbol, amount: fee! * fiatRate!, maxFontSize: 12),
                 ],
               ),
           ],

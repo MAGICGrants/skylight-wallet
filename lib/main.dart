@@ -27,7 +27,6 @@ import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
 import 'package:skylight_wallet/screens/receive.dart';
 import 'package:skylight_wallet/screens/send.dart';
-import 'package:skylight_wallet/screens/tx_details.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/screens/restore_wallet.dart';
 import 'package:skylight_wallet/screens/restore_warning.dart';
@@ -84,21 +83,14 @@ class MyApp extends StatelessWidget {
               loadExistingWalletIfExists(wallet),
             ]),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done &&
-                  snapshot.data != null) {
-                final sharedPreferences =
-                    snapshot.data![0] as SharedPreferences;
+              if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+                final sharedPreferences = snapshot.data![0] as SharedPreferences;
                 final walletExists = snapshot.data![1] as bool;
 
-                final theme =
-                    sharedPreferences.getString(SharedPreferencesKeys.theme) ??
-                    'system';
+                final theme = sharedPreferences.getString(SharedPreferencesKeys.theme) ?? 'system';
 
                 final appLockEnabled =
-                    sharedPreferences.getBool(
-                      SharedPreferencesKeys.appLockEnabled,
-                    ) ??
-                    false;
+                    sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
 
                 final initialRoute = walletExists
                     ? appLockEnabled
@@ -112,12 +104,9 @@ class MyApp extends StatelessWidget {
 
                 return MaterialApp(
                   title: 'Skylight Monero Wallet',
-                  localizationsDelegates:
-                      AppLocalizations.localizationsDelegates,
+                  localizationsDelegates: AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
-                  theme: ThemeData(
-                    colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-                  ),
+                  theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
                   darkTheme: ThemeData(
                     colorScheme: ColorScheme.fromSeed(
                       seedColor: Colors.blue,
@@ -130,9 +119,7 @@ class MyApp extends StatelessWidget {
                       ? ThemeMode.light
                       : ThemeMode.system,
                   initialRoute: initialRoute,
-                  locale: Locale.fromSubtags(
-                    languageCode: languageProvider.language,
-                  ),
+                  locale: Locale.fromSubtags(languageCode: languageProvider.language),
                   routes: {
                     '/welcome': (context) => WelcomeScreen(),
                     '/connection_setup': (context) => ConnectionSetupScreen(),
@@ -150,7 +137,6 @@ class MyApp extends StatelessWidget {
                     '/confirm_send': (context) => ConfirmSendScreen(),
                     '/scan_qr': (context) => ScanQrScreen(),
                     '/receive': (context) => ReceiveScreen(),
-                    '/tx_details': (context) => TxDetailsScreen(),
                     '/address_book': (context) => AddressBookScreen(),
                     '/terms_of_service': (context) => TermsOfService(),
                     '/privacy_policy': (context) => PrivacyPolicy(),
@@ -165,9 +151,7 @@ class MyApp extends StatelessWidget {
 
               return MaterialApp(
                 title: 'Skylight Monero Wallet',
-                theme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-                ),
+                theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
                 darkTheme: ThemeData(
                   colorScheme: ColorScheme.fromSeed(
                     seedColor: Colors.blue,

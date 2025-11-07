@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get close => 'Close';
+
+  @override
   String get unknownError => 'Unknown error.';
 
   @override
@@ -31,6 +34,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pending => 'Pending';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get addressCopied => 'Address copied to clipboard';
 
   @override
   String get fieldEmptyError => 'This field cannot be empty.';
@@ -59,12 +68,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionSetupTitle => 'Connection Setup';
 
   @override
-  String get connectionSetupDescription =>
-      'Let\'s setup a connection with LWS.';
+  String get connectionSetupDescription => 'Let\'s setup a connection with LWS.';
 
   @override
-  String get connectionSetupAddressHint =>
-      'e.g. 192.168.1.1:18090 or example.com:18090';
+  String get connectionSetupAddressHint => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
   String get connectionSetupProxyPortLabel => 'HTTP Proxy Port (optional)';
@@ -224,8 +231,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendSendButton => 'Send';
 
   @override
-  String get sendTransactionSuccessfullySent =>
-      'Transaction successfully sent!';
+  String get sendTransactionSuccessfullySent => 'Transaction successfully sent!';
 
   @override
   String get sendOpenAliasResolveError => 'Invalid OpenAlias.';
@@ -401,8 +407,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressBookNoContacts => 'No contacts yet';
 
   @override
-  String get addressBookNoContactsDescription =>
-      'Add your first contact by tapping the + button';
+  String get addressBookNoContactsDescription => 'Add your first contact by tapping the + button';
 
   @override
   String get addressBookNoSearchResults => 'No contacts found';
@@ -421,9 +426,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addressBookSave => 'Save';
-
-  @override
-  String get addressBookAddressCopied => 'Address copied to clipboard';
 
   @override
   String get sendSelectFromAddressBook => 'Select from Address Book';

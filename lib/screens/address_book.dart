@@ -45,26 +45,27 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(i18n.addressBookDeleteContact),
-        content: Text(i18n.addressBookDeleteContactConfirmation(contact.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(i18n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              Provider.of<ContactModel>(
-                context,
-                listen: false,
-              ).deleteContact(contact.id);
-              Navigator.of(context).pop();
-            },
-            child: Text(i18n.addressBookDelete),
-          ),
-        ],
-      ),
+      builder: (context) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final dialogWidth = screenWidth.clamp(0.0, 400.0);
+
+        return AlertDialog(
+          constraints: BoxConstraints.tightFor(width: dialogWidth),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          title: Text(i18n.addressBookDeleteContact),
+          content: Text(i18n.addressBookDeleteContactConfirmation(contact.name)),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n.cancel)),
+            FilledButton(
+              onPressed: () {
+                Provider.of<ContactModel>(context, listen: false).deleteContact(contact.id);
+                Navigator.of(context).pop();
+              },
+              child: Text(i18n.addressBookDelete),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -73,39 +74,34 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n.addressBookTitle),
-        actions: [
-          IconButton(
-            onPressed: _showAddContactDialog,
-            icon: Icon(Icons.add),
-            tooltip: i18n.addressBookAddContact,
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(i18n.addressBookTitle)),
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 1),
       body: Column(
         children: [
           Padding(
             padding: EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: i18n.addressBookSearchHint,
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: i18n.addressBookSearchHint,
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(width: 8),
+                IconButton(onPressed: _showAddContactDialog, icon: Icon(Icons.add)),
+              ],
             ),
           ),
           Expanded(
             child: Consumer<ContactModel>(
               builder: (context, contactModel, child) {
-                final filteredContacts = contactModel.searchContacts(
-                  _searchQuery,
-                );
+                final filteredContacts = contactModel.searchContacts(_searchQuery);
 
                 if (filteredContacts.isEmpty) {
                   return Center(
@@ -122,19 +118,17 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                           _searchQuery.isEmpty
                               ? i18n.addressBookNoContacts
                               : i18n.addressBookNoSearchResults,
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                         if (_searchQuery.isEmpty) ...[
                           SizedBox(height: 8),
                           Text(
                             i18n.addressBookNoContactsDescription,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -168,20 +162,14 @@ class _ContactListItem extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const _ContactListItem({
-    required this.contact,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _ContactListItem({required this.contact, required this.onEdit, required this.onDelete});
 
   void _copyAddressToClipboard(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
 
     Clipboard.setData(ClipboardData(text: contact.address));
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(i18n.addressBookAddressCopied)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.addressCopied)));
   }
 
   @override
@@ -201,10 +189,7 @@ class _ContactListItem extends StatelessWidget {
             ),
           ),
         ),
-        title: Text(
-          contact.name,
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
+        title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Text(
           contact.address,
           style: TextStyle(fontFamily: 'monospace', fontSize: 12),
@@ -229,21 +214,13 @@ class _ContactListItem extends StatelessWidget {
             PopupMenuItem(
               value: 'copy',
               child: Row(
-                children: [
-                  Icon(Icons.copy),
-                  SizedBox(width: 8),
-                  Text(i18n.addressBookCopyAddress),
-                ],
+                children: [Icon(Icons.copy), SizedBox(width: 8), Text(i18n.addressBookCopyAddress)],
               ),
             ),
             PopupMenuItem(
               value: 'edit',
               child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text(i18n.addressBookEdit),
-                ],
+                children: [Icon(Icons.edit), SizedBox(width: 8), Text(i18n.addressBookEdit)],
               ),
             ),
             PopupMenuItem(
@@ -252,10 +229,7 @@ class _ContactListItem extends StatelessWidget {
                 children: [
                   Icon(Icons.delete, color: Colors.red),
                   SizedBox(width: 8),
-                  Text(
-                    i18n.addressBookDelete,
-                    style: TextStyle(color: Colors.red),
-                  ),
+                  Text(i18n.addressBookDelete, style: TextStyle(color: Colors.red)),
                 ],
               ),
             ),
@@ -332,10 +306,7 @@ class _ContactDialogState extends State<_ContactDialog> {
       final contactModel = Provider.of<ContactModel>(context, listen: false);
 
       if (widget.contact == null) {
-        await contactModel.addContact(
-          _nameController.text.trim(),
-          _addressController.text.trim(),
-        );
+        await contactModel.addContact(_nameController.text.trim(), _addressController.text.trim());
       } else {
         await contactModel.updateContact(
           widget.contact!.id,
@@ -349,12 +320,9 @@ class _ContactDialogState extends State<_ContactDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(i18n.unknownError),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(i18n.unknownError), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) {
@@ -371,10 +339,13 @@ class _ContactDialogState extends State<_ContactDialog> {
     final isEditing = widget.contact != null;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 400.0);
+
     return AlertDialog(
-      title: Text(
-        isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact,
-      ),
+      constraints: BoxConstraints.tightFor(width: dialogWidth),
+      insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+      title: Text(isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact),
       content: Form(
         key: _formKey,
         child: Column(
@@ -384,9 +355,7 @@ class _ContactDialogState extends State<_ContactDialog> {
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: i18n.addressBookContactName,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
               ),
               validator: _validateName,
               textCapitalization: TextCapitalization.words,
@@ -396,9 +365,7 @@ class _ContactDialogState extends State<_ContactDialog> {
               controller: _addressController,
               decoration: InputDecoration(
                 labelText: i18n.address,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
               ),
               validator: _validateAddress,
               maxLines: 3,
@@ -419,9 +386,7 @@ class _ContactDialogState extends State<_ContactDialog> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: isDarkTheme
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Colors.white,
+                    color: isDarkTheme ? Theme.of(context).colorScheme.onPrimary : Colors.white,
                   ),
                 )
               : Text(isEditing ? i18n.addressBookUpdate : i18n.addressBookSave),

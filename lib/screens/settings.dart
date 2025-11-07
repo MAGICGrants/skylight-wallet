@@ -37,27 +37,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadPreferences() async {
     final newTxNotificationsEnabled =
-        await SharedPreferencesService.get<bool>(
-          SharedPreferencesKeys.notificationsEnabled,
-        ) ??
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ??
         false;
 
     final fiatCurrency =
-        await SharedPreferencesService.get<String>(
-          SharedPreferencesKeys.fiatCurrency,
-        ) ??
-        'USD';
+        await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
 
     final appLockEnabled =
-        await SharedPreferencesService.get<bool>(
-          SharedPreferencesKeys.appLockEnabled,
-        ) ??
-        false;
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
 
     final verboseLoggingEnabled =
-        await SharedPreferencesService.get<bool>(
-          SharedPreferencesKeys.verboseLoggingEnabled,
-        ) ??
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
         false;
 
     setState(() {
@@ -77,17 +67,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final isAllowed = await NotificationService().promptPermission();
 
       if (isAllowed) {
-        await SharedPreferencesService.set<bool>(
-          SharedPreferencesKeys.notificationsEnabled,
-          true,
-        );
+        await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
         await registerTxNotifierTaskIfAllowed();
       }
     } else {
-      await SharedPreferencesService.set<bool>(
-        SharedPreferencesKeys.notificationsEnabled,
-        false,
-      );
+      await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
       await unregisterPeriodicTasks();
     }
   }
@@ -101,17 +85,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final didAuthenticate = await auth.authenticate(
           localizedReason: i18n.settingsAppLockUnlockReason,
-          options: AuthenticationOptions(
-            useErrorDialogs: true,
-            sensitiveTransaction: true,
-          ),
+          options: AuthenticationOptions(useErrorDialogs: true, sensitiveTransaction: true),
         );
 
         if (!didAuthenticate) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
           }
           return;
         }
@@ -119,9 +100,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
         }
         return;
       }
@@ -131,10 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _appLockEnabled = value;
     });
 
-    await SharedPreferencesService.set<bool>(
-      SharedPreferencesKeys.appLockEnabled,
-      value,
-    );
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.appLockEnabled, value);
   }
 
   void _setVerboseLoggingEnabled(bool value) async {
@@ -142,10 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _verboseLoggingEnabled = value;
     });
 
-    await SharedPreferencesService.set<bool>(
-      SharedPreferencesKeys.verboseLoggingEnabled,
-      value,
-    );
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.verboseLoggingEnabled, value);
   }
 
   void _setFiatCurrency(String? value) async {
@@ -155,10 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _fiatCurrency = value;
     });
 
-    await SharedPreferencesService.set<String>(
-      SharedPreferencesKeys.fiatCurrency,
-      value,
-    );
+    await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, value);
 
     // Clear rate
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
@@ -182,6 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(i18n.settingsDeleteWalletButton),
           ],
         ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
         content: Text(i18n.settingsDeleteWalletDialogText),
         actions: [
           TextButton.icon(
@@ -215,6 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(i18n.warning),
           ],
         ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
         content: Text(i18n.settingsViewLwsKeysDialogText),
         actions: [
           TextButton.icon(
@@ -251,6 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(i18n.warning),
           ],
         ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
         content: Text(i18n.settingsViewSecretKeysDialogText),
         actions: [
           TextButton.icon(
@@ -278,11 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     await wallet.delete();
     if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/welcome',
-        (Route<dynamic> route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/welcome', (Route<dynamic> route) => false);
     }
   }
 
@@ -312,14 +283,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: 'system',
                       child: Text(i18n.settingsThemeSystem),
                     ),
-                    DropdownMenuItem<String>(
-                      value: 'light',
-                      child: Text(i18n.settingsThemeLight),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'dark',
-                      child: Text(i18n.settingsThemeDark),
-                    ),
+                    DropdownMenuItem<String>(value: 'light', child: Text(i18n.settingsThemeLight)),
+                    DropdownMenuItem<String>(value: 'dark', child: Text(i18n.settingsThemeDark)),
                   ],
                 ),
               ],
@@ -327,10 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  i18n.settingsLanguageLabel,
-                  style: TextStyle(fontSize: 18),
-                ),
+                Text(i18n.settingsLanguageLabel, style: TextStyle(fontSize: 18)),
                 DropdownButton<String>(
                   value: language.language,
                   onChanged: language.setLanguage,
@@ -346,18 +308,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  i18n.settingsDisplayCurrencyLabel,
-                  style: TextStyle(fontSize: 18),
-                ),
+                Text(i18n.settingsDisplayCurrencyLabel, style: TextStyle(fontSize: 18)),
                 DropdownButton<String>(
                   value: _fiatCurrency,
                   onChanged: _setFiatCurrency,
                   items: supportedFiatCurrencies.map((fiatCode) {
-                    return DropdownMenuItem<String>(
-                      value: fiatCode,
-                      child: Text(fiatCode),
-                    );
+                    return DropdownMenuItem<String>(value: fiatCode, child: Text(fiatCode));
                   }).toList(),
                 ),
               ],
@@ -373,14 +329,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    i18n.settingsNotifyNewTxsLabel,
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  Switch(
-                    value: _newTxNotificationsEnabled,
-                    onChanged: _setTxNotificationsEnabled,
-                  ),
+                  Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                  Switch(value: _newTxNotificationsEnabled, onChanged: _setTxNotificationsEnabled),
                 ],
               ),
             Row(
@@ -390,10 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        i18n.settingsVerboseLoggingLabel,
-                        style: TextStyle(fontSize: 18),
-                      ),
+                      Text(i18n.settingsVerboseLoggingLabel, style: TextStyle(fontSize: 18)),
                       Text(
                         i18n.settingsVerboseLoggingDescription,
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -401,66 +348,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
-                Switch(
-                  value: _verboseLoggingEnabled,
-                  onChanged: _setVerboseLoggingEnabled,
-                ),
+                Switch(value: _verboseLoggingEnabled, onChanged: _setVerboseLoggingEnabled),
               ],
             ),
-            Container(
-              margin: EdgeInsetsGeometry.symmetric(vertical: 10),
-              child: Divider(),
-            ),
+            Container(margin: EdgeInsetsGeometry.symmetric(vertical: 10), child: Divider()),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  i18n.settingsLwsViewKeysLabel,
-                  style: TextStyle(fontSize: 18),
-                ),
+                Text(i18n.settingsLwsViewKeysLabel, style: TextStyle(fontSize: 18)),
                 TextButton.icon(
                   onPressed: _showViewLwsKeysDialog,
                   icon: Icon(Icons.key),
                   label: Text(i18n.settingsLwsViewKeysButton),
-                  style: ButtonStyle(
-                    foregroundColor: WidgetStateProperty.all(Colors.orange),
-                  ),
+                  style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.orange)),
                 ),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  i18n.settingsSecretKeysLabel,
-                  style: TextStyle(fontSize: 18),
-                ),
+                Text(i18n.settingsSecretKeysLabel, style: TextStyle(fontSize: 18)),
                 TextButton.icon(
                   onPressed: _showViewSecretKeysDialog,
                   icon: Icon(Icons.key),
                   label: Text(i18n.settingsSecretKeysButton),
-                  style: ButtonStyle(
-                    foregroundColor: WidgetStateProperty.all(Colors.red),
-                  ),
+                  style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.red)),
                 ),
               ],
             ),
-            Container(
-              margin: EdgeInsetsGeometry.symmetric(vertical: 10),
-              child: Divider(),
-            ),
+            Container(margin: EdgeInsetsGeometry.symmetric(vertical: 10), child: Divider()),
             TextButton.icon(
               onPressed: _showDeleteWalletDialog,
               label: Text(i18n.settingsDeleteWalletButton),
               icon: Icon(Icons.delete),
-              style: ButtonStyle(
-                foregroundColor: WidgetStateProperty.all(Colors.red),
-              ),
+              style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.red)),
             ),
             Spacer(),
             TextButton(
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/terms_of_service'),
+              onPressed: () => Navigator.pushNamed(context, '/terms_of_service'),
               child: Text('Terms of Service'),
             ),
             TextButton(

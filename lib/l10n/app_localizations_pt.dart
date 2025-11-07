@@ -15,6 +15,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get close => 'Fechar';
+
+  @override
   String get unknownError => 'Erro desconhecido.';
 
   @override
@@ -31,6 +34,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pending => 'Pendente';
+
+  @override
+  String get copy => 'Copiar';
+
+  @override
+  String get addressCopied => 'Endereço copiado para a área de transferência';
 
   @override
   String get fieldEmptyError => 'Este campo não pode ficar vazio.';
@@ -59,12 +68,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionSetupTitle => 'Configuração da Conexão';
 
   @override
-  String get connectionSetupDescription =>
-      'Vamos configurar uma conexão com o LWS.';
+  String get connectionSetupDescription => 'Vamos configurar uma conexão com o LWS.';
 
   @override
-  String get connectionSetupAddressHint =>
-      'ex: 192.168.1.1:18090 ou exemplo.com:18090';
+  String get connectionSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
 
   @override
   String get connectionSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
@@ -224,8 +231,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendSendButton => 'Enviar';
 
   @override
-  String get sendTransactionSuccessfullySent =>
-      'Transação enviada com sucesso!';
+  String get sendTransactionSuccessfullySent => 'Transação enviada com sucesso!';
 
   @override
   String get sendOpenAliasResolveError => 'OpenAlias inválido.';
@@ -401,8 +407,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get addressBookNoContacts => 'Nenhum contato ainda';
 
   @override
-  String get addressBookNoContactsDescription =>
-      'Adicione seu primeiro contato tocando no botão +';
+  String get addressBookNoContactsDescription => 'Adicione seu primeiro contato tocando no botão +';
 
   @override
   String get addressBookNoSearchResults => 'Nenhum contato encontrado';
@@ -421,10 +426,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get addressBookSave => 'Salvar';
-
-  @override
-  String get addressBookAddressCopied =>
-      'Endereço copiado para a área de transferência';
 
   @override
   String get sendSelectFromAddressBook => 'Selecionar da Lista de Contatos';

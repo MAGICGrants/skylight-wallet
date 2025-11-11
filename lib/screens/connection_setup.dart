@@ -19,8 +19,7 @@ class ConnectionSetupScreen extends StatefulWidget {
 
 class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _customProxyPortController =
-      TextEditingController();
+  final TextEditingController _customProxyPortController = TextEditingController();
 
   bool _useTor = false;
   bool _useSsl = false;
@@ -64,9 +63,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     final ipAddressRegex = RegExp(
       r'^(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
     );
-    final onionAddressRegex = RegExp(
-      r'^[a-z2-7]{56}|[a-z2-7]{16}.onion(:\d{1,5})?$',
-    );
+    final onionAddressRegex = RegExp(r'^[a-z2-7]{56}|[a-z2-7]{16}.onion(:\d{1,5})?$');
     final domainAddressRegex = RegExp(
       r'^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
     );
@@ -154,8 +151,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
         ).timeout(Duration(seconds: 10));
 
         setState(() {
-          _connectionSuccess =
-              response.statusCode == HttpStatus.internalServerError;
+          _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
         });
       } else {
         var httpClient = HttpClient();
@@ -171,8 +167,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
         final response = await request.close().timeout(Duration(seconds: 10));
 
         setState(() {
-          _connectionSuccess =
-              response.statusCode == HttpStatus.internalServerError;
+          _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
         });
       }
     } catch (error) {
@@ -221,124 +216,109 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     return Scaffold(
       body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 20,
-            children: [
-              Column(
-                spacing: 10,
-                children: [
-                  Text(
-                    i18n.connectionSetupTitle,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  Text(
-                    i18n.connectionSetupDescription,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-              Column(
-                spacing: 10,
-                children: [
-                  TextFormField(
-                    controller: _addressController,
-                    onChanged: onAddressChange,
-                    decoration: InputDecoration(
-                      labelText: i18n.address,
-                      hintText: i18n.connectionSetupAddressHint,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      suffixIcon: _hasTested && !_connectionTestIsLoading
-                          ? Icon(
-                              _connectionSuccess
-                                  ? Icons.check
-                                  : Icons.cancel_outlined,
-                            )
-                          : null,
-                      suffixIconColor: _connectionSuccess
-                          ? Colors.teal
-                          : Colors.red,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 500),
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 20,
+              children: [
+                Column(
+                  spacing: 10,
+                  children: [
+                    Text(
+                      i18n.connectionSetupTitle,
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                    keyboardType: TextInputType.url,
-                  ),
-                  TextFormField(
-                    controller: _customProxyPortController,
-                    onChanged: onProxyPortChange,
-                    enabled: !_useTor,
-                    decoration: InputDecoration(
-                      labelText: i18n.connectionSetupProxyPortLabel,
-                      hintText: i18n.connectionSetupProxyPortHint,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
+                    Text(
+                      i18n.connectionSetupDescription,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  CheckboxListTile(
-                    title: Text(i18n.connectionSetupUseTorLabel),
-                    value: _useTor,
-                    onChanged: !_useSsl ? setUseTor : null,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  CheckboxListTile(
-                    title: Text(i18n.connectionSetupUseSslLabel),
-                    value: _useSsl,
-                    onChanged: !_useTor ? setUseSsl : null,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 10,
-                    children: [
-                      TextButton.icon(
-                        label: Text(i18n.connectionSetupTestConnectionButton),
-                        onPressed: () => _testConnection(),
-                        icon: !_connectionTestIsLoading
-                            ? Icon(Icons.network_check)
-                            : SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
+                  ],
+                ),
+                Column(
+                  spacing: 10,
+                  children: [
+                    TextFormField(
+                      controller: _addressController,
+                      onChanged: onAddressChange,
+                      decoration: InputDecoration(
+                        labelText: i18n.address,
+                        hintText: i18n.connectionSetupAddressHint,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                        suffixIcon: _hasTested && !_connectionTestIsLoading
+                            ? Icon(_connectionSuccess ? Icons.check : Icons.cancel_outlined)
+                            : null,
+                        suffixIconColor: _connectionSuccess ? Colors.teal : Colors.red,
                       ),
-                      if (_connectionSuccess &&
-                          _hasTested &&
-                          !_connectionTestIsLoading)
-                        FilledButton.icon(
-                          onPressed: _saveConnection,
-                          icon: !_connectionSaveIsLoading
-                              ? Icon(Icons.arrow_outward_rounded)
+                      keyboardType: TextInputType.url,
+                    ),
+                    TextFormField(
+                      controller: _customProxyPortController,
+                      onChanged: onProxyPortChange,
+                      enabled: !_useTor,
+                      decoration: InputDecoration(
+                        labelText: i18n.connectionSetupProxyPortLabel,
+                        hintText: i18n.connectionSetupProxyPortHint,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                    ),
+                    CheckboxListTile(
+                      title: Text(i18n.connectionSetupUseTorLabel),
+                      value: _useTor,
+                      onChanged: !_useSsl ? setUseTor : null,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    CheckboxListTile(
+                      title: Text(i18n.connectionSetupUseSslLabel),
+                      value: _useSsl,
+                      onChanged: !_useTor ? setUseSsl : null,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 10,
+                      children: [
+                        TextButton.icon(
+                          label: Text(i18n.connectionSetupTestConnectionButton),
+                          onPressed: () => _testConnection(),
+                          icon: !_connectionTestIsLoading
+                              ? Icon(Icons.network_check)
                               : SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: isDarkTheme
-                                        ? Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary
-                                        : Colors.white,
-                                  ),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
-                          label: Text(i18n.connectionSetupContinueButton),
                         ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+                        if (_connectionSuccess && _hasTested && !_connectionTestIsLoading)
+                          FilledButton.icon(
+                            onPressed: _saveConnection,
+                            icon: !_connectionSaveIsLoading
+                                ? Icon(Icons.arrow_outward_rounded)
+                                : SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: isDarkTheme
+                                          ? Theme.of(context).colorScheme.onPrimary
+                                          : Colors.white,
+                                    ),
+                                  ),
+                            label: Text(i18n.connectionSetupContinueButton),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

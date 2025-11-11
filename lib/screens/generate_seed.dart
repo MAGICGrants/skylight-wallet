@@ -87,45 +87,47 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsetsGeometry.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 20,
-            children: [
-              Text(
-                i18n.generateSeedTitle,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  i18n.generateSeedDescription,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-              if (_seed.isEmpty || _restoreHeight == 0)
-                CircularProgressIndicator(),
-              if (_seed.isNotEmpty && _restoreHeight > 0)
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 10,
-                  children: _seed.map((word) {
-                    return Chip(label: Text(word));
-                  }).toList(),
-                ),
-              if (_seed.isNotEmpty && _restoreHeight > 0)
-                FilledButton(
-                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/lws_details',
-                    (Route<dynamic> route) => false,
-                    arguments: _restoreHeight,
+        child: Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 540),
+            child: Padding(
+              padding: EdgeInsetsGeometry.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 20,
+                children: [
+                  Text(i18n.generateSeedTitle, style: Theme.of(context).textTheme.headlineMedium),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      i18n.generateSeedDescription,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
                   ),
-                  child: Text(i18n.generateSeedContinueButton),
-                ),
-            ],
+                  if (_seed.isEmpty || _restoreHeight == 0) CircularProgressIndicator(),
+                  if (_seed.isNotEmpty && _restoreHeight > 0)
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _seed.map((word) {
+                        return Chip(label: Text(word));
+                      }).toList(),
+                    ),
+                  if (_seed.isNotEmpty && _restoreHeight > 0)
+                    FilledButton(
+                      onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/lws_details',
+                        (Route<dynamic> route) => false,
+                        arguments: _restoreHeight,
+                      ),
+                      child: Text(i18n.generateSeedContinueButton),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

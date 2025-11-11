@@ -75,9 +75,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMsg)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
       return;
     } catch (error) {
@@ -88,9 +86,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       if (mounted) {
         final i18n = AppLocalizations.of(context)!;
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
       }
       return;
     }
@@ -102,11 +98,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     wallet.load();
 
     if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/wallet_home',
-        (Route<dynamic> route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
     }
   }
 
@@ -118,78 +110,73 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 20,
-          children: [
-            Text(
-              i18n.restoreWalletTitle,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                i18n.restoreWalletDescription,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: TextFormField(
-                controller: _mnemonicController,
-                keyboardType: TextInputType.multiline,
-                maxLines: null,
-                minLines: 3,
-                decoration: InputDecoration(
-                  labelText: i18n.restoreWalletSeedLabel,
-                  errorText: _mnemonicError,
-                  border: OutlineInputBorder(),
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 500),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 20,
+            children: [
+              Text(i18n.restoreWalletTitle, style: Theme.of(context).textTheme.headlineMedium),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  i18n.restoreWalletDescription,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: TextFormField(
-                controller: _restoreHeightController,
-                keyboardType: TextInputType.number,
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _mnemonicController,
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  minLines: 3,
+                  decoration: InputDecoration(
+                    labelText: i18n.restoreWalletSeedLabel,
+                    errorText: _mnemonicError,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _restoreHeightController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: i18n.restoreWalletRestoreHeightLabel,
+                    errorText: _restoreHeightError,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              Row(
+                spacing: 20,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
+                  FilledButton.icon(
+                    onPressed: _restore,
+                    label: Text(i18n.restoreWalletRestoreButton),
+                    icon: _isLoading
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: isDarkTheme
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : Colors.white,
+                            ),
+                          )
+                        : null,
+                  ),
                 ],
-                decoration: InputDecoration(
-                  labelText: i18n.restoreWalletRestoreHeightLabel,
-                  errorText: _restoreHeightError,
-                  border: OutlineInputBorder(),
-                ),
               ),
-            ),
-            Row(
-              spacing: 20,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(i18n.cancel),
-                ),
-                FilledButton.icon(
-                  onPressed: _restore,
-                  label: Text(i18n.restoreWalletRestoreButton),
-                  icon: _isLoading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: isDarkTheme
-                                ? Theme.of(context).colorScheme.onPrimary
-                                : Colors.white,
-                          ),
-                        )
-                      : null,
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

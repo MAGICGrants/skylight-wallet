@@ -399,6 +399,36 @@ abstract class AppLocalizations {
   /// **'Unable to authenticate.'**
   String get unlockUnableToAuthError;
 
+  /// No description provided for @unlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Wallet'**
+  String get unlockTitle;
+
+  /// No description provided for @unlockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your wallet password to unlock'**
+  String get unlockDescription;
+
+  /// No description provided for @unlockPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get unlockPasswordLabel;
+
+  /// No description provided for @unlockPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get unlockPasswordHint;
+
+  /// No description provided for @unlockIncorrectPasswordError.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get unlockIncorrectPasswordError;
+
   /// No description provided for @homeConnecting.
   ///
   /// In en, this message translates to:
@@ -576,7 +606,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppLockUnableToAuthError.
   ///
   /// In en, this message translates to:
-  /// **'Unable to authenticate.'**
+  /// **'Unable to authenticate. Make sure you have device unlock set up.'**
   String get settingsAppLockUnableToAuthError;
 
   /// No description provided for @settingsVerboseLoggingLabel.

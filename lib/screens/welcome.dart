@@ -27,11 +27,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
       await wallet.loadPersistedConnection();
 
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/wallet_home',
-          (Route<dynamic> route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
       }
     }
   }
@@ -47,10 +43,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20,
           children: [
-            Text(
-              i18n.welcomeTitle,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text(i18n.welcomeTitle, style: Theme.of(context).textTheme.headlineMedium),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
@@ -60,8 +53,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
               ),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/connection_setup'),
+              onPressed: () => Navigator.pushNamed(context, '/connection_setup'),
               child: Text(i18n.welcomeGetStarted),
             ),
           ],

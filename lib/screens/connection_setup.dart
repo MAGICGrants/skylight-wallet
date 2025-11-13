@@ -205,7 +205,12 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     });
 
     if (mounted) {
-      Navigator.pushNamed(context, '/create_wallet');
+      // On desktop platforms, navigate to password screen first
+      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+        Navigator.pushNamed(context, '/create_wallet_password');
+      } else {
+        Navigator.pushNamed(context, '/create_wallet');
+      }
     }
   }
 

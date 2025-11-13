@@ -168,6 +168,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get unlockUnableToAuthError => 'Não foi possível autenticar.';
 
   @override
+  String get unlockTitle => 'Desbloquear Carteira';
+
+  @override
+  String get unlockDescription => 'Digite a senha da sua carteira para desbloquear';
+
+  @override
+  String get unlockPasswordLabel => 'Senha';
+
+  @override
+  String get unlockPasswordHint => 'Digite sua senha';
+
+  @override
+  String get unlockIncorrectPasswordError => 'Senha incorreta. Tente novamente.';
+
+  @override
   String get homeConnecting => 'Conectando';
 
   @override
@@ -259,7 +274,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsAppLockUnlockReason => 'Desbloquear carteira';
 
   @override
-  String get settingsAppLockUnableToAuthError => 'Não foi possível autenticar.';
+  String get settingsAppLockUnableToAuthError =>
+      'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
 
   @override
   String get settingsVerboseLoggingLabel => 'Logs Detalhados';
@@ -378,7 +394,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get confirmSendDescription =>
-      'As transações são irreversíveis, então certifique-se de que estes detalhes correspondem exatamente.';
+      'As transações são irreversíveis, então verifique se estes detalhes correspondem exatamente.';
 
   @override
   String get addressBookTitle => 'Lista de Contatos';

@@ -148,6 +148,7 @@ class WalletModel with ChangeNotifier {
   bool? _serverSupportsSubaddresses;
   int? _unusedSubaddressIndex;
   bool? _unusedSubaddressIndexIsSupported;
+  String? _desktopWalletPassword;
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
@@ -347,6 +348,10 @@ class WalletModel with ChangeNotifier {
     _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
     notifyListeners();
+  }
+
+  void setWalletPassword(String password) {
+    _desktopWalletPassword = password;
   }
 
   Future<void> connectToDaemon() async {
@@ -719,7 +724,7 @@ class WalletModel with ChangeNotifier {
       isDummy: true,
     );
 
-    final walletPassword = genWalletPassword();
+    final walletPassword = _desktopWalletPassword ?? genWalletPassword();
 
     if (legacyWallet.errorString() == '' && legacyWallet.status() == 0) {
       _w2Wallet = await _getWalletFromLegacySeed(
@@ -746,7 +751,9 @@ class WalletModel with ChangeNotifier {
       throw Exception('Something went wrong.');
     }
 
-    await storeWalletPassword(walletPassword);
+    if (Platform.isAndroid || Platform.isIOS) {
+      await storeMobileWalletPassword(walletPassword);
+    }
 
     _w2TxHistory = _w2Wallet!.history();
 
@@ -754,10 +761,10 @@ class WalletModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> openExisting() async {
+  Future<void> openExisting({String? desktopWalletPassword}) async {
     final path = await getWalletPath();
 
-    final password = await getWalletPassword();
+    final password = desktopWalletPassword ?? await getMobileWalletPassword();
 
     if (password == null) {
       final errorMsg = 'Failed to open existing wallet: could not get password.';
@@ -769,18 +776,17 @@ class WalletModel with ChangeNotifier {
     log(LogLevel.info, '  path: $path');
     log(LogLevel.info, '  password: <hidden>');
 
-    _w2Wallet = _w2WalletManager.openWallet(path: path, password: password);
+    final w2Wallet = _w2WalletManager.openWallet(path: path, password: password);
 
-    log(LogLevel.info, 'WalletManager_openWallet completed');
-
-    final errorString = _w2WalletManager.errorString();
-
-    if (errorString != '') {
-      final errorMsg = 'WalletManager_openWallet error: $errorString';
+    if (w2Wallet.errorString() != '') {
+      final errorMsg = 'WalletManager_openWallet error: ${w2Wallet.errorString()}';
       log(LogLevel.error, errorMsg);
       throw Exception(errorMsg);
     }
 
+    log(LogLevel.info, 'WalletManager_openWallet completed');
+
+    _w2Wallet = w2Wallet;
     _w2TxHistory = _w2Wallet!.history();
 
     notifyListeners();

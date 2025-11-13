@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
@@ -28,12 +30,16 @@ import 'package:skylight_wallet/screens/generate_seed.dart';
 import 'package:skylight_wallet/screens/receive.dart';
 import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
+import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/screens/restore_wallet.dart';
 import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/util/logging.dart';
+
+final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+final isMobile = Platform.isAndroid || Platform.isIOS;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,8 +56,12 @@ void main() async {
 
 Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
   if (await wallet.hasExistingWallet()) {
-    await wallet.openExisting();
-    await wallet.loadPersistedConnection();
+    if (isMobile) {
+      await wallet.openExisting();
+      await wallet.loadPersistedConnection();
+      wallet.load();
+    }
+
     return true;
   }
 
@@ -93,14 +103,10 @@ class MyApp extends StatelessWidget {
                     sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
 
                 final initialRoute = walletExists
-                    ? appLockEnabled
+                    ? appLockEnabled || isDesktop
                           ? '/unlock'
                           : '/wallet_home'
                     : '/welcome';
-
-                if (walletExists) {
-                  wallet.load();
-                }
 
                 return MaterialApp(
                   title: 'Skylight Monero Wallet',
@@ -123,6 +129,7 @@ class MyApp extends StatelessWidget {
                   routes: {
                     '/welcome': (context) => WelcomeScreen(),
                     '/connection_setup': (context) => ConnectionSetupScreen(),
+                    '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
                     '/create_wallet': (context) => CreateWalletScreen(),
                     '/generate_seed': (context) => GenerateSeedScreen(),
                     '/lws_details': (context) => LwsDetailsScreen(),

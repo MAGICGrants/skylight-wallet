@@ -168,6 +168,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlockUnableToAuthError => 'Unable to authenticate.';
 
   @override
+  String get unlockTitle => 'Unlock Wallet';
+
+  @override
+  String get unlockDescription => 'Enter your wallet password to unlock';
+
+  @override
+  String get unlockPasswordLabel => 'Password';
+
+  @override
+  String get unlockPasswordHint => 'Enter your password';
+
+  @override
+  String get unlockIncorrectPasswordError => 'Incorrect password. Please try again.';
+
+  @override
   String get homeConnecting => 'Connecting';
 
   @override
@@ -259,7 +274,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppLockUnlockReason => 'Unlock wallet';
 
   @override
-  String get settingsAppLockUnableToAuthError => 'Unable to authenticate.';
+  String get settingsAppLockUnableToAuthError =>
+      'Unable to authenticate. Make sure you have device unlock set up.';
 
   @override
   String get settingsVerboseLoggingLabel => 'Verbose Logging';

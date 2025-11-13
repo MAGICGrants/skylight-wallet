@@ -663,8 +663,11 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
     return AlertDialog(
-      title: Text(i18n.sendSelectFromAddressBook),
+      constraints: BoxConstraints.tightFor(width: dialogWidth),
       insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
       content: SizedBox(
         width: double.maxFinite,

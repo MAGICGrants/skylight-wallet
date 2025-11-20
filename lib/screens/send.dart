@@ -40,6 +40,7 @@ class _SendScreenState extends State<SendScreen> {
   List<double>? _fees;
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0; // Track the latest fee calculation request
+  String _lastFeeFetchKey = '';
 
   String _destinationAddressError = '';
   String _amountError = '';
@@ -166,11 +167,40 @@ class _SendScreenState extends State<SendScreen> {
 
   Future<double> _getTxFee(String destinationAddress, double amount, int priority) async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
-    final tx = await wallet.createTx(destinationAddress, amount, _isSweepAll, priority: priority);
-    return doubleAmountFromInt(tx.fee());
+    const maxRetries = 10;
+
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        final tx = await wallet.createTx(
+          destinationAddress,
+          amount,
+          _isSweepAll,
+          priority: priority,
+        );
+        return doubleAmountFromInt(tx.fee());
+      } catch (error) {
+        if (error.toString().contains('Unlocked funds too low')) {
+          return 0;
+        }
+
+        if (i == maxRetries - 1) {
+          rethrow;
+        }
+      }
+    }
+
+    throw Exception('Failed to get transaction fee after $maxRetries retries');
   }
 
   Future<void> _calculateFees() async {
+    final feeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
+
+    if (feeFetchKey == _lastFeeFetchKey) {
+      return;
+    }
+
+    _lastFeeFetchKey = feeFetchKey;
+
     final i18n = AppLocalizations.of(context)!;
 
     // Increment counter to mark this as the latest request
@@ -179,42 +209,36 @@ class _SendScreenState extends State<SendScreen> {
 
     setState(() {
       _isLoadingFees = true;
+      _fees = null;
     });
 
     final destinationAddress = await _resolveDestinationAddress();
     final amount = double.parse(_amountController.text);
-    const maxRetries = 10;
 
-    for (int i = 0; i < maxRetries; i++) {
-      try {
-        final fees = await Future.wait([
-          _getTxFee(destinationAddress, amount, 1),
-          _getTxFee(destinationAddress, amount, 2),
-          _getTxFee(destinationAddress, amount, 3),
-        ]);
+    try {
+      final fees = await Future.wait([
+        _getTxFee(destinationAddress, amount, 1),
+        _getTxFee(destinationAddress, amount, 2),
+        _getTxFee(destinationAddress, amount, 3),
+      ]);
 
-        // Only update state if this is still the latest request
-        if (currentRequest == _feeCalculationCounter && mounted) {
-          setState(() {
-            _fees = fees;
-            _isLoadingFees = false;
-          });
-        }
-        break;
-      } catch (error) {
-        if (i == maxRetries - 1) {
-          // Only update state if this is still the latest request
-          if (currentRequest == _feeCalculationCounter && mounted) {
-            setState(() {
-              _isLoadingFees = false;
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(i18n.sendFailedToGetFeesError)));
-            }
-          }
-        }
+      // Only update state if this is still the latest request
+      if (currentRequest == _feeCalculationCounter && mounted) {
+        setState(() {
+          _fees = fees;
+          _isLoadingFees = false;
+        });
+      }
+    } catch (error) {
+      // Only update state if this is still the latest request
+      if (currentRequest == _feeCalculationCounter && mounted) {
+        setState(() {
+          _isLoadingFees = false;
+        });
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(i18n.sendFailedToGetFeesError)));
       }
     }
   }
@@ -561,14 +585,24 @@ class _SendScreenState extends State<SendScreen> {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 spacing: 4,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/monero.svg',
-                                    width: 14,
-                                    height: 14,
-                                  ),
-                                  MoneroAmount(amount: _fees![_selectedPriority], maxFontSize: 14),
-                                ],
+                                children: _fees![_selectedPriority] > 0
+                                    ? [
+                                        SvgPicture.asset(
+                                          'assets/icons/monero.svg',
+                                          width: 14,
+                                          height: 14,
+                                        ),
+                                        MoneroAmount(
+                                          amount: _fees![_selectedPriority],
+                                          maxFontSize: 14,
+                                        ),
+                                      ]
+                                    : [
+                                        Text(
+                                          i18n.sendInsufficientBalanceError,
+                                          style: TextStyle(color: Colors.red, fontSize: 14),
+                                        ),
+                                      ],
                               ),
                               Icon(Icons.arrow_drop_down),
                             ],
@@ -601,7 +635,6 @@ class _SendScreenState extends State<SendScreen> {
                     ),
                   ],
                 ),
-
                 Row(
                   spacing: 20,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -803,20 +836,30 @@ class _PriorityOption extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     spacing: 4,
-                    children: [
-                      Text(
-                        '${i18n.sendFeeLabel}:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
-                      MoneroAmount(amount: fee!, maxFontSize: 14),
-                    ],
+                    children: fee! > 0
+                        ? [
+                            Text(
+                              '${i18n.sendFeeLabel}:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
+
+                            // Show insufficient balance message in red if fee is 0
+                            MoneroAmount(amount: fee!, maxFontSize: 14),
+                          ]
+                        : [
+                            Text(
+                              i18n.sendInsufficientBalanceError,
+                              style: TextStyle(color: Colors.red, fontSize: 14),
+                            ),
+                          ],
                   ),
-                  if (fiatRate is double)
-                    FiatAmount(prefix: fiatSymbol, amount: fee! * fiatRate!, maxFontSize: 12),
+                  fiatRate is double && fee! > 0
+                      ? FiatAmount(prefix: fiatSymbol, amount: fee! * fiatRate!, maxFontSize: 12)
+                      : SizedBox.shrink(),
                 ],
               ),
           ],

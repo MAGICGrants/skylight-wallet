@@ -68,7 +68,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionSetupTitle => 'Configuração da Conexão';
 
   @override
-  String get connectionSetupDescription => 'Vamos configurar uma conexão com o LWS.';
+  String get connectionSetupDescription =>
+      'Vamos configurar uma conexão com seu servidor light-wallet de Monero (LWS).';
 
   @override
   String get connectionSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
@@ -316,7 +317,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsViewLwsKeysDialogText =>
-      'Somente compartilhe estas informações com o seu servidor LWS. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.';
+      'Somente compartilhe estas informações com o seu servidor light-wallet. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.';
 
   @override
   String get settingsViewLwsKeysDialogRevealButton => 'Revelar';

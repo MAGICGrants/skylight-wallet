@@ -210,7 +210,7 @@ abstract class AppLocalizations {
   /// No description provided for @connectionSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Let\'s setup a connection with LWS.'**
+  /// **'Let\'s setup a connection with your Monero light-wallet server (LWS).'**
   String get connectionSetupDescription;
 
   /// No description provided for @connectionSetupAddressHint.
@@ -684,7 +684,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsViewLwsKeysDialogText.
   ///
   /// In en, this message translates to:
-  /// **'Only share this information with your LWS server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.'**
+  /// **'Only share this information with your light-wallet server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.'**
   String get settingsViewLwsKeysDialogText;
 
   /// No description provided for @settingsViewLwsKeysDialogRevealButton.

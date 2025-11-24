@@ -134,16 +134,24 @@ export VERSION
 export ARCH=x86_64
 ./$APPIMAGETOOL_FILENAME AppDir
 
+GENERATED_APPIMAGE=$(ls -1 Skylight_Wallet-${VERSION}-*.AppImage 2>/dev/null | head -n1)
+DESIRED_NAME="skylight-wallet-v${VERSION}-x86_64.AppImage"
+
+if [ -n "$GENERATED_APPIMAGE" ]; then
+    echo "Renaming to: $DESIRED_NAME"
+    mv "$GENERATED_APPIMAGE" "$DESIRED_NAME"
+fi
+
 # Clean up temporary files
 echo "Cleaning up..."
 rm -rf AppDir
 
 echo ""
 echo "✓ AppImage created successfully!"
-APPIMAGE_FILE=$(ls -1 skylight-wallet-v${VERSION}-*.AppImage 2>/dev/null | head -n1)
-if [ -n "$APPIMAGE_FILE" ]; then
-    echo "Output: $APPIMAGE_FILE"
-    echo "Run with: ./appimage/$APPIMAGE_FILE"
+if [ -f "$DESIRED_NAME" ]; then
+    echo "Output: $DESIRED_NAME"
+    echo "Run with: ./appimage/$DESIRED_NAME"
 else
-    echo "Output: Check appimage/ directory for skylight-wallet-v${VERSION}-*.AppImage"
+    echo "Error: AppImage file not found!"
+    exit 1
 fi

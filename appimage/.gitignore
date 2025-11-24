@@ -1,0 +1,5 @@
+# AppImage build artifacts
+appimagetool-*.AppImage
+AppDir/
+*.AppImage
+.last_build_id

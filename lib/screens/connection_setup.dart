@@ -61,23 +61,35 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     value = cleanAddress(value);
 
     final ipAddressRegex = RegExp(
-      r'^(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
+      r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
     );
-    final onionAddressRegex = RegExp(r'^[a-z2-7]{56}|[a-z2-7]{16}.onion(:\d{1,5})?$');
+    final onionAddressRegex = RegExp(r'[a-z2-7]{56}|[a-z2-7]{16}.onion(:\d{1,5})?$');
     final domainAddressRegex = RegExp(
-      r'^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
+      r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
     );
 
+    var useTor = false;
+    var useSsl = false;
+
     if (ipAddressRegex.hasMatch(value)) {
-      setUseTor(false);
-      setUseSsl(false);
+      useTor = false;
+      useSsl = false;
     } else if (onionAddressRegex.hasMatch(value)) {
-      setUseSsl(false);
-      setUseTor(true);
+      useSsl = false;
+      useTor = true;
     } else if (domainAddressRegex.hasMatch(value)) {
-      setUseTor(false);
-      setUseSsl(true);
+      useTor = false;
+      useSsl = true;
     }
+
+    if (value.startsWith('https://')) {
+      useSsl = true;
+    } else if (value.startsWith('http://')) {
+      useSsl = false;
+    }
+
+    setUseSsl(useSsl);
+    setUseTor(useTor);
 
     setState(() {
       _hasTested = false;
@@ -93,7 +105,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   void setUseTor(bool? value) {
     setState(() {
       _useTor = value ?? false;
-      _useSsl = false;
+      _useSsl = value == true ? false : _useSsl;
       _hasTested = false;
     });
 

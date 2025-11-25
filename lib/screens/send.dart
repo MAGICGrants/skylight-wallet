@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+// ignore: implementation_imports
+import 'package:monero/src/monero.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -37,7 +39,7 @@ class _SendScreenState extends State<SendScreen> {
   final _amountController = TextEditingController(text: '');
   bool _isSweepAll = false;
   Contact? _selectedContact;
-  List<double>? _fees;
+  List<MoneroPendingTransaction?>? _fees;
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0; // Track the latest fee calculation request
   String _lastFeeFetchKey = '';
@@ -165,7 +167,11 @@ class _SendScreenState extends State<SendScreen> {
     return true;
   }
 
-  Future<double> _getTxFee(String destinationAddress, double amount, int priority) async {
+  Future<MoneroPendingTransaction?> _createTxForPriority(
+    String destinationAddress,
+    double amount,
+    int priority,
+  ) async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     const maxRetries = 10;
 
@@ -177,10 +183,10 @@ class _SendScreenState extends State<SendScreen> {
           _isSweepAll,
           priority: priority,
         );
-        return doubleAmountFromInt(tx.fee());
+        return tx;
       } catch (error) {
         if (error.toString().contains('Unlocked funds too low')) {
-          return 0;
+          return null;
         }
 
         if (i == maxRetries - 1) {
@@ -189,7 +195,7 @@ class _SendScreenState extends State<SendScreen> {
       }
     }
 
-    throw Exception('Failed to get transaction fee after $maxRetries retries');
+    throw Exception('Failed to create fee priority transaction after $maxRetries retries');
   }
 
   Future<void> _calculateFees() async {
@@ -216,16 +222,16 @@ class _SendScreenState extends State<SendScreen> {
     final amount = double.parse(_amountController.text);
 
     try {
-      final fees = await Future.wait([
-        _getTxFee(destinationAddress, amount, 1),
-        _getTxFee(destinationAddress, amount, 2),
-        _getTxFee(destinationAddress, amount, 3),
+      final txs = await Future.wait([
+        _createTxForPriority(destinationAddress, amount, 1),
+        _createTxForPriority(destinationAddress, amount, 2),
+        _createTxForPriority(destinationAddress, amount, 3),
       ]);
 
       // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
-          _fees = fees;
+          _fees = txs;
           _isLoadingFees = false;
         });
       }
@@ -276,12 +282,25 @@ class _SendScreenState extends State<SendScreen> {
     }
 
     try {
-      final tx = await wallet.createTx(
-        destinationAddress,
-        amount,
-        _isSweepAll,
-        priority: _selectedPriority + 1,
-      );
+      MoneroPendingTransaction tx;
+
+      // Check if we can reuse a cached transaction
+      final currentFeeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
+      final cachedTx = _fees != null && _fees!.length > _selectedPriority
+          ? _fees![_selectedPriority]
+          : null;
+
+      if (currentFeeFetchKey == _lastFeeFetchKey && cachedTx != null) {
+        tx = cachedTx;
+      } else {
+        // Create a new transaction if cached one is not available
+        tx = await wallet.createTx(
+          destinationAddress,
+          amount,
+          _isSweepAll,
+          priority: _selectedPriority + 1,
+        );
+      }
 
       setState(() {
         _isLoading = false;
@@ -350,7 +369,7 @@ class _SendScreenState extends State<SendScreen> {
               _PriorityOption(
                 label: i18n.sendPriorityLow,
                 priority: 0,
-                fee: _fees != null && _fees!.isNotEmpty ? _fees![0] : null,
+                tx: _fees != null && _fees!.isNotEmpty ? _fees![0] : null,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 0,
@@ -365,7 +384,7 @@ class _SendScreenState extends State<SendScreen> {
               _PriorityOption(
                 label: i18n.sendPriorityNormal,
                 priority: 1,
-                fee: _fees != null && _fees!.length > 1 ? _fees![1] : null,
+                tx: _fees != null && _fees!.length > 1 ? _fees![1] : null,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 1,
@@ -380,7 +399,7 @@ class _SendScreenState extends State<SendScreen> {
               _PriorityOption(
                 label: i18n.sendPriorityHigh,
                 priority: 2,
-                fee: _fees != null && _fees!.length > 2 ? _fees![2] : null,
+                tx: _fees != null && _fees!.length > 2 ? _fees![2] : null,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 2,
@@ -579,34 +598,43 @@ class _SendScreenState extends State<SendScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         else if (_fees != null && _fees!.length > _selectedPriority)
-                          Row(
-                            spacing: 8,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                spacing: 4,
-                                children: _fees![_selectedPriority] > 0
-                                    ? [
-                                        SvgPicture.asset(
-                                          'assets/icons/monero.svg',
-                                          width: 14,
-                                          height: 14,
-                                        ),
-                                        MoneroAmount(
-                                          amount: _fees![_selectedPriority],
-                                          maxFontSize: 14,
-                                        ),
-                                      ]
-                                    : [
-                                        Text(
-                                          i18n.sendInsufficientBalanceError,
-                                          style: TextStyle(color: Colors.red, fontSize: 14),
-                                        ),
-                                      ],
-                              ),
-                              Icon(Icons.arrow_drop_down),
-                            ],
-                          )
+                          () {
+                            final selectedTx = _fees![_selectedPriority];
+                            if (selectedTx != null) {
+                              return Row(
+                                spacing: 8,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    spacing: 4,
+                                    children: [
+                                      SvgPicture.asset(
+                                        'assets/icons/monero.svg',
+                                        width: 14,
+                                        height: 14,
+                                      ),
+                                      MoneroAmount(
+                                        amount: doubleAmountFromInt(selectedTx.fee()),
+                                        maxFontSize: 14,
+                                      ),
+                                    ],
+                                  ),
+                                  Icon(Icons.arrow_drop_down),
+                                ],
+                              );
+                            } else {
+                              return Row(
+                                spacing: 8,
+                                children: [
+                                  Text(
+                                    i18n.sendInsufficientBalanceError,
+                                    style: TextStyle(color: Colors.red, fontSize: 14),
+                                  ),
+                                  Icon(Icons.arrow_drop_down),
+                                ],
+                              );
+                            }
+                          }()
                         else
                           Icon(Icons.arrow_drop_down),
                       ],
@@ -775,7 +803,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
 class _PriorityOption extends StatelessWidget {
   final String label;
   final int priority;
-  final double? fee;
+  final MoneroPendingTransaction? tx;
   final String fiatSymbol;
   final double? fiatRate;
   final bool isSelected;
@@ -784,7 +812,7 @@ class _PriorityOption extends StatelessWidget {
   const _PriorityOption({
     required this.label,
     required this.priority,
-    required this.fee,
+    required this.tx,
     required this.fiatSymbol,
     required this.fiatRate,
     required this.isSelected,
@@ -794,6 +822,9 @@ class _PriorityOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final currentTx = tx;
+    final fee = currentTx != null ? doubleAmountFromInt(currentTx.fee()) : null;
+    final currentFiatRate = fiatRate;
 
     return InkWell(
       onTap: onTap,
@@ -836,31 +867,26 @@ class _PriorityOption extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     spacing: 4,
-                    children: fee! > 0
-                        ? [
-                            Text(
-                              '${i18n.sendFeeLabel}:',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
-
-                            // Show insufficient balance message in red if fee is 0
-                            MoneroAmount(amount: fee!, maxFontSize: 14),
-                          ]
-                        : [
-                            Text(
-                              i18n.sendInsufficientBalanceError,
-                              style: TextStyle(color: Colors.red, fontSize: 14),
-                            ),
-                          ],
+                    children: [
+                      Text(
+                        '${i18n.sendFeeLabel}:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
+                      MoneroAmount(amount: fee, maxFontSize: 14),
+                    ],
                   ),
-                  fiatRate is double && fee! > 0
-                      ? FiatAmount(prefix: fiatSymbol, amount: fee! * fiatRate!, maxFontSize: 12)
-                      : SizedBox.shrink(),
+                  if (currentFiatRate != null)
+                    FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
                 ],
+              )
+            else
+              Text(
+                i18n.sendInsufficientBalanceError,
+                style: TextStyle(color: Colors.red, fontSize: 14),
               ),
           ],
         ),

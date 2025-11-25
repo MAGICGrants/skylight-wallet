@@ -203,11 +203,7 @@ class WalletModel with ChangeNotifier {
       log(LogLevel.error, 'Error loading all stats: $e');
     }
 
-    final txCount = _w2TxHistory!.count();
-
-    if (_isConnected && _isSynced && txCount > 0) {
-      await store();
-    }
+    await store();
   }
 
   Future<void> load() async {
@@ -482,13 +478,12 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<void> loadPersistedUnusedSubaddressIndex() async {
-    _unusedSubaddressIndex =
-        await SharedPreferencesService.get<int>(SharedPreferencesKeys.unusedSubaddressIndex) ?? 1;
-    _unusedSubaddressIndexIsSupported =
-        await SharedPreferencesService.get<bool>(
-          SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
-        ) ??
-        false;
+    _unusedSubaddressIndex = await SharedPreferencesService.get<int>(
+      SharedPreferencesKeys.unusedSubaddressIndex,
+    );
+    _unusedSubaddressIndexIsSupported = await SharedPreferencesService.get<bool>(
+      SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
+    );
   }
 
   Future<bool> isSubaddressSupported(int subaddrIndex) async {

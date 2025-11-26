@@ -534,7 +534,7 @@ abstract class AppLocalizations {
   /// No description provided for @receiveMaxSubaddressesReachedWarn.
   ///
   /// In en, this message translates to:
-  /// **'You have reached the maximum number of subaddresses supported by this server. This is a used subaddress.'**
+  /// **'You have reached the maximum number of subaddresses supported by this server. This is a used address.'**
   String get receiveMaxSubaddressesReachedWarn;
 
   /// No description provided for @sendTitle.

@@ -19,6 +19,7 @@ import 'package:http/http.dart' as http;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
@@ -362,6 +363,12 @@ class WalletModel with ChangeNotifier {
     }
 
     final proxyPort = torProxyPort ?? _connectionProxyPort;
+
+    if (Platform.isAndroid) {
+      // This addresses SSL certificate verification issues on Android
+      final cacertFile = await getCacertFile();
+      _w2Wallet!.setCaFilePath(cacertFile.path);
+    }
 
     await _connectToDaemon(
       address: _connectionAddress,

@@ -238,7 +238,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receiveMaxSubaddressesReachedWarn =>
-      'Você atingiu o número máximo de subendereços suportados por este servidor. Este é um subendereço já usado.';
+      'Você atingiu o número máximo de subendereços suportados por este servidor. Este é um endereço já usado.';
 
   @override
   String get sendTitle => 'Enviar';

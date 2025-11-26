@@ -238,7 +238,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receiveMaxSubaddressesReachedWarn =>
-      'You have reached the maximum number of subaddresses supported by this server. This is a used subaddress.';
+      'You have reached the maximum number of subaddresses supported by this server. This is a used address.';
 
   @override
   String get sendTitle => 'Send';

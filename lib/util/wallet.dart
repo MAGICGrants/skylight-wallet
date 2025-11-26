@@ -1,8 +1,8 @@
-import 'package:path_provider/path_provider.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
+import 'package:skylight_wallet/util/dirs.dart';
 
 Future<String> getWalletPath([String? walletFileName]) async {
-  var path = (await getApplicationDocumentsDirectory()).path;
+  var path = (await getAppDir()).path;
   String walletName = walletFileName ?? consts.walletFileName;
   path = '$path/$walletName';
   return path;

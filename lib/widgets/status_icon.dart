@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 enum StatusIconStatus { loading, complete, fail }
 
 class StatusIcon extends StatelessWidget {
+  const StatusIcon({super.key, required this.child, required this.status});
+
   final Widget child;
   final StatusIconStatus status;
 
-  const StatusIcon({super.key, required this.child, required this.status});
-
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDarkTheme = brightness == Brightness.dark;
+
     return SizedBox(
       width: 22,
       height: 22,
@@ -24,7 +27,7 @@ class StatusIcon extends StatelessWidget {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDarkTheme ? Colors.grey[900] : Colors.white,
                 shape: BoxShape.circle,
               ),
               child: status == StatusIconStatus.complete

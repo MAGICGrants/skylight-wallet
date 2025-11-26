@@ -9,7 +9,14 @@ class NotificationService {
       '@mipmap/ic_launcher',
     );
 
-    const initSettings = InitializationSettings(android: initSettingsAndroid);
+    const initSettingsLinux = LinuxInitializationSettings(
+      defaultActionName: 'Open wallet',
+    );
+
+    const initSettings = InitializationSettings(
+      android: initSettingsAndroid,
+      linux: initSettingsLinux,
+    );
 
     await notificationsPlugin.initialize(initSettings);
   }

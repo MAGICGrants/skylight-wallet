@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get close => 'Close';
+
+  @override
   String get unknownError => 'Unknown error.';
 
   @override
@@ -31,6 +34,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pending => 'Pending';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get addressCopied => 'Address copied to clipboard';
 
   @override
   String get fieldEmptyError => 'This field cannot be empty.';
@@ -60,11 +69,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionSetupDescription =>
-      'Let\'s setup a connection with LWS.';
+      'Let\'s setup a connection with your Monero light-wallet server (LWS).';
 
   @override
-  String get connectionSetupAddressHint =>
-      'e.g. 192.168.1.1:18090 or example.com:18090';
+  String get connectionSetupAddressHint => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
   String get connectionSetupProxyPortLabel => 'HTTP Proxy Port (optional)';
@@ -140,7 +148,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletRestoreButton => 'Restore';
 
   @override
-  String get restoreWalletInvalidMnemonic => 'Invalid mnemonic.';
+  String get restoreWalletInvalidMnemonic => 'Invalid seed.';
 
   @override
   String get navigationBarWallet => 'Wallet';
@@ -159,6 +167,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unlockUnableToAuthError => 'Unable to authenticate.';
+
+  @override
+  String get unlockTitle => 'Unlock Wallet';
+
+  @override
+  String get unlockDescription => 'Enter your wallet password to unlock';
+
+  @override
+  String get unlockPasswordLabel => 'Password';
+
+  @override
+  String get unlockPasswordHint => 'Enter your password';
+
+  @override
+  String get unlockIncorrectPasswordError => 'Incorrect password. Please try again.';
 
   @override
   String get homeConnecting => 'Connecting';
@@ -198,11 +221,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Warning: For better privacy, consider using subaddresses if supported by your light wallet server.';
-
-  @override
-  String get receiveSubaddressWarn =>
-      'Warning: Make sure your light wallet server supports subaddresses, otherwise, you will not be able to see incoming transactions.';
+      'Warning: Unless you know what you\'re doing, please consider using subaddresses for better privacy.';
 
   @override
   String get receiveShareButton => 'Share';
@@ -214,14 +233,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveShowPrimaryAddressButton => 'Show Primary Address';
 
   @override
+  String get receiveServerNoSubaddressesWarn =>
+      'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.';
+
+  @override
+  String get receiveMaxSubaddressesReachedWarn =>
+      'You have reached the maximum number of subaddresses supported by this server. This is a used address.';
+
+  @override
   String get sendTitle => 'Send';
 
   @override
   String get sendSendButton => 'Send';
 
   @override
-  String get sendTransactionSuccessfullySent =>
-      'Transaction successfully sent!';
+  String get sendTransactionSuccessfullySent => 'Transaction successfully sent!';
 
   @override
   String get sendOpenAliasResolveError => 'Invalid OpenAlias.';
@@ -249,7 +275,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppLockUnlockReason => 'Unlock wallet';
 
   @override
-  String get settingsAppLockUnableToAuthError => 'Unable to authenticate.';
+  String get settingsAppLockUnableToAuthError =>
+      'Unable to authenticate. Make sure you have device unlock set up.';
+
+  @override
+  String get settingsVerboseLoggingLabel => 'Verbose Logging';
+
+  @override
+  String get settingsVerboseLoggingDescription =>
+      'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.';
+
+  @override
+  String get settingsThemeLabel => 'Theme';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeDark => 'Dark';
 
   @override
   String get settingsLanguageLabel => 'Language';
@@ -271,7 +317,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsViewLwsKeysDialogText =>
-      'Only share this information with your LWS server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.';
+      'Only share this information with your light-wallet server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.';
 
   @override
   String get settingsViewLwsKeysDialogRevealButton => 'Reveal';
@@ -350,4 +396,87 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get confirmSendDescription =>
       'Transactions are irreversible, so make sure that these details match exactly.';
+
+  @override
+  String get addressBookTitle => 'Address Book';
+
+  @override
+  String get addressBookAddContact => 'Add Contact';
+
+  @override
+  String get addressBookEditContact => 'Edit Contact';
+
+  @override
+  String get addressBookDeleteContact => 'Delete Contact';
+
+  @override
+  String addressBookDeleteContactConfirmation(String contactName) {
+    return 'Are you sure you want to delete \"$contactName\"?';
+  }
+
+  @override
+  String get addressBookDelete => 'Delete';
+
+  @override
+  String get addressBookSearchHint => 'Search contacts...';
+
+  @override
+  String get addressBookNoContacts => 'No contacts yet';
+
+  @override
+  String get addressBookNoContactsDescription => 'Add your first contact by tapping the + button';
+
+  @override
+  String get addressBookNoSearchResults => 'No contacts found';
+
+  @override
+  String get addressBookCopyAddress => 'Copy Address';
+
+  @override
+  String get addressBookEdit => 'Edit';
+
+  @override
+  String get addressBookContactName => 'Contact Name';
+
+  @override
+  String get addressBookUpdate => 'Update';
+
+  @override
+  String get addressBookSave => 'Save';
+
+  @override
+  String get sendSelectFromAddressBook => 'Select from Address Book';
+
+  @override
+  String get sendSelectedContact => 'Selected contact';
+
+  @override
+  String get sendClearSelectedContact => 'Clear selected contact';
+
+  @override
+  String get sendEditAddress => 'Edit Address';
+
+  @override
+  String get sendPriorityLow => 'Low';
+
+  @override
+  String get sendPriorityNormal => 'Normal';
+
+  @override
+  String get sendPriorityHigh => 'High';
+
+  @override
+  String get sendPriorityLabel => 'priority';
+
+  @override
+  String get sendTransactionPriority => 'Transaction Priority';
+
+  @override
+  String get sendFeeLabel => 'Fee';
+
+  @override
+  String get sendBalanceLabel => 'Balance';
+
+  @override
+  String get sendFailedToGetFeesError => 'Failed to get fees.';
 }

@@ -14,12 +14,17 @@ class WalletNavigationBar extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) => {
         if (index == 0) {Navigator.pushNamed(context, '/wallet_home')},
-        if (index == 1) {Navigator.pushNamed(context, '/settings')},
+        if (index == 1) {Navigator.pushNamed(context, '/address_book')},
+        if (index == 2) {Navigator.pushNamed(context, '/settings')},
       },
       destinations: [
         NavigationDestination(
           icon: Icon(Icons.wallet),
           label: i18n.navigationBarWallet,
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.contacts),
+          label: i18n.addressBookTitle,
         ),
         NavigationDestination(
           icon: Icon(Icons.settings),

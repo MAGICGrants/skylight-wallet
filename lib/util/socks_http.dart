@@ -49,7 +49,7 @@ String getRawHttpRequestString(String method, String url, {Object? jsonBody}) {
   request.write('Connection: close\r\n');
   request.write('Accept: */*\r\n');
 
-  final jsonBodyStr = jsonBody is Object ? jsonEncode(jsonBody) : null;
+  final jsonBodyStr = jsonBody is Object ? jsonBody.toString() : null;
 
   if (jsonBodyStr != null && jsonBodyStr.isNotEmpty) {
     final bodyBytes = utf8.encode(jsonBodyStr);
@@ -119,8 +119,9 @@ ParsedHttpResponse parseHttpResponse(String rawResponse) {
 Future<ParsedHttpResponse> makeSocksHttpRequest(
   String method,
   String url,
-  ({InternetAddress host, int port}) proxyInfo,
-) async {
+  ({InternetAddress host, int port}) proxyInfo, {
+  Object? body,
+}) async {
   final uri = Uri.parse(url);
 
   final socket = await SOCKSSocket.create(
@@ -132,7 +133,7 @@ Future<ParsedHttpResponse> makeSocksHttpRequest(
   await socket.connect();
   await socket.connectTo(uri.host, uri.port);
 
-  final rawRequest = getRawHttpRequestString(method, url);
+  final rawRequest = getRawHttpRequestString(method, url, jsonBody: body);
   final rawResponse = await socket.send(rawRequest);
   final parsedResponse = parseHttpResponse(rawResponse);
 

@@ -8,21 +8,25 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'package:dart_date/dart_date.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
+import 'package:http/http.dart' as http;
 
-import 'package:skylight_wallet/consts.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
+import 'package:skylight_wallet/consts.dart' as consts;
 
 String generateHexString(int length) {
   final Random random = Random.secure();
@@ -105,10 +109,8 @@ class TxRecipient {
 
   Map<String, dynamic> toJson() => {'address': address, 'amount': amount};
 
-  factory TxRecipient.fromJson(Map<String, dynamic> json) => TxRecipient(
-    json['address'] as String,
-    (json['amount'] as num).toDouble(),
-  );
+  factory TxRecipient.fromJson(Map<String, dynamic> json) =>
+      TxRecipient(json['address'] as String, (json['amount'] as num).toDouble());
 }
 
 class LWSConnectionDetails {
@@ -126,12 +128,9 @@ class LWSConnectionDetails {
 }
 
 class WalletModel with ChangeNotifier {
-  final _w2WalletManager = Monero()
-      .walletManagerFactory()
-      .getLWSFWalletManager();
+  final _w2WalletManager = Monero().walletManagerFactory().getLWSFWalletManager();
 
   Wallet2Wallet? _w2Wallet;
-
   Wallet2TransactionHistory? _w2TxHistory;
 
   late String _connectionAddress;
@@ -139,6 +138,7 @@ class WalletModel with ChangeNotifier {
   late bool _connectionUseTor;
   late bool _connectionUseSsl;
 
+  final _sessionStartedAt = DateTime.now().secondsSinceEpoch;
   var _hasAttemptedConnection = false;
   var _isConnected = false;
   var _isSynced = false;
@@ -146,6 +146,10 @@ class WalletModel with ChangeNotifier {
   double? _unlockedBalance;
   double? _totalBalance;
   List<TxDetails> _txHistory = [];
+  bool? _serverSupportsSubaddresses;
+  int? _unusedSubaddressIndex;
+  bool? _unusedSubaddressIndexIsSupported;
+  String? _desktopWalletPassword;
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
@@ -156,13 +160,12 @@ class WalletModel with ChangeNotifier {
   double? get totalBalance => _totalBalance;
   List<TxDetails> get txHistory => _txHistory;
   bool get usingTor => _connectionUseTor;
+  bool? get serverSupportsSubaddresses => _serverSupportsSubaddresses;
+  int? get unusedSubaddressIndex => _unusedSubaddressIndex;
+  bool? get unusedSubaddressIndexIsSupported => _unusedSubaddressIndexIsSupported;
 
   WalletModel() {
     _startTimers();
-  }
-
-  void notifyListenersFromOutside() {
-    notifyListeners();
   }
 
   void _startTimers() {
@@ -182,7 +185,7 @@ class WalletModel with ChangeNotifier {
 
     final isConnected = await getIsConnected();
 
-    if (isConnected != _isConnected) {
+    if (isConnected != _isConnected && _w2Wallet != null) {
       _isConnected = isConnected;
       notifyListeners();
     }
@@ -194,16 +197,36 @@ class WalletModel with ChangeNotifier {
     }
 
     await refresh();
-    await loadAllStats().timeout(Duration(seconds: 20));
 
-    final txCount = _w2TxHistory!.count();
-
-    if (_isConnected && _isSynced && txCount > 0) {
-      await store();
+    try {
+      await loadAllStats().timeout(Duration(seconds: 20));
+    } catch (e) {
+      log(LogLevel.error, 'Error loading all stats: $e');
     }
+
+    await store();
+  }
+
+  Future<void> load() async {
+    if (_w2Wallet == null) {
+      return;
+    }
+
+    await loadPersistedSubaddressSupport();
+    await loadPersistedUnusedSubaddressIndex();
+    await refresh();
+    await loadAllStats();
+    await connectToDaemon();
+    await loadSubaddressSupport();
+    await loadUnusedSubaddressIndex();
   }
 
   Future<void> loadAllStats() async {
+    if (_w2Wallet == null) {
+      log(LogLevel.warn, 'Attempted to load all stats but there is no wallet open.');
+      return;
+    }
+
     await Future.wait([
       loadIsSynced(),
       loadSyncedHeight(),
@@ -231,55 +254,58 @@ class WalletModel with ChangeNotifier {
     }
 
     if (txCount > _txHistory.length || hasPendingTx) {
+      final txCountDiff = txCount - _txHistory.length;
+
       _txHistory = await _getFullTxHistory();
+
+      // Notify new transactions on desktop
+      if ((Platform.isLinux || Platform.isWindows || Platform.isMacOS) &&
+          _isConnected &&
+          _isSynced &&
+          _syncedHeight is int &&
+          _syncedHeight! > 0) {
+        for (int i = 0; i < txCountDiff; i++) {
+          final tx = _txHistory[i];
+
+          if (tx.direction == consts.txDirectionIncoming && tx.timestamp > _sessionStartedAt) {
+            NotificationService().showIncomingTxNotification(tx.amount);
+            // Only notify one new transaction
+            break;
+          }
+        }
+      }
 
       if (persistCount) {
         await persistTxHistoryCount();
       }
     }
+
+    if (txCount > _txHistory.length) {
+      await loadUnusedSubaddressIndex();
+    }
   }
 
   Future<void> persistCurrentConnection() async {
-    await SharedPreferencesService.set(
-      SharedPreferencesKeys.connectionAddress,
-      _connectionAddress,
-    );
+    await SharedPreferencesService.set(SharedPreferencesKeys.connectionAddress, _connectionAddress);
     await SharedPreferencesService.set(
       SharedPreferencesKeys.connectionProxyPort,
       _connectionProxyPort,
     );
-    await SharedPreferencesService.set(
-      SharedPreferencesKeys.connectionUseTor,
-      _connectionUseTor,
-    );
-    await SharedPreferencesService.set(
-      SharedPreferencesKeys.connectionUseSsl,
-      _connectionUseSsl,
-    );
+    await SharedPreferencesService.set(SharedPreferencesKeys.connectionUseTor, _connectionUseTor);
+    await SharedPreferencesService.set(SharedPreferencesKeys.connectionUseSsl, _connectionUseSsl);
   }
 
   Future<LWSConnectionDetails> getPersistedConnection() async {
     return LWSConnectionDetails(
       address:
-          await SharedPreferencesService.get<String>(
-            SharedPreferencesKeys.connectionAddress,
-          ) ??
-          '',
+          await SharedPreferencesService.get<String>(SharedPreferencesKeys.connectionAddress) ?? '',
       proxyPort:
-          await SharedPreferencesService.get<String>(
-            SharedPreferencesKeys.connectionProxyPort,
-          ) ??
+          await SharedPreferencesService.get<String>(SharedPreferencesKeys.connectionProxyPort) ??
           '',
       useTor:
-          await SharedPreferencesService.get<bool>(
-            SharedPreferencesKeys.connectionUseTor,
-          ) ??
-          false,
+          await SharedPreferencesService.get<bool>(SharedPreferencesKeys.connectionUseTor) ?? false,
       useSsl:
-          await SharedPreferencesService.get<bool>(
-            SharedPreferencesKeys.connectionUseSsl,
-          ) ??
-          false,
+          await SharedPreferencesService.get<bool>(SharedPreferencesKeys.connectionUseSsl) ?? false,
     );
   }
 
@@ -305,10 +331,7 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<int> getPersistedTxHistoryCount() async {
-    return await SharedPreferencesService.get<int>(
-          SharedPreferencesKeys.txHistoryCount,
-        ) ??
-        0;
+    return await SharedPreferencesService.get<int>(SharedPreferencesKeys.txHistoryCount) ?? 0;
   }
 
   void setConnection({
@@ -322,6 +345,10 @@ class WalletModel with ChangeNotifier {
     _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
     notifyListeners();
+  }
+
+  void setWalletPassword(String password) {
+    _desktopWalletPassword = password;
   }
 
   Future<void> connectToDaemon() async {
@@ -356,34 +383,194 @@ class WalletModel with ChangeNotifier {
     bool useSsl = false,
   }) async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
+    final daemonAddress = '${useSsl ? 'https://' : 'http://'}$address';
     final proxyAddress = proxyPort != '' ? '127.0.0.1:$proxyPort' : '';
+    final lightWallet = true;
 
-    await Isolate.run(
+    log(LogLevel.info, 'Calling Wallet_init with parameters:');
+    log(LogLevel.info, '  daemonAddress: $daemonAddress');
+    log(LogLevel.info, '  proxyAddress: $proxyAddress');
+    log(LogLevel.info, '  useSsl: $useSsl');
+    log(LogLevel.info, '  lightWallet: $lightWallet');
+
+    final initResult = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_init(
         Pointer.fromAddress(walletFfiAddr),
-        daemonAddress: '${useSsl ? 'https://' : 'http://'}$address',
+        daemonAddress: daemonAddress,
         proxyAddress: proxyAddress,
         useSsl: useSsl,
-        lightWallet: true,
+        lightWallet: lightWallet,
       ),
     );
 
-    await Isolate.run(
+    log(LogLevel.info, 'Wallet_init result: $initResult');
+
+    final connectResult = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_connectToDaemon(Pointer.fromAddress(walletFfiAddr)),
     );
 
+    log(LogLevel.info, 'Wallet_connectToDaemon result: $connectResult');
+
     final connectError = _w2Wallet!.errorString();
 
     if (connectError != '') {
-      log(LogLevel.warn, connectError);
+      log(LogLevel.warn, 'Wallet_connectToDaemon error: $connectError');
     }
+  }
+
+  Future<void> loadPersistedSubaddressSupport() async {
+    _serverSupportsSubaddresses = await SharedPreferencesService.get<bool>(
+      SharedPreferencesKeys.serverSupportsSubaddresses,
+    );
+  }
+
+  Future<void> loadSubaddressSupport() async {
+    try {
+      final isSupported = await isSubaddressSupported(1);
+      _serverSupportsSubaddresses = isSupported;
+
+      await SharedPreferencesService.set<bool>(
+        SharedPreferencesKeys.serverSupportsSubaddresses,
+        _serverSupportsSubaddresses!,
+      );
+    } catch (e) {
+      //
+    }
+  }
+
+  Future<void> loadUnusedSubaddressIndex() async {
+    final txHistory = await _getFullTxHistory();
+
+    Set<int> usedIndexes = {};
+
+    for (final tx in txHistory) {
+      if (tx.accountIndex == 0) {
+        for (final subaddrIndex in tx.subaddrIndexList) {
+          usedIndexes.add(subaddrIndex);
+        }
+      }
+    }
+
+    int nextSubaddrIndex = 1;
+
+    while (usedIndexes.contains(nextSubaddrIndex)) {
+      nextSubaddrIndex++;
+    }
+
+    if (_unusedSubaddressIndex != nextSubaddrIndex) {
+      try {
+        final isSupported = await isSubaddressSupported(nextSubaddrIndex);
+        _unusedSubaddressIndex = nextSubaddrIndex;
+        _unusedSubaddressIndexIsSupported = isSupported;
+
+        await SharedPreferencesService.set<int>(
+          SharedPreferencesKeys.unusedSubaddressIndex,
+          _unusedSubaddressIndex!,
+        );
+        await SharedPreferencesService.set<bool>(
+          SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
+          _unusedSubaddressIndexIsSupported!,
+        );
+
+        notifyListeners();
+      } catch (e) {
+        //
+      }
+    }
+  }
+
+  Future<void> loadPersistedUnusedSubaddressIndex() async {
+    _unusedSubaddressIndex = await SharedPreferencesService.get<int>(
+      SharedPreferencesKeys.unusedSubaddressIndex,
+    );
+    _unusedSubaddressIndexIsSupported = await SharedPreferencesService.get<bool>(
+      SharedPreferencesKeys.unusedSubaddressIndexIsSupported,
+    );
+  }
+
+  Future<bool> isSubaddressSupported(int subaddrIndex) async {
+    final proto = _connectionUseSsl ? 'https' : 'http';
+    final url = Uri.parse('$proto://$_connectionAddress/upsert_subaddrs');
+    final primaryAddress = getPrimaryAddress();
+    final viewKey = _w2Wallet!.secretViewKey();
+    final subaddrs = [
+      {
+        "key": 0,
+        "value": [
+          [0, subaddrIndex],
+        ],
+      },
+    ];
+    final getAll = false;
+
+    final body = json.encode({
+      'address': primaryAddress,
+      'view_key': viewKey,
+      'subaddrs': subaddrs,
+      'get_all': getAll,
+    });
+
+    log(LogLevel.info, 'Checking subaddress support:');
+    log(LogLevel.info, '  url: $url');
+    log(LogLevel.info, '  primaryAddress: $primaryAddress');
+    log(LogLevel.info, '  viewKey: <hidden>');
+    log(LogLevel.info, '  subaddrs: $subaddrs');
+    log(LogLevel.info, '  getAll: $getAll');
+
+    var httpStatus = 0;
+
+    for (int i = 0; i < 3; i++) {
+      try {
+        if (_connectionUseTor) {
+          await TorService.sharedInstance.waitUntilConnected();
+          final proxyInfo = TorService.sharedInstance.getProxyInfo();
+          final response = await makeSocksHttpRequest(
+            'POST',
+            url.toString(),
+            proxyInfo,
+            body: body,
+          ).timeout(Duration(seconds: 20));
+
+          httpStatus = response.statusCode;
+        } else {
+          final response = await http
+              .post(url, headers: {'Content-Type': 'application/json'}, body: body)
+              .timeout(Duration(seconds: 5));
+
+          httpStatus = response.statusCode;
+        }
+
+        break;
+      } catch (e) {
+        if (i == 2) {
+          log(LogLevel.warn, 'Failed to check subaddress support after ${i + 1} attempts.');
+          log(LogLevel.warn, 'Error: $e');
+
+          rethrow;
+        }
+      }
+    }
+
+    final result = httpStatus == 200;
+
+    log(
+      LogLevel.info,
+      'Subaddress support check result for subaddress $subaddrIndex: $result (status: $httpStatus)',
+    );
+
+    return result;
   }
 
   Future<void> refresh() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
     final historyFfiAddr = _w2TxHistory!.ffiAddress();
+
+    log(
+      LogLevel.info,
+      'Calling Wallet_startRefresh, Wallet_refresh, and TransactionHistory_refresh',
+    );
 
     await Future.wait([
       Isolate.run(
@@ -396,16 +583,17 @@ class WalletModel with ChangeNotifier {
       ),
       Isolate.run(
         // ignore: deprecated_member_use
-        () => monero.TransactionHistory_refresh(
-          Pointer.fromAddress(historyFfiAddr),
-        ),
+        () => monero.TransactionHistory_refresh(Pointer.fromAddress(historyFfiAddr)),
       ),
     ]);
+
+    log(LogLevel.info, 'Wallet refresh methods completed successfully');
   }
 
   Future<String> create() async {
     // ignore: deprecated_member_use
     final polyseed = await Isolate.run(() => monero.Wallet_createPolyseed());
+    log(LogLevel.info, 'Wallet_createPolyseed completed');
     final currentHeight = await getCurrentBlockchainHeight();
     await restoreFromMnemonic(polyseed, currentHeight);
     await SharedPreferencesService.set<int>(
@@ -420,27 +608,31 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<int> getRestoreHeight() async {
+    log(LogLevel.info, 'Calling Wallet_getRefreshFromBlockHeight');
+
     var w2RestoreHeight = _w2Wallet!.getRefreshFromBlockHeight();
+
+    log(LogLevel.info, 'Wallet_getRefreshFromBlockHeight result: $w2RestoreHeight');
 
     if (w2RestoreHeight > 0) {
       return w2RestoreHeight;
     }
 
-    return await SharedPreferencesService.get<int>(
-          SharedPreferencesKeys.walletRestoreHeight,
-        ) ??
-        0;
+    return await SharedPreferencesService.get<int>(SharedPreferencesKeys.walletRestoreHeight) ?? 0;
   }
 
-  Future<int> getCurrentHeight() {
+  Future<int> getCurrentHeight() async {
     final wmFfiAddr = _w2WalletManager.ffiAddress();
 
-    return Isolate.run(() {
+    log(LogLevel.info, 'Calling WalletManager_blockchainHeight');
+
+    final height = await Isolate.run(() {
       // ignore: deprecated_member_use
-      return monero.WalletManager_blockchainHeight(
-        Pointer.fromAddress(wmFfiAddr),
-      );
+      return monero.WalletManager_blockchainHeight(Pointer.fromAddress(wmFfiAddr));
     });
+
+    log(LogLevel.info, 'WalletManager_blockchainHeight result: $height');
+    return height;
   }
 
   Future<MoneroWallet> _getWalletFromLegacySeed({
@@ -456,6 +648,13 @@ class WalletModel with ChangeNotifier {
     final wmFfiAddr = _w2WalletManager.ffiAddress();
     final walletPath = await getWalletPath();
 
+    log(LogLevel.info, 'Calling WalletManager_recoveryWallet with parameters:');
+    log(LogLevel.info, '  mnemonic: <hidden>');
+    log(LogLevel.info, '  restoreHeight: $restoreHeight');
+    log(LogLevel.info, '  password: <hidden>');
+    log(LogLevel.info, '  path: $walletPath');
+    log(LogLevel.info, '  isDummy: $isDummy');
+
     final walletFfiAddr = await Isolate.run(() {
       // ignore: deprecated_member_use
       return monero.WalletManager_recoveryWallet(
@@ -467,6 +666,8 @@ class WalletModel with ChangeNotifier {
         path: isDummy ? '' : walletPath,
       ).address;
     });
+
+    log(LogLevel.info, 'WalletManager_recoveryWallet completed');
 
     return MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
   }
@@ -498,6 +699,8 @@ class WalletModel with ChangeNotifier {
       ).address;
     });
 
+    log(LogLevel.info, 'WalletManager_createWalletFromPolyseed completed');
+
     return MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
   }
 
@@ -520,18 +723,15 @@ class WalletModel with ChangeNotifier {
       isDummy: true,
     );
 
-    final legacyError = legacyWallet.errorString();
-    final polyseedError = polyseedWallet.errorString();
+    final walletPassword = _desktopWalletPassword ?? genWalletPassword();
 
-    final walletPassword = genWalletPassword();
-
-    if (!legacyError.contains('word list failed verification')) {
+    if (legacyWallet.errorString() == '' && legacyWallet.status() == 0) {
       _w2Wallet = await _getWalletFromLegacySeed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
         password: walletPassword,
       );
-    } else if (polyseedError != 'Failed polyseed decode') {
+    } else if (polyseedWallet.errorString() == '' && polyseedWallet.status() == 0) {
       _w2Wallet = await _getWalletFromPolyseed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
@@ -539,11 +739,20 @@ class WalletModel with ChangeNotifier {
       );
     }
 
-    if (_w2Wallet == null) {
-      throw Exception("Something went wrong when generating seed");
+    if (_w2Wallet == null &&
+        legacyWallet.errorString().contains('word list failed verification') &&
+        polyseedWallet.errorString().contains('Failed polyseed decode')) {
+      throw Exception('Invalid mnemonic.');
+    } else if (_w2Wallet == null) {
+      log(LogLevel.error, 'Something went wrong when restoring from mnemonic.');
+      log(LogLevel.error, 'Legacy wallet error: ${legacyWallet.errorString()}');
+      log(LogLevel.error, 'Polyseed wallet error: ${polyseedWallet.errorString()}');
+      throw Exception('Something went wrong.');
     }
 
-    await storeWalletPassword(walletPassword);
+    if (Platform.isAndroid || Platform.isIOS) {
+      await storeMobileWalletPassword(walletPassword);
+    }
 
     _w2TxHistory = _w2Wallet!.history();
 
@@ -551,27 +760,32 @@ class WalletModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> openExisting() async {
+  Future<void> openExisting({String? desktopWalletPassword}) async {
     final path = await getWalletPath();
 
-    final password = await getWalletPassword();
+    final password = desktopWalletPassword ?? await getMobileWalletPassword();
 
     if (password == null) {
-      final errorMsg =
-          'Failed to open existing wallet: could not get password.';
+      final errorMsg = 'Failed to open existing wallet: could not get password.';
       log(LogLevel.error, errorMsg);
       throw Exception(errorMsg);
     }
 
-    _w2Wallet = _w2WalletManager.openWallet(path: path, password: password);
-    final errorString = _w2WalletManager.errorString();
+    log(LogLevel.info, 'Calling WalletManager_openWallet with parameters:');
+    log(LogLevel.info, '  path: $path');
+    log(LogLevel.info, '  password: <hidden>');
 
-    if (errorString != '') {
-      final errorMsg = 'Failed to open existing wallet: $errorString';
+    final w2Wallet = _w2WalletManager.openWallet(path: path, password: password);
+
+    if (w2Wallet.errorString() != '') {
+      final errorMsg = 'WalletManager_openWallet error: ${w2Wallet.errorString()}';
       log(LogLevel.error, errorMsg);
       throw Exception(errorMsg);
     }
 
+    log(LogLevel.info, 'WalletManager_openWallet completed');
+
+    _w2Wallet = w2Wallet;
     _w2TxHistory = _w2Wallet!.history();
 
     notifyListeners();
@@ -579,10 +793,16 @@ class WalletModel with ChangeNotifier {
 
   Future<bool> store() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
-    return Isolate.run(
+
+    log(LogLevel.info, 'Calling Wallet_store');
+
+    final result = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_store(Pointer<Void>.fromAddress(walletFfiAddr)),
     );
+
+    log(LogLevel.info, 'Wallet_store result: $result');
+    return result;
   }
 
   Future delete() async {
@@ -599,18 +819,27 @@ class WalletModel with ChangeNotifier {
     await File(path).delete();
 
     await SharedPreferencesService.remove(SharedPreferencesKeys.txHistoryCount);
-    await SharedPreferencesService.remove(
-      SharedPreferencesKeys.walletRestoreHeight,
-    );
+    await SharedPreferencesService.remove(SharedPreferencesKeys.walletRestoreHeight);
     await SharedPreferencesService.remove(SharedPreferencesKeys.appLockEnabled);
+    await SharedPreferencesService.remove(SharedPreferencesKeys.pendingOutgoingTxs);
+    await SharedPreferencesService.remove(SharedPreferencesKeys.serverSupportsSubaddresses);
+    await SharedPreferencesService.remove(SharedPreferencesKeys.contacts);
+    await SharedPreferencesService.remove(SharedPreferencesKeys.unusedSubaddressIndex);
+    await SharedPreferencesService.remove(SharedPreferencesKeys.unusedSubaddressIndexIsSupported);
   }
 
   Future<bool> hasExistingWallet() async {
+    log(LogLevel.info, 'Calling WalletManager_walletExists with parameters:');
+    log(LogLevel.info, '  path: ${await getWalletPath()}');
+
     final exists = _w2WalletManager.walletExists(await getWalletPath());
+
+    log(LogLevel.info, 'WalletManager_walletExists result: $exists');
+
     final errorString = _w2WalletManager.errorString();
 
     if (errorString != '') {
-      log(LogLevel.error, 'Failed to check if wallet exists: $errorString');
+      log(LogLevel.error, 'WalletManager_walletExists error: $errorString');
     }
 
     return exists;
@@ -619,92 +848,144 @@ class WalletModel with ChangeNotifier {
   Future<bool> getIsConnected() async {
     final w2WalletFfiAddr = _w2Wallet!.ffiAddress();
 
+    log(LogLevel.info, 'Calling Wallet_connected:');
+
     final connected = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_connected(Pointer<Void>.fromAddress(w2WalletFfiAddr)),
     );
+
+    log(LogLevel.info, 'Wallet_connected result: $connected');
 
     return connected != 0;
   }
 
   Future<void> loadIsSynced() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
+
+    log(LogLevel.info, 'Calling Wallet_synchronized:');
+
     _isSynced = await Isolate.run(
       () =>
           // ignore: deprecated_member_use
           monero.Wallet_synchronized(Pointer<Void>.fromAddress(walletFfiAddr)),
     );
+
+    log(LogLevel.info, 'Wallet_synchronized result: $_isSynced');
   }
 
   Future<void> loadSyncedHeight() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
+
+    log(LogLevel.info, 'Calling Wallet_blockChainHeight:');
+
     _syncedHeight = await Isolate.run(
       // ignore: deprecated_member_use
-      () => monero.Wallet_blockChainHeight(
-        Pointer<Void>.fromAddress(walletFfiAddr),
-      ),
+      () => monero.Wallet_blockChainHeight(Pointer<Void>.fromAddress(walletFfiAddr)),
     );
+
+    log(LogLevel.info, 'Wallet_blockChainHeight result: $_syncedHeight');
   }
 
   Future<void> loadTotalBalance() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
+
+    final accountIndex = 0;
+
+    log(LogLevel.info, 'Calling Wallet_balance with parameters:');
+    log(LogLevel.info, '  accountIndex: $accountIndex');
+
     final amount = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_balance(
         Pointer<Void>.fromAddress(walletFfiAddr),
-        accountIndex: 0,
+        accountIndex: accountIndex,
       ),
     );
+
+    log(LogLevel.info, 'Wallet_balance result: $amount');
 
     _totalBalance = doubleAmountFromInt(amount);
   }
 
   Future<void> loadUnlockedBalance() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
+
+    final accountIndex = 0;
+
+    log(LogLevel.info, 'Calling Wallet_unlockedBalance with parameters:');
+    log(LogLevel.info, '  accountIndex: $accountIndex');
+
     final amount = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_unlockedBalance(
         Pointer<Void>.fromAddress(walletFfiAddr),
-        accountIndex: 0,
+        accountIndex: accountIndex,
       ),
     );
+
+    log(LogLevel.info, 'Wallet_unlockedBalance result: $amount');
 
     _unlockedBalance = doubleAmountFromInt(amount);
   }
 
   String getPrimaryAddress() {
-    return _w2Wallet!.address(accountIndex: 0);
+    final accountIndex = 0;
+
+    log(LogLevel.info, 'Calling Wallet_address with parameters:');
+    log(LogLevel.info, '  accountIndex: $accountIndex');
+
+    final address = _w2Wallet!.address(accountIndex: accountIndex);
+
+    log(LogLevel.info, 'Wallet_address result: $address');
+
+    return address;
   }
 
-  Future<String> getUnusedSubaddress() async {
-    final txHistory = await _getFullTxHistory();
-
-    Set<int> usedIndexes = {};
-
-    for (final tx in txHistory) {
-      if (tx.accountIndex == 0) {
-        for (final subaddrIndex in tx.subaddrIndexList) {
-          usedIndexes.add(subaddrIndex);
-        }
-      }
+  String? getUnusedSubaddress() {
+    if (_unusedSubaddressIndex == null) {
+      return null;
     }
 
-    int nextSubaddrIndex = 1;
+    var subaddrIndex = _unusedSubaddressIndex!;
 
-    while (usedIndexes.contains(nextSubaddrIndex)) {
-      nextSubaddrIndex++;
+    if (_unusedSubaddressIndexIsSupported == false) {
+      subaddrIndex -= 1;
     }
 
-    return _w2Wallet!.address(accountIndex: 0, addressIndex: nextSubaddrIndex);
+    log(LogLevel.info, 'Calling Wallet_address with parameters:');
+    log(LogLevel.info, '  accountIndex: 0');
+    log(LogLevel.info, '  addressIndex: $subaddrIndex');
+
+    final subaddress = _w2Wallet!.address(accountIndex: 0, addressIndex: subaddrIndex);
+
+    log(LogLevel.info, 'Wallet_address result: $subaddress');
+
+    return subaddress;
   }
 
   Future<MoneroPendingTransaction> createTx(
     String destinationAddress,
     double amount,
-    bool isSweepAll,
-  ) async {
+    bool isSweepAll, {
+    int priority = 0,
+  }) async {
     final amountInt = _w2Wallet!.amountFromDouble(amount);
     final w2WalletFfiAddr = _w2Wallet!.ffiAddress();
+
+    final dstAddr = [destinationAddress];
+    final amounts = [amountInt];
+    final mixinCount = 15;
+    final subaddrAccount = 0;
+
+    log(LogLevel.info, 'Calling Wallet_createTransactionMultDest with parameters:');
+    log(LogLevel.info, '  w2WalletFfiAddr: $w2WalletFfiAddr');
+    log(LogLevel.info, '  isSweepAll: $isSweepAll');
+    log(LogLevel.info, '  dstAddr: $dstAddr');
+    log(LogLevel.info, '  amounts: $amounts');
+    log(LogLevel.info, '  mixinCount: $mixinCount');
+    log(LogLevel.info, '  pendingTransactionPriority: $priority');
+    log(LogLevel.info, '  subaddr_account: $subaddrAccount');
 
     final txPointer = Pointer<Void>.fromAddress(
       await Isolate.run(() {
@@ -712,31 +993,38 @@ class WalletModel with ChangeNotifier {
         return monero.Wallet_createTransactionMultDest(
           Pointer.fromAddress(w2WalletFfiAddr),
           isSweepAll: isSweepAll,
-          dstAddr: [destinationAddress],
-          amounts: [amountInt],
-          mixinCount: 15,
-          pendingTransactionPriority: 0,
-          subaddr_account: 0,
+          dstAddr: dstAddr,
+          amounts: amounts,
+          mixinCount: mixinCount,
+          pendingTransactionPriority: priority,
+          subaddr_account: subaddrAccount,
         ).address;
       }),
     );
 
+    log(LogLevel.info, 'Wallet_createTransactionMultDest completed');
+
     final pendingTx = MoneroPendingTransaction(txPointer);
 
     if (pendingTx.errorString() != '') {
+      log(LogLevel.error, 'Failed to create transaction: ${pendingTx.errorString()}');
       throw Exception(pendingTx.errorString());
     }
 
     return pendingTx;
   }
 
-  Future<void> commitTx(
-    MoneroPendingTransaction tx,
-    String destinationAddress,
-  ) async {
+  Future<void> commitTx(MoneroPendingTransaction tx, String destinationAddress) async {
     final txFfiAddr = tx.ffiAddress();
 
-    await Isolate.run(() {
+    final filename = '';
+    final overwrite = false;
+
+    log(LogLevel.info, 'Calling PendingTransaction_commit with parameters:');
+    log(LogLevel.info, '  filename: $filename');
+    log(LogLevel.info, '  overwrite: $overwrite');
+
+    final commitResult = await Isolate.run(() {
       // ignore: deprecated_member_use
       return monero.PendingTransaction_commit(
         Pointer.fromAddress(txFfiAddr),
@@ -745,22 +1033,20 @@ class WalletModel with ChangeNotifier {
       );
     });
 
+    log(LogLevel.info, 'PendingTransaction_commit result: $commitResult');
+
     final errorMsg = tx.errorString();
 
     if (errorMsg != '' && errorMsg != 'Schema expected string') {
-      log(LogLevel.error, 'Failed to commit transaction');
-      log(LogLevel.error, errorMsg);
+      log(LogLevel.error, 'PendingTransaction_commit error: $errorMsg');
       throw FormatException(errorMsg);
     }
 
-    final recipient = TxRecipient(
-      destinationAddress,
-      doubleAmountFromInt(tx.amount()),
-    );
+    final recipient = TxRecipient(destinationAddress, doubleAmountFromInt(tx.amount()));
 
     final TxDetails txDetails = TxDetails(
       index: null,
-      direction: txDirectionOutgoing,
+      direction: consts.txDirectionOutgoing,
       hash: tx.txid(''),
       amount: doubleAmountFromInt(tx.amount()),
       fee: doubleAmountFromInt(tx.fee()),
@@ -778,11 +1064,27 @@ class WalletModel with ChangeNotifier {
     await loadTxHistory();
   }
 
-  String resolveOpenAlias(String address) {
-    return _w2WalletManager.resolveOpenAlias(
-      address: address,
-      dnssecValid: true,
+  Future<String> resolveOpenAlias(String address) async {
+    final dnssecValid = true;
+
+    log(LogLevel.info, 'Calling WalletManager_resolveOpenAlias with parameters:');
+    log(LogLevel.info, '  address: $address');
+    log(LogLevel.info, '  dnssecValid: $dnssecValid');
+
+    final w2WalletManagerFfiAddr = _w2WalletManager.ffiAddress();
+
+    final resolvedAddress = await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.WalletManager_resolveOpenAlias(
+        Pointer.fromAddress(w2WalletManagerFfiAddr),
+        address: address,
+        dnssecValid: dnssecValid,
+      ),
     );
+
+    log(LogLevel.info, 'WalletManager_resolveOpenAlias result: $resolvedAddress');
+
+    return resolvedAddress;
   }
 
   Future<void> addPendingOutgoingTx(TxDetails tx) async {
@@ -800,23 +1102,15 @@ class WalletModel with ChangeNotifier {
   Future<void> _persistPendingOutgoingTxs(List<TxDetails> txs) async {
     final txsJson = txs.map((tx) => json.encode(tx)).toList();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      SharedPreferencesKeys.pendingOutgoingTxs,
-      txsJson,
-    );
+    await prefs.setStringList(SharedPreferencesKeys.pendingOutgoingTxs, txsJson);
   }
 
   Future<List<TxDetails>> _getPendingOutgoingTxs() async {
     final prefs = await SharedPreferences.getInstance();
-    final txsJson =
-        prefs.getStringList(SharedPreferencesKeys.pendingOutgoingTxs) ?? [];
+    final txsJson = prefs.getStringList(SharedPreferencesKeys.pendingOutgoingTxs) ?? [];
 
     final txs = txsJson
-        .map(
-          (jsonString) => TxDetails.fromJson(
-            json.decode(jsonString) as Map<String, dynamic>,
-          ),
-        )
+        .map((jsonString) => TxDetails.fromJson(json.decode(jsonString) as Map<String, dynamic>))
         .toList();
 
     return txs;
@@ -825,9 +1119,7 @@ class WalletModel with ChangeNotifier {
   Future<double> getPendingOutgoingTxsAmountSum() async {
     final txs = await _getPendingOutgoingTxs();
 
-    final amountSum = txs
-        .map((tx) => tx.amount + tx.fee)
-        .reduce((value, el) => value + el);
+    final amountSum = txs.map((tx) => tx.amount + tx.fee).reduce((value, el) => value + el);
 
     return amountSum;
   }

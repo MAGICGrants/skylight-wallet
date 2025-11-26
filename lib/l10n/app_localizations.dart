@@ -62,8 +62,7 @@ import 'app_localizations_pt.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -71,8 +70,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -93,10 +91,7 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[
-    Locale('en'),
-    Locale('pt'),
-  ];
+  static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('pt')];
 
   /// No description provided for @continueText.
   ///
@@ -109,6 +104,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
 
   /// No description provided for @unknownError.
   ///
@@ -145,6 +146,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pending'**
   String get pending;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @addressCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Address copied to clipboard'**
+  String get addressCopied;
 
   /// No description provided for @fieldEmptyError.
   ///
@@ -197,7 +210,7 @@ abstract class AppLocalizations {
   /// No description provided for @connectionSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Let\'s setup a connection with LWS.'**
+  /// **'Let\'s setup a connection with your Monero light-wallet server (LWS).'**
   String get connectionSetupDescription;
 
   /// No description provided for @connectionSetupAddressHint.
@@ -347,7 +360,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletInvalidMnemonic.
   ///
   /// In en, this message translates to:
-  /// **'Invalid mnemonic.'**
+  /// **'Invalid seed.'**
   String get restoreWalletInvalidMnemonic;
 
   /// No description provided for @navigationBarWallet.
@@ -385,6 +398,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to authenticate.'**
   String get unlockUnableToAuthError;
+
+  /// No description provided for @unlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Wallet'**
+  String get unlockTitle;
+
+  /// No description provided for @unlockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your wallet password to unlock'**
+  String get unlockDescription;
+
+  /// No description provided for @unlockPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get unlockPasswordLabel;
+
+  /// No description provided for @unlockPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get unlockPasswordHint;
+
+  /// No description provided for @unlockIncorrectPasswordError.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get unlockIncorrectPasswordError;
 
   /// No description provided for @homeConnecting.
   ///
@@ -461,14 +504,8 @@ abstract class AppLocalizations {
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: For better privacy, consider using subaddresses if supported by your light wallet server.'**
+  /// **'Warning: Unless you know what you\'re doing, please consider using subaddresses for better privacy.'**
   String get receivePrimaryAddressWarn;
-
-  /// No description provided for @receiveSubaddressWarn.
-  ///
-  /// In en, this message translates to:
-  /// **'Warning: Make sure your light wallet server supports subaddresses, otherwise, you will not be able to see incoming transactions.'**
-  String get receiveSubaddressWarn;
 
   /// No description provided for @receiveShareButton.
   ///
@@ -487,6 +524,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show Primary Address'**
   String get receiveShowPrimaryAddressButton;
+
+  /// No description provided for @receiveServerNoSubaddressesWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.'**
+  String get receiveServerNoSubaddressesWarn;
+
+  /// No description provided for @receiveMaxSubaddressesReachedWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached the maximum number of subaddresses supported by this server. This is a used address.'**
+  String get receiveMaxSubaddressesReachedWarn;
 
   /// No description provided for @sendTitle.
   ///
@@ -557,8 +606,44 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppLockUnableToAuthError.
   ///
   /// In en, this message translates to:
-  /// **'Unable to authenticate.'**
+  /// **'Unable to authenticate. Make sure you have device unlock set up.'**
   String get settingsAppLockUnableToAuthError;
+
+  /// No description provided for @settingsVerboseLoggingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verbose Logging'**
+  String get settingsVerboseLoggingLabel;
+
+  /// No description provided for @settingsVerboseLoggingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.'**
+  String get settingsVerboseLoggingDescription;
+
+  /// No description provided for @settingsThemeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsThemeLabel;
+
+  /// No description provided for @settingsThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsThemeSystem;
+
+  /// No description provided for @settingsThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsThemeLight;
+
+  /// No description provided for @settingsThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsThemeDark;
 
   /// No description provided for @settingsLanguageLabel.
   ///
@@ -599,7 +684,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsViewLwsKeysDialogText.
   ///
   /// In en, this message translates to:
-  /// **'Only share this information with your LWS server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.'**
+  /// **'Only share this information with your light-wallet server. These keys allow the holder to permanently see all transactions related to your wallets. Sharing these with an untrusted person will significantly harm your privacy.'**
   String get settingsViewLwsKeysDialogText;
 
   /// No description provided for @settingsViewLwsKeysDialogRevealButton.
@@ -751,10 +836,171 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transactions are irreversible, so make sure that these details match exactly.'**
   String get confirmSendDescription;
+
+  /// No description provided for @addressBookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Address Book'**
+  String get addressBookTitle;
+
+  /// No description provided for @addressBookAddContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Contact'**
+  String get addressBookAddContact;
+
+  /// No description provided for @addressBookEditContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Contact'**
+  String get addressBookEditContact;
+
+  /// No description provided for @addressBookDeleteContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Contact'**
+  String get addressBookDeleteContact;
+
+  /// No description provided for @addressBookDeleteContactConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{contactName}\"?'**
+  String addressBookDeleteContactConfirmation(String contactName);
+
+  /// No description provided for @addressBookDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get addressBookDelete;
+
+  /// No description provided for @addressBookSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contacts...'**
+  String get addressBookSearchHint;
+
+  /// No description provided for @addressBookNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get addressBookNoContacts;
+
+  /// No description provided for @addressBookNoContactsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first contact by tapping the + button'**
+  String get addressBookNoContactsDescription;
+
+  /// No description provided for @addressBookNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts found'**
+  String get addressBookNoSearchResults;
+
+  /// No description provided for @addressBookCopyAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Address'**
+  String get addressBookCopyAddress;
+
+  /// No description provided for @addressBookEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get addressBookEdit;
+
+  /// No description provided for @addressBookContactName.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Name'**
+  String get addressBookContactName;
+
+  /// No description provided for @addressBookUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get addressBookUpdate;
+
+  /// No description provided for @addressBookSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get addressBookSave;
+
+  /// No description provided for @sendSelectFromAddressBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from Address Book'**
+  String get sendSelectFromAddressBook;
+
+  /// No description provided for @sendSelectedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected contact'**
+  String get sendSelectedContact;
+
+  /// No description provided for @sendClearSelectedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selected contact'**
+  String get sendClearSelectedContact;
+
+  /// No description provided for @sendEditAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Address'**
+  String get sendEditAddress;
+
+  /// No description provided for @sendPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get sendPriorityLow;
+
+  /// No description provided for @sendPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get sendPriorityNormal;
+
+  /// No description provided for @sendPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get sendPriorityHigh;
+
+  /// No description provided for @sendPriorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'priority'**
+  String get sendPriorityLabel;
+
+  /// No description provided for @sendTransactionPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Priority'**
+  String get sendTransactionPriority;
+
+  /// No description provided for @sendFeeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get sendFeeLabel;
+
+  /// No description provided for @sendBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get sendBalanceLabel;
+
+  /// No description provided for @sendFailedToGetFeesError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get fees.'**
+  String get sendFailedToGetFeesError;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -763,8 +1009,7 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'pt'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['en', 'pt'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;

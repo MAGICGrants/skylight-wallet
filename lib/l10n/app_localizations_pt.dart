@@ -15,6 +15,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get close => 'Fechar';
+
+  @override
   String get unknownError => 'Erro desconhecido.';
 
   @override
@@ -31,6 +34,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pending => 'Pendente';
+
+  @override
+  String get copy => 'Copiar';
+
+  @override
+  String get addressCopied => 'Endereço copiado para a área de transferência';
 
   @override
   String get fieldEmptyError => 'Este campo não pode ficar vazio.';
@@ -60,11 +69,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get connectionSetupDescription =>
-      'Vamos configurar uma conexão com o LWS.';
+      'Vamos configurar uma conexão com seu servidor light-wallet de Monero (LWS).';
 
   @override
-  String get connectionSetupAddressHint =>
-      'ex: 192.168.1.1:18090 ou exemplo.com:18090';
+  String get connectionSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
 
   @override
   String get connectionSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
@@ -161,6 +169,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get unlockUnableToAuthError => 'Não foi possível autenticar.';
 
   @override
+  String get unlockTitle => 'Desbloquear Carteira';
+
+  @override
+  String get unlockDescription => 'Digite a senha da sua carteira para desbloquear';
+
+  @override
+  String get unlockPasswordLabel => 'Senha';
+
+  @override
+  String get unlockPasswordHint => 'Digite sua senha';
+
+  @override
+  String get unlockIncorrectPasswordError => 'Senha incorreta. Tente novamente.';
+
+  @override
   String get homeConnecting => 'Conectando';
 
   @override
@@ -198,11 +221,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Aviso: Para maior privacidade, considere usar subendereços se o seu servidor de light wallet os suportar.';
-
-  @override
-  String get receiveSubaddressWarn =>
-      'Aviso: Certifique-se de que seu servidor de light wallet suporta subendereços, caso contrário, você não conseguirá ver as transações recebidas.';
+      'Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.';
 
   @override
   String get receiveShareButton => 'Compartilhar';
@@ -214,14 +233,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get receiveShowPrimaryAddressButton => 'Mostrar Endereço Primário';
 
   @override
+  String get receiveServerNoSubaddressesWarn =>
+      'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.';
+
+  @override
+  String get receiveMaxSubaddressesReachedWarn =>
+      'Você atingiu o número máximo de subendereços suportados por este servidor. Este é um endereço já usado.';
+
+  @override
   String get sendTitle => 'Enviar';
 
   @override
   String get sendSendButton => 'Enviar';
 
   @override
-  String get sendTransactionSuccessfullySent =>
-      'Transação enviada com sucesso!';
+  String get sendTransactionSuccessfullySent => 'Transação enviada com sucesso!';
 
   @override
   String get sendOpenAliasResolveError => 'OpenAlias inválido.';
@@ -249,7 +275,27 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsAppLockUnlockReason => 'Desbloquear carteira';
 
   @override
-  String get settingsAppLockUnableToAuthError => 'Não foi possível autenticar.';
+  String get settingsAppLockUnableToAuthError =>
+      'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
+
+  @override
+  String get settingsVerboseLoggingLabel => 'Logs Detalhados';
+
+  @override
+  String get settingsVerboseLoggingDescription =>
+      'Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
+
+  @override
+  String get settingsThemeLabel => 'Tema';
+
+  @override
+  String get settingsThemeSystem => 'Sistema';
+
+  @override
+  String get settingsThemeLight => 'Claro';
+
+  @override
+  String get settingsThemeDark => 'Escuro';
 
   @override
   String get settingsLanguageLabel => 'Idioma';
@@ -271,7 +317,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsViewLwsKeysDialogText =>
-      'Somente compartilhe estas informações com o seu servidor LWS. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.';
+      'Somente compartilhe estas informações com o seu servidor light-wallet. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.';
 
   @override
   String get settingsViewLwsKeysDialogRevealButton => 'Revelar';
@@ -345,9 +391,92 @@ class AppLocalizationsPt extends AppLocalizations {
   String get scanQrTitle => 'Escanear QR Code';
 
   @override
-  String get confirmSendTitle => 'Confirm Send';
+  String get confirmSendTitle => 'Confirmar Envio';
 
   @override
   String get confirmSendDescription =>
-      'Transactions are irreversible, so make sure that these details match exactly.';
+      'As transações são irreversíveis, então verifique se estes detalhes correspondem exatamente.';
+
+  @override
+  String get addressBookTitle => 'Lista de Contatos';
+
+  @override
+  String get addressBookAddContact => 'Adicionar Contato';
+
+  @override
+  String get addressBookEditContact => 'Editar Contato';
+
+  @override
+  String get addressBookDeleteContact => 'Excluir Contato';
+
+  @override
+  String addressBookDeleteContactConfirmation(String contactName) {
+    return 'Tem certeza que deseja excluir \"$contactName\"?';
+  }
+
+  @override
+  String get addressBookDelete => 'Excluir';
+
+  @override
+  String get addressBookSearchHint => 'Pesquisar contatos...';
+
+  @override
+  String get addressBookNoContacts => 'Nenhum contato ainda';
+
+  @override
+  String get addressBookNoContactsDescription => 'Adicione seu primeiro contato tocando no botão +';
+
+  @override
+  String get addressBookNoSearchResults => 'Nenhum contato encontrado';
+
+  @override
+  String get addressBookCopyAddress => 'Copiar Endereço';
+
+  @override
+  String get addressBookEdit => 'Editar';
+
+  @override
+  String get addressBookContactName => 'Nome do Contato';
+
+  @override
+  String get addressBookUpdate => 'Atualizar';
+
+  @override
+  String get addressBookSave => 'Salvar';
+
+  @override
+  String get sendSelectFromAddressBook => 'Selecionar da Lista de Contatos';
+
+  @override
+  String get sendSelectedContact => 'Contato selecionado';
+
+  @override
+  String get sendClearSelectedContact => 'Limpar contato selecionado';
+
+  @override
+  String get sendEditAddress => 'Editar Endereço';
+
+  @override
+  String get sendPriorityLow => 'Baixa';
+
+  @override
+  String get sendPriorityNormal => 'Normal';
+
+  @override
+  String get sendPriorityHigh => 'Alta';
+
+  @override
+  String get sendPriorityLabel => 'prioridade';
+
+  @override
+  String get sendTransactionPriority => 'Prioridade da Transação';
+
+  @override
+  String get sendFeeLabel => 'Taxa';
+
+  @override
+  String get sendBalanceLabel => 'Saldo';
+
+  @override
+  String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
 }

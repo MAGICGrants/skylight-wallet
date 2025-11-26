@@ -1,0 +1,123 @@
+version: 1
+
+script:
+  # Build the Flutter app first
+  - flutter build linux --release
+  - rm -rf AppDir || true
+  - mkdir -p AppDir/usr/bin
+  - mkdir -p AppDir/usr/lib
+  - mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
+  - cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
+  - cp linux/launcher_icon.png AppDir/usr/share/icons/hicolor/512x512/apps/skylight_wallet.png
+
+AppDir:
+  path: ./AppDir
+  
+  app_info:
+    id: org.magicgrants.skylight
+    name: skylight_wallet
+    icon: skylight_wallet
+    version: latest
+    exec: usr/bin/skylight_wallet
+    exec_args: $@
+  
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C'
+    
+    include:
+      # Core GTK3 and dependencies (based on actual ldd output)
+      - libgtk-3-0
+      - libglib2.0-0
+      - libgdk-pixbuf2.0-0
+      - libcairo2
+      - libcairo-gobject2
+      - libpango-1.0-0
+      - libpangocairo-1.0-0
+      - libpangoft2-1.0-0
+      - libharfbuzz0b
+      - libfribidi0
+      
+      # Accessibility
+      - libatk1.0-0
+      - libatk-bridge2.0-0
+      - libatspi2.0-0
+      
+      # Graphics and rendering
+      - libepoxy0
+      - libpixman-1-0
+      - libfreetype6
+      - libfontconfig1
+      
+      # X11 support
+      - libx11-6
+      - libxcomposite1
+      - libxdamage1
+      - libxext6
+      - libxfixes3
+      - libxi6
+      - libxrandr2
+      - libxrender1
+      - libxcursor1
+      - libxinerama1
+      - libxcb1
+      - libxcb-render0
+      - libxcb-shm0
+      
+      # Wayland support
+      - libwayland-client0
+      - libwayland-cursor0
+      - libwayland-egl1
+      - libxkbcommon0
+      
+      # System libraries
+      - libdbus-1-3
+      - libblkid1
+      - libmount1
+      - libsystemd0
+      
+      # Security and crypto
+      - libsecret-1-0
+      - libgcrypt20
+      
+      # Other dependencies from ldd
+      - libgraphite2-3
+      - libjson-glib-1.0-0
+      - libexpat1
+      - libpng16-16
+      - libthai0
+      - libdatrie1
+      - libpcre2-8-0
+      
+    exclude:
+      # Exclude very common system libraries that should be on all systems
+      - libc6
+      - libgcc-s1
+      - libstdc++6
+      - libm6
+  
+  files:
+    include: []
+    exclude:
+      - usr/share/man
+      - usr/share/doc/*/README.*
+      - usr/share/doc/*/changelog.*
+      - usr/share/doc/*/NEWS.*
+      - usr/share/doc/*/TODO.*
+  
+  test:
+    arch-latest:
+      image: appimagecrafters/tests-env:archlinux-latest
+      command: ./AppRun
+    ubuntu-xenial:
+      image: appimagecrafters/tests-env:ubuntu-xenial
+      command: ./AppRun
+    debian-stable:
+      image: appimagecrafters/tests-env:debian-stable
+      command: ./AppRun
+
+AppImage:
+  arch: x86_64
+  update-information: guess

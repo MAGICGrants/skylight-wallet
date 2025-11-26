@@ -1,8 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,58 +17,30 @@ class ReceiveScreen extends StatefulWidget {
 }
 
 class _ReceiveScreenState extends State<ReceiveScreen> {
-  String _address = '';
-  bool _showSubaddress = false;
-  double _previousBrightness = 0.0;
+  var _showSubaddress = true;
+  var _previousBrightness = 0.0;
 
   @override
   void initState() {
     super.initState();
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    _address = wallet.getPrimaryAddress();
-
-    _loadShowReceiveSubaddress();
-    _setBrightnessToMax();
+    if (Platform.isAndroid || Platform.isIOS) {
+      _setBrightnessToMax();
+    }
   }
 
   @override
   void dispose() {
-    _setBrightnessToNormal();
+    if (Platform.isAndroid || Platform.isIOS) {
+      _setBrightnessToNormal();
+    }
     super.dispose();
   }
 
-  Future<void> _loadShowReceiveSubaddress() async {
-    final showReceiveSubaddress =
-        await SharedPreferencesService.get<bool>(
-          SharedPreferencesKeys.showReceiveSubaddress,
-        ) ??
-        false;
-
-    _setShowSubaddress(showReceiveSubaddress);
-  }
-
-  Future<void> _setShowSubaddress(bool value) async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
-    await SharedPreferencesService.set(
-      SharedPreferencesKeys.showReceiveSubaddress,
-      value,
-    );
-
-    final subddress = await wallet.getUnusedSubaddress();
-
-    if (value) {
-      setState(() {
-        _showSubaddress = true;
-        _address = subddress;
-      });
-    } else {
-      setState(() {
-        _showSubaddress = false;
-        _address = wallet.getPrimaryAddress();
-      });
-    }
+  void _setShowSubaddress(bool value) {
+    setState(() {
+      _showSubaddress = value;
+    });
   }
 
   Future<void> _setBrightnessToMax() async {
@@ -76,70 +49,116 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   }
 
   Future<void> _setBrightnessToNormal() async {
-    await ScreenBrightness().setApplicationScreenBrightness(
-      _previousBrightness,
-    );
+    await ScreenBrightness().setApplicationScreenBrightness(_previousBrightness);
+  }
+
+  void _copyAddressToClipboard(String address) {
+    final i18n = AppLocalizations.of(context)!;
+
+    Clipboard.setData(ClipboardData(text: address));
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.addressCopied)));
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final brightness = Theme.of(context).brightness;
+    final isDarkTheme = brightness == Brightness.dark;
+    final wallet = Provider.of<WalletModel>(context);
+    final primaryAddress = wallet.getPrimaryAddress();
+    final subaddress = wallet.getUnusedSubaddress();
+    String? address;
+
+    if (wallet.serverSupportsSubaddresses == false) {
+      address = primaryAddress;
+    }
+
+    if (wallet.serverSupportsSubaddresses == true) {
+      address = _showSubaddress ? subaddress : primaryAddress;
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.receiveTitle)),
       body: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 20,
-            children: [
-              QrImageView(data: _address),
-              if (_showSubaddress)
-                Text(
-                  i18n.receiveSubaddressWarn,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red),
-                ),
-              if (!_showSubaddress)
-                Text(
-                  i18n.receivePrimaryAddressWarn,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red),
-                ),
-              GestureDetector(
-                child: Text(
-                  _address,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: 'monospace'),
-                ),
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: _address));
-                },
-              ),
-              Row(
-                spacing: 20,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FilledButton.icon(
-                    onPressed: () =>
-                        SharePlus.instance.share(ShareParams(text: _address)),
-                    icon: Icon(Icons.share),
-                    label: Text(i18n.receiveShareButton),
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 480),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: wallet.serverSupportsSubaddresses == null || address == null
+                ? CircularProgressIndicator()
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 20,
+                    children: [
+                      QrImageView(
+                        data: address,
+                        eyeStyle: QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: isDarkTheme ? Colors.grey[300] : Colors.black,
+                        ),
+                        dataModuleStyle: QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: isDarkTheme ? Colors.grey[300] : Colors.black,
+                        ),
+                      ),
+                      if (wallet.serverSupportsSubaddresses == false)
+                        Text(
+                          i18n.receiveServerNoSubaddressesWarn,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      if (!_showSubaddress)
+                        Text(
+                          i18n.receivePrimaryAddressWarn,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      if (_showSubaddress && wallet.unusedSubaddressIndexIsSupported == false)
+                        Text(
+                          i18n.receiveMaxSubaddressesReachedWarn,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      GestureDetector(
+                        child: Text(
+                          address,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontFamily: 'monospace'),
+                        ),
+                        onTap: () => _copyAddressToClipboard(address!),
+                      ),
+                      Row(
+                        spacing: 20,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (Platform.isAndroid || Platform.isIOS)
+                            FilledButton.icon(
+                              onPressed: () => SharePlus.instance.share(ShareParams(text: address)),
+                              icon: Icon(Icons.share),
+                              label: Text(i18n.receiveShareButton),
+                            ),
+                          if (Platform.isLinux || Platform.isWindows || Platform.isMacOS)
+                            FilledButton.icon(
+                              onPressed: () => _copyAddressToClipboard(address!),
+                              icon: Icon(Icons.copy),
+                              label: Text(i18n.copy),
+                            ),
+                          // Only show toggle button if server supports subaddresses
+                          if (wallet.serverSupportsSubaddresses == true && !_showSubaddress)
+                            TextButton(
+                              onPressed: () => _setShowSubaddress(true),
+                              child: Text(i18n.receiveShowSubaddressButton),
+                            ),
+                          if (wallet.serverSupportsSubaddresses == true && _showSubaddress)
+                            TextButton(
+                              onPressed: () => _setShowSubaddress(false),
+                              child: Text(i18n.receiveShowPrimaryAddressButton),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
-                  if (!_showSubaddress)
-                    TextButton(
-                      onPressed: () => _setShowSubaddress(true),
-                      child: Text(i18n.receiveShowSubaddressButton),
-                    ),
-                  if (_showSubaddress)
-                    TextButton(
-                      onPressed: () => _setShowSubaddress(false),
-                      child: Text(i18n.receiveShowPrimaryAddressButton),
-                    ),
-                ],
-              ),
-            ],
           ),
         ),
       ),

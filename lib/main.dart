@@ -1,18 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
-=======
-import 'package:skylight_wallet/periodic_tasks.dart';
-import 'package:skylight_wallet/screens/privacy_policy.dart';
-import 'package:skylight_wallet/screens/terms_of_service.dart';
-import 'package:skylight_wallet/screens/unlock.dart';
-import 'package:skylight_wallet/services/notifications_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
->>>>>>> main
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skylight_wallet/util/dirs.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -39,12 +29,14 @@ import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
 import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/util/dirs.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;

@@ -363,8 +363,11 @@ class WalletModel with ChangeNotifier {
 
     final proxyPort = torProxyPort ?? _connectionProxyPort;
 
-    final cacertFile = await getCacertFile();
-    _w2Wallet!.setCaFilePath(cacertFile.path);
+    if (Platform.isAndroid) {
+      // This addresses SSL certificate verification issues on Android
+      final cacertFile = await getCacertFile();
+      _w2Wallet!.setCaFilePath(cacertFile.path);
+    }
 
     await _connectToDaemon(
       address: _connectionAddress,

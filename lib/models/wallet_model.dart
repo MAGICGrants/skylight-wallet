@@ -185,6 +185,7 @@ class WalletModel with ChangeNotifier {
     final isConnected = await getIsConnected();
 
     if (isConnected != _isConnected && _w2Wallet != null) {
+      log(LogLevel.info, 'Connection status changed to: $isConnected');
       _isConnected = isConnected;
       notifyListeners();
     }
@@ -844,14 +845,10 @@ class WalletModel with ChangeNotifier {
   Future<bool> getIsConnected() async {
     final w2WalletFfiAddr = _w2Wallet!.ffiAddress();
 
-    log(LogLevel.info, 'Calling Wallet_connected:');
-
     final connected = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_connected(Pointer<Void>.fromAddress(w2WalletFfiAddr)),
     );
-
-    log(LogLevel.info, 'Wallet_connected result: $connected');
 
     return connected != 0;
   }

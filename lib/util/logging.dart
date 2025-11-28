@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -5,6 +6,17 @@ import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 
 enum LogLevel { info, warn, error }
+
+class _LogQueue {
+  Future<void>? _lastWrite;
+
+  Future<void> add(Future<void> Function() operation) {
+    _lastWrite = _lastWrite?.then((_) => operation()) ?? operation();
+    return _lastWrite!;
+  }
+}
+
+final _logQueue = _LogQueue();
 
 String _timestamp() => DateTime.now().toUtc().toIso8601String();
 
@@ -81,17 +93,14 @@ Future<void> cleanOldLogFiles() async {
   }
 }
 
-void log(LogLevel level, String message, [Map<String, dynamic>? meta]) async {
-  // Check if verbose logging is enabled for info-level logs
+Future<void> log(LogLevel level, String message, [Map<String, dynamic>? meta]) async {
   final verboseLoggingEnabled =
-      await SharedPreferencesService.get<bool>(
-        SharedPreferencesKeys.verboseLoggingEnabled,
-      ) ??
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
       false;
 
   if (level == LogLevel.info && !verboseLoggingEnabled) {
     if (!verboseLoggingEnabled) {
-      return; // Skip info logs when verbose logging is disabled
+      return;
     }
   }
 
@@ -107,12 +116,13 @@ void log(LogLevel level, String message, [Map<String, dynamic>? meta]) async {
   }
 
   if (verboseLoggingEnabled) {
-    _getLogFile()
-        .then((file) {
-          file.writeAsString('$output\n', mode: FileMode.append);
-        })
-        .catchError((error) {
-          debugPrint('Failed to write log to file: $error');
-        });
+    _logQueue.add(() async {
+      try {
+        final file = await _getLogFile();
+        await file.writeAsString('$output\n', mode: FileMode.append);
+      } catch (error) {
+        debugPrint('Failed to write log to file: $error');
+      }
+    });
   }
 }

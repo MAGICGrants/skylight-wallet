@@ -1,5 +1,6 @@
 # AppImage build artifacts
 appimagetool-*.AppImage
 AppDir/
+squashfs-root/
 *.AppImage
 .last_build_id

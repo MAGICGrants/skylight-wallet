@@ -49,7 +49,7 @@ done
 if [ -z "$VERSION" ]; then
     echo "Error: --version is required"
     echo "Usage: $0 --version <version>"
-    echo "Example: $0 --version 1.0.0"
+    echo "Example: $0 --version v1.0.0"
     exit 1
 fi
 
@@ -128,14 +128,20 @@ fi
 
 echo "✓ Integrity verified"
 
+# Extract appimagetool if not already extracted (avoids FUSE requirement)
+if [ ! -d "squashfs-root" ]; then
+    echo "Extracting appimagetool..."
+    ./$APPIMAGETOOL_FILENAME --appimage-extract > /dev/null
+fi
+
 # Build the AppImage
 echo "Packaging AppImage..."
 export VERSION
 export ARCH=x86_64
-./$APPIMAGETOOL_FILENAME AppDir
+./squashfs-root/AppRun AppDir
 
 GENERATED_APPIMAGE=$(ls -1 Skylight_Wallet-${VERSION}-*.AppImage 2>/dev/null | head -n1)
-DESIRED_NAME="skylight-wallet-v${VERSION}-x86_64.AppImage"
+DESIRED_NAME="skylight-wallet-${VERSION}-x86_64.AppImage"
 
 if [ -n "$GENERATED_APPIMAGE" ]; then
     echo "Renaming to: $DESIRED_NAME"
@@ -144,7 +150,7 @@ fi
 
 # Clean up temporary files
 echo "Cleaning up..."
-rm -rf AppDir
+rm -rf AppDir squashfs-root
 
 echo ""
 echo "✓ AppImage created successfully!"

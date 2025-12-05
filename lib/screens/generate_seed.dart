@@ -31,7 +31,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
     try {
       final seed = await wallet.create();
-      await wallet.load();
+      wallet.load();
 
       setState(() {
         _seed = seed.split(' ');
@@ -57,7 +57,11 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
   Future<void> _loadCurrentHeight() async {
     try {
-      final height = await getCurrentBlockchainHeight();
+      // get current height from cache
+      final height = await Provider.of<WalletModel>(
+        context,
+        listen: false,
+      ).blockchainHeightCompleter!.future;
 
       if (mounted) {
         setState(() {

@@ -65,6 +65,11 @@ Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
     return true;
   }
 
+  // No wallet exists, fetch and cache the blockchain height in the background for future wallet creation
+  if (wallet.blockchainHeightCompleter == null) {
+    wallet.fetchAndCacheBlockchainHeight();
+  }
+
   return false;
 }
 

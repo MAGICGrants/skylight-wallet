@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
-import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 

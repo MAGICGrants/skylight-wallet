@@ -729,13 +729,17 @@ class WalletModel with ChangeNotifier {
 
     final walletPassword = _desktopWalletPassword ?? genWalletPassword();
 
-    if (legacyWallet.errorString() == '' && legacyWallet.status() == 0) {
+    if ((legacyWallet.errorString() == '' && legacyWallet.status() == 0) ||
+        legacyWallet.errorString() == 'No response from HTTP server' &&
+            legacyWallet.status() == 1) {
       _w2Wallet = await _getWalletFromLegacySeed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
         password: walletPassword,
       );
-    } else if (polyseedWallet.errorString() == '' && polyseedWallet.status() == 0) {
+    } else if ((polyseedWallet.errorString() == '' && polyseedWallet.status() == 0) ||
+        polyseedWallet.errorString() == 'No response from HTTP server' &&
+            polyseedWallet.status() == 1) {
       _w2Wallet = await _getWalletFromPolyseed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,

@@ -578,20 +578,15 @@ class WalletModel with ChangeNotifier {
       'Calling Wallet_startRefresh, Wallet_refresh, and TransactionHistory_refresh',
     );
 
-    await Future.wait([
-      Isolate.run(
-        // ignore: deprecated_member_use
-        () => monero.Wallet_startRefresh(Pointer.fromAddress(walletFfiAddr)),
-      ),
-      Isolate.run(
-        // ignore: deprecated_member_use
-        () => monero.Wallet_refresh(Pointer.fromAddress(walletFfiAddr)),
-      ),
-      Isolate.run(
-        // ignore: deprecated_member_use
-        () => monero.TransactionHistory_refresh(Pointer.fromAddress(historyFfiAddr)),
-      ),
-    ]);
+    await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.Wallet_refresh(Pointer.fromAddress(walletFfiAddr)),
+    );
+
+    await Isolate.run(
+      // ignore: deprecated_member_use
+      () => monero.TransactionHistory_refresh(Pointer.fromAddress(historyFfiAddr)),
+    );
 
     log(LogLevel.info, 'Wallet refresh methods completed successfully');
   }

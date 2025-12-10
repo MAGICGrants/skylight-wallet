@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:polyseed/polyseed.dart';
+
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/get_height_by_date.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 
 class RestoreWalletScreen extends StatefulWidget {
@@ -15,9 +18,17 @@ class RestoreWalletScreen extends StatefulWidget {
 class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   final _mnemonicController = TextEditingController();
   final _restoreHeightController = TextEditingController();
+  bool _isPolyseed = false;
   bool _isLoading = false;
   String? _mnemonicError;
   String? _restoreHeightError;
+
+  @override
+  void dispose() {
+    _mnemonicController.dispose();
+    _restoreHeightController.dispose();
+    super.dispose();
+  }
 
   Future<void> _restore() async {
     if (_isLoading) return;
@@ -36,17 +47,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       return;
     }
 
-    if (_restoreHeightController.text.isEmpty) {
-      setState(() {
-        _restoreHeightError = i18n.fieldEmptyError;
-      });
-      return;
-    }
-
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
     final mnemonic = _mnemonicController.text;
-    final restoreHeight = int.parse(_restoreHeightController.text);
+    final restoreHeight = int.tryParse(_restoreHeightController.text) ?? 0;
 
     setState(() {
       _isLoading = true;
@@ -102,6 +106,52 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     }
   }
 
+  Future<void> _calculatePolyseedHeight() async {
+    if (!Polyseed.isValidSeed(_mnemonicController.text)) {
+      if (_isPolyseed) {
+        setState(() {
+          _isPolyseed = false;
+          _restoreHeightController.text = '';
+        });
+      }
+      return;
+    }
+
+    final polyseed = Polyseed.decode(
+      _mnemonicController.text,
+      PolyseedLang.getByPhrase(_mnemonicController.text),
+      PolyseedCoin.POLYSEED_MONERO,
+    );
+
+    final birthday = polyseed.birthday;
+    final restoreHeight = getHeightByDate(
+      date: DateTime.fromMillisecondsSinceEpoch(birthday * 1000),
+    );
+
+    setState(() {
+      _isPolyseed = true;
+      _restoreHeightController.text = restoreHeight.toString();
+    });
+  }
+
+  void _onMnemonicChanged(String value) {
+    _calculatePolyseedHeight();
+
+    if (_mnemonicError != null) {
+      setState(() {
+        _mnemonicError = null;
+      });
+    }
+  }
+
+  void _onRestoreHeightChanged(String value) {
+    if (_restoreHeightError != null) {
+      setState(() {
+        _restoreHeightError = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -129,6 +179,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: TextFormField(
                   controller: _mnemonicController,
+                  onChanged: _onMnemonicChanged,
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
                   minLines: 3,
@@ -143,6 +194,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: TextFormField(
                   controller: _restoreHeightController,
+                  onChanged: _onRestoreHeightChanged,
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(

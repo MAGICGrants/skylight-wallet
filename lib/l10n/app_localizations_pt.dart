@@ -142,7 +142,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletSeedLabel => 'Semente';
 
   @override
-  String get restoreWalletRestoreHeightLabel => 'Bloco de Restauração';
+  String get restoreWalletRestoreHeightLabel => 'Bloco de Restauração (opcional)';
 
   @override
   String get restoreWalletRestoreButton => 'Restaurar';

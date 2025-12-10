@@ -42,7 +42,7 @@
   "restoreWalletTitle": "Restore Wallet",
   "restoreWalletDescription": "Input your Monero seed below. We will check common formats.",
   "restoreWalletSeedLabel": "Seed",
-  "restoreWalletRestoreHeightLabel": "Restore Height",
+  "restoreWalletRestoreHeightLabel": "Restore Height (optional)",
   "restoreWalletRestoreButton": "Restore",
   "restoreWalletInvalidMnemonic": "Invalid seed.",
   "navigationBarWallet": "Wallet",

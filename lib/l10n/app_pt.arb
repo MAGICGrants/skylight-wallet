@@ -42,7 +42,7 @@
   "restoreWalletTitle": "Restaurar Carteira",
   "restoreWalletDescription": "Insira sua semente Monero abaixo. Verificaremos os formatos comuns.",
   "restoreWalletSeedLabel": "Semente",
-  "restoreWalletRestoreHeightLabel": "Bloco de Restauração",
+  "restoreWalletRestoreHeightLabel": "Bloco de Restauração (opcional)",
   "restoreWalletRestoreButton": "Restaurar",
   "restoreWalletInvalidMnemonic": "Semente inválida.",
   "navigationBarWallet": "Carteira",

@@ -77,6 +77,12 @@ dependencies:
   local_auth: 2.3.0
   flutter_launcher_icons: 0.14.4
   gpt_markdown: 1.1.4
+  polyseed: 0.0.7
+  bip39: 1.0.6
+  bip32: 2.0.0
+
+dependency_overrides:
+  hashlib: 1.19.2
 
 dev_dependencies:
   flutter_test:

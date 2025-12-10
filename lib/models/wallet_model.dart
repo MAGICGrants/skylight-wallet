@@ -1,7 +1,4 @@
 // ignore_for_file: implementation_imports
-
-// import 'dart:async';
-// import 'dart:async' show Timer;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
@@ -15,10 +12,13 @@ import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
 import 'package:http/http.dart' as http;
+import 'package:polyseed/polyseed.dart';
+import 'package:bip39/bip39.dart' as bip39;
 
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/util/bip39.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/height.dart';
@@ -713,56 +713,48 @@ class WalletModel with ChangeNotifier {
     int restoreHeight, [
     String passphrase = '',
   ]) async {
-    final legacyWallet = await _getWalletFromLegacySeed(
-      mnemonic: mnemonic,
-      restoreHeight: restoreHeight,
-      password: '',
-      isDummy: true,
-    );
-
-    final polyseedWallet = await _getWalletFromPolyseed(
-      mnemonic: mnemonic,
-      restoreHeight: restoreHeight,
-      password: '',
-      isDummy: true,
-    );
-
     final walletPassword = _desktopWalletPassword ?? genWalletPassword();
+    MoneroWallet? wallet;
 
-    if ((legacyWallet.errorString() == '' && legacyWallet.status() == 0) ||
-        legacyWallet.errorString() == 'No response from HTTP server' &&
-            legacyWallet.status() == 1) {
-      _w2Wallet = await _getWalletFromLegacySeed(
+    if (Polyseed.isValidSeed(mnemonic)) {
+      wallet = await _getWalletFromPolyseed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
         password: walletPassword,
       );
-    } else if ((polyseedWallet.errorString() == '' && polyseedWallet.status() == 0) ||
-        polyseedWallet.errorString() == 'No response from HTTP server' &&
-            polyseedWallet.status() == 1) {
-      _w2Wallet = await _getWalletFromPolyseed(
+    } else if (bip39.validateMnemonic(mnemonic)) {
+      final legacyMnemonic = getLegacySeedFromBip39(mnemonic);
+
+      wallet = await _getWalletFromLegacySeed(
+        mnemonic: legacyMnemonic,
+        restoreHeight: restoreHeight,
+        password: walletPassword,
+      );
+    } else {
+      wallet = await _getWalletFromLegacySeed(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
         password: walletPassword,
       );
     }
 
-    if (_w2Wallet == null &&
-        legacyWallet.errorString().contains('word list failed verification') &&
-        polyseedWallet.errorString().contains('Failed polyseed decode')) {
-      throw Exception('Invalid mnemonic.');
-    } else if (_w2Wallet == null) {
-      log(LogLevel.error, 'Something went wrong when restoring from mnemonic.');
-      log(LogLevel.error, 'Legacy wallet error: ${legacyWallet.errorString()}');
-      log(LogLevel.error, 'Polyseed wallet error: ${polyseedWallet.errorString()}');
-      throw Exception('Something went wrong.');
+    if ((wallet.errorString() != '' || wallet.status() != 0) &&
+        !wallet.errorString().contains('No response from HTTP server')) {
+      if (wallet.errorString().contains('word list failed verification') ||
+          wallet.errorString().contains('Failed polyseed decode')) {
+        throw Exception('Invalid mnemonic.');
+      }
+
+      log(LogLevel.error, 'Error restoring from mnemonic: ${wallet.errorString()}');
+      throw Exception('Error restoring from mnemonic: ${wallet.errorString()}');
     }
+
+    _w2Wallet = wallet;
+    _w2TxHistory = _w2Wallet!.history();
 
     if (Platform.isAndroid || Platform.isIOS) {
       await storeMobileWalletPassword(walletPassword);
     }
-
-    _w2TxHistory = _w2Wallet!.history();
 
     await store();
     notifyListeners();

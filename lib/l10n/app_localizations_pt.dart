@@ -90,6 +90,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionSetupTestConnectionButton => 'Testar Conexão';
 
   @override
+  String get connectionSetupStartingTor => 'Iniciando Tor...';
+
+  @override
   String get connectionSetupContinueButton => 'Continuar';
 
   @override

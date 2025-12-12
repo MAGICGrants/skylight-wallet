@@ -26,6 +26,7 @@
   "connectionSetupUseTorLabel": "Use Tor",
   "connectionSetupUseSslLabel": "Use SSL",
   "connectionSetupTestConnectionButton": "Test Connection",
+  "connectionSetupStartingTor": "Starting Tor...",
   "connectionSetupContinueButton": "Continue",
   "createWalletTitle": "Create Wallet",
   "createWalletDescription": "Do you already have a Monero wallet seed, or do you need to make a new one?",

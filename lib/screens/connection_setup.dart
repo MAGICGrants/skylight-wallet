@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +28,8 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
   bool _connectionSaveIsLoading = false;
+  TorConnectionStatus _torStatus = TorService.sharedInstance.status;
+  Timer? _torStatusTimer;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
   @override
   void dispose() {
+    _torStatusTimer?.cancel();
     _addressController.dispose();
     _customProxyPortController.dispose();
     super.dispose();
@@ -51,6 +55,10 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
       _useTor = conn.useTor;
       _useSsl = conn.useSsl;
     });
+
+    if (conn.useTor) {
+      _pollTorStatus();
+    }
   }
 
   String cleanAddress(String value) {
@@ -111,7 +119,24 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     if (value == true) {
       _customProxyPortController.text = '';
+
+      if (TorService.sharedInstance.status != TorConnectionStatus.connected) {
+        _pollTorStatus();
+      }
     }
+  }
+
+  void _pollTorStatus() {
+    _torStatusTimer?.cancel();
+    _torStatusTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+      final status = TorService.sharedInstance.status;
+      if (status == TorConnectionStatus.connected) {
+        setState(() {
+          _torStatus = status;
+        });
+        timer.cancel();
+      }
+    });
   }
 
   void setUseSsl(bool? value) {
@@ -302,17 +327,31 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: 10,
                       children: [
-                        TextButton.icon(
-                          label: Text(i18n.connectionSetupTestConnectionButton),
-                          onPressed: () => _testConnection(),
-                          icon: !_connectionTestIsLoading
-                              ? Icon(Icons.network_check)
-                              : SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                        ),
+                        if (_useTor && _torStatus != TorConnectionStatus.connected)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              SizedBox(width: 8),
+                              Text(i18n.connectionSetupStartingTor),
+                            ],
+                          )
+                        else
+                          TextButton.icon(
+                            label: Text(i18n.connectionSetupTestConnectionButton),
+                            onPressed: () => _testConnection(),
+                            icon: !_connectionTestIsLoading
+                                ? Icon(Icons.network_check)
+                                : SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                          ),
                         if (_connectionSuccess && _hasTested && !_connectionTestIsLoading)
                           FilledButton.icon(
                             onPressed: _saveConnection,

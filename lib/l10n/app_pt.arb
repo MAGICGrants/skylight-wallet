@@ -26,6 +26,7 @@
   "connectionSetupUseTorLabel": "Usar Tor",
   "connectionSetupUseSslLabel": "Usar SSL",
   "connectionSetupTestConnectionButton": "Testar Conexão",
+  "connectionSetupStartingTor": "Iniciando Tor...",
   "connectionSetupContinueButton": "Continuar",
     "createWalletTitle": "Criar Carteira",
   "createWalletDescription": "Você já possui uma semente de carteira Monero ou precisa criar uma nova?",

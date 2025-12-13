@@ -249,6 +249,12 @@ abstract class AppLocalizations {
   /// **'Test Connection'**
   String get connectionSetupTestConnectionButton;
 
+  /// No description provided for @connectionSetupStartingTor.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting Tor...'**
+  String get connectionSetupStartingTor;
+
   /// No description provided for @connectionSetupContinueButton.
   ///
   /// In en, this message translates to:

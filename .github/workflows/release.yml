@@ -114,11 +114,13 @@ jobs:
           echo "GPG_KEY_ID=$GPG_KEY_ID" >> $GITHUB_ENV
 
       - name: Sign artifacts with GPG
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           # Sign Android APKs
           for file in build/app/outputs/flutter-apk/*.apk; do
             if [ -f "$file" ]; then
-              gpg --batch --yes --pinentry-mode loopback --detach-sign --armor "$file"
+              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor "$file"
               echo "Signed: $file"
             fi
           done
@@ -126,7 +128,7 @@ jobs:
           # Sign Android App Bundle
           for file in build/app/outputs/bundle/release/*.aab; do
             if [ -f "$file" ]; then
-              gpg --batch --yes --pinentry-mode loopback --detach-sign --armor "$file"
+              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor "$file"
               echo "Signed: $file"
             fi
           done
@@ -134,7 +136,7 @@ jobs:
           # Sign Linux AppImage
           for file in appimage/skylight-wallet-*.AppImage; do
             if [ -f "$file" ]; then
-              gpg --batch --yes --pinentry-mode loopback --detach-sign --armor "$file"
+              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor "$file"
               echo "Signed: $file"
             fi
           done

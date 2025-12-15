@@ -80,6 +80,7 @@ dependencies:
   polyseed: 0.0.7
   bip39: 1.0.6
   bip32: 2.0.0
+  package_info_plus: 8.3.0
 
 dependency_overrides:
   hashlib: 1.19.2

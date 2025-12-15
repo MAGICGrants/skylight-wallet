@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
@@ -28,11 +29,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   var _fiatCurrency = 'USD';
   var _appLockEnabled = false;
   var _verboseLoggingEnabled = false;
+  String _appVersion = '';
+  String _buildNumber = '';
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadPackageInfo();
+  }
+
+  void _loadPackageInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = packageInfo.version;
+      _buildNumber = packageInfo.buildNumber;
+    });
   }
 
   void _loadPreferences() async {
@@ -409,6 +421,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton(
               onPressed: () => Navigator.pushNamed(context, '/privacy_policy'),
               child: Text('Privacy Policy'),
+            ),
+            SizedBox(height: 8),
+            Center(
+              child: Text(
+                'Skylight Wallet v$_appVersion (build $_buildNumber)',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ),
           ],
         ),

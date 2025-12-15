@@ -19,7 +19,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.3+7
 
 environment:
-  sdk: 3.10.1
+  sdk: 3.10.4
 
 flutter_launcher_icons:
   android: true
@@ -80,6 +80,7 @@ dependencies:
   polyseed: 0.0.7
   bip39: 1.0.6
   bip32: 2.0.0
+  package_info_plus: 8.3.0
 
 dependency_overrides:
   hashlib: 1.19.2

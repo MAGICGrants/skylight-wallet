@@ -7,7 +7,6 @@ import 'dart:isolate';
 import 'dart:math';
 import 'package:dart_date/dart_date.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
@@ -244,11 +243,8 @@ class WalletModel with ChangeNotifier {
   Future<void> loadTxHistory({bool persistCount = true}) async {
     final txCount = _w2TxHistory!.count();
     var hasPendingTx = false;
-    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
 
-    if (pendingOutgoingTxs.isNotEmpty) {
-      hasPendingTx = true;
-    } else if (_txHistory.isNotEmpty) {
+    if (_txHistory.isNotEmpty) {
       final lastTx = txHistory[0];
 
       if (lastTx.confirmations < 10) {
@@ -259,7 +255,7 @@ class WalletModel with ChangeNotifier {
     if (txCount > _txHistory.length || hasPendingTx) {
       final txCountDiff = txCount - _txHistory.length;
 
-      _txHistory = await _getFullTxHistory();
+      _txHistory = _getTxHistory();
 
       // Notify new transactions on desktop
       if ((Platform.isLinux || Platform.isWindows || Platform.isMacOS) &&
@@ -447,7 +443,7 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<void> loadUnusedSubaddressIndex() async {
-    final txHistory = await _getFullTxHistory();
+    final txHistory = _getTxHistory();
 
     Set<int> usedIndexes = {};
 
@@ -1058,24 +1054,6 @@ class WalletModel with ChangeNotifier {
       throw FormatException(errorMsg);
     }
 
-    final recipient = TxRecipient(destinationAddress, doubleAmountFromInt(tx.amount()));
-
-    final TxDetails txDetails = TxDetails(
-      index: null,
-      direction: consts.txDirectionOutgoing,
-      hash: tx.txid(''),
-      amount: doubleAmountFromInt(tx.amount()),
-      fee: doubleAmountFromInt(tx.fee()),
-      recipients: [recipient],
-      accountIndex: 0,
-      subaddrIndexList: [],
-      timestamp: (DateTime.now().millisecondsSinceEpoch / 1000).round(),
-      height: 0,
-      confirmations: 0,
-      key: _w2Wallet!.getTxKey(txid: tx.txid('')),
-    );
-
-    await addPendingOutgoingTx(txDetails);
     await refresh();
     await loadTxHistory();
   }
@@ -1103,79 +1081,20 @@ class WalletModel with ChangeNotifier {
     return resolvedAddress;
   }
 
-  Future<void> addPendingOutgoingTx(TxDetails tx) async {
-    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
-    pendingOutgoingTxs.add(tx);
-    await _persistPendingOutgoingTxs(pendingOutgoingTxs);
-  }
-
-  Future<void> _removePendingOutgoingTx(String hash) async {
-    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
-    pendingOutgoingTxs.removeWhere((tx) => tx.hash == hash);
-    _persistPendingOutgoingTxs(pendingOutgoingTxs);
-  }
-
-  Future<void> _persistPendingOutgoingTxs(List<TxDetails> txs) async {
-    final txsJson = txs.map((tx) => json.encode(tx)).toList();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(SharedPreferencesKeys.pendingOutgoingTxs, txsJson);
-  }
-
-  Future<List<TxDetails>> _getPendingOutgoingTxs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final txsJson = prefs.getStringList(SharedPreferencesKeys.pendingOutgoingTxs) ?? [];
-
-    final txs = txsJson
-        .map((jsonString) => TxDetails.fromJson(json.decode(jsonString) as Map<String, dynamic>))
-        .toList();
-
-    return txs;
-  }
-
-  Future<double> getPendingOutgoingTxsAmountSum() async {
-    final txs = await _getPendingOutgoingTxs();
-
-    final amountSum = txs.map((tx) => tx.amount + tx.fee).reduce((value, el) => value + el);
-
-    return amountSum;
-  }
-
-  List<TxDetails> _getConfirmedTxHistory() {
+  List<TxDetails> _getTxHistory() {
     final txCount = _w2TxHistory!.count();
-    final List<TxDetails> confirmedTxs = [];
+    final List<TxDetails> txs = [];
 
     for (int i = 0; i < txCount; i++) {
       final tx = getTxDetails(i);
-      confirmedTxs.add(tx);
+      txs.add(tx);
     }
 
-    confirmedTxs.sort((a, b) {
+    txs.sort((a, b) {
       return a.timestamp < b.timestamp ? 1 : -1;
     });
 
-    return confirmedTxs;
-  }
-
-  Future<List<TxDetails>> _getFullTxHistory() async {
-    final pendingOutgoingTxs = await _getPendingOutgoingTxs();
-    final confirmedTxHistory = _getConfirmedTxHistory();
-
-    final confirmedTxMap = {for (var tx in confirmedTxHistory) tx.hash: tx};
-    final fullTxHistory = <TxDetails>[];
-
-    fullTxHistory.addAll(confirmedTxHistory);
-
-    for (final pendingOutgoingTx in pendingOutgoingTxs) {
-      if (confirmedTxMap.containsKey(pendingOutgoingTx.hash)) {
-        _removePendingOutgoingTx(pendingOutgoingTx.hash);
-      } else {
-        fullTxHistory.add(pendingOutgoingTx);
-      }
-    }
-
-    fullTxHistory.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-    return fullTxHistory;
+    return txs;
   }
 
   TxDetails getTxDetails(int txIndex) {

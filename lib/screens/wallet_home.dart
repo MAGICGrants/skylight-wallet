@@ -103,17 +103,17 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    if (widget.tx.confirmations < 10)
+                    if (widget.tx.confirmations < 10 || widget.tx.height == -1)
                       Row(
                         children: [
                           Text(
-                            '${widget.tx.confirmations}/10',
+                            '${widget.tx.height == -1 ? '0' : widget.tx.confirmations}/10',
                             style: TextStyle(color: Colors.amber.shade700),
                           ),
                           Icon(Icons.hourglass_top_rounded, color: Colors.amber.shade700, size: 20),
                         ],
                       ),
-                    if (widget.tx.confirmations >= 10) Text(''),
+                    if (widget.tx.confirmations >= 10 && widget.tx.height != -1) Text(''),
                     Text(
                       timeago.format(
                         DateTime.fromMillisecondsSinceEpoch(widget.tx.timestamp * 1000),

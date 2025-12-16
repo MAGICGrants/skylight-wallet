@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'Dockerfile'
-      - '.github/workflows/docker.yml'
+      - '.github/workflows/builder-image-build.yml'
   workflow_dispatch:
 
 env:
@@ -21,6 +21,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
 
     steps:
       - name: Checkout repository

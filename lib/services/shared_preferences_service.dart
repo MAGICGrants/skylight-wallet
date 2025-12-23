@@ -18,8 +18,9 @@ class SharedPreferencesKeys {
   static const String pendingOutgoingTxs = 'pendingOutgoingTxs';
   static const String contacts = 'contacts';
   static const String unusedSubaddressIndex = 'unusedSubaddressIndex';
-  static const String unusedSubaddressIndexIsSupported =
-      'unusedSubaddressIndexIsSupported';
+  static const String unusedSubaddressIndexIsSupported = 'unusedSubaddressIndexIsSupported';
+  static const String torMode = 'torMode';
+  static const String torSocksPort = 'torSocksPort';
 }
 
 class SharedPreferencesService {

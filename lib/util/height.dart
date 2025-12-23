@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
 
 Future<int> getCurrentBlockchainHeight() async {
   final urls = [
@@ -15,8 +15,12 @@ Future<int> getCurrentBlockchainHeight() async {
 
   urls.shuffle(Random.secure());
 
-  await TorService.sharedInstance.waitUntilConnected();
-  final proxyInfo = TorService.sharedInstance.getProxyInfo();
+  final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
+
+  if (proxyInfo == null) {
+    // FIXME
+    return 0;
+  }
 
   for (String url in urls) {
     try {

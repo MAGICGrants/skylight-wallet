@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/util/logging.dart';
@@ -22,18 +23,18 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
   void initState() {
     super.initState();
     _createWallet();
-    _loadCurrentHeight();
   }
 
   Future<void> _createWallet() async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
     try {
-      final seed = await wallet.create();
+      final (seed, restoreHeight) = await wallet.create();
       wallet.load();
 
       setState(() {
         _seed = seed.split(' ');
+        _restoreHeight = restoreHeight;
       });
     } catch (error) {
       var errorMsg = 'Sorry, something went wrong.';
@@ -54,34 +55,14 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
     }
   }
 
-  Future<void> _loadCurrentHeight() async {
-    try {
-      // get current height from cache
-      final height = await Provider.of<WalletModel>(
-        context,
-        listen: false,
-      ).blockchainHeightCompleter!.future;
-
-      if (mounted) {
-        setState(() {
-          _restoreHeight = height;
-        });
-      }
-    } catch (error) {
-      var errorMsg = 'Sorry, something went wrong.';
-
-      if (error.toString().contains('failedToLoadHeight')) {
-        errorMsg = 'Check your internet connection.';
-      }
-
-      if (mounted) {
-        Navigator.pushNamed(
-          context,
-          '/create_wallet',
-          arguments: CreateWalletScreenArgs(toastMessage: errorMsg),
-        );
-      }
-    }
+  void _continue() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/lws_details',
+      (Route<dynamic> route) => false,
+      arguments: _restoreHeight,
+    );
+    Provider.of<FiatRateModel>(context, listen: false).startService();
   }
 
   @override
@@ -120,12 +101,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                     ),
                   if (_seed.isNotEmpty && _restoreHeight > 0)
                     FilledButton(
-                      onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/lws_details',
-                        (Route<dynamic> route) => false,
-                        arguments: _restoreHeight,
-                      ),
+                      onPressed: _continue,
                       child: Text(i18n.generateSeedContinueButton),
                     ),
                 ],

@@ -13,13 +13,16 @@ import 'package:monero/src/wallet2.dart';
 import 'package:http/http.dart' as http;
 import 'package:polyseed/polyseed.dart';
 import 'package:bip39/bip39.dart' as bip39;
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/bip39.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
+import 'package:skylight_wallet/util/get_height_by_date.dart';
 import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
@@ -149,7 +152,6 @@ class WalletModel with ChangeNotifier {
   int? _unusedSubaddressIndex;
   bool? _unusedSubaddressIndexIsSupported;
   String? _desktopWalletPassword;
-  Completer<int>? _blockchainHeightCompleter;
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
@@ -163,7 +165,6 @@ class WalletModel with ChangeNotifier {
   bool? get serverSupportsSubaddresses => _serverSupportsSubaddresses;
   int? get unusedSubaddressIndex => _unusedSubaddressIndex;
   bool? get unusedSubaddressIndexIsSupported => _unusedSubaddressIndexIsSupported;
-  Completer<int>? get blockchainHeightCompleter => _blockchainHeightCompleter;
 
   WalletModel() {
     _startTimers();
@@ -356,8 +357,10 @@ class WalletModel with ChangeNotifier {
     String? torProxyPort;
 
     if (_connectionUseTor) {
-      await TorService.sharedInstance.waitUntilConnected();
-      torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
+      final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
+      if (proxyInfo != null) {
+        torProxyPort = proxyInfo.port.toString();
+      }
     }
 
     final proxyPort = torProxyPort ?? _connectionProxyPort;
@@ -587,24 +590,21 @@ class WalletModel with ChangeNotifier {
     log(LogLevel.info, 'Wallet refresh methods completed successfully');
   }
 
-  Future<String> create() async {
+  Future<(String, int)> create() async {
     // ignore: deprecated_member_use
     final polyseed = await Isolate.run(() => monero.Wallet_createPolyseed());
     log(LogLevel.info, 'Wallet_createPolyseed completed');
-    final isCached = _blockchainHeightCompleter != null;
-    final currentHeight = isCached
-        ? await _blockchainHeightCompleter!.future
-        : await getCurrentBlockchainHeight();
-    log(LogLevel.info, 'Using blockchain height: $currentHeight (cached: $isCached)');
+    final restoreHeight = getHeightByDate(date: DateTime.now());
+    log(LogLevel.info, 'Using blockchain height: $restoreHeight');
 
-    await restoreFromMnemonic(polyseed, currentHeight);
+    await restoreFromMnemonic(polyseed, restoreHeight);
     await SharedPreferencesService.set<int>(
       SharedPreferencesKeys.walletRestoreHeight,
-      currentHeight,
+      restoreHeight,
     );
     refresh().then((_) => connectToDaemon().then((_) => store()));
 
-    return polyseed;
+    return (polyseed, restoreHeight);
   }
 
   Future<int> getRestoreHeight() async {
@@ -822,26 +822,6 @@ class WalletModel with ChangeNotifier {
     await SharedPreferencesService.remove(SharedPreferencesKeys.contacts);
     await SharedPreferencesService.remove(SharedPreferencesKeys.unusedSubaddressIndex);
     await SharedPreferencesService.remove(SharedPreferencesKeys.unusedSubaddressIndexIsSupported);
-
-    // Fetch and cache blockchain height in the background for future wallet creation
-    fetchAndCacheBlockchainHeight();
-  }
-
-  void fetchAndCacheBlockchainHeight() async {
-    _blockchainHeightCompleter = Completer<int>();
-
-    try {
-      final height = await getCurrentBlockchainHeight();
-      log(LogLevel.info, 'Cached blockchain height: $height');
-
-      // another call might have already completed the completer
-      if (_blockchainHeightCompleter?.isCompleted == false) {
-        _blockchainHeightCompleter!.complete(height);
-      }
-    } catch (e) {
-      log(LogLevel.error, 'Failed to fetch and cache blockchain height: $e');
-      _blockchainHeightCompleter!.completeError(e);
-    }
   }
 
   Future<bool> hasExistingWallet() async {

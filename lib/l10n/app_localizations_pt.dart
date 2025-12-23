@@ -482,4 +482,55 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
+
+  @override
+  String get torInfoTitle => 'Tor Integrado';
+
+  @override
+  String get torInfoDescription =>
+      'A Carteira Skylight usa automaticamente Tor integrado para proteger suas conexões de internet.';
+
+  @override
+  String get torInfoContinueButton => 'Continuar';
+
+  @override
+  String get torInfoConfigureButton => 'Configurar';
+
+  @override
+  String get torSettingsTitle => 'Configurações do Tor';
+
+  @override
+  String get torSettingsModeLabel => 'Modo Tor';
+
+  @override
+  String get torSettingsModeBuiltIn => 'Tor Integrado';
+
+  @override
+  String get torSettingsModeExternal => 'Tor Externo';
+
+  @override
+  String get torSettingsModeDisabled => 'Sem Tor';
+
+  @override
+  String get torSettingsSocksPortLabel => 'Porta SOCKS';
+
+  @override
+  String get torSettingsSocksPortHint => 'ex: 9050';
+
+  @override
+  String get torSettingsSaveButton => 'Salvar';
+
+  @override
+  String get torSettingsTestConnectionButton => 'Testar Conexão';
+
+  @override
+  String get settingsTorSettingsLabel => 'Configurações do Tor';
+
+  @override
+  String get connectionSetupUsingInternalTor => 'Usando Tor interno';
+
+  @override
+  String connectionSetupUsingExternalTor(String address) {
+    return 'Usando proxy Tor externo em $address';
+  }
 }

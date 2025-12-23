@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:provider/provider.dart';
 
@@ -56,7 +58,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
       _useSsl = conn.useSsl;
     });
 
-    if (conn.useTor) {
+    if (conn.useTor && TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
       _pollTorStatus();
     }
   }
@@ -111,6 +113,11 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   }
 
   void setUseTor(bool? value) {
+    if (TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
+      log(LogLevel.info, 'Tor is disabled. Not setting useTor to true.');
+      value = false;
+    }
+
     setState(() {
       _useTor = value ?? false;
       _useSsl = value == true ? false : _useSsl;
@@ -120,7 +127,8 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     if (value == true) {
       _customProxyPortController.text = '';
 
-      if (TorService.sharedInstance.status != TorConnectionStatus.connected) {
+      if (TorSettingsService.sharedInstance.torMode == TorMode.builtIn &&
+          TorService.sharedInstance.status != TorConnectionStatus.connected) {
         _pollTorStatus();
       }
     }
@@ -163,12 +171,6 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
       }
     }
 
-    if (_useTor) {
-      await TorService.sharedInstance.start();
-      await TorService.sharedInstance.waitUntilConnected();
-      torProxyPort = TorService.sharedInstance.getProxyInfo().port.toString();
-    }
-
     String proxyPort = torProxyPort != '' ? torProxyPort : customProxyPort;
 
     setState(() {
@@ -180,11 +182,26 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     try {
       if (_useTor) {
-        final proxyInfo = TorService.sharedInstance.getProxyInfo();
+        if (!mounted) {
+          return;
+        }
+
+        final torSettings = TorSettingsService.sharedInstance;
+
+        if (torSettings.torMode == TorMode.disabled) {
+          // show error toast
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Tor is disabled. Please go back and enable it.")));
+          return;
+        }
+
+        final proxyInfo = await torSettings.getProxy();
+
         final response = await makeSocksHttpRequest(
           'POST',
           url,
-          proxyInfo,
+          proxyInfo!,
         ).timeout(Duration(seconds: 10));
 
         setState(() {
@@ -255,8 +272,10 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final torMode = TorSettingsService.sharedInstance.torMode;
 
     return Scaffold(
+      appBar: AppBar(title: Text('Skylight Monero Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),
@@ -312,7 +331,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                     CheckboxListTile(
                       title: Text(i18n.connectionSetupUseTorLabel),
                       value: _useTor,
-                      onChanged: !_useSsl ? setUseTor : null,
+                      onChanged: _useSsl || torMode == TorMode.disabled ? null : setUseTor,
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -323,11 +342,22 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                     ),
+                    if (_useTor)
+                      Text(
+                        torMode == TorMode.builtIn
+                            ? i18n.connectionSetupUsingInternalTor
+                            : i18n.connectionSetupUsingExternalTor(
+                                '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
+                              ),
+                        style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
+                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: 10,
                       children: [
-                        if (_useTor && _torStatus != TorConnectionStatus.connected)
+                        if (_useTor &&
+                            torMode == TorMode.builtIn &&
+                            _torStatus != TorConnectionStatus.connected)
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

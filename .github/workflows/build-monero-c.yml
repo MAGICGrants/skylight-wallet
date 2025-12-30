@@ -183,4 +183,4 @@ jobs:
             Built from [monero_c](https://github.com/vtnerd/monero_c) branch `lwsf`.
           branch: update-moneroc-libs
           delete-branch: true
-
+          reviewers: SamsungGalaxyPlayer,Keeqler

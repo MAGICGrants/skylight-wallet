@@ -1083,7 +1083,7 @@ class WalletModel with ChangeNotifier {
     final fee = doubleAmountFromInt(tx.fee());
     final timestamp = tx.timestamp();
     final height = tx.blockHeight();
-    final confirmations = _w2Wallet!.blockChainHeight() - height + 1;
+    final confirmations = height > -1 ? _w2Wallet!.blockChainHeight() - height + 1 : 0;
     final key = _w2Wallet!.getTxKey(txid: hash);
 
     List<TxRecipient> recipients = [];

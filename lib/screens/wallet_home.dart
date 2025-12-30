@@ -61,6 +61,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
               : Colors.transparent,
         ),
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
           child: Padding(
             padding: EdgeInsetsDirectional.symmetric(vertical: 10, horizontal: 20),

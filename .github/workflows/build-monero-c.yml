@@ -1,0 +1,186 @@
+name: Build monero_c
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-x86_64-linux-gnu:
+    name: Build x86_64-linux-gnu
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build monero_c
+        env:
+          TARGET_ARCH: x86_64-linux-gnu
+        run: scripts/build-moneroc.sh
+
+      - name: Copy built library
+        run: |
+          mkdir -p artifacts
+          cp monero_c/monero_libwallet2_api_c/build/x86_64-linux-gnu/libwallet2_api_c.so artifacts/monero_libwallet2_api_c.so
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-linux-gnu
+          path: artifacts/monero_libwallet2_api_c.so
+
+  build-x86_64-linux-android:
+    name: Build x86_64-linux-android
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build monero_c
+        env:
+          TARGET_ARCH: x86_64-linux-android
+        run: scripts/build-moneroc.sh
+
+      - name: Copy built library
+        run: |
+          mkdir -p artifacts
+          cp monero_c/monero_libwallet2_api_c/build/x86_64-linux-android/libwallet2_api_c.so artifacts/libmonero_libwallet2_api_c.so
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-linux-android
+          path: artifacts/libmonero_libwallet2_api_c.so
+
+  build-aarch64-linux-android:
+    name: Build aarch64-linux-android
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build monero_c
+        env:
+          TARGET_ARCH: aarch64-linux-android
+        run: scripts/build-moneroc.sh
+
+      - name: Copy built library
+        run: |
+          mkdir -p artifacts
+          cp monero_c/monero_libwallet2_api_c/build/aarch64-linux-android/libwallet2_api_c.so artifacts/libmonero_libwallet2_api_c.so
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aarch64-linux-android
+          path: artifacts/libmonero_libwallet2_api_c.so
+
+  build-armv7a-linux-androideabi:
+    name: Build armv7a-linux-androideabi
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build monero_c
+        env:
+          TARGET_ARCH: armv7a-linux-androideabi
+        run: scripts/build-moneroc.sh
+
+      - name: Copy built library
+        run: |
+          mkdir -p artifacts
+          cp monero_c/monero_libwallet2_api_c/build/armv7a-linux-androideabi/libwallet2_api_c.so artifacts/libmonero_libwallet2_api_c.so
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: armv7a-linux-androideabi
+          path: artifacts/libmonero_libwallet2_api_c.so
+
+  create-pr:
+    name: Create Pull Request
+    runs-on: ubuntu-latest
+    needs:
+      - build-x86_64-linux-gnu
+      - build-x86_64-linux-android
+      - build-aarch64-linux-android
+      - build-armv7a-linux-androideabi
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download x86_64-linux-gnu artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-linux-gnu
+          path: artifacts/x86_64-linux-gnu
+
+      - name: Download x86_64-linux-android artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-linux-android
+          path: artifacts/x86_64-linux-android
+
+      - name: Download aarch64-linux-android artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aarch64-linux-android
+          path: artifacts/aarch64-linux-android
+
+      - name: Download armv7a-linux-androideabi artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: armv7a-linux-androideabi
+          path: artifacts/armv7a-linux-androideabi
+
+      - name: Place libraries in correct locations
+        run: |
+          # Linux x86_64
+          cp artifacts/x86_64-linux-gnu/monero_libwallet2_api_c.so linux/monero_libwallet2_api_c.so
+
+          # Android x86_64
+          cp artifacts/x86_64-linux-android/libmonero_libwallet2_api_c.so android/app/src/main/jniLibs/x86_64/libmonero_libwallet2_api_c.so
+
+          # Android arm64-v8a
+          cp artifacts/aarch64-linux-android/libmonero_libwallet2_api_c.so android/app/src/main/jniLibs/arm64-v8a/libmonero_libwallet2_api_c.so
+
+          # Android armeabi-v7a
+          cp artifacts/armv7a-linux-androideabi/libmonero_libwallet2_api_c.so android/app/src/main/jniLibs/armeabi-v7a/libmonero_libwallet2_api_c.so
+
+      - name: Fix Linux library executable stack
+        run: scripts/fix-linux-moneroc-execstack.sh
+
+      - name: Update pubspec.lock with monero_c commit hash
+        run: |
+          COMMIT_HASH=$(git ls-remote https://github.com/vtnerd/monero_c refs/heads/lwsf | cut -f1)
+          sed -i "s/resolved-ref: \"[a-f0-9]*\"/resolved-ref: \"${COMMIT_HASH}\"/" pubspec.lock
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update monero_c libraries"
+          title: "Update monero_c libraries"
+          body: |
+            This PR updates the monero_c libraries for all supported architectures:
+
+            - `linux/monero_libwallet2_api_c.so` (x86_64-linux-gnu)
+            - `android/app/src/main/jniLibs/x86_64/libmonero_libwallet2_api_c.so` (x86_64-linux-android)
+            - `android/app/src/main/jniLibs/arm64-v8a/libmonero_libwallet2_api_c.so` (aarch64-linux-android)
+            - `android/app/src/main/jniLibs/armeabi-v7a/libmonero_libwallet2_api_c.so` (armv7a-linux-androideabi)
+
+            Built from [monero_c](https://github.com/vtnerd/monero_c) branch `lwsf`.
+          branch: update-moneroc-libs
+          delete-branch: true
+

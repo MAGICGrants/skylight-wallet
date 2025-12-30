@@ -56,6 +56,10 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
   }
 
   Future<void> _testConnection() async {
+    if (_isTestingConnection) {
+      return;
+    }
+
     if (_selectedMode != TorMode.external) {
       return;
     }
@@ -173,7 +177,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
             if (_selectedMode == TorMode.external)
               TextButton.icon(
                 label: Text(i18n.torSettingsTestConnectionButton),
-                onPressed: _isTestingConnection ? null : _testConnection,
+                onPressed: _testConnection,
                 icon: _isTestingConnection
                     ? SizedBox(
                         width: 16,

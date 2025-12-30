@@ -1089,6 +1089,12 @@ abstract class AppLocalizations {
   /// **'Test Connection'**
   String get torSettingsTestConnectionButton;
 
+  /// No description provided for @settingsConnectionSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Settings'**
+  String get settingsConnectionSettingsLabel;
+
   /// No description provided for @settingsTorSettingsLabel.
   ///
   /// In en, this message translates to:

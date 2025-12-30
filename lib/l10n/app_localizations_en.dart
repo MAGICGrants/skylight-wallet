@@ -527,6 +527,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torSettingsTestConnectionButton => 'Test Connection';
 
   @override
+  String get settingsConnectionSettingsLabel => 'Connection Settings';
+
+  @override
   String get settingsTorSettingsLabel => 'Tor Settings';
 
   @override

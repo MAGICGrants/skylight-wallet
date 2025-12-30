@@ -173,6 +173,7 @@
   "torSettingsUseOrbotLabel": "Usar Orbot/InviZible",
   "torSettingsSaveButton": "Salvar",
   "torSettingsTestConnectionButton": "Testar Conexão",
+  "settingsConnectionSettingsLabel": "Configurações da Conexão",
   "settingsTorSettingsLabel": "Configurações do Tor",
   "connectionSetupUsingInternalTor": "Usando Tor interno",
   "connectionSetupUsingExternalTor": "Usando proxy Tor externo em {address}",

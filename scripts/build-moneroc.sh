@@ -4,7 +4,7 @@ set -e
 apt update
 apt upgrade -y
 apt install -y build-essential pkg-config autoconf libtool ccache make cmake gcc g++ git curl \
-  lbzip2 libtinfo5 gperf unzip python-is-python3 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+  lbzip2 libtinfo5 gperf unzip python-is-python3 llvm gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
 
 git config --global --add safe.directory '*'
 git config --global user.email "info@magicgrants.org"

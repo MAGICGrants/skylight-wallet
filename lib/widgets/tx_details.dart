@@ -51,7 +51,7 @@ class _TxDetailsDialog extends StatelessWidget {
                 Text(i18n.txDetailsHashLabel, style: TextStyle(fontWeight: FontWeight.bold)),
                 Flexible(
                   child: Container(
-                    constraints: BoxConstraints(maxWidth: 240),
+                    constraints: BoxConstraints(maxWidth: 280),
                     child: GestureDetector(
                       child: Text(
                         txDetails.hash,
@@ -143,7 +143,7 @@ class _TxDetailsDialog extends StatelessWidget {
                   Text(i18n.txDetailsViewKeyLabel, style: TextStyle(fontWeight: FontWeight.bold)),
                   Flexible(
                     child: Container(
-                      constraints: BoxConstraints(maxWidth: 240),
+                      constraints: BoxConstraints(maxWidth: 280),
                       child: GestureDetector(
                         child: Text(
                           txDetails.key,
@@ -177,13 +177,17 @@ class _TxDetailsDialog extends StatelessWidget {
                         final amountStr = recipient.amount.toString();
 
                         return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             GestureDetector(
-                              child: Text(
-                                recipient.address,
-                                style: TextStyle(fontFamily: 'monospace'),
-                                softWrap: true,
+                              child: Container(
+                                constraints: BoxConstraints(maxWidth: 280),
+                                child: Text(
+                                  recipient.address,
+                                  style: TextStyle(fontFamily: 'monospace'),
+                                  softWrap: true,
+                                  textAlign: TextAlign.end,
+                                ),
                               ),
                               onTap: () =>
                                   Clipboard.setData(ClipboardData(text: recipient.address)),

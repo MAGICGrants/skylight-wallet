@@ -166,6 +166,9 @@ jobs:
           COMMIT_HASH=$(git ls-remote https://github.com/vtnerd/monero_c refs/heads/lwsf | cut -f1)
           sed -i "s/resolved-ref: \"[a-f0-9]*\"/resolved-ref: \"${COMMIT_HASH}\"/" pubspec.lock
 
+      - name: Clean up artifacts
+        run: rm -rf artifacts
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:

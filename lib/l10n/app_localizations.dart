@@ -1004,6 +1004,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to get fees.'**
   String get sendFailedToGetFeesError;
+
+  /// No description provided for @torInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor Built-in'**
+  String get torInfoTitle;
+
+  /// No description provided for @torInfoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Skylight Wallet automatically uses built-in Tor to protect your internet connections.'**
+  String get torInfoDescription;
+
+  /// No description provided for @torInfoContinueButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get torInfoContinueButton;
+
+  /// No description provided for @torInfoConfigureButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure'**
+  String get torInfoConfigureButton;
+
+  /// No description provided for @torSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor Settings'**
+  String get torSettingsTitle;
+
+  /// No description provided for @torSettingsModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor Mode'**
+  String get torSettingsModeLabel;
+
+  /// No description provided for @torSettingsModeBuiltIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in Tor'**
+  String get torSettingsModeBuiltIn;
+
+  /// No description provided for @torSettingsModeExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'External Tor'**
+  String get torSettingsModeExternal;
+
+  /// No description provided for @torSettingsModeDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'No Tor'**
+  String get torSettingsModeDisabled;
+
+  /// No description provided for @torSettingsSocksPortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SOCKS Port'**
+  String get torSettingsSocksPortLabel;
+
+  /// No description provided for @torSettingsSocksPortHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 9050'**
+  String get torSettingsSocksPortHint;
+
+  /// No description provided for @torSettingsUseOrbotLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Orbot/InviZible'**
+  String get torSettingsUseOrbotLabel;
+
+  /// No description provided for @torSettingsSaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get torSettingsSaveButton;
+
+  /// No description provided for @torSettingsTestConnectionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Connection'**
+  String get torSettingsTestConnectionButton;
+
+  /// No description provided for @settingsConnectionSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Settings'**
+  String get settingsConnectionSettingsLabel;
+
+  /// No description provided for @settingsTorSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor Settings'**
+  String get settingsTorSettingsLabel;
+
+  /// No description provided for @connectionSetupUsingInternalTor.
+  ///
+  /// In en, this message translates to:
+  /// **'Using internal Tor'**
+  String get connectionSetupUsingInternalTor;
+
+  /// No description provided for @connectionSetupUsingExternalTor.
+  ///
+  /// In en, this message translates to:
+  /// **'Using external Tor proxy at {address}'**
+  String connectionSetupUsingExternalTor(String address);
+
+  /// No description provided for @connectionSetupTorDisabledError.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor is disabled. Please go back and enable it.'**
+  String get connectionSetupTorDisabledError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

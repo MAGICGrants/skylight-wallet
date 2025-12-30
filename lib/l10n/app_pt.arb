@@ -158,5 +158,31 @@
   "sendTransactionPriority": "Prioridade da Transação",
   "sendFeeLabel": "Taxa",
   "sendBalanceLabel": "Saldo",
-  "sendFailedToGetFeesError": "Não foi possível carregar taxas."
+  "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
+  "torInfoTitle": "Tor Integrado",
+  "torInfoDescription": "A Carteira Skylight usa automaticamente Tor integrado para proteger suas conexões de internet.",
+  "torInfoContinueButton": "Continuar",
+  "torInfoConfigureButton": "Configurar",
+  "torSettingsTitle": "Configurações do Tor",
+  "torSettingsModeLabel": "Modo Tor",
+  "torSettingsModeBuiltIn": "Tor Integrado",
+  "torSettingsModeExternal": "Tor Externo",
+  "torSettingsModeDisabled": "Sem Tor",
+  "torSettingsSocksPortLabel": "Porta SOCKS",
+  "torSettingsSocksPortHint": "ex: 9050",
+  "torSettingsUseOrbotLabel": "Usar Orbot/InviZible",
+  "torSettingsSaveButton": "Salvar",
+  "torSettingsTestConnectionButton": "Testar Conexão",
+  "settingsConnectionSettingsLabel": "Configurações da Conexão",
+  "settingsTorSettingsLabel": "Configurações do Tor",
+  "connectionSetupUsingInternalTor": "Usando Tor interno",
+  "connectionSetupUsingExternalTor": "Usando proxy Tor externo em {address}",
+  "@connectionSetupUsingExternalTor": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionSetupTorDisabledError": "O Tor está desativado. Por favor, volte e ative-o."
 }

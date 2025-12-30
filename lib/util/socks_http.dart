@@ -71,9 +71,7 @@ ParsedHttpResponse parseHttpResponse(String rawResponse) {
   final separatorIndex = rawResponse.indexOf(separator);
 
   if (separatorIndex == -1) {
-    throw FormatException(
-      'Invalid HTTP response: No header/body separator found.',
-    );
+    throw FormatException('Invalid HTTP response: No header/body separator found.');
   }
 
   final headersPart = rawResponse.substring(0, separatorIndex);

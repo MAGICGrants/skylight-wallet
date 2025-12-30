@@ -9,6 +9,8 @@ import 'package:local_auth/local_auth.dart';
 import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/widgets/connection_settings_form.dart';
+import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
@@ -143,13 +145,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, value);
-
-    // Clear rate
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
 
     if (mounted) {
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-      await fiatRate.reset();
+      await fiatRate.startService();
     }
   }
 
@@ -287,6 +287,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _showTorSettingsDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
+    void onSaved() {
+      final wallet = Provider.of<WalletModel>(context, listen: false);
+      wallet.load();
+
+      final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+      fiatRate.startService();
+
+      Navigator.pop(context);
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        constraints: BoxConstraints.tightFor(width: dialogWidth),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        title: Text(i18n.torSettingsTitle),
+        content: TorSettingsForm(saveButtonLabel: i18n.torSettingsSaveButton, onSaved: onSaved),
+      ),
+    );
+  }
+
+  void _showConnectionSettingsDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
+    void onSaved() {
+      final wallet = Provider.of<WalletModel>(context, listen: false);
+      wallet.load();
+
+      final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+      fiatRate.startService();
+
+      Navigator.pop(context);
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        constraints: BoxConstraints.tightFor(width: dialogWidth),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        title: Text(i18n.settingsConnectionSettingsLabel),
+        content: ConnectionSettingsForm(
+          saveButtonLabel: i18n.torSettingsSaveButton,
+          onSaved: onSaved,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -296,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
       appBar: AppBar(title: Text(i18n.settingsTitle)),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,6 +436,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(value: _verboseLoggingEnabled, onChanged: _setVerboseLoggingEnabled),
               ],
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(i18n.settingsConnectionSettingsLabel, style: TextStyle(fontSize: 18)),
+                TextButton.icon(
+                  onPressed: _showConnectionSettingsDialog,
+                  icon: Icon(Icons.dns),
+                  label: Text(i18n.settingsLwsViewKeysButton),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(i18n.settingsTorSettingsLabel, style: TextStyle(fontSize: 18)),
+                TextButton.icon(
+                  onPressed: _showTorSettingsDialog,
+                  icon: Icon(Icons.security),
+                  label: Text(i18n.settingsLwsViewKeysButton),
+                ),
+              ],
+            ),
             Container(margin: EdgeInsetsGeometry.symmetric(vertical: 10), child: Divider()),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -413,7 +490,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icon(Icons.delete),
               style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.red)),
             ),
-            Spacer(),
+            SizedBox(height: 20),
             TextButton(
               onPressed: () => Navigator.pushNamed(context, '/terms_of_service'),
               child: Text('Terms of Service'),

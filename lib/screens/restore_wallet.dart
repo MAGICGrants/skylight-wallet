@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:polyseed/polyseed.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
@@ -102,6 +103,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     wallet.load();
 
     if (mounted) {
+      Provider.of<FiatRateModel>(context, listen: false).startService();
       Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
     }
   }

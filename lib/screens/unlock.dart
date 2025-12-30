@@ -77,7 +77,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
       await wallet.openExisting(desktopWalletPassword: enteredPassword);
       await wallet.loadPersistedConnection();
-      await wallet.load();
+      wallet.load();
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);

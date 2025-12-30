@@ -482,4 +482,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendFailedToGetFeesError => 'Failed to get fees.';
+
+  @override
+  String get torInfoTitle => 'Tor Built-in';
+
+  @override
+  String get torInfoDescription =>
+      'Skylight Wallet automatically uses built-in Tor to protect your internet connections.';
+
+  @override
+  String get torInfoContinueButton => 'Continue';
+
+  @override
+  String get torInfoConfigureButton => 'Configure';
+
+  @override
+  String get torSettingsTitle => 'Tor Settings';
+
+  @override
+  String get torSettingsModeLabel => 'Tor Mode';
+
+  @override
+  String get torSettingsModeBuiltIn => 'Built-in Tor';
+
+  @override
+  String get torSettingsModeExternal => 'External Tor';
+
+  @override
+  String get torSettingsModeDisabled => 'No Tor';
+
+  @override
+  String get torSettingsSocksPortLabel => 'SOCKS Port';
+
+  @override
+  String get torSettingsSocksPortHint => 'e.g. 9050';
+
+  @override
+  String get torSettingsUseOrbotLabel => 'Use Orbot/InviZible';
+
+  @override
+  String get torSettingsSaveButton => 'Save';
+
+  @override
+  String get torSettingsTestConnectionButton => 'Test Connection';
+
+  @override
+  String get settingsConnectionSettingsLabel => 'Connection Settings';
+
+  @override
+  String get settingsTorSettingsLabel => 'Tor Settings';
+
+  @override
+  String get connectionSetupUsingInternalTor => 'Using internal Tor';
+
+  @override
+  String connectionSetupUsingExternalTor(String address) {
+    return 'Using external Tor proxy at $address';
+  }
+
+  @override
+  String get connectionSetupTorDisabledError => 'Tor is disabled. Please go back and enable it.';
 }

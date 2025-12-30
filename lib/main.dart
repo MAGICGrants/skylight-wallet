@@ -7,6 +7,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
 import 'package:skylight_wallet/screens/lws_details.dart';
 import 'package:skylight_wallet/screens/lws_keys.dart';
@@ -28,6 +29,8 @@ import 'package:skylight_wallet/screens/restore_wallet.dart';
 import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
+import 'package:skylight_wallet/screens/tor_info.dart';
+import 'package:skylight_wallet/screens/tor_settings.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
 import 'package:skylight_wallet/screens/terms_of_service.dart';
@@ -48,6 +51,7 @@ void main() async {
   await createAppDir();
   copyCacertToAppDocumentsDir();
   TorService.sharedInstance.start();
+  TorSettingsService.sharedInstance.loadSettings();
   await registerPeriodicTasks();
   await NotificationService().init();
   cleanOldLogFiles();
@@ -63,11 +67,6 @@ Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
     }
 
     return true;
-  }
-
-  // No wallet exists, fetch and cache the blockchain height in the background for future wallet creation
-  if (wallet.blockchainHeightCompleter == null) {
-    wallet.fetchAndCacheBlockchainHeight();
   }
 
   return false;
@@ -89,6 +88,7 @@ class MyApp extends StatelessWidget {
       child: Consumer2<LanguageModel, ThemeModel>(
         builder: (context, languageProvider, themeProvider, child) {
           final wallet = Provider.of<WalletModel>(context, listen: false);
+          final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
 
           return FutureBuilder(
             // We need to check for wallet existence to determine the correct initial route,
@@ -113,6 +113,10 @@ class MyApp extends StatelessWidget {
                           : '/wallet_home'
                     : '/welcome';
 
+                if (walletExists) {
+                  fiatRate.startService();
+                }
+
                 return MaterialApp(
                   title: 'Skylight Monero Wallet',
                   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -133,6 +137,8 @@ class MyApp extends StatelessWidget {
                   locale: Locale.fromSubtags(languageCode: languageProvider.language),
                   routes: {
                     '/welcome': (context) => WelcomeScreen(),
+                    '/tor_info': (context) => TorInfoScreen(),
+                    '/tor_settings': (context) => TorSettingsScreen(),
                     '/connection_setup': (context) => ConnectionSetupScreen(),
                     '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
                     '/create_wallet': (context) => CreateWalletScreen(),

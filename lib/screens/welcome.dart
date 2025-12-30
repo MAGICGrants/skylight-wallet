@@ -53,7 +53,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
               ),
             ),
             FilledButton(
-              onPressed: () => Navigator.pushNamed(context, '/connection_setup'),
+              onPressed: () => Navigator.pushNamed(context, '/tor_info'),
               child: Text(i18n.welcomeGetStarted),
             ),
           ],

@@ -158,5 +158,31 @@
   "sendTransactionPriority": "Transaction Priority",
   "sendFeeLabel": "Fee",
   "sendBalanceLabel": "Balance",
-  "sendFailedToGetFeesError": "Failed to get fees."
+  "sendFailedToGetFeesError": "Failed to get fees.",
+  "torInfoTitle": "Tor Built-in",
+  "torInfoDescription": "Skylight Wallet automatically uses built-in Tor to protect your internet connections.",
+  "torInfoContinueButton": "Continue",
+  "torInfoConfigureButton": "Configure",
+  "torSettingsTitle": "Tor Settings",
+  "torSettingsModeLabel": "Tor Mode",
+  "torSettingsModeBuiltIn": "Built-in Tor",
+  "torSettingsModeExternal": "External Tor",
+  "torSettingsModeDisabled": "No Tor",
+  "torSettingsSocksPortLabel": "SOCKS Port",
+  "torSettingsSocksPortHint": "e.g. 9050",
+  "torSettingsUseOrbotLabel": "Use Orbot/InviZible",
+  "torSettingsSaveButton": "Save",
+  "torSettingsTestConnectionButton": "Test Connection",
+  "settingsConnectionSettingsLabel": "Connection Settings",
+  "settingsTorSettingsLabel": "Tor Settings",
+  "connectionSetupUsingInternalTor": "Using internal Tor",
+  "connectionSetupUsingExternalTor": "Using external Tor proxy at {address}",
+  "@connectionSetupUsingExternalTor": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionSetupTorDisabledError": "Tor is disabled. Please go back and enable it."
 }

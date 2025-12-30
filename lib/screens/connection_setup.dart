@@ -155,6 +155,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
   }
 
   Future _testConnection() async {
+    final i18n = AppLocalizations.of(context)!;
     final proto = _useSsl ? 'https' : 'http';
     final daemonAddress = cleanAddress(_addressController.text);
     final customProxyPort = _customProxyPortController.text;
@@ -192,7 +193,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
           // show error toast
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text("Tor is disabled. Please go back and enable it.")));
+          ).showSnackBar(SnackBar(content: Text(i18n.connectionSetupTorDisabledError)));
           return;
         }
 

@@ -20,6 +20,7 @@ class TorSettingsForm extends StatefulWidget {
 class _TorSettingsFormState extends State<TorSettingsForm> {
   TorMode _selectedMode = TorMode.builtIn;
   final TextEditingController _socksPortController = TextEditingController();
+  bool _useOrbot = false;
 
   bool _isTestingConnection = false;
   bool _hasTested = false;
@@ -35,13 +36,18 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
     final torSettings = TorSettingsService.sharedInstance;
     setState(() {
       _selectedMode = torSettings.torMode;
-      _socksPortController.text = torSettings.socksPort;
+      _useOrbot = torSettings.useOrbot;
+      _socksPortController.text = _useOrbot ? '9050' : torSettings.socksPort;
     });
   }
 
   Future<void> _saveSettings() async {
     final torSettings = TorSettingsService.sharedInstance;
-    await torSettings.save(torMode: _selectedMode, socksPort: _socksPortController.text);
+    await torSettings.save(
+      torMode: _selectedMode,
+      socksPort: _socksPortController.text,
+      useOrbot: _useOrbot,
+    );
   }
 
   void _onSavePressed() async {
@@ -126,6 +132,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
         if (_selectedMode == TorMode.external)
           TextFormField(
             controller: _socksPortController,
+            enabled: !_useOrbot || !(Platform.isAndroid || Platform.isIOS),
             decoration: InputDecoration(
               labelText: i18n.torSettingsSocksPortLabel,
               hintText: i18n.torSettingsSocksPortHint,
@@ -142,6 +149,22 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
                 _hasTested = false;
               });
             },
+          ),
+        if (_selectedMode == TorMode.external && (Platform.isAndroid || Platform.isIOS))
+          CheckboxListTile(
+            title: Text(i18n.torSettingsUseOrbotLabel),
+            value: _useOrbot,
+            onChanged: (value) {
+              setState(() {
+                _useOrbot = value ?? false;
+                if (_useOrbot) {
+                  _socksPortController.text = '9050';
+                }
+                _hasTested = false;
+              });
+            },
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
           ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

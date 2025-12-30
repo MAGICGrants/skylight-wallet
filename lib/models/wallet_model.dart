@@ -13,7 +13,6 @@ import 'package:monero/src/wallet2.dart';
 import 'package:http/http.dart' as http;
 import 'package:polyseed/polyseed.dart';
 import 'package:bip39/bip39.dart' as bip39;
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
 
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -23,7 +22,6 @@ import 'package:skylight_wallet/util/bip39.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
-import 'package:skylight_wallet/util/height.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:skylight_wallet/util/wallet.dart';

@@ -170,6 +170,7 @@
   "torSettingsModeDisabled": "Sem Tor",
   "torSettingsSocksPortLabel": "Porta SOCKS",
   "torSettingsSocksPortHint": "ex: 9050",
+  "torSettingsUseOrbotLabel": "Usar Orbot/InviZible",
   "torSettingsSaveButton": "Salvar",
   "torSettingsTestConnectionButton": "Testar Conexão",
   "settingsTorSettingsLabel": "Configurações do Tor",
@@ -181,5 +182,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "connectionSetupTorDisabledError": "O Tor está desativado. Por favor, volte e ative-o."
 }

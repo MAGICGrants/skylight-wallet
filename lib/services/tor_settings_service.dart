@@ -9,10 +9,12 @@ class TorSettingsService {
   static final TorSettingsService sharedInstance = TorSettingsService._();
 
   TorMode _torMode = TorMode.builtIn;
-  String _socksPort = '9150';
+  String _socksPort = '9050';
+  bool _useOrbot = false;
 
   TorMode get torMode => _torMode;
   String get socksPort => _socksPort;
+  bool get useOrbot => _useOrbot;
 
   TorSettingsService._();
 
@@ -23,6 +25,9 @@ class TorSettingsService {
     final String? socksPortString = await SharedPreferencesService.get<String>(
       SharedPreferencesKeys.torSocksPort,
     );
+    final bool? useOrbotValue = await SharedPreferencesService.get<bool>(
+      SharedPreferencesKeys.torUseOrbot,
+    );
 
     if (torModeString != null) {
       _torMode = _torModeFromString(torModeString);
@@ -31,9 +36,13 @@ class TorSettingsService {
     if (socksPortString != null) {
       _socksPort = socksPortString;
     }
+
+    if (useOrbotValue != null) {
+      _useOrbot = useOrbotValue;
+    }
   }
 
-  Future<void> save({required TorMode torMode, String? socksPort}) async {
+  Future<void> save({required TorMode torMode, String? socksPort, bool? useOrbot}) async {
     _torMode = torMode;
     await SharedPreferencesService.set<String>(
       SharedPreferencesKeys.torMode,
@@ -43,6 +52,11 @@ class TorSettingsService {
     if (socksPort != null) {
       _socksPort = socksPort;
       await SharedPreferencesService.set<String>(SharedPreferencesKeys.torSocksPort, socksPort);
+    }
+
+    if (useOrbot != null) {
+      _useOrbot = useOrbot;
+      await SharedPreferencesService.set<bool>(SharedPreferencesKeys.torUseOrbot, useOrbot);
     }
   }
 

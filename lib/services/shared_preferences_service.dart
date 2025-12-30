@@ -21,6 +21,7 @@ class SharedPreferencesKeys {
   static const String unusedSubaddressIndexIsSupported = 'unusedSubaddressIndexIsSupported';
   static const String torMode = 'torMode';
   static const String torSocksPort = 'torSocksPort';
+  static const String torUseOrbot = 'torUseOrbot';
 }
 
 class SharedPreferencesService {

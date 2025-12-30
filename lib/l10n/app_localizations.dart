@@ -1071,6 +1071,12 @@ abstract class AppLocalizations {
   /// **'e.g. 9050'**
   String get torSettingsSocksPortHint;
 
+  /// No description provided for @torSettingsUseOrbotLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Orbot/InviZible'**
+  String get torSettingsUseOrbotLabel;
+
   /// No description provided for @torSettingsSaveButton.
   ///
   /// In en, this message translates to:
@@ -1100,6 +1106,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Using external Tor proxy at {address}'**
   String connectionSetupUsingExternalTor(String address);
+
+  /// No description provided for @connectionSetupTorDisabledError.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor is disabled. Please go back and enable it.'**
+  String get connectionSetupTorDisabledError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

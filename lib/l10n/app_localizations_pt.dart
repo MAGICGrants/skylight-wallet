@@ -518,6 +518,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get torSettingsSocksPortHint => 'ex: 9050';
 
   @override
+  String get torSettingsUseOrbotLabel => 'Usar Orbot/InviZible';
+
+  @override
   String get torSettingsSaveButton => 'Salvar';
 
   @override
@@ -533,4 +536,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String connectionSetupUsingExternalTor(String address) {
     return 'Usando proxy Tor externo em $address';
   }
+
+  @override
+  String get connectionSetupTorDisabledError =>
+      'O Tor está desativado. Por favor, volte e ative-o.';
 }

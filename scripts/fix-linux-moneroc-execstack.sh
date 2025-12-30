@@ -2,7 +2,7 @@
 # Script to fix executable stack flag in monero_libwallet2_api_c.so
 # This should be run whenever monero_libwallet2_api_c.so file is updated.
 
-LIB_PATH="$(dirname "$0")/monero_libwallet2_api_c.so"
+LIB_PATH="$(dirname "$0")/../linux/monero_libwallet2_api_c.so"
 
 if [ ! -f "$LIB_PATH" ]; then
     echo "Error: $LIB_PATH not found"

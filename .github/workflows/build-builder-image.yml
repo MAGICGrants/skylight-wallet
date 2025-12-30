@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'Dockerfile'
-      - '.github/workflows/builder-image-build.yml'
+      - '.github/workflows/build-builder-image.yml'
   workflow_dispatch:
 
 env:
@@ -51,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile.builder
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

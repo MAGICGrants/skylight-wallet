@@ -534,6 +534,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torSettingsUseOrbotLabel => 'Use Orbot/InviZible';
 
   @override
+  String get torSettingsUseOrbotLabelIos => 'Use Orbot';
+
+  @override
   String get torSettingsSaveButton => 'Save';
 
   @override

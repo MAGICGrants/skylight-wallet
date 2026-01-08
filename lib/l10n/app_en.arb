@@ -175,6 +175,7 @@
   "torSettingsSocksPortLabel": "SOCKS Port",
   "torSettingsSocksPortHint": "e.g. 9050",
   "torSettingsUseOrbotLabel": "Use Orbot/InviZible",
+  "torSettingsUseOrbotLabelIos": "Use Orbot",
   "torSettingsSaveButton": "Save",
   "torSettingsTestConnectionButton": "Test Connection",
   "settingsConnectionSettingsLabel": "Connection Settings",

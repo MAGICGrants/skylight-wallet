@@ -1101,6 +1101,12 @@ abstract class AppLocalizations {
   /// **'Use Orbot/InviZible'**
   String get torSettingsUseOrbotLabel;
 
+  /// No description provided for @torSettingsUseOrbotLabelIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Orbot'**
+  String get torSettingsUseOrbotLabelIos;
+
   /// No description provided for @torSettingsSaveButton.
   ///
   /// In en, this message translates to:

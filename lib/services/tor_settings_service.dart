@@ -63,15 +63,10 @@ class TorSettingsService {
   Future<({InternetAddress host, int port})?> getProxy() async {
     if (_torMode == TorMode.builtIn) {
       await TorService.sharedInstance.waitUntilConnected();
-      print('getProxyInfo builtIn: ${TorService.sharedInstance.getProxyInfo()}');
       return TorService.sharedInstance.getProxyInfo();
     } else if (_torMode == TorMode.external) {
-      print(
-        'getProxyInfo external: (host: InternetAddress.loopbackIPv4, port: ${int.parse(_socksPort)})',
-      );
       return (host: InternetAddress.loopbackIPv4, port: int.parse(_socksPort));
     } else {
-      print('getProxyInfo disabled: null');
       return null;
     }
   }

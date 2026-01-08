@@ -82,7 +82,6 @@ class TorService {
     final completer = Completer<void>();
 
     Timer.periodic(Duration(milliseconds: 50), (timer) {
-      print('waitUntilConnected: ${status.name}');
       if (status == TorConnectionStatus.connected) {
         timer.cancel();
         completer.complete();

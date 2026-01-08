@@ -12,6 +12,10 @@ import UIKit
     }
 
     GeneratedPluginRegistrant.register(with: self)
+    
+    // Enable background fetch for workmanager
+    UIApplication.shared.setMinimumBackgroundFetchInterval(UIApplication.backgroundFetchIntervalMinimum)
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

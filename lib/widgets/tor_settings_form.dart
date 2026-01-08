@@ -156,7 +156,9 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
           ),
         if (_selectedMode == TorMode.external && (Platform.isAndroid || Platform.isIOS))
           CheckboxListTile(
-            title: Text(i18n.torSettingsUseOrbotLabel),
+            title: Text(
+              Platform.isIOS ? i18n.torSettingsUseOrbotLabelIos : i18n.torSettingsUseOrbotLabel,
+            ),
             value: _useOrbot,
             onChanged: (value) {
               setState(() {

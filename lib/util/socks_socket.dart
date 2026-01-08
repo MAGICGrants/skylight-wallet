@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:skylight_wallet/util/logging.dart';
 
 /// A SOCKS5 socket.
 ///
@@ -169,7 +170,7 @@ class SOCKSSocket {
       },
       onError: (e, stackTrace) {
         // Log the error for debugging
-        debugPrint('SOCKSSocket error: $e');
+        log(LogLevel.error, 'SOCKSSocket error: $e');
         // Only forward error if controller is open and has listeners
         if (!_responseController.isClosed && _responseController.hasListener) {
           _responseController.addError(e, stackTrace);
@@ -177,7 +178,7 @@ class SOCKSSocket {
       },
       onDone: () {
         // Socket closed - don't close controller here as it may be reused
-        debugPrint('SOCKSSocket: connection closed');
+        log(LogLevel.info, 'SOCKSSocket: connection closed');
       },
     );
   }
@@ -200,6 +201,19 @@ class SOCKSSocket {
 
     return;
   }
+
+  /// SOCKS5 reply codes for better error messages.
+  static const Map<int, String> _socks5ReplyCodes = {
+    0x00: 'Succeeded',
+    0x01: 'General SOCKS server failure',
+    0x02: 'Connection not allowed by ruleset',
+    0x03: 'Network unreachable',
+    0x04: 'Host unreachable',
+    0x05: 'Connection refused',
+    0x06: 'TTL expired',
+    0x07: 'Command not supported',
+    0x08: 'Address type not supported',
+  };
 
   /// Connects to the specified [domain] and [port] through the SOCKS socket.
   ///
@@ -230,8 +244,10 @@ class SOCKSSocket {
 
     // Check if the connection was successful.
     if (response[1] != 0x00) {
+      final replyCode = response[1];
+      final replyMessage = _socks5ReplyCodes[replyCode] ?? 'Unknown error';
       throw Exception(
-        'socks_socket.connectTo(): Failed to connect to target through SOCKS5 proxy.',
+        'socks_socket.connectTo(): Failed to connect to $domain:$port - SOCKS5 error $replyCode: $replyMessage',
       );
     }
 
@@ -254,7 +270,7 @@ class SOCKSSocket {
         },
         onError: (e, stackTrace) {
           // Log the error for debugging
-          debugPrint('SOCKSSocket (secure) error: $e');
+          log(LogLevel.error, 'SOCKSSocket (secure) error: $e');
           // Only forward error if controller is open and has listeners
           if (!_secureResponseController.isClosed && _secureResponseController.hasListener) {
             _secureResponseController.addError(e, stackTrace);
@@ -355,7 +371,7 @@ class SOCKSSocket {
       // Wait for the response from the proxy server.
       var responseData = await _responseController.stream.first;
       if (kDebugMode) {
-        print("responseData: ${utf8.decode(responseData)}");
+        log(LogLevel.info, "responseData: ${utf8.decode(responseData)}");
       }
     } else {
       // Send the command to the proxy server.
@@ -364,7 +380,7 @@ class SOCKSSocket {
       // Wait for the response from the proxy server.
       var responseData = await _secureResponseController.stream.first;
       if (kDebugMode) {
-        print("secure responseData: ${utf8.decode(responseData)}");
+        log(LogLevel.info, "secure responseData: ${utf8.decode(responseData)}");
       }
     }
 
@@ -381,5 +397,69 @@ class SOCKSSocket {
       }
     }
     return buffer.toString();
+  }
+
+  /// Send an HTTP request and read the full response including body.
+  ///
+  /// This method properly handles Content-Length to read the complete response,
+  /// which is necessary for keep-alive connections.
+  Future<String> sendHttpRequest(String rawRequest) async {
+    write(rawRequest);
+
+    final bytes = <int>[];
+    String? headers;
+    int? contentLength;
+    int headerEndIndex = -1;
+
+    await for (final chunk in inputStream) {
+      bytes.addAll(chunk);
+
+      // Try to find the end of headers if we haven't yet
+      if (headers == null) {
+        final current = utf8.decode(bytes, allowMalformed: true);
+        headerEndIndex = current.indexOf('\r\n\r\n');
+
+        if (headerEndIndex != -1) {
+          headers = current.substring(0, headerEndIndex);
+
+          // Parse Content-Length from headers
+          final contentLengthMatch = RegExp(
+            r'content-length:\s*(\d+)',
+            caseSensitive: false,
+          ).firstMatch(headers);
+          if (contentLengthMatch != null) {
+            contentLength = int.parse(contentLengthMatch.group(1)!);
+          }
+
+          // Check if connection will close (no keep-alive possible)
+          final connectionClose = headers.toLowerCase().contains('connection: close');
+          if (connectionClose) {
+            // Server will close connection, read until EOF
+            contentLength = null;
+          }
+        }
+      }
+
+      // Check if we have the full response
+      if (headers != null) {
+        final headerBytes = utf8.encode('$headers\r\n\r\n').length;
+        final bodyBytesReceived = bytes.length - headerBytes;
+
+        if (contentLength != null && bodyBytesReceived >= contentLength) {
+          // We have the full response based on Content-Length
+          break;
+        } else if (contentLength == null) {
+          // No Content-Length, check for end of chunked encoding or connection close
+          final current = utf8.decode(bytes, allowMalformed: true);
+          if (current.contains('\r\n0\r\n\r\n')) {
+            // End of chunked encoding
+            break;
+          }
+          // For connection: close, we'll read until the stream ends
+        }
+      }
+    }
+
+    return utf8.decode(bytes);
   }
 }

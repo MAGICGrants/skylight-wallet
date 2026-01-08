@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:skylight_wallet/util/socks_socket.dart';
 
 class ParsedHttpResponse {
@@ -121,19 +123,33 @@ Future<ParsedHttpResponse> makeSocksHttpRequest(
   Object? body,
 }) async {
   final uri = Uri.parse(url);
+  SOCKSSocket? socket;
 
-  final socket = await SOCKSSocket.create(
-    proxyHost: proxyInfo.host.address,
-    proxyPort: proxyInfo.port,
-    sslEnabled: uri.scheme == 'https',
-  );
+  try {
+    socket = await SOCKSSocket.create(
+      proxyHost: proxyInfo.host.address,
+      proxyPort: proxyInfo.port,
+      sslEnabled: uri.scheme == 'https',
+    );
 
-  await socket.connect();
-  await socket.connectTo(uri.host, uri.port);
+    await socket.connect();
+    await socket.connectTo(uri.host, uri.port);
 
-  final rawRequest = getRawHttpRequestString(method, url, jsonBody: body);
-  final rawResponse = await socket.send(rawRequest);
-  final parsedResponse = parseHttpResponse(rawResponse);
+    final rawRequest = getRawHttpRequestString(method, url, jsonBody: body);
+    final rawResponse = await socket.send(rawRequest);
+    final parsedResponse = parseHttpResponse(rawResponse);
 
-  return parsedResponse;
+    return parsedResponse;
+  } catch (e) {
+    debugPrint('makeSocksHttpRequest error: $e');
+    rethrow;
+  } finally {
+    // Always close the socket when done
+    try {
+      await socket?.close();
+    } catch (e) {
+      // Ignore errors when closing - socket may already be closed
+      debugPrint('Error closing socket: $e');
+    }
+  }
 }

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,16 +48,36 @@ final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 final isMobile = Platform.isAndroid || Platform.isIOS;
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  timeago.setLocaleMessages('pt', timeago.PtBrMessages());
-  await createAppDir();
-  copyCacertToAppDocumentsDir();
-  TorService.sharedInstance.start();
-  TorSettingsService.sharedInstance.loadSettings();
-  await registerPeriodicTasks();
-  await NotificationService().init();
-  cleanOldLogFiles();
-  runApp(MyApp());
+  // Catch all uncaught async errors
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // Catch Flutter framework errors
+      FlutterError.onError = (FlutterErrorDetails details) {
+        log(LogLevel.error, 'Flutter error: ${details.exception}');
+        if (kDebugMode) {
+          FlutterError.dumpErrorToConsole(details);
+        }
+      };
+
+      timeago.setLocaleMessages('pt', timeago.PtBrMessages());
+      await createAppDir();
+      copyCacertToAppDocumentsDir();
+      await registerPeriodicTasks();
+      await NotificationService().init();
+      cleanOldLogFiles();
+      runApp(MyApp());
+    },
+    (error, stackTrace) {
+      // Handle uncaught async errors (like socket disconnections)
+      log(LogLevel.error, 'Uncaught error: $error');
+      if (kDebugMode) {
+        debugPrint('Uncaught error: $error');
+        debugPrint('Stack trace: $stackTrace');
+      }
+    },
+  );
 }
 
 Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
@@ -99,6 +121,9 @@ class MyApp extends StatelessWidget {
             ]),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+                TorSettingsService.sharedInstance.loadSettings();
+                TorService.sharedInstance.start();
+
                 final sharedPreferences = snapshot.data![0] as SharedPreferences;
                 final walletExists = snapshot.data![1] as bool;
 

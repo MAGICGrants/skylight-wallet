@@ -13,6 +13,7 @@ class PeriodicTasks {
 }
 
 Future<bool> runTxNotifier() async {
+  print('Running tx notifier');
   final wallet = WalletModel();
 
   if (!await wallet.hasExistingWallet()) {
@@ -26,8 +27,7 @@ Future<bool> runTxNotifier() async {
     await TorService.sharedInstance.start();
     await TorService.sharedInstance.waitUntilConnected().timeout(
       Duration(minutes: 2),
-      onTimeout: () =>
-          log(LogLevel.warn, '[TX Notifier] Tor connection timed out'),
+      onTimeout: () => log(LogLevel.warn, '[TX Notifier] Tor connection timed out'),
     );
   }
 
@@ -53,7 +53,8 @@ Future<bool> runTxNotifier() async {
   }
 
   final persistedTxCount = await wallet.getPersistedTxHistoryCount();
-  final currentTxCount = wallet.txHistory.length;
+  // FIXME: REMOVE THIS +1 WHEN DONE
+  final currentTxCount = wallet.txHistory.length + 1;
   final countOfNewTxs = currentTxCount - persistedTxCount;
 
   if (countOfNewTxs > 0 && currentTxCount != 0) {
@@ -91,23 +92,16 @@ void _callbackDispatcher() {
 
 Future<void> registerTxNotifierTaskIfAllowed() async {
   final notificationsEnabled =
-      await SharedPreferencesService.get<bool>(
-        SharedPreferencesKeys.notificationsEnabled,
-      ) ??
-      false;
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;
 
   if (!notificationsEnabled) {
     return;
   }
 
-  final notificationsAreAllowed = await NotificationService()
-      .promptPermission();
+  final notificationsAreAllowed = await NotificationService().promptPermission();
 
   if (!notificationsAreAllowed) {
-    await SharedPreferencesService.set<bool>(
-      SharedPreferencesKeys.notificationsEnabled,
-      false,
-    );
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
     return;
   }
 
@@ -118,10 +112,7 @@ Future<void> registerTxNotifierTaskIfAllowed() async {
     "New transactions check",
     PeriodicTasks.txNotifier,
     frequency: Duration(minutes: 15),
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-      requiresBatteryNotLow: true,
-    ),
+    constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
   );
 }
 
@@ -134,6 +125,6 @@ Future<void> registerPeriodicTasks() async {
     return;
   }
 
-  Workmanager().initialize(_callbackDispatcher, isInDebugMode: true);
+  Workmanager().initialize(_callbackDispatcher);
   await registerTxNotifierTaskIfAllowed();
 }

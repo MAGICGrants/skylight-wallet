@@ -289,6 +289,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.';
 
   @override
+  String get settingsVerboseLoggingDescriptionIos =>
+      'Logs wallet operations and allows the logs to be exported to a text file.';
+
+  @override
+  String get settingsExportLogsLabel => 'Export Logs';
+
+  @override
+  String get settingsExportLogsButton => 'Export';
+
+  @override
+  String get settingsExportLogsError => 'No logs found to export.';
+
+  @override
   String get settingsThemeLabel => 'Theme';
 
   @override

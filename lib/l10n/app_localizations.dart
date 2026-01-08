@@ -627,6 +627,30 @@ abstract class AppLocalizations {
   /// **'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.'**
   String get settingsVerboseLoggingDescription;
 
+  /// No description provided for @settingsVerboseLoggingDescriptionIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs wallet operations and allows the logs to be exported to a text file.'**
+  String get settingsVerboseLoggingDescriptionIos;
+
+  /// No description provided for @settingsExportLogsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Logs'**
+  String get settingsExportLogsLabel;
+
+  /// No description provided for @settingsExportLogsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get settingsExportLogsButton;
+
+  /// No description provided for @settingsExportLogsError.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs found to export.'**
+  String get settingsExportLogsError;
+
   /// No description provided for @settingsThemeLabel.
   ///
   /// In en, this message translates to:

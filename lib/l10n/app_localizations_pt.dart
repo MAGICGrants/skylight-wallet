@@ -289,6 +289,19 @@ class AppLocalizationsPt extends AppLocalizations {
       'Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
 
   @override
+  String get settingsVerboseLoggingDescriptionIos =>
+      'Registra operações da carteira e permite exportar os logs para um arquivo de texto.';
+
+  @override
+  String get settingsExportLogsLabel => 'Exportar Logs';
+
+  @override
+  String get settingsExportLogsButton => 'Exportar';
+
+  @override
+  String get settingsExportLogsError => 'Nenhum log encontrado para exportar.';
+
+  @override
   String get settingsThemeLabel => 'Tema';
 
   @override

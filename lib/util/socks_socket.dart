@@ -68,12 +68,10 @@ class SOCKSSocket {
   late final Socket _secureSocksSocket;
 
   /// A StreamController that listens to the _socksSocket and broadcasts.
-  final StreamController<List<int>> _responseController =
-      StreamController.broadcast();
+  late final StreamController<List<int>> _responseController;
 
   /// A StreamController that listens to the _secureSocksSocket and broadcasts.
-  final StreamController<List<int>> _secureResponseController =
-      StreamController.broadcast();
+  late final StreamController<List<int>> _secureResponseController;
 
   /// Getter for the StreamController that listens to the _socksSocket and
   /// broadcasts, or the _secureSocksSocket and broadcasts if SSL is enabled.
@@ -92,12 +90,15 @@ class SOCKSSocket {
   final bool sslEnabled;
 
   /// Private constructor.
-  SOCKSSocket._(this.proxyHost, this.proxyPort, this.sslEnabled);
+  SOCKSSocket._(this.proxyHost, this.proxyPort, this.sslEnabled) {
+    // Initialize stream controllers with error handling to prevent uncaught errors
+    _responseController = StreamController.broadcast(onListen: null, onCancel: null);
+    _secureResponseController = StreamController.broadcast(onListen: null, onCancel: null);
+  }
 
   /// Provides a stream of data as List<int>.
-  Stream<List<int>> get inputStream => sslEnabled
-      ? _secureResponseController.stream
-      : _responseController.stream;
+  Stream<List<int>> get inputStream =>
+      sslEnabled ? _secureResponseController.stream : _responseController.stream;
 
   /// Provides a StreamSink compatible with List<int> for sending data.
   StreamSink<List<int>> get outputStream {
@@ -141,11 +142,10 @@ class SOCKSSocket {
   }
 
   /// Constructor.
-  SOCKSSocket({
-    required this.proxyHost,
-    required this.proxyPort,
-    required this.sslEnabled,
-  }) {
+  SOCKSSocket({required this.proxyHost, required this.proxyPort, required this.sslEnabled}) {
+    // Initialize stream controllers
+    _responseController = StreamController.broadcast();
+    _secureResponseController = StreamController.broadcast();
     _init();
   }
 
@@ -163,21 +163,21 @@ class SOCKSSocket {
     _subscription = _socksSocket.listen(
       (data) {
         // Add the data to the response controller.
-        _responseController.add(data);
-      },
-      onError: (e) {
-        // Handle errors.
-        if (e is Object) {
-          _responseController.addError(e);
+        if (!_responseController.isClosed) {
+          _responseController.add(data);
         }
-
-        // If the error is not an object, send the error as a string.
-        _responseController.addError("$e");
-        // TODO make sure sending error as string is acceptable.
+      },
+      onError: (e, stackTrace) {
+        // Log the error for debugging
+        debugPrint('SOCKSSocket error: $e');
+        // Only forward error if controller is open and has listeners
+        if (!_responseController.isClosed && _responseController.hasListener) {
+          _responseController.addError(e, stackTrace);
+        }
       },
       onDone: () {
-        // Close the response controller when the socket is closed.
-        // _responseController.close();
+        // Socket closed - don't close controller here as it may be reused
+        debugPrint('SOCKSSocket: connection closed');
       },
     );
   }
@@ -195,9 +195,7 @@ class SOCKSSocket {
 
     // Check if the connection was successful.
     if (response[1] != 0x00) {
-      throw Exception(
-        'socks_socket.connect(): Failed to connect to SOCKS5 proxy.',
-      );
+      throw Exception('socks_socket.connect(): Failed to connect to SOCKS5 proxy.');
     }
 
     return;
@@ -250,21 +248,23 @@ class SOCKSSocket {
       _subscription = _secureSocksSocket.listen(
         (data) {
           // Add the data to the response controller.
-          _secureResponseController.add(data);
-        },
-        onError: (e) {
-          // Handle errors.
-          if (e is Object) {
-            _secureResponseController.addError(e);
+          if (!_secureResponseController.isClosed) {
+            _secureResponseController.add(data);
           }
-
-          // If the error is not an object, send the error as a string.
-          _secureResponseController.addError("$e");
-          // TODO make sure sending error as string is acceptable.
+        },
+        onError: (e, stackTrace) {
+          // Log the error for debugging
+          debugPrint('SOCKSSocket (secure) error: $e');
+          // Only forward error if controller is open and has listeners
+          if (!_secureResponseController.isClosed && _secureResponseController.hasListener) {
+            _secureResponseController.addError(e, stackTrace);
+          }
         },
         onDone: () {
           // Close the response controller when the socket is closed.
-          _secureResponseController.close();
+          if (!_secureResponseController.isClosed) {
+            _secureResponseController.close();
+          }
         },
       );
     }
@@ -307,8 +307,10 @@ class SOCKSSocket {
     } finally {
       await _subscription?.cancel();
       await _socksSocket.close();
-      _responseController.close();
-      if (sslEnabled) {
+      if (!_responseController.isClosed) {
+        _responseController.close();
+      }
+      if (sslEnabled && !_secureResponseController.isClosed) {
         _secureResponseController.close();
       }
     }
@@ -344,8 +346,7 @@ class SOCKSSocket {
   ///   A Future that resolves to void.
   Future<void> sendServerFeaturesCommand() async {
     // The server.features command.
-    const String command =
-        '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
+    const String command = '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
 
     if (!sslEnabled) {
       // Send the command to the proxy server.

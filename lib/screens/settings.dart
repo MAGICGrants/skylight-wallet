@@ -137,6 +137,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await SharedPreferencesService.set<bool>(SharedPreferencesKeys.verboseLoggingEnabled, value);
   }
 
+  void _exportLogs() async {
+    final i18n = AppLocalizations.of(context)!;
+
+    try {
+      final logFiles = await getLogFiles();
+
+      if (logFiles.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(i18n.settingsExportLogsError)));
+        }
+        return;
+      }
+
+      if (mounted) {
+        _showExportLogsDialog(logFiles);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(i18n.settingsExportLogsError)));
+      }
+    }
+  }
+
+  void _showExportLogsDialog(List<LogFileInfo> logFiles) {
+    final i18n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        constraints: BoxConstraints.tightFor(width: dialogWidth),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        title: Text(i18n.settingsExportLogsLabel),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: logFiles.length,
+            itemBuilder: (context, index) {
+              final file = logFiles[index];
+              final dateStr =
+                  '${file.modified.year}-${file.modified.month.toString().padLeft(2, '0')}-${file.modified.day.toString().padLeft(2, '0')}';
+              final sizeKb = (file.size / 1024).toStringAsFixed(1);
+
+              return ListTile(
+                onTap: () async {
+                  Navigator.pop(context);
+                  await exportLogFiles([file]);
+                },
+                leading: Icon(Icons.description_outlined),
+                title: Text(file.name),
+                subtitle: Text('$dateStr • $sizeKb KB'),
+                trailing: Icon(Icons.ios_share),
+              );
+            },
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel))],
+      ),
+    );
+  }
+
   void _setFiatCurrency(String? value) async {
     if (value == null) return;
 
@@ -427,7 +494,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Text(i18n.settingsVerboseLoggingLabel, style: TextStyle(fontSize: 18)),
                       Text(
-                        i18n.settingsVerboseLoggingDescription,
+                        Platform.isIOS
+                            ? i18n.settingsVerboseLoggingDescriptionIos
+                            : i18n.settingsVerboseLoggingDescription,
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
@@ -436,6 +505,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(value: _verboseLoggingEnabled, onChanged: _setVerboseLoggingEnabled),
               ],
             ),
+            if (Platform.isIOS)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(i18n.settingsExportLogsLabel, style: TextStyle(fontSize: 18)),
+                  TextButton.icon(
+                    onPressed: _verboseLoggingEnabled ? _exportLogs : null,
+                    icon: Icon(Icons.ios_share),
+                    label: Text(i18n.settingsExportLogsButton),
+                  ),
+                ],
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

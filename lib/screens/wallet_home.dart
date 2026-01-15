@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/widgets/fiat_amount.dart';
 import 'package:skylight_wallet/widgets/monero_amount.dart';
@@ -160,6 +161,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   @override
   void initState() {
     super.initState();
+
+    NotificationService().showIncomingTxNotification(1);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final Map<String, dynamic>? args =

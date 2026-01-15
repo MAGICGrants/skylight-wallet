@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 
@@ -53,8 +54,6 @@ Future<void> cleanOldLogFiles() async {
 
     if (Platform.isAndroid) {
       directory = await getExternalStorageDirectory();
-    } else if (Platform.isIOS) {
-      directory = await getAppDir();
     } else {
       directory = await getAppDir();
     }
@@ -124,5 +123,66 @@ Future<void> log(LogLevel level, String message, [Map<String, dynamic>? meta]) a
         debugPrint('Failed to write log to file: $error');
       }
     });
+  }
+}
+
+class LogFileInfo {
+  final String path;
+  final String name;
+  final DateTime modified;
+  final int size;
+
+  LogFileInfo({required this.path, required this.name, required this.modified, required this.size});
+}
+
+/// Returns a list of available log files sorted by date (newest first)
+Future<List<LogFileInfo>> getLogFiles() async {
+  Directory? directory;
+
+  if (Platform.isAndroid) {
+    directory = await getExternalStorageDirectory();
+  } else {
+    directory = await getAppDir();
+  }
+
+  if (directory == null) {
+    return [];
+  }
+
+  final logsDir = Directory('${directory.path}/logs');
+  if (!await logsDir.exists()) {
+    return [];
+  }
+
+  final files = await logsDir.list().toList();
+  final logFiles = <LogFileInfo>[];
+
+  for (var entity in files) {
+    if (entity is File && entity.path.endsWith('.txt')) {
+      final stat = await entity.stat();
+      final name = entity.path.split('/').last;
+      logFiles.add(
+        LogFileInfo(path: entity.path, name: name, modified: stat.modified, size: stat.size),
+      );
+    }
+  }
+
+  // Sort by date (newest first)
+  logFiles.sort((a, b) => b.modified.compareTo(a.modified));
+  return logFiles;
+}
+
+/// Exports selected log files via the system share sheet (iOS/Android)
+Future<void> exportLogFiles(List<LogFileInfo> files) async {
+  if (files.isEmpty) {
+    throw Exception('No log files selected');
+  }
+
+  try {
+    final xFiles = files.map((f) => XFile(f.path)).toList();
+    await SharePlus.instance.share(ShareParams(files: xFiles));
+  } catch (error) {
+    debugPrint('Failed to export logs: $error');
+    rethrow;
   }
 }

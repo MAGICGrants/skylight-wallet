@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/util/logging.dart';
 
 class Contact {
   final String id;
@@ -19,11 +20,7 @@ class Contact {
   );
 
   Contact copyWith({String? id, String? name, String? address}) {
-    return Contact(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      address: address ?? this.address,
-    );
+    return Contact(id: id ?? this.id, name: name ?? this.name, address: address ?? this.address);
   }
 }
 
@@ -39,33 +36,26 @@ class ContactModel with ChangeNotifier {
   Future<void> _loadContacts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final contactsJson =
-          prefs.getStringList(SharedPreferencesKeys.contacts) ?? [];
+      final contactsJson = prefs.getStringList(SharedPreferencesKeys.contacts) ?? [];
 
       _contacts = contactsJson
-          .map(
-            (jsonString) => Contact.fromJson(
-              json.decode(jsonString) as Map<String, dynamic>,
-            ),
-          )
+          .map((jsonString) => Contact.fromJson(json.decode(jsonString) as Map<String, dynamic>))
           .toList();
 
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading contacts: $e');
+      log(LogLevel.error, 'Error loading contacts: $e');
     }
   }
 
   Future<void> _saveContacts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final contactsJson = _contacts
-          .map((contact) => json.encode(contact.toJson()))
-          .toList();
+      final contactsJson = _contacts.map((contact) => json.encode(contact.toJson())).toList();
 
       await prefs.setStringList(SharedPreferencesKeys.contacts, contactsJson);
     } catch (e) {
-      debugPrint('Error saving contacts: $e');
+      log(LogLevel.error, 'Error saving contacts: $e');
     }
   }
 
@@ -81,10 +71,7 @@ class ContactModel with ChangeNotifier {
   Future<void> updateContact(String id, String name, String address) async {
     final index = _contacts.indexWhere((contact) => contact.id == id);
     if (index != -1) {
-      _contacts[index] = _contacts[index].copyWith(
-        name: name.trim(),
-        address: address.trim(),
-      );
+      _contacts[index] = _contacts[index].copyWith(name: name.trim(), address: address.trim());
       await _saveContacts();
       notifyListeners();
     }

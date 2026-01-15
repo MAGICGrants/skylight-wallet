@@ -26,8 +26,7 @@ Future<bool> runTxNotifier() async {
     await TorService.sharedInstance.start();
     await TorService.sharedInstance.waitUntilConnected().timeout(
       Duration(minutes: 2),
-      onTimeout: () =>
-          log(LogLevel.warn, '[TX Notifier] Tor connection timed out'),
+      onTimeout: () => log(LogLevel.warn, '[TX Notifier] Tor connection timed out'),
     );
   }
 
@@ -91,23 +90,16 @@ void _callbackDispatcher() {
 
 Future<void> registerTxNotifierTaskIfAllowed() async {
   final notificationsEnabled =
-      await SharedPreferencesService.get<bool>(
-        SharedPreferencesKeys.notificationsEnabled,
-      ) ??
-      false;
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;
 
   if (!notificationsEnabled) {
     return;
   }
 
-  final notificationsAreAllowed = await NotificationService()
-      .promptPermission();
+  final notificationsAreAllowed = await NotificationService().promptPermission();
 
   if (!notificationsAreAllowed) {
-    await SharedPreferencesService.set<bool>(
-      SharedPreferencesKeys.notificationsEnabled,
-      false,
-    );
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
     return;
   }
 
@@ -115,13 +107,10 @@ Future<void> registerTxNotifierTaskIfAllowed() async {
   // old release from remaining forever.
   await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
   await Workmanager().registerPeriodicTask(
-    "New transactions check",
     PeriodicTasks.txNotifier,
+    "New transactions check",
     frequency: Duration(minutes: 15),
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-      requiresBatteryNotLow: true,
-    ),
+    constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
   );
 }
 
@@ -130,10 +119,10 @@ Future<void> unregisterPeriodicTasks() async {
 }
 
 Future<void> registerPeriodicTasks() async {
-  if (!(Platform.isAndroid || Platform.isIOS)) {
+  if (!Platform.isAndroid) {
     return;
   }
 
-  Workmanager().initialize(_callbackDispatcher, isInDebugMode: true);
+  Workmanager().initialize(_callbackDispatcher);
   await registerTxNotifierTaskIfAllowed();
 }

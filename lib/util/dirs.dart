@@ -2,6 +2,34 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
+import 'package:skylight_wallet/util/logging.dart';
+
+Future<void> cleanTorDirectoriesOnIOS() async {
+  if (!Platform.isIOS) return;
+
+  final documentsDir = await getApplicationDocumentsDirectory();
+  final torCacheDir = Directory('${documentsDir.path}/tor_cache');
+  final torStateDir = Directory('${documentsDir.path}/tor_state');
+
+  if (await torCacheDir.exists()) {
+    try {
+      await torCacheDir.delete(recursive: true);
+      log(LogLevel.info, 'Deleted tor_cache directory');
+    } catch (e) {
+      log(LogLevel.error, 'Failed to delete tor_cache directory: $e');
+    }
+  }
+
+  if (await torStateDir.exists()) {
+    try {
+      await torStateDir.delete(recursive: true);
+      log(LogLevel.info, 'Deleted tor_state directory');
+    } catch (e) {
+      log(LogLevel.error, 'Failed to delete tor_state directory: $e');
+    }
+  }
+}
+
 Future<void> createAppDir() async {
   final appDir = await getAppDir();
   if (!await appDir.exists()) {

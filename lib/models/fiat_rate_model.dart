@@ -69,16 +69,20 @@ class FiatRateModel with ChangeNotifier {
       throw Exception('Not fetching rate from fiat API because Tor is disabled');
     }
 
-    final response = await makeSocksHttpRequest('GET', url, proxyInfo);
-
-    if (response.statusCode == 200) {
-      final rate = response.jsonBody['result']?[pair]?['o'];
-      if (rate is! String) {
-        throw Exception('Could not find rate for $pair');
+    try {
+      final response = await makeSocksHttpRequest('GET', url, proxyInfo);
+      if (response.statusCode == 200) {
+        final rate = response.jsonBody['result']?[pair]?['o'];
+        if (rate is! String) {
+          throw Exception('Could not find rate for $pair');
+        }
+        return double.parse(rate);
+      } else {
+        throw Exception('Status code: ${response.statusCode}');
       }
-      return double.parse(rate);
-    } else {
-      throw Exception('Status code: ${response.statusCode}');
+    } catch (error) {
+      log(LogLevel.error, 'Failed to get fiat rate. ${error.toString()}');
+      throw Exception('Failed to get fiat rate. ${error.toString()}');
     }
   }
 

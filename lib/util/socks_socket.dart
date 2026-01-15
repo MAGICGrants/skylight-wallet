@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:skylight_wallet/util/logging.dart';
 
 /// A SOCKS5 socket.
 ///
@@ -68,12 +69,10 @@ class SOCKSSocket {
   late final Socket _secureSocksSocket;
 
   /// A StreamController that listens to the _socksSocket and broadcasts.
-  final StreamController<List<int>> _responseController =
-      StreamController.broadcast();
+  late final StreamController<List<int>> _responseController;
 
   /// A StreamController that listens to the _secureSocksSocket and broadcasts.
-  final StreamController<List<int>> _secureResponseController =
-      StreamController.broadcast();
+  late final StreamController<List<int>> _secureResponseController;
 
   /// Getter for the StreamController that listens to the _socksSocket and
   /// broadcasts, or the _secureSocksSocket and broadcasts if SSL is enabled.
@@ -92,12 +91,15 @@ class SOCKSSocket {
   final bool sslEnabled;
 
   /// Private constructor.
-  SOCKSSocket._(this.proxyHost, this.proxyPort, this.sslEnabled);
+  SOCKSSocket._(this.proxyHost, this.proxyPort, this.sslEnabled) {
+    // Initialize stream controllers with error handling to prevent uncaught errors
+    _responseController = StreamController.broadcast(onListen: null, onCancel: null);
+    _secureResponseController = StreamController.broadcast(onListen: null, onCancel: null);
+  }
 
   /// Provides a stream of data as List<int>.
-  Stream<List<int>> get inputStream => sslEnabled
-      ? _secureResponseController.stream
-      : _responseController.stream;
+  Stream<List<int>> get inputStream =>
+      sslEnabled ? _secureResponseController.stream : _responseController.stream;
 
   /// Provides a StreamSink compatible with List<int> for sending data.
   StreamSink<List<int>> get outputStream {
@@ -141,11 +143,10 @@ class SOCKSSocket {
   }
 
   /// Constructor.
-  SOCKSSocket({
-    required this.proxyHost,
-    required this.proxyPort,
-    required this.sslEnabled,
-  }) {
+  SOCKSSocket({required this.proxyHost, required this.proxyPort, required this.sslEnabled}) {
+    // Initialize stream controllers
+    _responseController = StreamController.broadcast();
+    _secureResponseController = StreamController.broadcast();
     _init();
   }
 
@@ -163,21 +164,21 @@ class SOCKSSocket {
     _subscription = _socksSocket.listen(
       (data) {
         // Add the data to the response controller.
-        _responseController.add(data);
-      },
-      onError: (e) {
-        // Handle errors.
-        if (e is Object) {
-          _responseController.addError(e);
+        if (!_responseController.isClosed) {
+          _responseController.add(data);
         }
-
-        // If the error is not an object, send the error as a string.
-        _responseController.addError("$e");
-        // TODO make sure sending error as string is acceptable.
+      },
+      onError: (e, stackTrace) {
+        // Log the error for debugging
+        log(LogLevel.error, 'SOCKSSocket error: $e');
+        // Only forward error if controller is open and has listeners
+        if (!_responseController.isClosed && _responseController.hasListener) {
+          _responseController.addError(e, stackTrace);
+        }
       },
       onDone: () {
-        // Close the response controller when the socket is closed.
-        // _responseController.close();
+        // Socket closed - don't close controller here as it may be reused
+        log(LogLevel.info, 'SOCKSSocket: connection closed');
       },
     );
   }
@@ -195,13 +196,24 @@ class SOCKSSocket {
 
     // Check if the connection was successful.
     if (response[1] != 0x00) {
-      throw Exception(
-        'socks_socket.connect(): Failed to connect to SOCKS5 proxy.',
-      );
+      throw Exception('socks_socket.connect(): Failed to connect to SOCKS5 proxy.');
     }
 
     return;
   }
+
+  /// SOCKS5 reply codes for better error messages.
+  static const Map<int, String> _socks5ReplyCodes = {
+    0x00: 'Succeeded',
+    0x01: 'General SOCKS server failure',
+    0x02: 'Connection not allowed by ruleset',
+    0x03: 'Network unreachable',
+    0x04: 'Host unreachable',
+    0x05: 'Connection refused',
+    0x06: 'TTL expired',
+    0x07: 'Command not supported',
+    0x08: 'Address type not supported',
+  };
 
   /// Connects to the specified [domain] and [port] through the SOCKS socket.
   ///
@@ -232,8 +244,10 @@ class SOCKSSocket {
 
     // Check if the connection was successful.
     if (response[1] != 0x00) {
+      final replyCode = response[1];
+      final replyMessage = _socks5ReplyCodes[replyCode] ?? 'Unknown error';
       throw Exception(
-        'socks_socket.connectTo(): Failed to connect to target through SOCKS5 proxy.',
+        'socks_socket.connectTo(): Failed to connect to $domain:$port - SOCKS5 error $replyCode: $replyMessage',
       );
     }
 
@@ -250,21 +264,23 @@ class SOCKSSocket {
       _subscription = _secureSocksSocket.listen(
         (data) {
           // Add the data to the response controller.
-          _secureResponseController.add(data);
-        },
-        onError: (e) {
-          // Handle errors.
-          if (e is Object) {
-            _secureResponseController.addError(e);
+          if (!_secureResponseController.isClosed) {
+            _secureResponseController.add(data);
           }
-
-          // If the error is not an object, send the error as a string.
-          _secureResponseController.addError("$e");
-          // TODO make sure sending error as string is acceptable.
+        },
+        onError: (e, stackTrace) {
+          // Log the error for debugging
+          log(LogLevel.error, 'SOCKSSocket (secure) error: $e');
+          // Only forward error if controller is open and has listeners
+          if (!_secureResponseController.isClosed && _secureResponseController.hasListener) {
+            _secureResponseController.addError(e, stackTrace);
+          }
         },
         onDone: () {
           // Close the response controller when the socket is closed.
-          _secureResponseController.close();
+          if (!_secureResponseController.isClosed) {
+            _secureResponseController.close();
+          }
         },
       );
     }
@@ -307,8 +323,10 @@ class SOCKSSocket {
     } finally {
       await _subscription?.cancel();
       await _socksSocket.close();
-      _responseController.close();
-      if (sslEnabled) {
+      if (!_responseController.isClosed) {
+        _responseController.close();
+      }
+      if (sslEnabled && !_secureResponseController.isClosed) {
         _secureResponseController.close();
       }
     }
@@ -344,8 +362,7 @@ class SOCKSSocket {
   ///   A Future that resolves to void.
   Future<void> sendServerFeaturesCommand() async {
     // The server.features command.
-    const String command =
-        '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
+    const String command = '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
 
     if (!sslEnabled) {
       // Send the command to the proxy server.
@@ -354,7 +371,7 @@ class SOCKSSocket {
       // Wait for the response from the proxy server.
       var responseData = await _responseController.stream.first;
       if (kDebugMode) {
-        print("responseData: ${utf8.decode(responseData)}");
+        log(LogLevel.info, "responseData: ${utf8.decode(responseData)}");
       }
     } else {
       // Send the command to the proxy server.
@@ -363,7 +380,7 @@ class SOCKSSocket {
       // Wait for the response from the proxy server.
       var responseData = await _secureResponseController.stream.first;
       if (kDebugMode) {
-        print("secure responseData: ${utf8.decode(responseData)}");
+        log(LogLevel.info, "secure responseData: ${utf8.decode(responseData)}");
       }
     }
 
@@ -380,5 +397,69 @@ class SOCKSSocket {
       }
     }
     return buffer.toString();
+  }
+
+  /// Send an HTTP request and read the full response including body.
+  ///
+  /// This method properly handles Content-Length to read the complete response,
+  /// which is necessary for keep-alive connections.
+  Future<String> sendHttpRequest(String rawRequest) async {
+    write(rawRequest);
+
+    final bytes = <int>[];
+    String? headers;
+    int? contentLength;
+    int headerEndIndex = -1;
+
+    await for (final chunk in inputStream) {
+      bytes.addAll(chunk);
+
+      // Try to find the end of headers if we haven't yet
+      if (headers == null) {
+        final current = utf8.decode(bytes, allowMalformed: true);
+        headerEndIndex = current.indexOf('\r\n\r\n');
+
+        if (headerEndIndex != -1) {
+          headers = current.substring(0, headerEndIndex);
+
+          // Parse Content-Length from headers
+          final contentLengthMatch = RegExp(
+            r'content-length:\s*(\d+)',
+            caseSensitive: false,
+          ).firstMatch(headers);
+          if (contentLengthMatch != null) {
+            contentLength = int.parse(contentLengthMatch.group(1)!);
+          }
+
+          // Check if connection will close (no keep-alive possible)
+          final connectionClose = headers.toLowerCase().contains('connection: close');
+          if (connectionClose) {
+            // Server will close connection, read until EOF
+            contentLength = null;
+          }
+        }
+      }
+
+      // Check if we have the full response
+      if (headers != null) {
+        final headerBytes = utf8.encode('$headers\r\n\r\n').length;
+        final bodyBytesReceived = bytes.length - headerBytes;
+
+        if (contentLength != null && bodyBytesReceived >= contentLength) {
+          // We have the full response based on Content-Length
+          break;
+        } else if (contentLength == null) {
+          // No Content-Length, check for end of chunked encoding or connection close
+          final current = utf8.decode(bytes, allowMalformed: true);
+          if (current.contains('\r\n0\r\n\r\n')) {
+            // End of chunked encoding
+            break;
+          }
+          // For connection: close, we'll read until the stream ends
+        }
+      }
+    }
+
+    return utf8.decode(bytes);
   }
 }

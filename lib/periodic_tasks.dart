@@ -13,7 +13,6 @@ class PeriodicTasks {
 }
 
 Future<bool> runTxNotifier() async {
-  print('Running tx notifier');
   final wallet = WalletModel();
 
   if (!await wallet.hasExistingWallet()) {
@@ -53,8 +52,7 @@ Future<bool> runTxNotifier() async {
   }
 
   final persistedTxCount = await wallet.getPersistedTxHistoryCount();
-  // FIXME: REMOVE THIS +1 WHEN DONE
-  final currentTxCount = wallet.txHistory.length + 1;
+  final currentTxCount = wallet.txHistory.length;
   final countOfNewTxs = currentTxCount - persistedTxCount;
 
   if (countOfNewTxs > 0 && currentTxCount != 0) {

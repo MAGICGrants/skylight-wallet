@@ -109,8 +109,8 @@ Future<void> registerTxNotifierTaskIfAllowed() async {
   // old release from remaining forever.
   await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
   await Workmanager().registerPeriodicTask(
-    "New transactions check",
     PeriodicTasks.txNotifier,
+    "New transactions check",
     frequency: Duration(minutes: 15),
     constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
   );
@@ -121,7 +121,7 @@ Future<void> unregisterPeriodicTasks() async {
 }
 
 Future<void> registerPeriodicTasks() async {
-  if (!(Platform.isAndroid || Platform.isIOS)) {
+  if (!Platform.isAndroid) {
     return;
   }
 

@@ -62,10 +62,21 @@ void main() async {
       };
 
       timeago.setLocaleMessages('pt', timeago.PtBrMessages());
-      await createAppDir();
-      copyCacertToAppDocumentsDir();
-      await registerPeriodicTasks();
-      await NotificationService().init();
+
+      if (Platform.isLinux) {
+        await createAppDir();
+      }
+
+      if (Platform.isAndroid) {
+        copyCacertToAppDocumentsDir();
+        registerPeriodicTasks();
+        NotificationService().init();
+      }
+
+      if (Platform.isIOS) {
+        await cleanTorDirectoriesOnIOS();
+      }
+
       cleanOldLogFiles();
       runApp(MyApp());
     },

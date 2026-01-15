@@ -477,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
               ],
             ),
-            if (Platform.isAndroid || Platform.isIOS)
+            if (Platform.isAndroid)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

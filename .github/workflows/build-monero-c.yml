@@ -108,9 +108,14 @@ jobs:
           name: armv7a-linux-androideabi
           path: artifacts/libmonero_libwallet2_api_c.so
 
-  build-aarch64-apple-ios:
-    name: Build aarch64-apple-ios and aarch64-apple-iossimulator
+  build-ios-targets:
+    name: Build ${{ matrix.target }}
     runs-on: macos-15
+    strategy:
+      matrix:
+        target:
+          - aarch64-apple-ios
+          - aarch64-apple-iossimulator
     steps:
       - name: Checkout monero_c repo
         uses: actions/checkout@v4
@@ -136,13 +141,32 @@ jobs:
           git config --global user.name "CI mrcyjanek.net"
           ./apply_patches.sh monero
 
-      - name: Build monero_c for aarch64-apple-ios
+      - name: Build monero_c for ${{ matrix.target }}
         run: |
-          ./build_single.sh monero aarch64-apple-ios -j$(sysctl -n hw.logicalcpu)
+          ./build_single.sh monero ${{ matrix.target }} -j$(sysctl -n hw.logicalcpu)
 
-      - name: Build monero_c for aarch64-apple-iossimulator
-        run: |
-          ./build_single.sh monero aarch64-apple-iossimulator -j$(sysctl -n hw.logicalcpu)
+      - name: Upload built library
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: monero_libwallet2_api_c/build/${{ matrix.target }}/libwallet2_api_c.dylib
+
+  create-ios-xcframework:
+    name: Create iOS XCFramework
+    runs-on: macos-15
+    needs: build-ios-targets
+    steps:
+      - name: Download aarch64-apple-ios artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aarch64-apple-ios
+          path: device-lib
+
+      - name: Download aarch64-apple-iossimulator artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aarch64-apple-iossimulator
+          path: simulator-lib
 
       - name: Create XCFramework
         run: |
@@ -151,8 +175,8 @@ jobs:
           mkdir -p simulator/MoneroWallet.framework
 
           # Copy binaries
-          cp monero_c/monero_libwallet2_api_c/build/aarch64-apple-ios/libwallet2_api_c.dylib device/MoneroWallet.framework/MoneroWallet
-          cp monero_c/monero_libwallet2_api_c/build/aarch64-apple-iossimulator/libwallet2_api_c.dylib simulator/MoneroWallet.framework/MoneroWallet
+          cp device-lib/libwallet2_api_c.dylib device/MoneroWallet.framework/MoneroWallet
+          cp simulator-lib/libwallet2_api_c.dylib simulator/MoneroWallet.framework/MoneroWallet
 
           # Create Info.plist for both
           cat > device/MoneroWallet.framework/Info.plist << 'EOF'
@@ -192,7 +216,7 @@ jobs:
             -output MoneroWallet.xcframework
 
           # Clean up temp directories
-          rm -rf device simulator
+          rm -rf device simulator device-lib simulator-lib
 
       - name: Upload XCFramework artifact
         uses: actions/upload-artifact@v4
@@ -208,7 +232,7 @@ jobs:
       - build-x86_64-linux-android
       - build-aarch64-linux-android
       - build-armv7a-linux-androideabi
-      - build-aarch64-apple-ios
+      - create-ios-xcframework
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

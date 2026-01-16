@@ -108,8 +108,8 @@ jobs:
           name: armv7a-linux-androideabi
           path: artifacts/libmonero_libwallet2_api_c.so
 
-  build-arm64-apple-ios:
-    name: Build arm64-apple-ios and arm64-apple-iossimulator
+  build-aarch64-apple-ios:
+    name: Build aarch64-apple-ios and aarch64-apple-iossimulator
     runs-on: macos-15
     steps:
       - name: Checkout monero_c repo
@@ -136,13 +136,13 @@ jobs:
           git config --global user.name "CI mrcyjanek.net"
           ./apply_patches.sh monero
 
-      - name: Build monero_c for arm64-apple-ios
+      - name: Build monero_c for aarch64-apple-ios
         run: |
-          ./build_single.sh monero arm64-apple-ios -j$(sysctl -n hw.logicalcpu)
+          ./build_single.sh monero aarch64-apple-ios -j$(sysctl -n hw.logicalcpu)
 
-      - name: Build monero_c for arm64-apple-iossimulator
+      - name: Build monero_c for aarch64-apple-iossimulator
         run: |
-          ./build_single.sh monero arm64-apple-iossimulator -j$(sysctl -n hw.logicalcpu)
+          ./build_single.sh monero aarch64-apple-iossimulator -j$(sysctl -n hw.logicalcpu)
 
       - name: Create XCFramework
         run: |
@@ -151,8 +151,8 @@ jobs:
           mkdir -p simulator/MoneroWallet.framework
 
           # Copy binaries
-          cp monero_c/monero_libwallet2_api_c/build/arm64-apple-ios/libwallet2_api_c.dylib device/MoneroWallet.framework/MoneroWallet
-          cp monero_c/monero_libwallet2_api_c/build/arm64-apple-iossimulator/libwallet2_api_c.dylib simulator/MoneroWallet.framework/MoneroWallet
+          cp monero_c/monero_libwallet2_api_c/build/aarch64-apple-ios/libwallet2_api_c.dylib device/MoneroWallet.framework/MoneroWallet
+          cp monero_c/monero_libwallet2_api_c/build/aarch64-apple-iossimulator/libwallet2_api_c.dylib simulator/MoneroWallet.framework/MoneroWallet
 
           # Create Info.plist for both
           cat > device/MoneroWallet.framework/Info.plist << 'EOF'
@@ -208,7 +208,7 @@ jobs:
       - build-x86_64-linux-android
       - build-aarch64-linux-android
       - build-armv7a-linux-androideabi
-      - build-arm64-apple-ios
+      - build-aarch64-apple-ios
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -285,7 +285,7 @@ jobs:
             - `android/app/src/main/jniLibs/x86_64/libmonero_libwallet2_api_c.so` (x86_64-linux-android)
             - `android/app/src/main/jniLibs/arm64-v8a/libmonero_libwallet2_api_c.so` (aarch64-linux-android)
             - `android/app/src/main/jniLibs/armeabi-v7a/libmonero_libwallet2_api_c.so` (armv7a-linux-androideabi)
-            - `ios/Frameworks/MoneroWallet.xcframework` (arm64-apple-ios + arm64-apple-iossimulator)
+            - `ios/Frameworks/MoneroWallet.xcframework` (aarch64-apple-ios + aarch64-apple-iossimulator)
 
             Built from [monero_c](https://github.com/vtnerd/monero_c) branch `lwsf`.
           branch: update-moneroc-libs

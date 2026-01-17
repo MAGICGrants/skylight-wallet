@@ -12,9 +12,7 @@
     <string>FMWK</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>fetch</string>
-    </array>
+    <key>MinimumOSVersion</key>
+    <string>15.0</string>
 </dict>
 </plist>

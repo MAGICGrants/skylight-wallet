@@ -71,6 +71,7 @@ RUN yes | sdkmanager --licenses && \
 
 # Install Flutter with pinned version
 RUN git clone https://github.com/flutter/flutter.git -b ${FLUTTER_VERSION} --depth 1 /flutter && \
+    git config --system --add safe.directory /flutter && \
     flutter doctor -v && \
     flutter config --enable-linux-desktop && \
     flutter config --no-analytics && \

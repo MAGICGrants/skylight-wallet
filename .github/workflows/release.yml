@@ -54,7 +54,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -lc "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-x64"
+            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-x64"
 
           mkdir -p dist
           APK="$(ls -1 build/app/outputs/flutter-apk/*.apk | head -n1)"
@@ -98,7 +98,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -lc "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-arm64"
+            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-arm64"
 
           mkdir -p dist
           APK="$(ls -1 build/app/outputs/flutter-apk/*.apk | head -n1)"
@@ -142,7 +142,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -lc "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-arm"
+            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-arm"
 
           mkdir -p dist
           APK="$(ls -1 build/app/outputs/flutter-apk/*.apk | head -n1)"
@@ -186,7 +186,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -lc "flutter pub get && flutter build appbundle --dart-define=DEMO_MODE=true --release"
+            bash -c "flutter pub get && flutter build appbundle --dart-define=DEMO_MODE=true --release"
 
           mkdir -p dist
           cp -v build/app/outputs/bundle/release/app-release.aab "dist/skylight-wallet-${VERSION}.aab"
@@ -219,7 +219,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -lc "flutter pub get && ./appimage/build_appimage.sh --version ${VERSION}"
+            bash -c "flutter pub get && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
           cp -v appimage/skylight-wallet-*.AppImage dist/

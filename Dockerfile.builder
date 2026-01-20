@@ -13,7 +13,7 @@ ARG ANDROID_NDK_VERSION=28.0.13004108
 # Install system dependencies with pinned versions
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl=7.74.0-1.3+deb11u15 \
+    curl=7.74.0-1.3+deb11u16 \
     wget=1.21-1+deb11u2 \
     git=1:2.30.2-1+deb11u5 \
     unzip=6.0-26+deb11u1 \

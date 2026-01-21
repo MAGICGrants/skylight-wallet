@@ -228,6 +228,7 @@ jobs:
   release:
     name: Sign + Release
     runs-on: ubuntu-latest
+    environment: Release
     needs:
       - version
       - build-android-x86_64

@@ -162,8 +162,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   void initState() {
     super.initState();
 
-    NotificationService().showIncomingTxNotification(1);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final Map<String, dynamic>? args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;

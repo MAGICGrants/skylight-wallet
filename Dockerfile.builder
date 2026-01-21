@@ -1,6 +1,6 @@
 # Using Debian Bullseye for maximum AppImage compatibility (GLIBC 2.31)
 FROM debian:bullseye-20251117@sha256:ee239c601913c0d3962208299eef70dcffcb7aac1787f7a02f6d3e2b518755e6
- 
+
 ARG TARGETARCH
 
 ARG FLUTTER_VERSION=3.38.7
@@ -79,4 +79,3 @@ RUN git clone https://github.com/flutter/flutter.git -b ${FLUTTER_VERSION} --dep
     find /flutter -name "*.zip" -delete
 
 WORKDIR /workspace
-

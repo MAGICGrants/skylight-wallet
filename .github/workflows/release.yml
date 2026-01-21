@@ -51,7 +51,6 @@ jobs:
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
-            --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
@@ -95,7 +94,6 @@ jobs:
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
-            --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
@@ -139,7 +137,6 @@ jobs:
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
-            --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
@@ -183,7 +180,6 @@ jobs:
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
-            --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
@@ -216,7 +212,6 @@ jobs:
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
-            --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \

@@ -1,9 +1,13 @@
 # Skylight Wallet
 
+![Skylight Wallet feature graphic](assets/feature_graphic.png)
+
 A modern, open-source, and self-custody Monero light-wallet built with Flutter.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Flutter](https://img.shields.io/badge/Flutter-3.8.1+-02569B.svg?logo=flutter)
+
+[![Get it on Google Play badge](assets/GetItOnGooglePlay_Badge_Web_color_English.svg)](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
 
 ## Prerequisites
 
@@ -167,6 +171,8 @@ $ ./build_single.sh monero x86_64-linux-android -j$(nproc)
 ## Contributing
 
 Pull requests welcome! Thanks for supporting MAGIC Grants.
+
+To join our Matrix community, [click here](https://matrix.to/#/#skylight-wallet:monero.social).
 
 ## License
 

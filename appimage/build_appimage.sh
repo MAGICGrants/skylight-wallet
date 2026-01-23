@@ -49,11 +49,16 @@ done
 if [ -z "$VERSION" ]; then
     echo "Error: --version is required"
     echo "Usage: $0 --version <version>"
-    echo "Example: $0 --version v1.0.0"
+    echo "Example: $0 --version 1.0.0"
     exit 1
 fi
 
-echo "Building AppImage version: $VERSION"
+# Version without 'v' prefix (for internal use)
+VERSION="${VERSION#v}"
+# Version for output filename (with 'v' prefix)
+FILE_VERSION="v${VERSION}"
+
+echo "Building AppImage version: $FILE_VERSION"
 
 # Get the project root directory (parent of appimage folder)
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -145,7 +150,7 @@ export ARCH=x86_64
 ./squashfs-root/AppRun AppDir
 
 GENERATED_APPIMAGE=$(ls -1 Skylight_Wallet-${VERSION}-*.AppImage 2>/dev/null | head -n1)
-DESIRED_NAME="skylight-wallet-${VERSION}-x86_64.AppImage"
+DESIRED_NAME="skylight-wallet-${FILE_VERSION}-x86_64.AppImage"
 
 if [ -n "$GENERATED_APPIMAGE" ]; then
     echo "Renaming to: $DESIRED_NAME"

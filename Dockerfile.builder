@@ -35,7 +35,8 @@ RUN apt-get update && \
     libssl-dev=1.1.1w-0+deb11u4 \
     libsecret-1-dev=0.20.4-2 \
     libsecret-1-0=0.20.4-2 \
-    file=1:5.39-3+deb11u1 && \
+    file=1:5.39-3+deb11u1 \
+    fakeroot=1.25.3-1.1 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

@@ -23,8 +23,8 @@ jobs:
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-  build-android-x86_64:
-    name: Android APK (x86_64)
+  build-android-apk:
+    name: Android APKs
     runs-on: ubuntu-latest
     environment: Release
     needs: version
@@ -47,109 +47,24 @@ jobs:
           storeFile=/workspace/android/keystore.jks
           EOF
 
-      - name: Build APK (x86_64)
+      - name: Build APKs (split per ABI)
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-x64"
+            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi"
 
           mkdir -p dist
-          APK="$(ls -1 build/app/outputs/flutter-apk/*.apk | head -n1)"
-          cp -v "$APK" "dist/skylight-wallet-${VERSION}-x86_64.apk"
+          cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"
+          cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
+          cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/skylight-wallet-${VERSION}-x86_64.apk"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-x86_64
-          path: dist/*.apk
-
-  build-android-arm64:
-    name: Android APK (arm64-v8a)
-    runs-on: ubuntu-latest
-    environment: Release
-    needs: version
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Pull builder image
-        run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
-
-      - name: Set up Android signing
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/keystore.jks
-          cat > android/key.properties << EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=/workspace/android/keystore.jks
-          EOF
-
-      - name: Build APK (arm64-v8a)
-        run: |
-          VERSION='${{ needs.version.outputs.version }}'
-          docker run --rm \
-            -v "$PWD:/workspace" \
-            -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-arm64"
-
-          mkdir -p dist
-          APK="$(ls -1 build/app/outputs/flutter-apk/*.apk | head -n1)"
-          cp -v "$APK" "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-arm64-v8a
-          path: dist/*.apk
-
-  build-android-armeabi-v7a:
-    name: Android APK (armeabi-v7a)
-    runs-on: ubuntu-latest
-    environment: Release
-    needs: version
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Pull builder image
-        run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
-
-      - name: Set up Android signing
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/keystore.jks
-          cat > android/key.properties << EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=/workspace/android/keystore.jks
-          EOF
-
-      - name: Build APK (armeabi-v7a)
-        run: |
-          VERSION='${{ needs.version.outputs.version }}'
-          docker run --rm \
-            -v "$PWD:/workspace" \
-            -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --target-platform android-arm"
-
-          mkdir -p dist
-          APK="$(ls -1 build/app/outputs/flutter-apk/*.apk | head -n1)"
-          cp -v "$APK" "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-armeabi-v7a
+          name: android-apk
           path: dist/*.apk
 
   build-android-aab:
@@ -195,7 +110,7 @@ jobs:
           path: dist/*.aab
 
   build-linux-x86_64:
-    name: Linux AppImage (x86_64)
+    name: Linux (x86_64)
     runs-on: ubuntu-latest
     environment: Release
     needs: version
@@ -208,23 +123,26 @@ jobs:
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
 
-      - name: Build AppImage (x86_64)
+      - name: Build Linux packages
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && ./appimage/build_appimage.sh --version ${VERSION}"
+            bash -c "flutter pub get && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
+          cp -v deb/skylight-wallet_*.deb dist/
           cp -v appimage/skylight-wallet-*.AppImage dist/
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-appimage
-          path: dist/*.AppImage
+          name: linux-x86_64
+          path: |
+            dist/*.deb
+            dist/*.AppImage
 
   release:
     name: Sign + Release
@@ -232,9 +150,7 @@ jobs:
     environment: Release
     needs:
       - version
-      - build-android-x86_64
-      - build-android-arm64
-      - build-android-armeabi-v7a
+      - build-android-apk
       - build-android-aab
       - build-linux-x86_64
     permissions:
@@ -259,7 +175,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          find dist -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.AppImage" \) -print0 | while IFS= read -r -d '' file; do
+          find dist -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.AppImage" \) -print0 | while IFS= read -r -d '' file; do
             echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor "$file"
             echo "Signed: $file"
           done
@@ -279,6 +195,8 @@ jobs:
             dist/**/*.apk.asc
             dist/**/*.aab
             dist/**/*.aab.asc
+            dist/**/*.deb
+            dist/**/*.deb.asc
             dist/**/*.AppImage
             dist/**/*.AppImage.asc
         env:

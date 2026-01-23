@@ -59,8 +59,12 @@ echo "Building AppImage version: $VERSION"
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "Building Flutter Linux app..."
-flutter build linux --release
+# Check if Flutter build exists
+if [ ! -d "build/linux/x64/release/bundle" ]; then
+    echo "Error: Flutter Linux build not found."
+    echo "Run 'flutter build linux --release' first."
+    exit 1
+fi
 
 echo "Creating AppImage structure..."
 cd appimage

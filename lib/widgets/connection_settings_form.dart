@@ -162,7 +162,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final proto = _useSsl ? 'https' : 'http';
     final daemonAddress = cleanAddress(_addressController.text);
     final customProxyPort = _customProxyPortController.text;
-    String torProxyPort = '';
 
     // Handle demo mode
     if (isDemoMode) {
@@ -174,8 +173,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         return;
       }
     }
-
-    String proxyPort = torProxyPort != '' ? torProxyPort : customProxyPort;
 
     setState(() {
       _hasTested = true;
@@ -206,7 +203,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           'POST',
           url,
           proxyInfo!,
-        ).timeout(Duration(seconds: 10));
+        ).timeout(Duration(seconds: 20));
 
         setState(() {
           _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
@@ -214,10 +211,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       } else {
         var httpClient = HttpClient();
 
-        if (proxyPort != '') {
+        if (customProxyPort != '') {
           httpClient = httpClient
             ..findProxy = (uri) {
-              return "PROXY localhost:$proxyPort";
+              return "PROXY localhost:$customProxyPort";
             };
         }
 

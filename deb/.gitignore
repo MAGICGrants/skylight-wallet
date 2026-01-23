@@ -1,0 +1,3 @@
+# Debian package build artifacts
+skylight-wallet_*/
+*.deb

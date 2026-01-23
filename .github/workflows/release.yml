@@ -195,7 +195,7 @@ jobs:
           path: dist/*.aab
 
   build-linux-x86_64:
-    name: Linux AppImage (x86_64)
+    name: Linux (x86_64)
     runs-on: ubuntu-latest
     environment: Release
     needs: version
@@ -208,23 +208,26 @@ jobs:
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
 
-      - name: Build AppImage (x86_64)
+      - name: Build Linux packages
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && ./appimage/build_appimage.sh --version ${VERSION}"
+            bash -c "flutter pub get && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
+          cp -v deb/skylight-wallet_*.deb dist/
           cp -v appimage/skylight-wallet-*.AppImage dist/
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-appimage
-          path: dist/*.AppImage
+          name: linux-x86_64
+          path: |
+            dist/*.deb
+            dist/*.AppImage
 
   release:
     name: Sign + Release
@@ -259,7 +262,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          find dist -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.AppImage" \) -print0 | while IFS= read -r -d '' file; do
+          find dist -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.AppImage" \) -print0 | while IFS= read -r -d '' file; do
             echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor "$file"
             echo "Signed: $file"
           done
@@ -279,6 +282,8 @@ jobs:
             dist/**/*.apk.asc
             dist/**/*.aab
             dist/**/*.aab.asc
+            dist/**/*.deb
+            dist/**/*.deb.asc
             dist/**/*.AppImage
             dist/**/*.AppImage.asc
         env:

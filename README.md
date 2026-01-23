@@ -7,7 +7,7 @@ A modern, open-source, and self-custody Monero light-wallet built with Flutter.
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Flutter](https://img.shields.io/badge/Flutter-3.8.1+-02569B.svg?logo=flutter)
 
-[![Get it on Google Play badge](assets/GetItOnGooglePlay_Badge_Web_color_English.svg)](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
+[<img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play badge" width="25%"/>](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
 
 ## Prerequisites
 

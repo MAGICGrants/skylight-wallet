@@ -155,6 +155,7 @@ DESIRED_NAME="skylight-wallet-${FILE_VERSION}-x86_64.AppImage"
 if [ -n "$GENERATED_APPIMAGE" ]; then
     echo "Renaming to: $DESIRED_NAME"
     mv "$GENERATED_APPIMAGE" "$DESIRED_NAME"
+    chmod +x "$DESIRED_NAME"
 fi
 
 # Clean up temporary files

@@ -73,8 +73,8 @@ fi
 
 echo "Creating Debian package structure..."
 cd deb
-rm -rf skylight-wallet_* || true
-PACKAGE_DIR="skylight-wallet_${FILE_VERSION}_amd64"
+rm -rf skylight-wallet-* || true
+PACKAGE_DIR="skylight-wallet-${FILE_VERSION}-amd64"
 mkdir -p "$PACKAGE_DIR/DEBIAN"
 mkdir -p "$PACKAGE_DIR/usr/lib/skylight-wallet"
 mkdir -p "$PACKAGE_DIR/usr/bin"

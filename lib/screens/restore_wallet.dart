@@ -50,7 +50,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
-    final mnemonic = _mnemonicController.text;
+    final mnemonic = _mnemonicController.text.trim();
     final restoreHeight = int.tryParse(_restoreHeightController.text) ?? 0;
 
     setState(() {
@@ -109,7 +109,9 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   }
 
   Future<void> _calculatePolyseedHeight() async {
-    if (!Polyseed.isValidSeed(_mnemonicController.text)) {
+    final mnemonic = _mnemonicController.text.trim();
+
+    if (!Polyseed.isValidSeed(mnemonic)) {
       if (_isPolyseed) {
         setState(() {
           _isPolyseed = false;
@@ -120,8 +122,8 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     }
 
     final polyseed = Polyseed.decode(
-      _mnemonicController.text,
-      PolyseedLang.getByPhrase(_mnemonicController.text),
+      mnemonic,
+      PolyseedLang.getByPhrase(mnemonic),
       PolyseedCoin.POLYSEED_MONERO,
     );
 

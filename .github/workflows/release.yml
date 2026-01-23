@@ -94,7 +94,7 @@ jobs:
             bash -c "flutter pub get && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
-          cp -v deb/skylight-wallet_*.deb dist/
+          cp -v deb/skylight-wallet-*.deb dist/
           cp -v appimage/skylight-wallet-*.AppImage dist/
 
       - name: Upload artifacts

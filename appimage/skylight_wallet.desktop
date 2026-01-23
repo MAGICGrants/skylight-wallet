@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Skylight Wallet
-Comment=Monero cryptocurrency wallet
+Comment=A light Monero wallet.
 Exec=skylight_wallet
 Icon=skylight_wallet
 Categories=Finance;Network;

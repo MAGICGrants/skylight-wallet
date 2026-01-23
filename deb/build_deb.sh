@@ -46,8 +46,10 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-# Strip 'v' prefix if present for package version
+# Version for package metadata (without 'v' prefix)
 PKG_VERSION="${VERSION#v}"
+# Version for output filename (with 'v' prefix)
+FILE_VERSION="v${PKG_VERSION}"
 
 echo "Building .deb package version: $PKG_VERSION"
 
@@ -72,7 +74,7 @@ fi
 echo "Creating Debian package structure..."
 cd deb
 rm -rf skylight-wallet_* || true
-PACKAGE_DIR="skylight-wallet_${PKG_VERSION}_amd64"
+PACKAGE_DIR="skylight-wallet_${FILE_VERSION}_amd64"
 mkdir -p "$PACKAGE_DIR/DEBIAN"
 mkdir -p "$PACKAGE_DIR/usr/lib/skylight-wallet"
 mkdir -p "$PACKAGE_DIR/usr/bin"
@@ -89,11 +91,8 @@ Section: finance
 Priority: optional
 Architecture: amd64
 Installed-Size: $INSTALLED_SIZE
-Maintainer: Skylight Wallet Developers
-Description: Monero cryptocurrency wallet
- A light Monero wallet with privacy-focused features.
- Skylight Wallet provides an easy-to-use interface for
- managing Monero cryptocurrency.
+Maintainer: MAGIC Grants
+Description: A light Monero wallet.
 Homepage: https://github.com/skylight-wallet/skylight-wallet
 EOF
 

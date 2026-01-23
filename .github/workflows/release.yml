@@ -23,8 +23,8 @@ jobs:
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-  build-android-apk:
-    name: Android APKs
+  build-android:
+    name: Android
     runs-on: ubuntu-latest
     environment: Release
     needs: version
@@ -47,67 +47,28 @@ jobs:
           storeFile=/workspace/android/keystore.jks
           EOF
 
-      - name: Build APKs (split per ABI)
+      - name: Build APKs and AAB
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi"
+            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release"
 
           mkdir -p dist
           cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"
           cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
           cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/skylight-wallet-${VERSION}-x86_64.apk"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: dist/*.apk
-
-  build-android-aab:
-    name: Android App Bundle (AAB)
-    runs-on: ubuntu-latest
-    environment: Release
-    needs: version
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Pull builder image
-        run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
-
-      - name: Set up Android signing
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/keystore.jks
-          cat > android/key.properties << EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=/workspace/android/keystore.jks
-          EOF
-
-      - name: Build AAB
-        run: |
-          VERSION='${{ needs.version.outputs.version }}'
-          docker run --rm \
-            -v "$PWD:/workspace" \
-            -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build appbundle --dart-define=DEMO_MODE=true --release"
-
-          mkdir -p dist
           cp -v build/app/outputs/bundle/release/app-release.aab "dist/skylight-wallet-${VERSION}.aab"
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: android-aab
-          path: dist/*.aab
+          name: android
+          path: |
+            dist/*.apk
+            dist/*.aab
 
   build-linux-x86_64:
     name: Linux (x86_64)
@@ -150,8 +111,7 @@ jobs:
     environment: Release
     needs:
       - version
-      - build-android-apk
-      - build-android-aab
+      - build-android
       - build-linux-x86_64
     permissions:
       contents: write

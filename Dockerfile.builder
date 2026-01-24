@@ -27,7 +27,7 @@ RUN apt-get update && \
     libgtk-3-dev=3.24.24-4+deb11u4 \
     liblzma-dev=5.2.5-2.1~deb11u1 \
     libstdc++-10-dev=10.2.1-6 \
-    openjdk-17-jdk=17.0.17+10-1~deb11u1 \
+    openjdk-17-jdk-headless=17.0.17+10-1~deb11u1 \
     ca-certificates=20210119 \
     build-essential=12.9 \
     make=4.3-4.1 \
@@ -38,7 +38,7 @@ RUN apt-get update && \
     file=1:5.39-3+deb11u1 \
     fakeroot=1.25.3-1.1 && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/*
 
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${TARGETARCH}
 ENV ANDROID_HOME=/opt/android-sdk
@@ -68,7 +68,11 @@ RUN yes | sdkmanager --licenses && \
     "platforms;android-${ANDROID_PLATFORM_VERSION}" \
     "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" \
     "ndk;${ANDROID_NDK_VERSION}" && \
-    rm -rf ${ANDROID_HOME}/.android/cache
+    rm -rf ${ANDROID_HOME}/.android/cache && \
+    rm -rf ${ANDROID_HOME}/ndk/*/sources/third_party/shaderc && \
+    rm -rf ${ANDROID_HOME}/ndk/*/sources/cxx-stl/llvm-libc++/test && \
+    rm -rf ${ANDROID_HOME}/ndk/*/shader-tools && \
+    rm -rf ${ANDROID_HOME}/ndk/*/simpleperf
 
 # Install Flutter with pinned version
 RUN git clone https://github.com/flutter/flutter.git -b ${FLUTTER_VERSION} --depth 1 /flutter && \
@@ -77,6 +81,8 @@ RUN git clone https://github.com/flutter/flutter.git -b ${FLUTTER_VERSION} --dep
     flutter config --enable-linux-desktop && \
     flutter config --no-analytics && \
     flutter precache --linux --android && \
-    find /flutter -name "*.zip" -delete
+    find /flutter -name "*.zip" -delete && \
+    rm -rf /flutter/examples /flutter/dev/devicelab /flutter/dev/benchmarks && \
+    rm -rf /flutter/.pub-cache/hosted/pub.dev/*/example
 
 WORKDIR /workspace

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:path/path.dart' as p;
 
 class NotificationService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -14,10 +15,21 @@ class NotificationService {
     );
     const initSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open wallet');
 
-    const initSettings = InitializationSettings(
+    // Windows requires an absolute path to an .ico file
+    final initSettingsWindows = WindowsInitializationSettings(
+      appName: 'Skylight Wallet',
+      appUserModelId: 'org.magicgrants.skylight',
+      guid: '6dcf17a9-fb5f-4f47-b0b9-6d655e90adbf',
+      iconPath: Platform.isWindows
+          ? p.join(p.dirname(Platform.resolvedExecutable), 'data', 'flutter_assets', 'assets', 'app_icon.ico')
+          : null,
+    );
+
+    final initSettings = InitializationSettings(
       android: initSettingsAndroid,
       iOS: initSettingsIOS,
       linux: initSettingsLinux,
+      windows: initSettingsWindows,
     );
 
     await notificationsPlugin.initialize(initSettings);

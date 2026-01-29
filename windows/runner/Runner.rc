@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "MAGIC Grants" "\0"
-            VALUE "FileDescription", "skylight_wallet" "\0"
+            VALUE "FileDescription", "Skylight Wallet" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "skylight_wallet" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 MAGIC Grants. All rights reserved." "\0"
             VALUE "OriginalFilename", "skylight_wallet.exe" "\0"
-            VALUE "ProductName", "skylight_wallet" "\0"
+            VALUE "ProductName", "Skylight Wallet" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

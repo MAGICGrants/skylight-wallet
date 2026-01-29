@@ -65,6 +65,11 @@ void main() async {
 
       if (Platform.isLinux) {
         await createAppDir();
+        NotificationService().init();
+      }
+
+      if (Platform.isWindows) {
+        NotificationService().init();
       }
 
       if (Platform.isAndroid) {

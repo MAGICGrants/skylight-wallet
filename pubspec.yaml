@@ -24,6 +24,10 @@ environment:
 flutter_launcher_icons:
   android: true
   ios: true
+  windows:
+    generate: true
+    image_path: "assets/launcher_icon.png"
+    icon_size: 48
   image_path: "assets/launcher_icon.png"
   adaptive_icon_background: "#263F5F"
   adaptive_icon_foreground: "assets/launcher_icon.png"
@@ -111,6 +115,7 @@ flutter:
   assets:
     - assets/icons/
     - assets/cacert.pem
+    - assets/app_icon.ico
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

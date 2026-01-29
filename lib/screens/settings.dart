@@ -470,13 +470,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(i18n.settingsAppLockLabel, style: TextStyle(fontSize: 18)),
-                Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
-              ],
-            ),
+            if (Platform.isAndroid || Platform.isIOS)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(i18n.settingsAppLockLabel, style: TextStyle(fontSize: 18)),
+                  Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
+                ],
+              ),
             if (Platform.isAndroid)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

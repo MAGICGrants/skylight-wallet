@@ -49,6 +49,14 @@ Future<Directory> getAppDir() async {
     } else {
       throw Exception('HOME environment variable is not set');
     }
+  } else if (Platform.isWindows) {
+    final appData = Platform.environment['APPDATA'];
+
+    if (appData != null) {
+      appDir = Directory('$appData/MAGIC Grants/Skylight Wallet');
+    } else {
+      throw Exception('APPDATA environment variable is not set');
+    }
   }
 
   return appDir;

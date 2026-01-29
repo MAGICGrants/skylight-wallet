@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -114,6 +114,43 @@ jobs:
             dist/*.deb
             dist/*.AppImage
 
+  build-windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    environment: Release
+    needs: version
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.38.7
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install Inno Setup and Rust
+        run: choco install innosetup rust -y
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Create installer
+        run: |
+          $version = '${{ needs.version.outputs.version }}'.TrimStart('v')
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' /DAppVersion=$version windows\installer.iss
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: windows/Output/*.exe
+
   release:
     name: Sign + Release
     runs-on: ubuntu-latest
@@ -122,6 +159,7 @@ jobs:
       - version
       - build-android
       - build-linux-x86_64
+      - build-windows
     permissions:
       contents: write
     steps:
@@ -144,7 +182,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-          find dist -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.AppImage" \) -print0 | while IFS= read -r -d '' file; do
+          find dist -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" \) -print0 | while IFS= read -r -d '' file; do
             echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --detach-sign --armor "$file"
             echo "Signed: $file"
           done
@@ -168,5 +206,7 @@ jobs:
             dist/**/*.deb.asc
             dist/**/*.AppImage
             dist/**/*.AppImage.asc
+            dist/**/*.exe
+            dist/**/*.exe.asc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

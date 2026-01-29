@@ -46,7 +46,6 @@ PrivilegesRequiredOverridesAllowed=dialog
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -64,3 +63,31 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function IsAppRunning(const ExeName: string): Boolean;
+var
+  WMIService: Variant;
+  ProcessList: Variant;
+begin
+  Result := False;
+  try
+    WMIService := CreateOleObject('WbemScripting.SWbemLocator');
+    WMIService := WMIService.ConnectServer('.', 'root\cimv2');
+    ProcessList := WMIService.ExecQuery('SELECT * FROM Win32_Process WHERE Name = ''' + ExeName + '''');
+    Result := (ProcessList.Count > 0);
+  except
+    Result := False;
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := True;
+  if IsAppRunning('{#AppExeName}') then
+  begin
+    MsgBox('{#AppName} is currently running.' + #13#10 + #13#10 +
+           'Please close the application before uninstalling.', mbError, MB_OK);
+    Result := False;
+  end;
+end;

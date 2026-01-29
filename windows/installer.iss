@@ -43,7 +43,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-CloseApplications=prompt
+CloseApplications=yes
 CloseApplicationsFilter=*.exe
 RestartApplications=yes
 

@@ -108,6 +108,33 @@ jobs:
           name: armv7a-linux-androideabi
           path: artifacts/libmonero_libwallet2_api_c.so
 
+  build-x86_64-w64-mingw32:
+    name: Build x86_64-w64-mingw32
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build monero_c
+        env:
+          TARGET_ARCH: x86_64-w64-mingw32
+        run: scripts/build-moneroc.sh
+
+      - name: Copy built libraries
+        run: |
+          mkdir -p artifacts
+          cp monero_c/monero_libwallet2_api_c/build/x86_64-w64-mingw32/libwallet2_api_c.dll artifacts/monero_libwallet2_api_c.dll
+          cp monero_c/release/monero/x86_64-w64-mingw32_libwinpthread-1.dll artifacts/libwinpthread-1.dll
+          cp monero_c/release/monero/x86_64-w64-mingw32_libssp-0.dll artifacts/libssp-0.dll
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-w64-mingw32
+          path: artifacts/
+
   build-ios-targets:
     name: Build ${{ matrix.target }}
     runs-on: macos-15
@@ -232,6 +259,7 @@ jobs:
       - build-x86_64-linux-android
       - build-aarch64-linux-android
       - build-armv7a-linux-androideabi
+      - build-x86_64-w64-mingw32
       - create-ios-xcframework
     steps:
       - name: Checkout repository
@@ -267,6 +295,12 @@ jobs:
           name: MoneroWallet-xcframework
           path: artifacts/MoneroWallet.xcframework
 
+      - name: Download x86_64-w64-mingw32 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-w64-mingw32
+          path: artifacts/x86_64-w64-mingw32
+
       - name: Place libraries in correct locations
         run: |
           # Linux x86_64
@@ -284,6 +318,11 @@ jobs:
           # iOS XCFramework - remove old and copy new
           rm -rf ios/Frameworks/MoneroWallet.xcframework
           cp -R artifacts/MoneroWallet.xcframework ios/Frameworks/MoneroWallet.xcframework
+
+          # Windows x86_64
+          cp artifacts/x86_64-w64-mingw32/monero_libwallet2_api_c.dll windows/monero_libwallet2_api_c.dll
+          cp artifacts/x86_64-w64-mingw32/libwinpthread-1.dll windows/libwinpthread-1.dll
+          cp artifacts/x86_64-w64-mingw32/libssp-0.dll windows/libssp-0.dll
 
       - name: Fix Linux library executable stack
         run: scripts/fix-linux-moneroc-execstack.sh
@@ -309,6 +348,9 @@ jobs:
             - `android/app/src/main/jniLibs/x86_64/libmonero_libwallet2_api_c.so` (x86_64-linux-android)
             - `android/app/src/main/jniLibs/arm64-v8a/libmonero_libwallet2_api_c.so` (aarch64-linux-android)
             - `android/app/src/main/jniLibs/armeabi-v7a/libmonero_libwallet2_api_c.so` (armv7a-linux-androideabi)
+            - `windows/monero_libwallet2_api_c.dll` (x86_64-w64-mingw32)
+            - `windows/libwinpthread-1.dll` (x86_64-w64-mingw32)
+            - `windows/libssp-0.dll` (x86_64-w64-mingw32)
             - `ios/Frameworks/MoneroWallet.xcframework` (aarch64-apple-ios + aarch64-apple-iossimulator)
 
             Built from [monero_c](https://github.com/vtnerd/monero_c) branch `lwsf`.

@@ -189,5 +189,6 @@
       }
     }
   },
-  "connectionSetupTorDisabledError": "Tor is disabled. Please go back and enable it."
+  "connectionSetupTorDisabledError": "Tor is disabled. Please go back and enable it.",
+  "connectionSetupInvalidQrCode": "Invalid connection address."
 }

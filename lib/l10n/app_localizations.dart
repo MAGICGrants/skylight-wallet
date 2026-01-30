@@ -1148,6 +1148,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tor is disabled. Please go back and enable it.'**
   String get connectionSetupTorDisabledError;
+
+  /// No description provided for @connectionSetupInvalidQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid connection address.'**
+  String get connectionSetupInvalidQrCode;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

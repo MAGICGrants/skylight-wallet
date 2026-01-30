@@ -13,12 +13,26 @@ import 'package:skylight_wallet/services/tor_service.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
 
+final ipAddressRegex = RegExp(
+  r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
+);
+final domainAddressRegex = RegExp(
+  r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
+);
+final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
+
 /// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog
 class ConnectionSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
   final VoidCallback onSaved;
+  final bool isInDialog;
 
-  const ConnectionSettingsForm({super.key, required this.saveButtonLabel, required this.onSaved});
+  const ConnectionSettingsForm({
+    super.key,
+    required this.saveButtonLabel,
+    required this.onSaved,
+    this.isInDialog = false,
+  });
 
   @override
   State<ConnectionSettingsForm> createState() => _ConnectionSettingsFormState();
@@ -33,6 +47,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _hasTested = false;
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
+  String? _errorMessage;
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
 
@@ -66,20 +81,46 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
   }
 
-  String cleanAddress(String value) {
-    return value.trim().replaceAll(r'https?:\/\/', '');
+  String _cleanAddress(String value) {
+    return value.trim().replaceAll(RegExp(r'https?:\/\/'), '');
   }
 
-  void onAddressChange(String value) {
-    value = cleanAddress(value);
+  bool _isValidConnectionAddress(String value) {
+    final connectionUrlRegex = RegExp(
+      [ipAddressRegex.pattern, onionAddressRegex.pattern, domainAddressRegex.pattern].join('|'),
+    );
 
-    final ipAddressRegex = RegExp(
-      r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
-    );
-    final onionAddressRegex = RegExp(r'[a-z2-7]{56}|[a-z2-7]{16}.onion(:\d{1,5})?$');
-    final domainAddressRegex = RegExp(
-      r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
-    );
+    return connectionUrlRegex.hasMatch(value);
+  }
+
+  Future<void> _scanQrCode() async {
+    final i18n = AppLocalizations.of(context)!;
+
+    final result = await Navigator.pushNamed(context, '/scan_qr');
+
+    if (result != null && result is String) {
+      final scannedAddress = _cleanAddress(result);
+      if (_isValidConnectionAddress(scannedAddress)) {
+        _addressController.text = scannedAddress;
+        _onAddressChange(scannedAddress);
+      } else {
+        if (mounted) {
+          if (widget.isInDialog) {
+            setState(() {
+              _errorMessage = i18n.connectionSetupInvalidQrCode;
+            });
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(i18n.connectionSetupInvalidQrCode)));
+          }
+        }
+      }
+    }
+  }
+
+  void _onAddressChange(String value) {
+    value = _cleanAddress(value);
 
     var useTor = false;
     var useSsl = false;
@@ -101,21 +142,22 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       useSsl = false;
     }
 
-    setUseSsl(useSsl);
-    setUseTor(useTor);
+    _setUseSsl(useSsl);
+    _setUseTor(useTor);
 
+    setState(() {
+      _hasTested = false;
+      _errorMessage = null;
+    });
+  }
+
+  void _onProxyPortChange(String value) {
     setState(() {
       _hasTested = false;
     });
   }
 
-  void onProxyPortChange(String value) {
-    setState(() {
-      _hasTested = false;
-    });
-  }
-
-  void setUseTor(bool? value) {
+  void _setUseTor(bool? value) {
     if (TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
       log(LogLevel.info, 'Tor is disabled. Not setting useTor to true.');
       value = false;
@@ -150,7 +192,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     });
   }
 
-  void setUseSsl(bool? value) {
+  void _setUseSsl(bool? value) {
     setState(() {
       _useSsl = value ?? false;
       _hasTested = false;
@@ -160,7 +202,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   Future _testConnection() async {
     final i18n = AppLocalizations.of(context)!;
     final proto = _useSsl ? 'https' : 'http';
-    final daemonAddress = cleanAddress(_addressController.text);
+    final daemonAddress = _cleanAddress(_addressController.text);
     final customProxyPort = _customProxyPortController.text;
 
     // Handle demo mode
@@ -237,7 +279,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   Future<void> _saveConnection() async {
-    final daemonAddress = cleanAddress(_addressController.text);
+    final daemonAddress = _cleanAddress(_addressController.text);
     final proxyAddress = _customProxyPortController.text;
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
@@ -261,25 +303,39 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 10,
       children: [
         TextFormField(
           controller: _addressController,
-          onChanged: onAddressChange,
+          onChanged: _onAddressChange,
           decoration: InputDecoration(
             labelText: i18n.address,
             hintText: i18n.connectionSetupAddressHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-            suffixIcon: _hasTested && !_connectionTestIsLoading
-                ? Icon(_connectionSuccess ? Icons.check : Icons.cancel_outlined)
-                : null,
-            suffixIconColor: _connectionSuccess ? Colors.teal : Colors.red,
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (Platform.isAndroid || Platform.isIOS)
+                  IconButton(onPressed: _scanQrCode, icon: Icon(Icons.qr_code)),
+                if (_hasTested && !_connectionTestIsLoading)
+                  Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Icon(
+                      _connectionSuccess ? Icons.check : Icons.cancel_outlined,
+                      color: _connectionSuccess ? Colors.teal : Colors.red,
+                    ),
+                  ),
+              ],
+            ),
           ),
           keyboardType: TextInputType.url,
         ),
+        if (_errorMessage != null)
+          Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         TextFormField(
           controller: _customProxyPortController,
-          onChanged: onProxyPortChange,
+          onChanged: _onProxyPortChange,
           enabled: !_useTor,
           decoration: InputDecoration(
             labelText: i18n.connectionSetupProxyPortLabel,
@@ -292,25 +348,27 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         CheckboxListTile(
           title: Text(i18n.connectionSetupUseTorLabel),
           value: _useTor,
-          onChanged: _useSsl || torMode == TorMode.disabled ? null : setUseTor,
+          onChanged: _useSsl || torMode == TorMode.disabled ? null : _setUseTor,
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),
         CheckboxListTile(
           title: Text(i18n.connectionSetupUseSslLabel),
           value: _useSsl,
-          onChanged: !_useTor ? setUseSsl : null,
+          onChanged: !_useTor ? _setUseSsl : null,
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),
         if (_useTor)
-          Text(
-            torMode == TorMode.builtIn
-                ? i18n.connectionSetupUsingInternalTor
-                : i18n.connectionSetupUsingExternalTor(
-                    '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
-                  ),
-            style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
+          Center(
+            child: Text(
+              torMode == TorMode.builtIn
+                  ? i18n.connectionSetupUsingInternalTor
+                  : i18n.connectionSetupUsingExternalTor(
+                      '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
+                    ),
+              style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
+            ),
           ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

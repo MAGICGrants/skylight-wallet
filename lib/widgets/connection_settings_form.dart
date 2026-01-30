@@ -73,7 +73,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _isValidConnectionAddress(String value) {
     final connectionUrlRegex = RegExp(
       [
-        r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
+        r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
         r'[a-z2-7]{56}.onion(:\d{1,5})?$',
         r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
       ].join('|'),

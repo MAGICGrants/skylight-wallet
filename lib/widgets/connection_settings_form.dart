@@ -13,6 +13,14 @@ import 'package:skylight_wallet/services/tor_service.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
 
+final ipAddressRegex = RegExp(
+  r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
+);
+final domainAddressRegex = RegExp(
+  r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
+);
+final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
+
 /// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog
 class ConnectionSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
@@ -67,19 +75,15 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   String _cleanAddress(String value) {
-    return value.trim().replaceAll(r'https?:\/\/', '');
+    return value.trim().replaceAll(RegExp(r'https?:\/\/'), '');
   }
 
   bool _isValidConnectionAddress(String value) {
     final connectionUrlRegex = RegExp(
-      [
-        r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
-        r'[a-z2-7]{56}.onion(:\d{1,5})?$',
-        r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
-      ].join('|'),
+      [ipAddressRegex.pattern, onionAddressRegex.pattern, domainAddressRegex.pattern].join('|'),
     );
 
-    return connectionUrlRegex.hasMatch(value.replaceAll(r'https?:\/\/', ''));
+    return connectionUrlRegex.hasMatch(value);
   }
 
   Future<void> _scanQrCode() async {
@@ -88,7 +92,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final result = await Navigator.pushNamed(context, '/scan_qr');
 
     if (result != null && result is String) {
-      final scannedAddress = result.trim();
+      final scannedAddress = _cleanAddress(result);
       if (_isValidConnectionAddress(scannedAddress)) {
         _addressController.text = scannedAddress;
         _onAddressChange(scannedAddress);
@@ -104,14 +108,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
   void _onAddressChange(String value) {
     value = _cleanAddress(value);
-
-    final ipAddressRegex = RegExp(
-      r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$',
-    );
-    final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
-    final domainAddressRegex = RegExp(
-      r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
-    );
 
     var useTor = false;
     var useSsl = false;

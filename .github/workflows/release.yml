@@ -134,8 +134,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Install Inno Setup and Rust
-        run: choco install innosetup rust -y
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
 
       - name: Build Windows release
         run: flutter build windows --release

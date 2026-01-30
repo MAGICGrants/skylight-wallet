@@ -558,4 +558,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionSetupTorDisabledError => 'Tor is disabled. Please go back and enable it.';
+
+  @override
+  String get connectionSetupInvalidQrCode => 'Invalid connection address.';
 }

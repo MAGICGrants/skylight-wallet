@@ -82,6 +82,50 @@ class _SendScreenState extends State<SendScreen> {
     }
   }
 
+  Future<void> _scanQrCode() async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final i18n = AppLocalizations.of(context)!;
+
+    final result = await Navigator.pushNamed(context, '/scan_qr');
+
+    if (result == null || result is! String) return;
+
+    String address = '';
+    double? amount;
+    final uri = Uri.tryParse(result);
+
+    if (uri != null && uri.scheme == 'monero') {
+      if (!wallet.w2Wallet!.addressValid(uri.path, 0)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(i18n.sendInvalidAddressError)),
+          );
+        }
+        return;
+      }
+
+      address = uri.path;
+
+      if (uri.queryParameters.containsKey('tx_amount')) {
+        amount = double.tryParse(uri.queryParameters['tx_amount']!);
+      }
+    } else if (wallet.w2Wallet!.addressValid(result, 0)) {
+      address = result;
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(i18n.sendInvalidAddressError)),
+        );
+      }
+      return;
+    }
+
+    _destinationAddressController.text = address;
+    if (amount != null) {
+      _amountController.text = amount.toString();
+    }
+  }
+
   void _showContactPicker() {
     showDialog(
       context: context,
@@ -481,7 +525,7 @@ class _SendScreenState extends State<SendScreen> {
                             ),
                             if (Platform.isAndroid || Platform.isIOS)
                               GestureDetector(
-                                onTap: () => Navigator.pushNamed(context, '/scan_qr'),
+                                onTap: _scanQrCode,
                                 child: Icon(Icons.qr_code),
                               ),
                             GestureDetector(

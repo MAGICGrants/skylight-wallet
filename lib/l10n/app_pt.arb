@@ -189,5 +189,6 @@
       }
     }
   },
-  "connectionSetupTorDisabledError": "O Tor está desativado. Por favor, volte e ative-o."
+  "connectionSetupTorDisabledError": "O Tor está desativado. Por favor, volte e ative-o.",
+  "connectionSetupInvalidQrCode": "Endereço de conexão inválido."
 }

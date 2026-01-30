@@ -97,9 +97,9 @@ class _SendScreenState extends State<SendScreen> {
     if (uri != null && uri.scheme == 'monero') {
       if (!wallet.w2Wallet!.addressValid(uri.path, 0)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(i18n.sendInvalidAddressError)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
         }
         return;
       }
@@ -113,9 +113,9 @@ class _SendScreenState extends State<SendScreen> {
       address = result;
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(i18n.sendInvalidAddressError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
       }
       return;
     }
@@ -413,7 +413,7 @@ class _SendScreenState extends State<SendScreen> {
               _PriorityOption(
                 label: i18n.sendPriorityLow,
                 priority: 0,
-                tx: _fees != null && _fees!.isNotEmpty ? _fees![0] : null,
+                fees: _fees,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 0,
@@ -428,7 +428,7 @@ class _SendScreenState extends State<SendScreen> {
               _PriorityOption(
                 label: i18n.sendPriorityNormal,
                 priority: 1,
-                tx: _fees != null && _fees!.length > 1 ? _fees![1] : null,
+                fees: _fees,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 1,
@@ -443,7 +443,7 @@ class _SendScreenState extends State<SendScreen> {
               _PriorityOption(
                 label: i18n.sendPriorityHigh,
                 priority: 2,
-                tx: _fees != null && _fees!.length > 2 ? _fees![2] : null,
+                fees: _fees,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 2,
@@ -524,10 +524,7 @@ class _SendScreenState extends State<SendScreen> {
                               child: Icon(Icons.paste),
                             ),
                             if (Platform.isAndroid || Platform.isIOS)
-                              GestureDetector(
-                                onTap: _scanQrCode,
-                                child: Icon(Icons.qr_code),
-                              ),
+                              GestureDetector(onTap: _scanQrCode, child: Icon(Icons.qr_code)),
                             GestureDetector(
                               onTap: _showContactPicker,
                               child: Icon(Icons.contacts_outlined),
@@ -847,7 +844,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
 class _PriorityOption extends StatelessWidget {
   final String label;
   final int priority;
-  final MoneroPendingTransaction? tx;
+  final List<MoneroPendingTransaction?>? fees;
   final String fiatSymbol;
   final double? fiatRate;
   final bool isSelected;
@@ -856,7 +853,7 @@ class _PriorityOption extends StatelessWidget {
   const _PriorityOption({
     required this.label,
     required this.priority,
-    required this.tx,
+    required this.fees,
     required this.fiatSymbol,
     required this.fiatRate,
     required this.isSelected,
@@ -866,8 +863,8 @@ class _PriorityOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final currentTx = tx;
-    final fee = currentTx != null ? doubleAmountFromInt(currentTx.fee()) : null;
+    final feeTx = fees?[priority];
+    final fee = feeTx != null ? doubleAmountFromInt(feeTx.fee()) : null;
     final currentFiatRate = fiatRate;
 
     return InkWell(
@@ -927,7 +924,7 @@ class _PriorityOption extends StatelessWidget {
                     FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
                 ],
               )
-            else
+            else if (fees != null)
               Text(
                 i18n.sendInsufficientBalanceError,
                 style: TextStyle(color: Colors.red, fontSize: 14),

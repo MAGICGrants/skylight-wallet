@@ -277,6 +277,17 @@ class _SendScreenState extends State<SendScreen> {
         setState(() {
           _fees = txs;
           _isLoadingFees = false;
+
+          // If there is not enough balance for the selected priority,
+          // find the highest priority the user can pay for and select it
+          if (_fees?[_selectedPriority] == null) {
+            for (int i = _selectedPriority; i >= 0; i--) {
+              if (_fees?[i] != null) {
+                _selectedPriority = i;
+                break;
+              }
+            }
+          }
         });
       }
     } catch (error) {

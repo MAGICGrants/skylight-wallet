@@ -10,7 +10,14 @@ class ScanQrScreen extends StatefulWidget {
 }
 
 class _ScanQrScreenState extends State<ScanQrScreen> {
+  final MobileScannerController _controller = MobileScannerController();
   bool _hasScanned = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _onScannerDetect(BarcodeCapture result) {
     if (_hasScanned) return;
@@ -19,6 +26,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
     if (scanResult == null) return;
 
     _hasScanned = true;
+    _controller.stop();
     Navigator.pop(context, scanResult);
   }
 
@@ -28,7 +36,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.scanQrTitle)),
-      body: SafeArea(child: MobileScanner(onDetect: _onScannerDetect)),
+      body: SafeArea(child: MobileScanner(controller: _controller, onDetect: _onScannerDetect)),
     );
   }
 }

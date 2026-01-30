@@ -25,8 +25,14 @@ final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
 class ConnectionSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
   final VoidCallback onSaved;
+  final bool isInDialog;
 
-  const ConnectionSettingsForm({super.key, required this.saveButtonLabel, required this.onSaved});
+  const ConnectionSettingsForm({
+    super.key,
+    required this.saveButtonLabel,
+    required this.onSaved,
+    this.isInDialog = false,
+  });
 
   @override
   State<ConnectionSettingsForm> createState() => _ConnectionSettingsFormState();
@@ -41,6 +47,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _hasTested = false;
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
+  String? _errorMessage;
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
 
@@ -98,9 +105,15 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         _onAddressChange(scannedAddress);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.connectionSetupInvalidQrCode)));
+          if (widget.isInDialog) {
+            setState(() {
+              _errorMessage = i18n.connectionSetupInvalidQrCode;
+            });
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(i18n.connectionSetupInvalidQrCode)));
+          }
         }
       }
     }
@@ -134,6 +147,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     setState(() {
       _hasTested = false;
+      _errorMessage = null;
     });
   }
 
@@ -289,6 +303,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 10,
       children: [
         TextFormField(
@@ -316,6 +331,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           ),
           keyboardType: TextInputType.url,
         ),
+        if (_errorMessage != null)
+          Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         TextFormField(
           controller: _customProxyPortController,
           onChanged: _onProxyPortChange,
@@ -343,13 +360,15 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           contentPadding: EdgeInsets.zero,
         ),
         if (_useTor)
-          Text(
-            torMode == TorMode.builtIn
-                ? i18n.connectionSetupUsingInternalTor
-                : i18n.connectionSetupUsingExternalTor(
-                    '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
-                  ),
-            style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
+          Center(
+            child: Text(
+              torMode == TorMode.builtIn
+                  ? i18n.connectionSetupUsingInternalTor
+                  : i18n.connectionSetupUsingExternalTor(
+                      '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
+                    ),
+              style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
+            ),
           ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -404,6 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: ConnectionSettingsForm(
           saveButtonLabel: i18n.torSettingsSaveButton,
           onSaved: onSaved,
+          isInDialog: true,
         ),
       ),
     );

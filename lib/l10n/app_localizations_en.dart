@@ -220,6 +220,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoTransactions => 'No transactions';
 
   @override
+  String get homeFiatApiError => 'Error connecting to fiat API';
+
+  @override
   String get receiveTitle => 'Receive';
 
   @override

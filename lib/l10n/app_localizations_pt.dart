@@ -220,6 +220,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeNoTransactions => 'Sem transações';
 
   @override
+  String get homeFiatApiError => 'Erro ao conectar à API de cotação';
+
+  @override
   String get receiveTitle => 'Receber';
 
   @override

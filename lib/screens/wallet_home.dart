@@ -193,12 +193,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     ).showSnackBar(SnackBar(content: Text(i18n.sendTransactionSuccessfullySent)));
   }
 
-  Widget _buildStatusIcons(
-    WalletModel wallet,
-    StatusIconStatus lwsConnectionIconStatus,
-    StatusIconStatus fiatApiIconStatus,
-    FiatRateModel fiatRate,
-  ) {
+  Widget _buildStatusIcons(WalletModel wallet, StatusIconStatus lwsConnectionIconStatus) {
     return Column(
       spacing: 10,
       children: [
@@ -219,16 +214,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
           ),
         if (!wallet.usingTor && lwsConnectionIconStatus == StatusIconStatus.fail)
           SizedBox(width: 26, height: 26, child: Icon(Icons.cancel, color: Colors.red)),
-        if (wallet.usingTor)
-          StatusIcon(
-            status: lwsConnectionIconStatus,
-            child: SvgPicture.asset('assets/icons/tor.svg', width: 22, height: 22),
-          ),
-        if (!fiatRate.isDisabled)
-          StatusIcon(
-            status: fiatApiIconStatus,
-            child: SvgPicture.asset('assets/icons/tor.svg', width: 22, height: 22),
-          ),
       ],
     );
   }
@@ -259,10 +244,21 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
-        if (unlockedBalanceFiat == null && !fiatRate.isDisabled)
-          Skeletonizer(enabled: true, child: Text('Potato', style: TextStyle(fontSize: 18))),
-        if (unlockedBalanceFiat is double && !fiatRate.isDisabled)
-          FiatAmount(prefix: fiatSymbol, amount: unlockedBalanceFiat, maxFontSize: 18),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 4,
+          children: [
+            if (fiatRate.hasFailed)
+              Tooltip(
+                message: i18n.homeFiatApiError,
+                child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),
+              ),
+            if (unlockedBalanceFiat == null && !fiatRate.isDisabled)
+              Skeletonizer(enabled: true, child: Text('Potato', style: TextStyle(fontSize: 18))),
+            if (unlockedBalanceFiat is double && !fiatRate.isDisabled)
+              FiatAmount(prefix: fiatSymbol, amount: unlockedBalanceFiat, maxFontSize: 18),
+          ],
+        ),
       ],
     );
   }
@@ -473,12 +469,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     Positioned(
                       top: 0,
                       right: 0,
-                      child: _buildStatusIcons(
-                        wallet,
-                        lwsConnectionIconStatus,
-                        fiatApiIconStatus,
-                        fiatRate,
-                      ),
+                      child: _buildStatusIcons(wallet, lwsConnectionIconStatus),
                     ),
                     Center(
                       child: _buildBalanceDisplay(
@@ -538,12 +529,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 Positioned(
                   top: 0,
                   left: 0,
-                  child: _buildStatusIcons(
-                    wallet,
-                    lwsConnectionIconStatus,
-                    fiatApiIconStatus,
-                    fiatRate,
-                  ),
+                  child: _buildStatusIcons(wallet, lwsConnectionIconStatus),
                 ),
                 Column(
                   children: [

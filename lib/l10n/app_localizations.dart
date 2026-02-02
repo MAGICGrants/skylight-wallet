@@ -501,6 +501,12 @@ abstract class AppLocalizations {
   /// **'No transactions'**
   String get homeNoTransactions;
 
+  /// No description provided for @homeFiatApiError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error connecting to fiat API'**
+  String get homeFiatApiError;
+
   /// No description provided for @receiveTitle.
   ///
   /// In en, this message translates to:

@@ -68,6 +68,7 @@
   "homeIncomingTxSemanticLabel": "Transação de Entrada",
   "homeTransactionConfirmed": "Confirmado",
   "homeNoTransactions": "Sem transações",
+  "homeFiatApiError": "Erro ao conectar à API de cotação",
   "receiveTitle": "Receber",
   "receivePrimaryAddressWarn": "Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.",
   "receiveShareButton": "Compartilhar",

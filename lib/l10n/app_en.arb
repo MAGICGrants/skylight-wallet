@@ -68,6 +68,7 @@
   "homeIncomingTxSemanticLabel": "Incoming Transaction",
   "homeTransactionConfirmed": "Confirmed",
   "homeNoTransactions": "No transactions",
+  "homeFiatApiError": "Error connecting to fiat API",
   "receiveTitle": "Receive",
   "receivePrimaryAddressWarn": "Warning: Unless you know what you're doing, please consider using subaddresses for better privacy.",
   "receiveShareButton": "Share",

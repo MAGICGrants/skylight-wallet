@@ -213,6 +213,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				FA400AF07F45AC9B9BB0A29C /* [CP] Embed Pods Frameworks */,
 				B05AE4C7A964EACCD3805024 /* [CP] Copy Pods Resources */,
+				6FF8B85F2F19278000206F00 /* Generate MoneroWallet dSYM */,
 			);
 			buildRules = (
 			);
@@ -393,6 +394,23 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		6FF8B85F2F19278000206F00 /* Generate MoneroWallet dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Frameworks/MoneroWallet.framework/MoneroWallet",
+			);
+			name = "Generate MoneroWallet dSYM";
+			outputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/MoneroWallet.framework.dSYM",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${PLATFORM_NAME}\" = \"iphoneos\" ] && [ -f \"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Frameworks/MoneroWallet.framework/MoneroWallet\" ]; then\n  DSYM_DIR=\"${DWARF_DSYM_FOLDER_PATH:-${BUILT_PRODUCTS_DIR}}\"\n  mkdir -p \"${DSYM_DIR}\"\n  dsymutil -o \"${DSYM_DIR}/MoneroWallet.framework.dSYM\" \"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Frameworks/MoneroWallet.framework/MoneroWallet\" 2>/dev/null || true\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -501,7 +519,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = Y62MZZFR2Y;
@@ -517,7 +534,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight;
+				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylightwallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -535,7 +552,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylightwallet.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -553,7 +570,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylightwallet.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
@@ -569,7 +586,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylightwallet.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
@@ -693,7 +710,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = Y62MZZFR2Y;
@@ -709,7 +725,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight;
+				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylightwallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -725,7 +741,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = Y62MZZFR2Y;
@@ -741,7 +756,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight;
+				PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylightwallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";

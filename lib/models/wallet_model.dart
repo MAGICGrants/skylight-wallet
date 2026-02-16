@@ -152,6 +152,10 @@ class WalletModel with ChangeNotifier {
   String? _desktopWalletPassword;
 
   Wallet2Wallet? get w2Wallet => _w2Wallet;
+  String get connectionAddress => _connectionAddress;
+  String get connectionProxyPort => _connectionProxyPort;
+  bool get connectionUseTor => _connectionUseTor;
+  bool get connectionUseSsl => _connectionUseSsl;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
   bool get isConnected => _isConnected;
   bool get isSynced => _isSynced;

@@ -194,27 +194,23 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   }
 
   Widget _buildStatusIcons(WalletModel wallet, StatusIconStatus lwsConnectionIconStatus) {
-    return Column(
-      spacing: 10,
-      children: [
-        if (!wallet.usingTor && lwsConnectionIconStatus == StatusIconStatus.complete)
-          SizedBox(
-            width: 26,
-            height: 26,
-            child: Icon(Icons.check_circle, size: 26, color: Colors.teal),
-          ),
-        if (!wallet.usingTor && lwsConnectionIconStatus == StatusIconStatus.loading)
-          SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-              constraints: BoxConstraints(maxWidth: 22, maxHeight: 22),
-              strokeWidth: 2,
-            ),
-          ),
-        if (!wallet.usingTor && lwsConnectionIconStatus == StatusIconStatus.fail)
-          SizedBox(width: 26, height: 26, child: Icon(Icons.cancel, color: Colors.red)),
-      ],
+    var message = lwsConnectionIconStatus == StatusIconStatus.complete
+        ? 'Connected to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}'
+        : lwsConnectionIconStatus == StatusIconStatus.loading
+        ? 'Connecting to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}...'
+        : 'Failed to connect to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}';
+
+    if (wallet.connectionUseTor) {
+      message += ' via Tor';
+    }
+
+    if (wallet.connectionProxyPort != '') {
+      message += ' via proxy port ${wallet.connectionProxyPort}';
+    }
+
+    return Tooltip(
+      message: message,
+      child: StatusIcon(status: lwsConnectionIconStatus, torIsEnabled: wallet.usingTor),
     );
   }
 

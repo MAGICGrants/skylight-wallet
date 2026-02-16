@@ -13,30 +13,30 @@ ARG ANDROID_NDK_VERSION=28.0.13004108
 # Install system dependencies with pinned versions
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl=7.74.0-1.3+deb11u16 \
-    wget=1.21-1+deb11u2 \
-    git=1:2.30.2-1+deb11u5 \
-    unzip=6.0-26+deb11u1 \
-    xz-utils=5.2.5-2.1~deb11u1 \
-    zip=3.0-12 \
-    libglu1-mesa=9.0.1-1 \
-    clang=1:11.0-51+nmu5 \
-    cmake=3.18.4-2+deb11u1 \
-    ninja-build=1.10.1-1 \
-    pkg-config=0.29.2-1 \
-    libgtk-3-dev=3.24.24-4+deb11u4 \
-    liblzma-dev=5.2.5-2.1~deb11u1 \
-    libstdc++-10-dev=10.2.1-6 \
-    openjdk-17-jdk-headless=17.0.17+10-1~deb11u1 \
-    ca-certificates=20210119 \
-    build-essential=12.9 \
-    make=4.3-4.1 \
-    perl=5.32.1-4+deb11u4 \
-    libssl-dev=1.1.1w-0+deb11u4 \
-    libsecret-1-dev=0.20.4-2 \
-    libsecret-1-0=0.20.4-2 \
-    file=1:5.39-3+deb11u1 \
-    fakeroot=1.25.3-1.1 && \
+    curl \
+    wget \
+    git \
+    unzip \
+    xz-utils \
+    zip \
+    libglu1-mesa \
+    clang \
+    cmake \
+    ninja-build \
+    pkg-config \
+    libgtk-3-dev \
+    liblzma-dev \
+    libstdc++-10-dev \
+    openjdk-17-jdk-headless \
+    ca-certificates \
+    build-essential \
+    make \
+    perl \
+    libssl-dev \
+    libsecret-1-dev \
+    libsecret-1-0 \
+    file \
+    fakeroot && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/*
 

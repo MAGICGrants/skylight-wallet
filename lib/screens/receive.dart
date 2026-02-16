@@ -68,9 +68,10 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final wallet = Provider.of<WalletModel>(context);
     final primaryAddress = wallet.getPrimaryAddress();
     final subaddress = wallet.getUnusedSubaddress();
+    final isDemoMode = wallet.connectionAddress == 'demo';
     String? address;
 
-    if (wallet.serverSupportsSubaddresses == false) {
+    if (wallet.serverSupportsSubaddresses == false || isDemoMode) {
       address = primaryAddress;
     }
 
@@ -85,9 +86,8 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
           constraints: BoxConstraints(maxWidth: 480),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: wallet.serverSupportsSubaddresses == null || address == null
-                ? CircularProgressIndicator()
-                : Column(
+            child: (wallet.serverSupportsSubaddresses != null || isDemoMode) && address != null
+                ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     spacing: 20,
                     children: [
@@ -158,7 +158,8 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                         ],
                       ),
                     ],
-                  ),
+                  )
+                : CircularProgressIndicator(),
           ),
         ),
       ),

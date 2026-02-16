@@ -109,7 +109,7 @@ class _TxDetailsDialog extends StatelessWidget {
                 ),
                 Flexible(
                   child: Text(
-                    txDetails.height.toString(),
+                    txDetails.height == -1 ? '0' : txDetails.height.toString(),
                     textAlign: TextAlign.end,
                     softWrap: true,
                   ),

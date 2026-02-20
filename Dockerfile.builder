@@ -1,9 +1,8 @@
 # Using Debian Bullseye for maximum AppImage compatibility (GLIBC 2.31)
 FROM debian:bullseye-20251117@sha256:ee239c601913c0d3962208299eef70dcffcb7aac1787f7a02f6d3e2b518755e6
 
-ARG TARGETARCH
+ARG FLUTTER_VERSION
 
-ARG FLUTTER_VERSION=3.41.0
 ARG RUST_VERSION=1.83.0
 ARG ANDROID_CMDLINE_TOOLS_VERSION=11076708
 ARG ANDROID_BUILD_TOOLS_VERSION=36.0.0
@@ -40,7 +39,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/*
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${TARGETARCH}
 ENV ANDROID_HOME=/opt/android-sdk
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV CARGO_HOME=/opt/cargo

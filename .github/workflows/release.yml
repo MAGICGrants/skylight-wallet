@@ -10,9 +10,78 @@ permissions:
   contents: read
 
 jobs:
+  check-version:
+    name: Check version match
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      version_matches: ${{ steps.check.outputs.VERSION_MATCHES }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if pubspec version matches tag
+        id: check
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PUBSPEC_VERSION=$(grep -E '^version:\s+' pubspec.yaml | sed 's/version:\s*//' | cut -d'+' -f1)
+          PUBSPEC_BUILD=$(grep -E '^version:\s+' pubspec.yaml | sed 's/version:\s*//' | grep -oE '\+[0-9]+$' | tr -d '+' || echo "0")
+
+          echo "Tag version: ${TAG_VERSION}"
+          echo "Pubspec version: ${PUBSPEC_VERSION}"
+          echo "Pubspec build number: ${PUBSPEC_BUILD}"
+
+          if [ "${TAG_VERSION}" = "${PUBSPEC_VERSION}" ]; then
+            echo "VERSION_MATCHES=true" >> $GITHUB_OUTPUT
+            echo "Versions match!"
+          else
+            echo "VERSION_MATCHES=false" >> $GITHUB_OUTPUT
+            echo "NEW_VERSION=${TAG_VERSION}" >> $GITHUB_OUTPUT
+            echo "NEW_BUILD=$((PUBSPEC_BUILD + 1))" >> $GITHUB_OUTPUT
+            echo "Version mismatch - will create PR to update pubspec.yaml"
+          fi
+
+      - name: Update pubspec.yaml version
+        if: steps.check.outputs.VERSION_MATCHES == 'false'
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PUBSPEC_BUILD=$(grep -E '^version:\s+' pubspec.yaml | sed 's/version:\s*//' | grep -oE '\+[0-9]+$' | tr -d '+' || echo "0")
+          NEW_BUILD=$((PUBSPEC_BUILD + 1))
+          NEW_FULL_VERSION="${TAG_VERSION}+${NEW_BUILD}"
+
+          echo "Updating pubspec.yaml to version ${NEW_FULL_VERSION}"
+          sed -i "s/^version:.*$/version: ${NEW_FULL_VERSION}/" pubspec.yaml
+
+          echo "Updated pubspec.yaml:"
+          grep "^version:" pubspec.yaml
+
+      - name: Create Pull Request
+        if: steps.check.outputs.VERSION_MATCHES == 'false'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump version to ${{ github.ref_name }}"
+          title: "chore: bump version to ${{ github.ref_name }}"
+          body: |
+            This PR updates the pubspec.yaml version to match the release tag `${{ github.ref_name }}`.
+
+            Once merged, re-run the release workflow for this tag.
+          branch: version-bump/${{ github.ref_name }}
+          base: main
+
+      - name: Fail if version mismatch
+        if: steps.check.outputs.VERSION_MATCHES == 'false'
+        run: |
+          echo "::error::Version mismatch detected. A PR has been created to update pubspec.yaml."
+          echo "Please merge the PR and re-trigger this workflow."
+          exit 1
+
   version:
     name: Extract version
     runs-on: ubuntu-latest
+    needs: check-version
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       tag: ${{ steps.version.outputs.TAG }}

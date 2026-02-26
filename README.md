@@ -8,9 +8,7 @@ A modern, open-source, and self-custody Monero light-wallet built with Flutter.
 ![Flutter](https://img.shields.io/badge/Flutter-3.8.1+-02569B.svg?logo=flutter)
 
 
-[<img src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store badge" width="25%"/>](https://apps.apple.com/us/app/skylight-wallet-for-monero/id6759176050)
-
-[<img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play badge" width="25%"/>](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
+[<img src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store badge" width="25%"/>](https://apps.apple.com/us/app/skylight-wallet-for-monero/id6759176050) [<img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play badge" width="25%"/>](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
 
 ## Prerequisites
 

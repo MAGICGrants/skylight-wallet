@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_zxing/flutter_zxing.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 
 class ScanQrScreen extends StatefulWidget {
@@ -10,24 +10,16 @@ class ScanQrScreen extends StatefulWidget {
 }
 
 class _ScanQrScreenState extends State<ScanQrScreen> {
-  final MobileScannerController _controller = MobileScannerController();
   bool _hasScanned = false;
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onScannerDetect(BarcodeCapture result) {
+  void _onScan(Code result) {
     if (_hasScanned) return;
 
-    final scanResult = result.barcodes.first.rawValue;
-    if (scanResult == null) return;
+    final text = result.text;
+    if (text == null || text.isEmpty) return;
 
     _hasScanned = true;
-    _controller.stop();
-    Navigator.pop(context, scanResult);
+    Navigator.pop(context, text);
   }
 
   @override
@@ -36,7 +28,15 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.scanQrTitle)),
-      body: SafeArea(child: MobileScanner(controller: _controller, onDetect: _onScannerDetect)),
+      body: SafeArea(
+        child: ReaderWidget(
+          onScan: _onScan,
+          showGallery: false,
+          cropPercent: 1.0,
+          tryHarder: true,
+          scanDelay: Duration(milliseconds: 200),
+        ),
+      ),
     );
   }
 }

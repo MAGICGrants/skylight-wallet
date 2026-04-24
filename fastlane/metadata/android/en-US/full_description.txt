@@ -1,0 +1,19 @@
+This is not your normal Monero wallet app. Read the description to learn more.
+
+Skylight Wallet REQUIRES you to specify a Monero light-wallet server (LWS). This can be a server that you already have, or a server that is operated by a trusted friend. Read "About Monero Light-Wallets" below to learn more.
+
+FEATURES
+* Fully self-custody. Only you have your private keys and seed, not us.
+* Completely open-source.
+* No local wallet syncing needed! Syncing is handled by the LWS you specify. Save time, data, and your battery.
+* Built-in Tor support. Optionally connect to your LWS over Tor, and your connections to all helper APIs are automatically protected with Tor.
+* Address book for managing contacts.
+* OpenAlias, for easy and secure sending without cumbersome addresses.
+* Subaddress support.
+
+ABOUT MONERO LIGHT-WALLETS
+Skylight Wallet is a modern Monero light-wallet. Monero light-wallets provide the private view key to a light-wallet server (LWS) that you specify, such as your own. This LWS uses the view key to search for transactions that your wallet may be interested in. It sends these transactions to Skylight Wallet.
+
+Since Skylight Wallet only needs to receive this minimal information, connections are fast and efficient, even over Tor.
+
+Skylight Wallet is developed by MAGIC Grants, a 501(c)(3) public charity.

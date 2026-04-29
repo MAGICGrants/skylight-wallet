@@ -1,0 +1,3 @@
+[submodule "monero_c"]
+	path = monero_c
+	url = https://github.com/vtnerd/monero_c.git

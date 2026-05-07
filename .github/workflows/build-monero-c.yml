@@ -15,7 +15,7 @@ jobs:
       image: debian:bookworm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build monero_c
         env:
@@ -40,7 +40,7 @@ jobs:
       image: debian:bookworm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build monero_c
         env:
@@ -65,7 +65,7 @@ jobs:
       image: debian:bookworm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build monero_c
         env:
@@ -90,7 +90,7 @@ jobs:
       image: debian:bookworm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build monero_c
         env:
@@ -115,7 +115,7 @@ jobs:
       image: debian:bookworm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build monero_c
         env:
@@ -145,7 +145,7 @@ jobs:
           - aarch64-apple-iossimulator
     steps:
       - name: Checkout monero_c repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: vtnerd/monero_c
           ref: lwsf
@@ -265,7 +265,7 @@ jobs:
       - create-ios-xcframework
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download x86_64-linux-gnu artifact
         uses: actions/download-artifact@v4

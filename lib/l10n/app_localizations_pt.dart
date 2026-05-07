@@ -65,35 +65,55 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWarningContinueButton => 'Continuar';
 
   @override
-  String get connectionSetupTitle => 'Configuração da Conexão';
+  String get lwsSetupTitle => 'Configuração do LWS';
 
   @override
-  String get connectionSetupDescription =>
-      'Vamos configurar uma conexão com seu servidor light-wallet de Monero (LWS).';
+  String get lwsSetupDescription => 'Informe o endereço do seu servidor light-wallet Monero (LWS).';
 
   @override
-  String get connectionSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
+  String get lwsSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
 
   @override
-  String get connectionSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
+  String get lwsSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
 
   @override
-  String get connectionSetupProxyPortHint => 'ex: 4444 para I2P';
+  String get lwsSetupProxyPortHint => 'ex: 4444 para I2P';
 
   @override
-  String get connectionSetupUseTorLabel => 'Usar Tor';
+  String get lwsSetupUseTorLabel => 'Usar Tor';
 
   @override
-  String get connectionSetupUseSslLabel => 'Usar SSL';
+  String get lwsSetupUseSslLabel => 'Usar SSL';
 
   @override
-  String get connectionSetupTestConnectionButton => 'Testar Conexão';
+  String get lwsSetupTestConnectionButton => 'Testar Conexão';
 
   @override
-  String get connectionSetupStartingTor => 'Iniciando Tor...';
+  String get lwsSetupStartingTor => 'Iniciando Tor...';
 
   @override
-  String get connectionSetupContinueButton => 'Continuar';
+  String get lwsSetupContinueButton => 'Continuar';
+
+  @override
+  String get fiatApiSetupTitle => 'Exibição de Saldo em Fiat';
+
+  @override
+  String get fiatApiSetupDescription => 'Preço de referência opcional para seu saldo em XMR.';
+
+  @override
+  String get fiatApiSettingsModeLabel => 'Modo';
+
+  @override
+  String get fiatApiSettingsModeTorOnly => 'Somente Tor';
+
+  @override
+  String get fiatApiSettingsModeClearnet => 'Somente Clearnet (não privado)';
+
+  @override
+  String get fiatApiSettingsModeDisabled => 'Desativado';
+
+  @override
+  String get fiatApiSettingsDisplayCurrencyLabel => 'Moeda de Exibição';
 
   @override
   String get createWalletTitle => 'Criar Carteira';
@@ -158,9 +178,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get navigationBarSettings => 'Configurações';
-
-  @override
-  String get navigationBarKeys => 'Chaves';
 
   @override
   String get unlockButton => 'Desbloquear';
@@ -320,7 +337,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsLanguageLabel => 'Idioma';
 
   @override
-  String get settingsDisplayCurrencyLabel => 'Moeda Local';
+  String get settingsFiatApiSettingsLabel => 'Configs. da API de Moeda Local';
 
   @override
   String get settingsLwsViewKeysLabel => 'Chaves de Visualização do LWS';
@@ -464,16 +481,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get addressBookSave => 'Salvar';
 
   @override
-  String get sendSelectFromAddressBook => 'Selecionar da Lista de Contatos';
-
-  @override
   String get sendSelectedContact => 'Contato selecionado';
 
   @override
   String get sendClearSelectedContact => 'Limpar contato selecionado';
-
-  @override
-  String get sendEditAddress => 'Editar Endereço';
 
   @override
   String get sendPriorityLow => 'Baixa';
@@ -546,23 +557,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get torSettingsTestConnectionButton => 'Testar Conexão';
 
   @override
-  String get settingsConnectionSettingsLabel => 'Configurações da Conexão';
+  String get settingsLwsSettingsLabel => 'Configurações do LWS';
 
   @override
   String get settingsTorSettingsLabel => 'Configurações do Tor';
 
   @override
-  String get connectionSetupUsingInternalTor => 'Usando Tor interno';
+  String get lwsSetupUsingInternalTor => 'Usando Tor interno';
 
   @override
-  String connectionSetupUsingExternalTor(String address) {
+  String lwsSetupUsingExternalTor(String address) {
     return 'Usando proxy Tor externo em $address';
   }
 
   @override
-  String get connectionSetupTorDisabledError =>
-      'O Tor está desativado. Por favor, volte e ative-o.';
+  String get lwsSetupTorDisabledError => 'O Tor está desativado. Por favor, volte e ative-o.';
 
   @override
-  String get connectionSetupInvalidQrCode => 'Endereço de conexão inválido.';
+  String get lwsSetupInvalidQrCode => 'Endereço de conexão inválido.';
 }

@@ -26,12 +26,14 @@ class ConnectionSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
   final VoidCallback onSaved;
   final bool isInDialog;
+  final Future<void> Function()? onBeforeSave;
 
   const ConnectionSettingsForm({
     super.key,
     required this.saveButtonLabel,
     required this.onSaved,
     this.isInDialog = false,
+    this.onBeforeSave,
   });
 
   @override
@@ -107,12 +109,12 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         if (mounted) {
           if (widget.isInDialog) {
             setState(() {
-              _errorMessage = i18n.connectionSetupInvalidQrCode;
+              _errorMessage = i18n.lwsSetupInvalidQrCode;
             });
           } else {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(SnackBar(content: Text(i18n.connectionSetupInvalidQrCode)));
+            ).showSnackBar(SnackBar(content: Text(i18n.lwsSetupInvalidQrCode)));
           }
         }
       }
@@ -235,7 +237,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           // show error toast
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(i18n.connectionSetupTorDisabledError)));
+          ).showSnackBar(SnackBar(content: Text(i18n.lwsSetupTorDisabledError)));
           return;
         }
 
@@ -292,6 +294,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     );
 
     await wallet.persistCurrentConnection();
+    await widget.onBeforeSave?.call();
 
     widget.onSaved();
   }
@@ -311,7 +314,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           onChanged: _onAddressChange,
           decoration: InputDecoration(
             labelText: i18n.address,
-            hintText: i18n.connectionSetupAddressHint,
+            hintText: i18n.lwsSetupAddressHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
             suffixIcon: Row(
               mainAxisSize: MainAxisSize.min,
@@ -338,22 +341,22 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           onChanged: _onProxyPortChange,
           enabled: !_useTor,
           decoration: InputDecoration(
-            labelText: i18n.connectionSetupProxyPortLabel,
-            hintText: i18n.connectionSetupProxyPortHint,
+            labelText: i18n.lwsSetupProxyPortLabel,
+            hintText: i18n.lwsSetupProxyPortHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
           ),
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
         ),
         CheckboxListTile(
-          title: Text(i18n.connectionSetupUseTorLabel),
+          title: Text(i18n.lwsSetupUseTorLabel),
           value: _useTor,
           onChanged: _useSsl || torMode == TorMode.disabled ? null : _setUseTor,
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),
         CheckboxListTile(
-          title: Text(i18n.connectionSetupUseSslLabel),
+          title: Text(i18n.lwsSetupUseSslLabel),
           value: _useSsl,
           onChanged: !_useTor ? _setUseSsl : null,
           controlAffinity: ListTileControlAffinity.leading,
@@ -363,8 +366,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           Center(
             child: Text(
               torMode == TorMode.builtIn
-                  ? i18n.connectionSetupUsingInternalTor
-                  : i18n.connectionSetupUsingExternalTor(
+                  ? i18n.lwsSetupUsingInternalTor
+                  : i18n.lwsSetupUsingExternalTor(
                       '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
                     ),
               style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
@@ -382,12 +385,12 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
                 children: [
                   SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                   SizedBox(width: 8),
-                  Text(i18n.connectionSetupStartingTor),
+                  Text(i18n.lwsSetupStartingTor),
                 ],
               )
             else
               TextButton.icon(
-                label: Text(i18n.connectionSetupTestConnectionButton),
+                label: Text(i18n.lwsSetupTestConnectionButton),
                 onPressed: () => _testConnection(),
                 icon: !_connectionTestIsLoading
                     ? Icon(Icons.network_check)

@@ -6,10 +6,10 @@ import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
+import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
 import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
@@ -28,7 +28,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
-  var _fiatCurrency = 'USD';
   var _appLockEnabled = false;
   var _verboseLoggingEnabled = false;
   String _appVersion = '';
@@ -54,9 +53,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ??
         false;
 
-    final fiatCurrency =
-        await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
-
     final appLockEnabled =
         await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
 
@@ -66,7 +62,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() {
       _newTxNotificationsEnabled = newTxNotificationsEnabled;
-      _fiatCurrency = fiatCurrency;
       _appLockEnabled = appLockEnabled;
       _verboseLoggingEnabled = verboseLoggingEnabled;
     });
@@ -202,22 +197,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel))],
       ),
     );
-  }
-
-  void _setFiatCurrency(String? value) async {
-    if (value == null) return;
-
-    setState(() {
-      _fiatCurrency = value;
-    });
-
-    await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, value);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
-
-    if (mounted) {
-      final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-      await fiatRate.startService();
-    }
   }
 
   void _showDeleteWalletDialog() {
@@ -380,6 +359,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showFiatApiSettingsDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        constraints: BoxConstraints.tightFor(width: dialogWidth),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        title: Text(i18n.settingsFiatApiSettingsLabel),
+        content: FiatApiSettingsForm(
+          saveButtonLabel: i18n.torSettingsSaveButton,
+          onSaved: () async {
+            final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+            await fiatRate.startService();
+            if (dialogContext.mounted) {
+              Navigator.of(dialogContext).pop();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   void _showConnectionSettingsDialog() {
     final i18n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -400,7 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         constraints: BoxConstraints.tightFor(width: dialogWidth),
         insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        title: Text(i18n.settingsConnectionSettingsLabel),
+        title: Text(i18n.settingsLwsSettingsLabel),
         content: ConnectionSettingsForm(
           saveButtonLabel: i18n.torSettingsSaveButton,
           onSaved: onSaved,
@@ -458,19 +462,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(i18n.settingsDisplayCurrencyLabel, style: TextStyle(fontSize: 18)),
-                DropdownButton<String>(
-                  value: _fiatCurrency,
-                  onChanged: _setFiatCurrency,
-                  items: supportedFiatCurrencies.map((fiatCode) {
-                    return DropdownMenuItem<String>(value: fiatCode, child: Text(fiatCode));
-                  }).toList(),
-                ),
-              ],
-            ),
             if (Platform.isAndroid || Platform.isIOS)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -522,7 +513,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(i18n.settingsConnectionSettingsLabel, style: TextStyle(fontSize: 18)),
+                Text(i18n.settingsLwsSettingsLabel, style: TextStyle(fontSize: 18)),
                 TextButton.icon(
                   onPressed: _showConnectionSettingsDialog,
                   icon: Icon(Icons.dns),
@@ -537,6 +528,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 TextButton.icon(
                   onPressed: _showTorSettingsDialog,
                   icon: Icon(Icons.security),
+                  label: Text(i18n.settingsLwsViewKeysButton),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(i18n.settingsFiatApiSettingsLabel, style: TextStyle(fontSize: 18)),
+                TextButton.icon(
+                  onPressed: _showFiatApiSettingsDialog,
+                  icon: Icon(Icons.currency_exchange),
                   label: Text(i18n.settingsLwsViewKeysButton),
                 ),
               ],

@@ -201,65 +201,107 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get restoreWarningContinueButton;
 
-  /// No description provided for @connectionSetupTitle.
+  /// No description provided for @lwsSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Connection Setup'**
-  String get connectionSetupTitle;
+  /// **'LWS Setup'**
+  String get lwsSetupTitle;
 
-  /// No description provided for @connectionSetupDescription.
+  /// No description provided for @lwsSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Let\'s setup a connection with your Monero light-wallet server (LWS).'**
-  String get connectionSetupDescription;
+  /// **'Enter the address of your Monero light-wallet server (LWS).'**
+  String get lwsSetupDescription;
 
-  /// No description provided for @connectionSetupAddressHint.
+  /// No description provided for @lwsSetupAddressHint.
   ///
   /// In en, this message translates to:
   /// **'e.g. 192.168.1.1:18090 or example.com:18090'**
-  String get connectionSetupAddressHint;
+  String get lwsSetupAddressHint;
 
-  /// No description provided for @connectionSetupProxyPortLabel.
+  /// No description provided for @lwsSetupProxyPortLabel.
   ///
   /// In en, this message translates to:
   /// **'HTTP Proxy Port (optional)'**
-  String get connectionSetupProxyPortLabel;
+  String get lwsSetupProxyPortLabel;
 
-  /// No description provided for @connectionSetupProxyPortHint.
+  /// No description provided for @lwsSetupProxyPortHint.
   ///
   /// In en, this message translates to:
   /// **'e.g. 4444 for I2P'**
-  String get connectionSetupProxyPortHint;
+  String get lwsSetupProxyPortHint;
 
-  /// No description provided for @connectionSetupUseTorLabel.
+  /// No description provided for @lwsSetupUseTorLabel.
   ///
   /// In en, this message translates to:
   /// **'Use Tor'**
-  String get connectionSetupUseTorLabel;
+  String get lwsSetupUseTorLabel;
 
-  /// No description provided for @connectionSetupUseSslLabel.
+  /// No description provided for @lwsSetupUseSslLabel.
   ///
   /// In en, this message translates to:
   /// **'Use SSL'**
-  String get connectionSetupUseSslLabel;
+  String get lwsSetupUseSslLabel;
 
-  /// No description provided for @connectionSetupTestConnectionButton.
+  /// No description provided for @lwsSetupTestConnectionButton.
   ///
   /// In en, this message translates to:
   /// **'Test Connection'**
-  String get connectionSetupTestConnectionButton;
+  String get lwsSetupTestConnectionButton;
 
-  /// No description provided for @connectionSetupStartingTor.
+  /// No description provided for @lwsSetupStartingTor.
   ///
   /// In en, this message translates to:
   /// **'Starting Tor...'**
-  String get connectionSetupStartingTor;
+  String get lwsSetupStartingTor;
 
-  /// No description provided for @connectionSetupContinueButton.
+  /// No description provided for @lwsSetupContinueButton.
   ///
   /// In en, this message translates to:
   /// **'Continue'**
-  String get connectionSetupContinueButton;
+  String get lwsSetupContinueButton;
+
+  /// No description provided for @fiatApiSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiat Display Setup'**
+  String get fiatApiSetupTitle;
+
+  /// No description provided for @fiatApiSetupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional reference price for your XMR balance.'**
+  String get fiatApiSetupDescription;
+
+  /// No description provided for @fiatApiSettingsModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get fiatApiSettingsModeLabel;
+
+  /// No description provided for @fiatApiSettingsModeTorOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor-Only'**
+  String get fiatApiSettingsModeTorOnly;
+
+  /// No description provided for @fiatApiSettingsModeClearnet.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearnet-Only (not private)'**
+  String get fiatApiSettingsModeClearnet;
+
+  /// No description provided for @fiatApiSettingsModeDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get fiatApiSettingsModeDisabled;
+
+  /// No description provided for @fiatApiSettingsDisplayCurrencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Display Currency'**
+  String get fiatApiSettingsDisplayCurrencyLabel;
 
   /// No description provided for @createWalletTitle.
   ///
@@ -380,12 +422,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get navigationBarSettings;
-
-  /// No description provided for @navigationBarKeys.
-  ///
-  /// In en, this message translates to:
-  /// **'Keys'**
-  String get navigationBarKeys;
 
   /// No description provided for @unlockButton.
   ///
@@ -687,11 +723,11 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get settingsLanguageLabel;
 
-  /// No description provided for @settingsDisplayCurrencyLabel.
+  /// No description provided for @settingsFiatApiSettingsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Display Currency'**
-  String get settingsDisplayCurrencyLabel;
+  /// **'Fiat API Settings'**
+  String get settingsFiatApiSettingsLabel;
 
   /// No description provided for @settingsLwsViewKeysLabel.
   ///
@@ -963,12 +999,6 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get addressBookSave;
 
-  /// No description provided for @sendSelectFromAddressBook.
-  ///
-  /// In en, this message translates to:
-  /// **'Select from Address Book'**
-  String get sendSelectFromAddressBook;
-
   /// No description provided for @sendSelectedContact.
   ///
   /// In en, this message translates to:
@@ -980,12 +1010,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear selected contact'**
   String get sendClearSelectedContact;
-
-  /// No description provided for @sendEditAddress.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit Address'**
-  String get sendEditAddress;
 
   /// No description provided for @sendPriorityLow.
   ///
@@ -1125,11 +1149,11 @@ abstract class AppLocalizations {
   /// **'Test Connection'**
   String get torSettingsTestConnectionButton;
 
-  /// No description provided for @settingsConnectionSettingsLabel.
+  /// No description provided for @settingsLwsSettingsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Connection Settings'**
-  String get settingsConnectionSettingsLabel;
+  /// **'LWS Settings'**
+  String get settingsLwsSettingsLabel;
 
   /// No description provided for @settingsTorSettingsLabel.
   ///
@@ -1137,29 +1161,29 @@ abstract class AppLocalizations {
   /// **'Tor Settings'**
   String get settingsTorSettingsLabel;
 
-  /// No description provided for @connectionSetupUsingInternalTor.
+  /// No description provided for @lwsSetupUsingInternalTor.
   ///
   /// In en, this message translates to:
   /// **'Using internal Tor'**
-  String get connectionSetupUsingInternalTor;
+  String get lwsSetupUsingInternalTor;
 
-  /// No description provided for @connectionSetupUsingExternalTor.
+  /// No description provided for @lwsSetupUsingExternalTor.
   ///
   /// In en, this message translates to:
   /// **'Using external Tor proxy at {address}'**
-  String connectionSetupUsingExternalTor(String address);
+  String lwsSetupUsingExternalTor(String address);
 
-  /// No description provided for @connectionSetupTorDisabledError.
+  /// No description provided for @lwsSetupTorDisabledError.
   ///
   /// In en, this message translates to:
   /// **'Tor is disabled. Please go back and enable it.'**
-  String get connectionSetupTorDisabledError;
+  String get lwsSetupTorDisabledError;
 
-  /// No description provided for @connectionSetupInvalidQrCode.
+  /// No description provided for @lwsSetupInvalidQrCode.
   ///
   /// In en, this message translates to:
   /// **'Invalid connection address.'**
-  String get connectionSetupInvalidQrCode;
+  String get lwsSetupInvalidQrCode;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

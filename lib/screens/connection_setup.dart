@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -12,12 +11,7 @@ class ConnectionSetupScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
 
     void onSaved() {
-      // On desktop platforms, navigate to password screen first
-      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-        Navigator.pushNamed(context, '/create_wallet_password');
-      } else {
-        Navigator.pushNamed(context, '/create_wallet');
-      }
+      Navigator.pushNamed(context, '/fiat_api_setup');
     }
 
     return Scaffold(
@@ -35,18 +29,18 @@ class ConnectionSetupScreen extends StatelessWidget {
                   spacing: 10,
                   children: [
                     Text(
-                      i18n.connectionSetupTitle,
+                      i18n.lwsSetupTitle,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     Text(
-                      i18n.connectionSetupDescription,
+                      i18n.lwsSetupDescription,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
                 ),
                 ConnectionSettingsForm(
-                  saveButtonLabel: i18n.connectionSetupContinueButton,
+                  saveButtonLabel: i18n.lwsSetupContinueButton,
                   onSaved: onSaved,
                 ),
               ],

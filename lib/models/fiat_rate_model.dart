@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/consts.dart';
@@ -7,12 +10,30 @@ import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 
+enum FiatApiMode { torOnly, clearnet, disabled }
+
 class FiatRateModel with ChangeNotifier {
+  static Future<FiatApiMode> loadFiatApiMode() async {
+    final s = await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatApiMode);
+    if (s == null) {
+      return FiatApiMode.torOnly;
+    }
+    for (final m in FiatApiMode.values) {
+      if (m.name == s) return m;
+    }
+    return FiatApiMode.torOnly;
+  }
+
+  static Future<void> saveFiatApiMode(FiatApiMode mode) async {
+    await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatApiMode, mode.name);
+  }
+
   double? _rate;
   bool _isLoading = false;
   bool _hasFailed = false;
   bool _isDisabled = false;
   String _fiatCode = 'USD';
+  FiatApiMode _fiatApiMode = FiatApiMode.torOnly;
   Timer? _rateFetchTimer;
 
   double? get rate => _rate;
@@ -22,28 +43,20 @@ class FiatRateModel with ChangeNotifier {
   String get fiatCode => _fiatCode;
 
   void _startRateFetchTimer() {
-    if (TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
+    if (_fiatApiMode == FiatApiMode.disabled) {
       _isDisabled = true;
-      log(LogLevel.info, 'Tor is disabled. Not starting rate fetch timer.');
+      log(LogLevel.info, 'Fiat API is disabled. Not starting rate fetch timer.');
       return;
     } else {
       _isDisabled = false;
     }
 
-    if (_rateFetchTimer != null) {
-      _rateFetchTimer?.cancel();
-    }
+    _rateFetchTimer?.cancel();
 
     _loadRate();
 
-    _rateFetchTimer = Timer.periodic(Duration(minutes: 10), (timer) {
-      if (TorSettingsService.sharedInstance.torMode != TorMode.disabled) {
-        _loadRate();
-      } else {
-        log(LogLevel.info, 'Tor is disabled. Stopping rate fetch timer.');
-        timer.cancel();
-        _rateFetchTimer = null;
-      }
+    _rateFetchTimer = Timer.periodic(Duration(minutes: 10), (_) {
+      _loadRate();
     });
   }
 
@@ -51,28 +64,52 @@ class FiatRateModel with ChangeNotifier {
     _fiatCode =
         await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
     _rate = await SharedPreferencesService.get<double>(SharedPreferencesKeys.fiatRate);
+    _fiatApiMode = await FiatRateModel.loadFiatApiMode();
   }
 
   Future<void> _persist(double rate) async {
     await SharedPreferencesService.set<double>(SharedPreferencesKeys.fiatRate, rate);
   }
 
-  Future<double> _requestPairRate(String pair) async {
+  Future<double> _requestPairRateClearnet(String pair) async {
+    final url = 'https://api.kraken.com/0/public/Ticker?pair=$pair';
+    log(LogLevel.info, 'Fetching rate from fiat api (clearnet): $url');
+
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse(url));
+      final response = await request.close().timeout(Duration(seconds: 20));
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode != 200) {
+        throw Exception('Status code: ${response.statusCode}');
+      }
+      final jsonBody = jsonDecode(body) as Map<String, dynamic>;
+      final rate = jsonBody['result']?[pair]?['o'];
+      if (rate is! String) {
+        throw Exception('Could not find rate for $pair');
+      }
+      return double.parse(rate);
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<double> _requestPairRateTor(String pair) async {
     final url = 'https://api.kraken.com/0/public/Ticker?pair=$pair';
     final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
 
-    log(LogLevel.info, 'Fetching rate from fiat api:');
+    log(LogLevel.info, 'Fetching rate from fiat api (Tor):');
     log(LogLevel.info, '  url: $url');
     log(LogLevel.info, '  proxyInfo: $proxyInfo');
 
     if (proxyInfo == null) {
-      throw Exception('Not fetching rate from fiat API because Tor is disabled');
+      throw Exception('Not fetching rate from fiat API because no Tor proxy is available');
     }
 
     try {
       final response = await makeSocksHttpRequest('GET', url, proxyInfo);
       if (response.statusCode == 200) {
-        final rate = response.jsonBody['result']?[pair]?['o'];
+        final rate = response.jsonBody?['result']?[pair]?['o'];
         if (rate is! String) {
           throw Exception('Could not find rate for $pair');
         }
@@ -86,7 +123,29 @@ class FiatRateModel with ChangeNotifier {
     }
   }
 
+  Future<double> _requestPairRate(String pair) async {
+    if (_fiatApiMode == FiatApiMode.clearnet) {
+      try {
+        return await _requestPairRateClearnet(pair);
+      } catch (error) {
+        log(LogLevel.error, 'Failed to get fiat rate. ${error.toString()}');
+        throw Exception('Failed to get fiat rate. ${error.toString()}');
+      }
+    }
+    return _requestPairRateTor(pair);
+  }
+
   Future<void> _loadRate() async {
+    _fiatApiMode = await FiatRateModel.loadFiatApiMode();
+    if (_fiatApiMode == FiatApiMode.disabled) {
+      _rateFetchTimer?.cancel();
+      _rateFetchTimer = null;
+      _isDisabled = true;
+      notifyListeners();
+      return;
+    }
+    _isDisabled = false;
+
     _fiatCode =
         await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
 
@@ -117,6 +176,8 @@ class FiatRateModel with ChangeNotifier {
   }
 
   Future<void> startService() async {
+    _rateFetchTimer?.cancel();
+    _rateFetchTimer = null;
     await _loadPersisted();
     _startRateFetchTimer();
   }

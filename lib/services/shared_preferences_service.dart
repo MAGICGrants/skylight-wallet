@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SharedPreferencesKeys {
   static const String language = 'language';
   static const String fiatCurrency = 'fiatCurrency';
+  static const String fiatApiMode = 'fiatApiMode';
   static const String fiatRate = 'fiatRate';
   static const String theme = 'theme';
   static const String notificationsEnabled = 'notificationsEnabled';

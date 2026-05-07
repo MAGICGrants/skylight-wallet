@@ -65,35 +65,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWarningContinueButton => 'Continue';
 
   @override
-  String get connectionSetupTitle => 'Connection Setup';
+  String get lwsSetupTitle => 'LWS Setup';
 
   @override
-  String get connectionSetupDescription =>
-      'Let\'s setup a connection with your Monero light-wallet server (LWS).';
+  String get lwsSetupDescription => 'Enter the address of your Monero light-wallet server (LWS).';
 
   @override
-  String get connectionSetupAddressHint => 'e.g. 192.168.1.1:18090 or example.com:18090';
+  String get lwsSetupAddressHint => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
-  String get connectionSetupProxyPortLabel => 'HTTP Proxy Port (optional)';
+  String get lwsSetupProxyPortLabel => 'HTTP Proxy Port (optional)';
 
   @override
-  String get connectionSetupProxyPortHint => 'e.g. 4444 for I2P';
+  String get lwsSetupProxyPortHint => 'e.g. 4444 for I2P';
 
   @override
-  String get connectionSetupUseTorLabel => 'Use Tor';
+  String get lwsSetupUseTorLabel => 'Use Tor';
 
   @override
-  String get connectionSetupUseSslLabel => 'Use SSL';
+  String get lwsSetupUseSslLabel => 'Use SSL';
 
   @override
-  String get connectionSetupTestConnectionButton => 'Test Connection';
+  String get lwsSetupTestConnectionButton => 'Test Connection';
 
   @override
-  String get connectionSetupStartingTor => 'Starting Tor...';
+  String get lwsSetupStartingTor => 'Starting Tor...';
 
   @override
-  String get connectionSetupContinueButton => 'Continue';
+  String get lwsSetupContinueButton => 'Continue';
+
+  @override
+  String get fiatApiSetupTitle => 'Fiat Display Setup';
+
+  @override
+  String get fiatApiSetupDescription => 'Optional reference price for your XMR balance.';
+
+  @override
+  String get fiatApiSettingsModeLabel => 'Mode';
+
+  @override
+  String get fiatApiSettingsModeTorOnly => 'Tor-Only';
+
+  @override
+  String get fiatApiSettingsModeClearnet => 'Clearnet-Only (not private)';
+
+  @override
+  String get fiatApiSettingsModeDisabled => 'Disabled';
+
+  @override
+  String get fiatApiSettingsDisplayCurrencyLabel => 'Display Currency';
 
   @override
   String get createWalletTitle => 'Create Wallet';
@@ -158,9 +178,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navigationBarSettings => 'Settings';
-
-  @override
-  String get navigationBarKeys => 'Keys';
 
   @override
   String get unlockButton => 'Unlock';
@@ -320,7 +337,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageLabel => 'Language';
 
   @override
-  String get settingsDisplayCurrencyLabel => 'Display Currency';
+  String get settingsFiatApiSettingsLabel => 'Fiat API Settings';
 
   @override
   String get settingsLwsViewKeysLabel => 'LWS View Keys';
@@ -464,16 +481,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressBookSave => 'Save';
 
   @override
-  String get sendSelectFromAddressBook => 'Select from Address Book';
-
-  @override
   String get sendSelectedContact => 'Selected contact';
 
   @override
   String get sendClearSelectedContact => 'Clear selected contact';
-
-  @override
-  String get sendEditAddress => 'Edit Address';
 
   @override
   String get sendPriorityLow => 'Low';
@@ -546,22 +557,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torSettingsTestConnectionButton => 'Test Connection';
 
   @override
-  String get settingsConnectionSettingsLabel => 'Connection Settings';
+  String get settingsLwsSettingsLabel => 'LWS Settings';
 
   @override
   String get settingsTorSettingsLabel => 'Tor Settings';
 
   @override
-  String get connectionSetupUsingInternalTor => 'Using internal Tor';
+  String get lwsSetupUsingInternalTor => 'Using internal Tor';
 
   @override
-  String connectionSetupUsingExternalTor(String address) {
+  String lwsSetupUsingExternalTor(String address) {
     return 'Using external Tor proxy at $address';
   }
 
   @override
-  String get connectionSetupTorDisabledError => 'Tor is disabled. Please go back and enable it.';
+  String get lwsSetupTorDisabledError => 'Tor is disabled. Please go back and enable it.';
 
   @override
-  String get connectionSetupInvalidQrCode => 'Invalid connection address.';
+  String get lwsSetupInvalidQrCode => 'Invalid connection address.';
 }

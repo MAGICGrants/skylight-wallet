@@ -49,11 +49,7 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return SizedBox(
-        width: 280,
-        height: 120,
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return SizedBox(width: 280, height: 120, child: Center(child: CircularProgressIndicator()));
     }
     final i18n = AppLocalizations.of(context)!;
     return Column(
@@ -66,9 +62,12 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
             labelText: i18n.fiatApiSettingsModeLabel,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          value: _mode,
+          initialValue: _mode,
           items: [
-            DropdownMenuItem(value: FiatApiMode.torOnly, child: Text(i18n.fiatApiSettingsModeTorOnly)),
+            DropdownMenuItem(
+              value: FiatApiMode.torOnly,
+              child: Text(i18n.fiatApiSettingsModeTorOnly),
+            ),
             DropdownMenuItem(
               value: FiatApiMode.clearnet,
               child: Text(i18n.fiatApiSettingsModeClearnet),
@@ -88,7 +87,7 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
               labelText: i18n.fiatApiSettingsDisplayCurrencyLabel,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            value: _currency,
+            initialValue: _currency,
             items: supportedFiatCurrencies
                 .map((c) => DropdownMenuItem<String>(value: c, child: Text(c)))
                 .toList(),

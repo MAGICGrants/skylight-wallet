@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:provider/provider.dart';
 
 class CreateWalletPasswordScreen extends StatefulWidget {
@@ -38,8 +38,8 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
       final password = _passwordController.text;
 
       if (mounted) {
-        final wallet = Provider.of<WalletModel>(context, listen: false);
-        wallet.setWalletPassword(password);
+        final manager = Provider.of<WalletManager>(context, listen: false);
+        manager.setWalletPassword(password);
         Navigator.pushNamed(context, '/create_wallet');
       }
     } catch (e) {
@@ -83,7 +83,7 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),

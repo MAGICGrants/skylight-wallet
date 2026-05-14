@@ -336,7 +336,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedDescription.
   ///
   /// In en, this message translates to:
-  /// **'This is your polyseed. Write it down and keep it in a safe place.'**
+  /// **'This is your 15-word seed phrase. Write it down and keep it in a safe place. It can restore every coin in this wallet.'**
   String get generateSeedDescription;
 
   /// No description provided for @generateSeedContinueButton.
@@ -384,7 +384,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletDescription.
   ///
   /// In en, this message translates to:
-  /// **'Input your Monero seed below. We will check common formats.'**
+  /// **'Enter your 15-word seed phrase to restore every coin in this wallet.'**
   String get restoreWalletDescription;
 
   /// No description provided for @restoreWalletSeedLabel.
@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore Height (optional)'**
   String get restoreWalletRestoreHeightLabel;
+
+  /// No description provided for @restoreWalletRestoreDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from date'**
+  String get restoreWalletRestoreDateLabel;
 
   /// No description provided for @restoreWalletRestoreButton.
   ///
@@ -542,6 +548,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error connecting to fiat API'**
   String get homeFiatApiError;
+
+  /// No description provided for @homeTotalBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Balance'**
+  String get homeTotalBalanceLabel;
+
+  /// No description provided for @homeYourCoinsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Coins'**
+  String get homeYourCoinsTitle;
+
+  /// No description provided for @homeCoinNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get homeCoinNotConfigured;
+
+  /// No description provided for @homeCoinSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get homeCoinSetUp;
 
   /// No description provided for @receiveTitle.
   ///

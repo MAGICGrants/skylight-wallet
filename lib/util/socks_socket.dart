@@ -97,10 +97,12 @@ class SOCKSSocket {
     _secureResponseController = StreamController.broadcast(onListen: null, onCancel: null);
   }
 
+  // ignore: unintended_html_in_doc_comment
   /// Provides a stream of data as List<int>.
   Stream<List<int>> get inputStream =>
       sslEnabled ? _secureResponseController.stream : _responseController.stream;
 
+  // ignore: unintended_html_in_doc_comment
   /// Provides a StreamSink compatible with List<int> for sending data.
   StreamSink<List<int>> get outputStream {
     // Create a simple StreamSink wrapper for _socksSocket and

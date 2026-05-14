@@ -4,23 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-// ignore: implementation_imports
-import 'package:monero/src/monero.dart';
+
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
-import 'package:skylight_wallet/util/formatting.dart';
+import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
+import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:skylight_wallet/widgets/coin_amount.dart';
 import 'package:skylight_wallet/widgets/fiat_amount.dart';
-import 'package:skylight_wallet/widgets/monero_amount.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:skylight_wallet/models/contact_model.dart';
 
 class SendScreenArgs {
-  String destinationAddress;
-  double? amount;
+  final String coinSymbol;
+  final String destinationAddress;
+  final double? amount;
 
-  SendScreenArgs({required this.destinationAddress, this.amount});
+  SendScreenArgs({required this.coinSymbol, required this.destinationAddress, this.amount});
 }
 
 class SendScreen extends StatefulWidget {
@@ -39,13 +40,32 @@ class _SendScreenState extends State<SendScreen> {
   final _amountController = TextEditingController(text: '');
   bool _isSweepAll = false;
   Contact? _selectedContact;
-  List<MoneroPendingTransaction?>? _fees;
+  List<PendingTransaction?>? _fees;
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
-  int _feeCalculationCounter = 0; // Track the latest fee calculation request
+  int _feeCalculationCounter = 0;
   String _lastFeeFetchKey = '';
 
   String _destinationAddressError = '';
   String _amountError = '';
+
+  String _coinSymbol = 'XMR';
+
+  CryptoWallet _wallet(BuildContext context) {
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final wallet = manager.getWallet(_coinSymbol);
+    if (wallet == null) {
+      throw StateError('No wallet for $_coinSymbol');
+    }
+    return wallet;
+  }
+
+  Future<String> _resolveAddressIfDomain(String value) async {
+    final wallet = _wallet(context);
+    if (wallet is MoneroWallet && domainRegex.hasMatch(value)) {
+      return wallet.resolveOpenAlias(value);
+    }
+    return value;
+  }
 
   @override
   void dispose() {
@@ -69,6 +89,7 @@ class _SendScreenState extends State<SendScreen> {
     final args = ModalRoute.of(context)!.settings.arguments as SendScreenArgs?;
 
     if (args != null) {
+      _coinSymbol = args.coinSymbol;
       _destinationAddressController.text = args.destinationAddress;
       _amountController.text = args.amount != null ? args.amount.toString() : '';
     }
@@ -83,7 +104,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _scanQrCode() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = _wallet(context);
     final i18n = AppLocalizations.of(context)!;
 
     final result = await Navigator.pushNamed(context, '/scan_qr');
@@ -94,8 +115,8 @@ class _SendScreenState extends State<SendScreen> {
     double? amount;
     final uri = Uri.tryParse(result);
 
-    if (uri != null && uri.scheme == 'monero') {
-      if (!wallet.w2Wallet!.addressValid(uri.path, 0)) {
+    if (uri != null && uri.scheme.toLowerCase() == wallet.coinSymbol.toLowerCase()) {
+      if (!wallet.isAddressValid(uri.path)) {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -109,7 +130,7 @@ class _SendScreenState extends State<SendScreen> {
       if (uri.queryParameters.containsKey('tx_amount')) {
         amount = double.tryParse(uri.queryParameters['tx_amount']!);
       }
-    } else if (wallet.w2Wallet!.addressValid(result, 0)) {
+    } else if (wallet.isAddressValid(result)) {
       address = result;
     } else {
       if (mounted) {
@@ -150,17 +171,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<String> _resolveDestinationAddress() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    final unresolvedDestinationAddress = _destinationAddressController.text;
-    String destinationAddress = '';
-
-    if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      destinationAddress = await wallet.resolveOpenAlias(unresolvedDestinationAddress);
-    } else {
-      destinationAddress = unresolvedDestinationAddress;
-    }
-
-    return destinationAddress;
+    return _resolveAddressIfDomain(_destinationAddressController.text);
   }
 
   Future<bool> _validateForm({bool setErrors = true}) async {
@@ -172,12 +183,11 @@ class _SendScreenState extends State<SendScreen> {
       return false;
     }
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = _wallet(context);
     final i18n = AppLocalizations.of(context)!;
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      // check for openalias
-      destinationAddress = await wallet.resolveOpenAlias(unresolvedDestinationAddress);
+      destinationAddress = await _resolveAddressIfDomain(unresolvedDestinationAddress);
 
       if (destinationAddress == '') {
         if (setErrors) {
@@ -187,8 +197,7 @@ class _SendScreenState extends State<SendScreen> {
         }
         return false;
       }
-    } else if (wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
-      // check for address
+    } else if (wallet.isAddressValid(unresolvedDestinationAddress)) {
       destinationAddress = unresolvedDestinationAddress;
     } else {
       if (setErrors) {
@@ -198,6 +207,8 @@ class _SendScreenState extends State<SendScreen> {
       }
       return false;
     }
+
+    if (destinationAddress.isEmpty) return false;
 
     if (amount > (wallet.unlockedBalance ?? 0)) {
       if (setErrors) {
@@ -211,23 +222,22 @@ class _SendScreenState extends State<SendScreen> {
     return true;
   }
 
-  Future<MoneroPendingTransaction?> _createTxForPriority(
+  Future<PendingTransaction?> _createTxForPriority(
     String destinationAddress,
     double amount,
     int priority,
   ) async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = _wallet(context);
     const maxRetries = 10;
 
     for (int i = 0; i < maxRetries; i++) {
       try {
-        final tx = await wallet.createTx(
+        return await wallet.createTx(
           destinationAddress,
           amount,
           _isSweepAll,
           priority: priority,
         );
-        return tx;
       } catch (error) {
         if (error.toString().contains('Unlocked funds too low')) {
           return null;
@@ -253,7 +263,6 @@ class _SendScreenState extends State<SendScreen> {
 
     final i18n = AppLocalizations.of(context)!;
 
-    // Increment counter to mark this as the latest request
     _feeCalculationCounter++;
     final currentRequest = _feeCalculationCounter;
 
@@ -272,14 +281,11 @@ class _SendScreenState extends State<SendScreen> {
         _createTxForPriority(destinationAddress, amount, 3),
       ]);
 
-      // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
           _fees = txs;
           _isLoadingFees = false;
 
-          // If there is not enough balance for the selected priority,
-          // find the highest priority the user can pay for and select it
           if (_fees?[_selectedPriority] == null) {
             for (int i = _selectedPriority; i >= 0; i--) {
               if (_fees?[i] != null) {
@@ -291,7 +297,6 @@ class _SendScreenState extends State<SendScreen> {
         });
       }
     } catch (error) {
-      // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
           _isLoadingFees = false;
@@ -305,7 +310,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _send() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = _wallet(context);
     final i18n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -328,18 +333,16 @@ class _SendScreenState extends State<SendScreen> {
     String destinationAddress = '';
     String? destinationOpenAlias;
 
-    // Resolve openalias if it is a domain
     if (domainRegex.hasMatch(destinationAddressUnresolved)) {
-      destinationAddress = await wallet.resolveOpenAlias(destinationAddressUnresolved);
+      destinationAddress = await _resolveAddressIfDomain(destinationAddressUnresolved);
       destinationOpenAlias = destinationAddressUnresolved;
     } else {
       destinationAddress = destinationAddressUnresolved;
     }
 
     try {
-      MoneroPendingTransaction tx;
+      PendingTransaction tx;
 
-      // Check if we can reuse a cached transaction
       final currentFeeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
       final cachedTx = _fees != null && _fees!.length > _selectedPriority
           ? _fees![_selectedPriority]
@@ -348,7 +351,6 @@ class _SendScreenState extends State<SendScreen> {
       if (currentFeeFetchKey == _lastFeeFetchKey && cachedTx != null) {
         tx = cachedTx;
       } else {
-        // Create a new transaction if cached one is not available
         tx = await wallet.createTx(
           destinationAddress,
           amount,
@@ -366,6 +368,7 @@ class _SendScreenState extends State<SendScreen> {
           context,
           '/confirm_send',
           arguments: ConfirmSendScreenArgs(
+            coinSymbol: _coinSymbol,
             tx: tx,
             destinationAddress: destinationAddress,
             destinationOpenAlias: destinationOpenAlias,
@@ -397,7 +400,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _setBalanceAsSendAmount() {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = _wallet(context);
     _amountController.text = (wallet.unlockedBalance ?? 0).toString();
 
     setState(() {
@@ -405,7 +408,7 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
-  void _showPrioritySelector() {
+  void _showPrioritySelector(CryptoWallet wallet) {
     final i18n = AppLocalizations.of(context)!;
     final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
@@ -425,6 +428,7 @@ class _SendScreenState extends State<SendScreen> {
                 label: i18n.sendPriorityLow,
                 priority: 0,
                 fees: _fees,
+                wallet: wallet,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 0,
@@ -440,6 +444,7 @@ class _SendScreenState extends State<SendScreen> {
                 label: i18n.sendPriorityNormal,
                 priority: 1,
                 fees: _fees,
+                wallet: wallet,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 1,
@@ -455,6 +460,7 @@ class _SendScreenState extends State<SendScreen> {
                 label: i18n.sendPriorityHigh,
                 priority: 2,
                 fees: _fees,
+                wallet: wallet,
                 fiatSymbol: fiatSymbol,
                 fiatRate: fiatRate.rate,
                 isSelected: _selectedPriority == 2,
@@ -479,7 +485,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _onAmountChanged() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = _wallet(context);
     final amount = double.tryParse(_amountController.text) ?? 0;
 
     if (amount == wallet.unlockedBalance! && !_isSweepAll) {
@@ -502,8 +508,16 @@ class _SendScreenState extends State<SendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = context.watch<WalletModel>();
+    final walletManager = context.watch<WalletManager>();
+    final wallet = walletManager.getWallet(_coinSymbol);
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+
+    if (wallet == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(i18n.sendTitle)),
+        body: Center(child: Text('Unknown coin: $_coinSymbol')),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.sendTitle)),
@@ -615,7 +629,7 @@ class _SendScreenState extends State<SendScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: _showPrioritySelector,
+                  onTap: () => _showPrioritySelector(wallet),
                   child: Container(
                     height: 40,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -661,12 +675,13 @@ class _SendScreenState extends State<SendScreen> {
                                     spacing: 4,
                                     children: [
                                       SvgPicture.asset(
-                                        'assets/icons/monero.svg',
+                                        wallet.iconAsset,
                                         width: 14,
                                         height: 14,
                                       ),
-                                      MoneroAmount(
-                                        amount: doubleAmountFromInt(selectedTx.fee()),
+                                      CoinAmount(
+                                        amount: selectedTx.fee,
+                                        decimals: wallet.decimals,
                                         maxFontSize: 14,
                                       ),
                                     ],
@@ -708,8 +723,12 @@ class _SendScreenState extends State<SendScreen> {
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          SvgPicture.asset('assets/icons/monero.svg', width: 18, height: 18),
-                          MoneroAmount(amount: wallet.unlockedBalance ?? 0, maxFontSize: 18),
+                          SvgPicture.asset(wallet.iconAsset, width: 18, height: 18),
+                          CoinAmount(
+                            amount: wallet.unlockedBalance ?? 0,
+                            decimals: wallet.decimals,
+                            maxFontSize: 18,
+                          ),
                         ],
                       ),
                     ),
@@ -855,7 +874,8 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
 class _PriorityOption extends StatelessWidget {
   final String label;
   final int priority;
-  final List<MoneroPendingTransaction?>? fees;
+  final List<PendingTransaction?>? fees;
+  final CryptoWallet wallet;
   final String fiatSymbol;
   final double? fiatRate;
   final bool isSelected;
@@ -865,6 +885,7 @@ class _PriorityOption extends StatelessWidget {
     required this.label,
     required this.priority,
     required this.fees,
+    required this.wallet,
     required this.fiatSymbol,
     required this.fiatRate,
     required this.isSelected,
@@ -875,7 +896,7 @@ class _PriorityOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final feeTx = fees?[priority];
-    final fee = feeTx != null ? doubleAmountFromInt(feeTx.fee()) : null;
+    final fee = feeTx?.fee;
     final currentFiatRate = fiatRate;
 
     return InkWell(
@@ -927,8 +948,8 @@ class _PriorityOption extends StatelessWidget {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
-                      MoneroAmount(amount: fee, maxFontSize: 14),
+                      SvgPicture.asset(wallet.iconAsset, width: 14, height: 14),
+                      CoinAmount(amount: fee, decimals: wallet.decimals, maxFontSize: 14),
                     ],
                   ),
                   if (currentFiatRate != null)

@@ -9,7 +9,7 @@ class RestoreWarningScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

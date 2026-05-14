@@ -133,7 +133,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generateSeedDescription =>
-      'This is your polyseed. Write it down and keep it in a safe place.';
+      'This is your 15-word seed phrase. Write it down and keep it in a safe place. It can restore every coin in this wallet.';
 
   @override
   String get generateSeedContinueButton => 'I wrote it down';
@@ -159,13 +159,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreWalletDescription =>
-      'Input your Monero seed below. We will check common formats.';
+      'Enter your 15-word seed phrase to restore every coin in this wallet.';
 
   @override
   String get restoreWalletSeedLabel => 'Seed';
 
   @override
   String get restoreWalletRestoreHeightLabel => 'Restore Height (optional)';
+
+  @override
+  String get restoreWalletRestoreDateLabel => 'Restore from date';
 
   @override
   String get restoreWalletRestoreButton => 'Restore';
@@ -238,6 +241,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeFiatApiError => 'Error connecting to fiat API';
+
+  @override
+  String get homeTotalBalanceLabel => 'Total Balance';
+
+  @override
+  String get homeYourCoinsTitle => 'Your Coins';
+
+  @override
+  String get homeCoinNotConfigured => 'Not configured';
+
+  @override
+  String get homeCoinSetUp => 'Set up';
 
   @override
   String get receiveTitle => 'Receive';

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});
@@ -73,11 +73,10 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
     try {
       final enteredPassword = _passwordController.text;
-      final wallet = Provider.of<WalletModel>(context, listen: false);
+      final manager = Provider.of<WalletManager>(context, listen: false);
 
-      await wallet.openExisting(desktopWalletPassword: enteredPassword);
-      await wallet.loadPersistedConnection();
-      wallet.load();
+      await manager.openAll(password: enteredPassword);
+      manager.loadAll();
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
@@ -108,7 +107,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: SafeArea(
         child: Center(
           child: Container(

@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
-// ignore: implementation_imports
-import 'package:monero/src/monero.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:skylight_wallet/util/formatting.dart';
-import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/screens/coin_home.dart';
+import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
+
 class ConfirmSendScreenArgs {
-  MoneroPendingTransaction tx;
-  String destinationAddress;
-  String? destinationOpenAlias;
-  String? destinationContactName;
+  final String coinSymbol;
+  final PendingTransaction tx;
+  final String destinationAddress;
+  final String? destinationOpenAlias;
+  final String? destinationContactName;
 
   ConfirmSendScreenArgs({
+    required this.coinSymbol,
     required this.tx,
     required this.destinationAddress,
     this.destinationOpenAlias,
@@ -31,23 +33,18 @@ class ConfirmSendScreen extends StatefulWidget {
 
 class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   bool _isLoading = false;
-  MoneroPendingTransaction? _tx;
+  PendingTransaction? _tx;
   double _amount = 0.0;
   double _fee = 0.0;
   String? _destinationOpenAlias;
   String _destinationAddress = '';
   List<String> _destinationAddressSliced = [];
   String? _destinationContactName;
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  String _coinSymbol = 'XMR';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     _loadTxDetails();
   }
 
@@ -59,9 +56,10 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     }
 
     setState(() {
+      _coinSymbol = args.coinSymbol;
       _tx = args.tx;
-      _amount = doubleAmountFromInt(args.tx.amount());
-      _fee = doubleAmountFromInt(args.tx.fee());
+      _amount = args.tx.amount;
+      _fee = args.tx.fee;
       _destinationOpenAlias = args.destinationOpenAlias;
       _destinationAddress = args.destinationAddress;
       _destinationAddressSliced = _sliceAddress(args.destinationAddress);
@@ -70,11 +68,10 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   }
 
   List<String> _sliceAddress(String address) {
-    List<String> result = [];
+    final List<String> result = [];
 
     for (int i = 0; i < address.length; i += 5) {
-      // Get the substring of the next 5 characters
-      String substring = address.substring(i, i + 5 > address.length ? address.length : i + 5);
+      final substring = address.substring(i, i + 5 > address.length ? address.length : i + 5);
       result.add(substring);
     }
 
@@ -83,9 +80,10 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
 
   Future<void> _confirmSend() async {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final wallet = manager.getWallet(_coinSymbol);
 
-    if (_tx == null) return;
+    if (_tx == null || wallet == null) return;
 
     setState(() {
       _isLoading = true;
@@ -99,7 +97,11 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
       });
 
       if (mounted) {
-        Navigator.pushNamed(context, '/wallet_home', arguments: {'showTxSuccessToast': true});
+        Navigator.pushNamed(
+          context,
+          '/coin_home',
+          arguments: CoinHomeScreenArgs(coinSymbol: _coinSymbol, showTxSuccessToast: true),
+        );
       }
     } on FormatException catch (error) {
       var errorMsg = error.toString().replaceFirst('FormatException: ', '');
@@ -131,6 +133,9 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
     final amountFiat = fiatRate.rate is double ? _amount * fiatRate.rate! : null;
     final networkFeeFiat = fiatRate.rate is double ? _fee * fiatRate.rate! : null;
+    final wallet = context.watch<WalletManager>().getWallet(_coinSymbol);
+    final decimals = wallet?.decimals ?? 12;
+    final coinSymbol = wallet?.coinSymbol ?? _coinSymbol;
 
     return Scaffold(
       appBar: AppBar(),
@@ -164,7 +169,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${_amount.toStringAsFixed(12)} XMR',
+                          '${_amount.toStringAsFixed(decimals)} $coinSymbol',
                           style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                         if (amountFiat is double)
@@ -182,7 +187,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${_fee.toStringAsFixed(12)} XMR',
+                          '${_fee.toStringAsFixed(decimals)} $coinSymbol',
                           style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                         if (networkFeeFiat is double)
@@ -204,7 +209,6 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(i18n.address, style: TextStyle(fontWeight: FontWeight.bold)),
-
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -222,7 +226,6 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                                       item.value,
                                       style: TextStyle(
                                         fontFamily: 'monospace',
-                                        // highlight start and end slices of address
                                         fontWeight:
                                             item.key == 0 ||
                                                 item.key == _destinationAddressSliced.length - 1

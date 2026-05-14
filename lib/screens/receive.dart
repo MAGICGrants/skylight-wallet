@@ -2,12 +2,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
+
+class ReceiveScreenArgs {
+  final String coinSymbol;
+
+  ReceiveScreenArgs({required this.coinSymbol});
+}
 
 class ReceiveScreen extends StatefulWidget {
   const ReceiveScreen({super.key});
@@ -65,19 +73,37 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final i18n = AppLocalizations.of(context)!;
     final brightness = Theme.of(context).brightness;
     final isDarkTheme = brightness == Brightness.dark;
-    final wallet = Provider.of<WalletModel>(context);
+    final args = ModalRoute.of(context)?.settings.arguments as ReceiveScreenArgs?;
+    final coinSymbol = args?.coinSymbol ?? 'XMR';
+    final wallet = context.watch<WalletManager>().getWallet(coinSymbol);
+
+    if (wallet == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(i18n.receiveTitle)),
+        body: Center(child: Text('Unknown coin: $coinSymbol')),
+      );
+    }
+
     final primaryAddress = wallet.getPrimaryAddress();
-    final subaddress = wallet.getUnusedSubaddress();
+    final receiveAddress = wallet.getReceiveAddress();
     final isDemoMode = wallet.connectionAddress == 'demo';
+
+    // Monero-only subaddress UX. For non-Monero coins, fall back to primary.
+    final monero = wallet is MoneroWallet ? wallet : null;
+    final serverSupportsSubaddresses = monero?.serverSupportsSubaddresses;
+    final unusedSubaddressIndexIsSupported = monero?.unusedSubaddressIndexIsSupported;
+
     String? address;
-
-    if (wallet.serverSupportsSubaddresses == false || isDemoMode) {
+    if (monero == null) {
       address = primaryAddress;
+    } else if (serverSupportsSubaddresses == false || isDemoMode) {
+      address = primaryAddress;
+    } else if (serverSupportsSubaddresses == true) {
+      address = _showSubaddress ? receiveAddress : primaryAddress;
     }
 
-    if (wallet.serverSupportsSubaddresses == true) {
-      address = _showSubaddress ? subaddress : primaryAddress;
-    }
+    final canShowAddress =
+        monero == null || serverSupportsSubaddresses != null || isDemoMode;
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.receiveTitle)),
@@ -86,7 +112,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
           constraints: BoxConstraints(maxWidth: 480),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: (wallet.serverSupportsSubaddresses != null || isDemoMode) && address != null
+            child: canShowAddress && address != null
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     spacing: 20,
@@ -102,19 +128,21 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                           color: isDarkTheme ? Colors.grey[300] : Colors.black,
                         ),
                       ),
-                      if (wallet.serverSupportsSubaddresses == false)
+                      if (monero != null && serverSupportsSubaddresses == false)
                         Text(
                           i18n.receiveServerNoSubaddressesWarn,
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.red),
                         ),
-                      if (!_showSubaddress)
+                      if (monero != null && !_showSubaddress)
                         Text(
                           i18n.receivePrimaryAddressWarn,
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.red),
                         ),
-                      if (_showSubaddress && wallet.unusedSubaddressIndexIsSupported == false)
+                      if (monero != null &&
+                          _showSubaddress &&
+                          unusedSubaddressIndexIsSupported == false)
                         Text(
                           i18n.receiveMaxSubaddressesReachedWarn,
                           textAlign: TextAlign.center,
@@ -144,13 +172,12 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                               icon: Icon(Icons.copy),
                               label: Text(i18n.copy),
                             ),
-                          // Only show toggle button if server supports subaddresses
-                          if (wallet.serverSupportsSubaddresses == true && !_showSubaddress)
+                          if (monero != null && serverSupportsSubaddresses == true && !_showSubaddress)
                             TextButton(
                               onPressed: () => _setShowSubaddress(true),
                               child: Text(i18n.receiveShowSubaddressButton),
                             ),
-                          if (wallet.serverSupportsSubaddresses == true && _showSubaddress)
+                          if (monero != null && serverSupportsSubaddresses == true && _showSubaddress)
                             TextButton(
                               onPressed: () => _setShowSubaddress(false),
                               child: Text(i18n.receiveShowPrimaryAddressButton),

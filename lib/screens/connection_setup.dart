@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
+
+class ConnectionSetupScreenArgs {
+  final String coinSymbol;
+  final String? successRoute;
+
+  ConnectionSetupScreenArgs({required this.coinSymbol, this.successRoute});
+}
 
 class ConnectionSetupScreen extends StatelessWidget {
   const ConnectionSetupScreen({super.key});
@@ -9,13 +18,23 @@ class ConnectionSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final args = ModalRoute.of(context)?.settings.arguments as ConnectionSetupScreenArgs?;
+    final coinSymbol = args?.coinSymbol ?? 'XMR';
 
     void onSaved() {
-      Navigator.pushNamed(context, '/fiat_api_setup');
+      final manager = Provider.of<WalletManager>(context, listen: false);
+      manager.getWallet(coinSymbol)?.load();
+
+      final route = args?.successRoute;
+      if (route != null) {
+        Navigator.pushNamedAndRemoveUntil(context, route, (r) => false);
+      } else {
+        Navigator.pop(context);
+      }
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),
@@ -28,10 +47,7 @@ class ConnectionSetupScreen extends StatelessWidget {
                 Column(
                   spacing: 10,
                   children: [
-                    Text(
-                      i18n.lwsSetupTitle,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
+                    Text(i18n.lwsSetupTitle, style: Theme.of(context).textTheme.headlineMedium),
                     Text(
                       i18n.lwsSetupDescription,
                       textAlign: TextAlign.center,
@@ -40,6 +56,7 @@ class ConnectionSetupScreen extends StatelessWidget {
                   ],
                 ),
                 ConnectionSettingsForm(
+                  coinSymbol: coinSymbol,
                   saveButtonLabel: i18n.lwsSetupContinueButton,
                   onSaved: onSaved,
                 ),

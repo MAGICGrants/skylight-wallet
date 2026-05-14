@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:provider/provider.dart';
+
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WalletHomeScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WalletHomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
-
-    // push to wallet home screen if wallet exists
     _pushHomeIfWalletExists();
   }
 
-  Future _pushHomeIfWalletExists() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+  Future<void> _pushHomeIfWalletExists() async {
+    final manager = Provider.of<WalletManager>(context, listen: false);
 
-    if (await wallet.hasExistingWallet()) {
-      await wallet.openExisting();
-      await wallet.loadPersistedConnection();
+    if (await manager.hasAnyExistingWallet()) {
+      await manager.openAll();
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
@@ -37,7 +35,7 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

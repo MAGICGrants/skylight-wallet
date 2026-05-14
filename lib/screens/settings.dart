@@ -13,7 +13,8 @@ import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
 import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -239,95 +240,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showViewLwsKeysDialog() {
-    final i18n = AppLocalizations.of(context)!;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final dialogWidth = screenWidth.clamp(0.0, 500.0);
-
-        return AlertDialog(
-          constraints: BoxConstraints.tightFor(width: dialogWidth),
-          insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          title: Row(
-            spacing: 6,
-            children: [
-              Icon(Icons.warning, color: Colors.orange),
-              Text(i18n.warning),
-            ],
-          ),
-          content: Text(i18n.settingsViewLwsKeysDialogText),
-          actions: [
-            TextButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/lws_keys');
-              },
-              icon: Icon(Icons.warning),
-              label: Text(i18n.settingsViewLwsKeysDialogRevealButton),
-              style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: Icon(Icons.cancel),
-              label: Text(i18n.cancel),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showViewSecretKeysDialog() {
-    final i18n = AppLocalizations.of(context)!;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final dialogWidth = screenWidth.clamp(0.0, 500.0);
-
-        return AlertDialog(
-          constraints: BoxConstraints.tightFor(width: dialogWidth),
-          insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          title: Row(
-            spacing: 6,
-            children: [
-              Icon(Icons.warning, color: Colors.red),
-              Text(i18n.warning),
-            ],
-          ),
-          content: Text(i18n.settingsViewSecretKeysDialogText),
-          actions: [
-            TextButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/secret_keys');
-              },
-              icon: Icon(Icons.warning),
-              label: Text(i18n.settingsViewSecretKeysDialogRevealButton),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: Icon(Icons.cancel),
-              label: Text(i18n.cancel),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _deleteWallet() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    await wallet.delete();
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    await manager.deleteAll();
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/welcome', (Route<dynamic> route) => false);
     }
@@ -339,8 +254,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final dialogWidth = screenWidth.clamp(0.0, 500.0);
 
     void onSaved() {
-      final wallet = Provider.of<WalletModel>(context, listen: false);
-      wallet.load();
+      final manager = Provider.of<WalletManager>(context, listen: false);
+      manager.loadAll();
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
       fiatRate.startService();
@@ -384,13 +299,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showConnectionSettingsDialog() {
+  void _showConnectionSettingsDialog(CryptoWallet wallet) {
     final i18n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth.clamp(0.0, 500.0);
 
     void onSaved() {
-      final wallet = Provider.of<WalletModel>(context, listen: false);
       wallet.load();
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
@@ -404,8 +318,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         constraints: BoxConstraints.tightFor(width: dialogWidth),
         insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        title: Text(i18n.settingsLwsSettingsLabel),
+        title: Text('${wallet.coinName} ${i18n.settingsLwsSettingsLabel}'),
         content: ConnectionSettingsForm(
+          coinSymbol: wallet.coinSymbol,
           saveButtonLabel: i18n.torSettingsSaveButton,
           onSaved: onSaved,
           isInDialog: true,
@@ -419,6 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final i18n = AppLocalizations.of(context)!;
     final language = context.watch<LanguageModel>();
     final theme = context.watch<ThemeModel>();
+    final walletManager = context.watch<WalletManager>();
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
@@ -510,17 +426,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(i18n.settingsLwsSettingsLabel, style: TextStyle(fontSize: 18)),
-                TextButton.icon(
-                  onPressed: _showConnectionSettingsDialog,
-                  icon: Icon(Icons.dns),
-                  label: Text(i18n.settingsLwsViewKeysButton),
-                ),
-              ],
-            ),
+            for (final wallet in walletManager.allWallets)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${wallet.coinName} ${i18n.settingsLwsSettingsLabel}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _showConnectionSettingsDialog(wallet),
+                    icon: Icon(Icons.dns),
+                    label: Text(i18n.settingsLwsViewKeysButton),
+                  ),
+                ],
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -540,31 +460,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: _showFiatApiSettingsDialog,
                   icon: Icon(Icons.currency_exchange),
                   label: Text(i18n.settingsLwsViewKeysButton),
-                ),
-              ],
-            ),
-            Container(margin: EdgeInsetsGeometry.symmetric(vertical: 10), child: Divider()),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(i18n.settingsLwsViewKeysLabel, style: TextStyle(fontSize: 18)),
-                TextButton.icon(
-                  onPressed: _showViewLwsKeysDialog,
-                  icon: Icon(Icons.key),
-                  label: Text(i18n.settingsLwsViewKeysButton),
-                  style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.orange)),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(i18n.settingsSecretKeysLabel, style: TextStyle(fontSize: 18)),
-                TextButton.icon(
-                  onPressed: _showViewSecretKeysDialog,
-                  icon: Icon(Icons.key),
-                  label: Text(i18n.settingsSecretKeysButton),
-                  style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.red)),
                 ),
               ],
             ),

@@ -10,17 +10,14 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/screens/coin_home.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
-import 'package:skylight_wallet/screens/lws_details.dart';
-import 'package:skylight_wallet/screens/lws_keys.dart';
 import 'package:skylight_wallet/screens/scan_qr.dart';
-import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
@@ -44,17 +41,16 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 final isMobile = Platform.isAndroid || Platform.isIOS;
 
 void main() async {
-  // Catch all uncaught async errors
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
         log(LogLevel.error, 'Flutter error: ${details.exception}');
         if (kDebugMode) {
@@ -87,7 +83,6 @@ void main() async {
       runApp(MyApp());
     },
     (error, stackTrace) {
-      // Handle uncaught async errors (like socket disconnections)
       log(LogLevel.error, 'Uncaught error: $error');
       if (kDebugMode) {
         debugPrint('Uncaught error: $error');
@@ -97,18 +92,17 @@ void main() async {
   );
 }
 
-Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
-  if (await wallet.hasExistingWallet()) {
-    if (isMobile) {
-      await wallet.openExisting();
-      await wallet.loadPersistedConnection();
-      wallet.load();
-    }
-
-    return true;
+Future<bool> loadExistingWalletsIfAny(WalletManager walletManager) async {
+  if (!await walletManager.hasAnyExistingWallet()) {
+    return false;
   }
 
-  return false;
+  if (isMobile) {
+    await walletManager.openAll();
+    walletManager.loadAll();
+  }
+
+  return true;
 }
 
 class MyApp extends StatelessWidget {
@@ -118,23 +112,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => WalletModel()),
-        ChangeNotifierProvider(create: (context) => LanguageModel()),
-        ChangeNotifierProvider(create: (context) => ThemeModel()),
-        ChangeNotifierProvider(create: (context) => FiatRateModel()),
-        ChangeNotifierProvider(create: (context) => ContactModel()),
+        ChangeNotifierProvider(create: (_) => WalletManager()),
+        ChangeNotifierProvider(create: (_) => LanguageModel()),
+        ChangeNotifierProvider(create: (_) => ThemeModel()),
+        ChangeNotifierProvider(create: (_) => FiatRateModel()),
+        ChangeNotifierProvider(create: (_) => ContactModel()),
       ],
       child: Consumer2<LanguageModel, ThemeModel>(
         builder: (context, languageProvider, themeProvider, child) {
-          final wallet = Provider.of<WalletModel>(context, listen: false);
+          final walletManager = Provider.of<WalletManager>(context, listen: false);
           final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
 
           return FutureBuilder(
-            // We need to check for wallet existence to determine the correct initial route,
-            // but we'll do this quickly without loading the wallet to avoid startup delay.
             future: Future.wait([
               SharedPreferences.getInstance(),
-              loadExistingWalletIfExists(wallet),
+              loadExistingWalletsIfAny(walletManager),
             ]),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
@@ -160,7 +152,7 @@ class MyApp extends StatelessWidget {
                 }
 
                 return MaterialApp(
-                  title: 'Skylight Monero Wallet',
+                  title: 'Skylight Wallet',
                   localizationsDelegates: AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
                   theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
@@ -186,14 +178,12 @@ class MyApp extends StatelessWidget {
                     '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
                     '/create_wallet': (context) => CreateWalletScreen(),
                     '/generate_seed': (context) => GenerateSeedScreen(),
-                    '/lws_details': (context) => LwsDetailsScreen(),
                     '/restore_warning': (context) => RestoreWarningScreen(),
                     '/restore_wallet': (context) => RestoreWalletScreen(),
                     '/unlock': (context) => UnlockScreen(),
                     '/wallet_home': (context) => WalletHomeScreen(),
+                    '/coin_home': (context) => CoinHomeScreen(),
                     '/settings': (context) => SettingsScreen(),
-                    '/lws_keys': (context) => LwsKeysScreen(),
-                    '/secret_keys': (context) => SecretKeysScreen(),
                     '/send': (context) => SendScreen(),
                     '/confirm_send': (context) => ConfirmSendScreen(),
                     '/scan_qr': (context) => ScanQrScreen(),
@@ -211,7 +201,7 @@ class MyApp extends StatelessWidget {
               }
 
               return MaterialApp(
-                title: 'Skylight Monero Wallet',
+                title: 'Skylight Wallet',
                 theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
                 darkTheme: ThemeData(
                   colorScheme: ColorScheme.fromSeed(

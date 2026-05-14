@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 
 class TxDetailsDialog {
-  static void show(BuildContext context, TxDetails txDetails) {
+  static void show(BuildContext context, CryptoWallet wallet, TxDetails txDetails) {
     showDialog(
       context: context,
-      builder: (context) => _TxDetailsDialog(txDetails: txDetails),
+      builder: (context) => _TxDetailsDialog(wallet: wallet, txDetails: txDetails),
     );
   }
 }
 
 class _TxDetailsDialog extends StatelessWidget {
+  final CryptoWallet wallet;
   final TxDetails txDetails;
 
-  const _TxDetailsDialog({required this.txDetails});
+  const _TxDetailsDialog({required this.wallet, required this.txDetails});
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context);
-    final amountSent = txDetails.amount.toString();
-    final fee = txDetails.fee.toString();
+    final amountSent = txDetails.amount.toStringAsFixed(wallet.decimals);
+    final fee = txDetails.fee.toStringAsFixed(wallet.decimals);
 
     final dateTime = DateTime.fromMillisecondsSinceEpoch(txDetails.timestamp * 1000);
 
@@ -71,7 +73,13 @@ class _TxDetailsDialog extends StatelessWidget {
               spacing: 20,
               children: [
                 Text(i18n.amount, style: TextStyle(fontWeight: FontWeight.bold)),
-                Flexible(child: Text('$amountSent XMR', textAlign: TextAlign.end, softWrap: true)),
+                Flexible(
+                  child: Text(
+                    '$amountSent ${wallet.coinSymbol}',
+                    textAlign: TextAlign.end,
+                    softWrap: true,
+                  ),
+                ),
               ],
             ),
             Row(
@@ -80,7 +88,13 @@ class _TxDetailsDialog extends StatelessWidget {
               spacing: 20,
               children: [
                 Text(i18n.networkFee, style: TextStyle(fontWeight: FontWeight.bold)),
-                Flexible(child: Text('$fee XMR', textAlign: TextAlign.end, softWrap: true)),
+                Flexible(
+                  child: Text(
+                    '$fee ${wallet.coinSymbol}',
+                    textAlign: TextAlign.end,
+                    softWrap: true,
+                  ),
+                ),
               ],
             ),
             Row(
@@ -174,7 +188,7 @@ class _TxDetailsDialog extends StatelessWidget {
                       separatorBuilder: (context, index) => SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final recipient = txDetails.recipients[index];
-                        final amountStr = recipient.amount.toString();
+                        final amountStr = recipient.amount.toStringAsFixed(wallet.decimals);
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -192,7 +206,7 @@ class _TxDetailsDialog extends StatelessWidget {
                               onTap: () =>
                                   Clipboard.setData(ClipboardData(text: recipient.address)),
                             ),
-                            Text('$amountStr XMR', softWrap: true),
+                            Text('$amountStr ${wallet.coinSymbol}', softWrap: true),
                           ],
                         );
                       },

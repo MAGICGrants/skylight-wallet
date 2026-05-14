@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/consts.dart';
@@ -24,11 +22,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
 
     if (!mounted) return;
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-      Navigator.pushNamed(context, '/create_wallet_password');
-    } else {
-      Navigator.pushNamed(context, '/create_wallet');
-    }
+    Navigator.pushNamed(context, '/create_wallet_password');
   }
 
   @override
@@ -37,7 +31,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),
@@ -50,10 +44,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
                 Column(
                   spacing: 10,
                   children: [
-                    Text(
-                      i18n.fiatApiSetupTitle,
-                      style: theme.textTheme.headlineMedium,
-                    ),
+                    Text(i18n.fiatApiSetupTitle, style: theme.textTheme.headlineMedium),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
@@ -73,7 +64,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
                         labelText: i18n.fiatApiSettingsModeLabel,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      value: _fiatMode,
+                      initialValue: _fiatMode,
                       items: [
                         DropdownMenuItem(
                           value: FiatApiMode.torOnly,
@@ -98,7 +89,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
                           labelText: i18n.fiatApiSettingsDisplayCurrencyLabel,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        value: _fiatCurrency,
+                        initialValue: _fiatCurrency,
                         items: supportedFiatCurrencies
                             .map((c) => DropdownMenuItem<String>(value: c, child: Text(c)))
                             .toList(),
@@ -111,10 +102,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FilledButton(
-                      onPressed: _onContinue,
-                      child: Text(i18n.lwsSetupContinueButton),
-                    ),
+                    FilledButton(onPressed: _onContinue, child: Text(i18n.lwsSetupContinueButton)),
                   ],
                 ),
               ],

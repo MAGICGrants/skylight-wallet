@@ -8,8 +8,8 @@ import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
 
@@ -21,8 +21,13 @@ final domainAddressRegex = RegExp(
 );
 final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
 
-/// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog
+/// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog.
+///
+/// Operates against the wallet identified by [coinSymbol]; the form reads
+/// and writes connection details on that wallet through the
+/// [WalletManager].
 class ConnectionSettingsForm extends StatefulWidget {
+  final String coinSymbol;
   final String saveButtonLabel;
   final VoidCallback onSaved;
   final bool isInDialog;
@@ -30,6 +35,7 @@ class ConnectionSettingsForm extends StatefulWidget {
 
   const ConnectionSettingsForm({
     super.key,
+    required this.coinSymbol,
     required this.saveButtonLabel,
     required this.onSaved,
     this.isInDialog = false,
@@ -68,7 +74,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   Future<void> _loadPersistedConnection() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final wallet = manager.getWallet(widget.coinSymbol);
+    if (wallet == null) return;
+
     final conn = await wallet.getPersistedConnection();
 
     setState(() {
@@ -284,7 +293,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final daemonAddress = _cleanAddress(_addressController.text);
     final proxyAddress = _customProxyPortController.text;
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final wallet = manager.getWallet(widget.coinSymbol);
+    if (wallet == null) return;
 
     wallet.setConnection(
       address: daemonAddress,

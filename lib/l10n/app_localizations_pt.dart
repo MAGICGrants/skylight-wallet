@@ -133,7 +133,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generateSeedDescription =>
-      'Esta é a sua polyseed. Anote-a e guarde-a em um lugar seguro.';
+      'Esta é a sua semente de 15 palavras. Anote-a e guarde-a em um lugar seguro. Ela pode restaurar todas as moedas desta carteira.';
 
   @override
   String get generateSeedContinueButton => 'Eu anotei';
@@ -159,13 +159,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWalletDescription =>
-      'Insira sua semente Monero abaixo. Verificaremos os formatos comuns.';
+      'Insira sua semente de 15 palavras para restaurar todas as moedas desta carteira.';
 
   @override
   String get restoreWalletSeedLabel => 'Semente';
 
   @override
   String get restoreWalletRestoreHeightLabel => 'Bloco de Restauração (opcional)';
+
+  @override
+  String get restoreWalletRestoreDateLabel => 'Restaurar a partir da data';
 
   @override
   String get restoreWalletRestoreButton => 'Restaurar';
@@ -238,6 +241,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get homeFiatApiError => 'Erro ao conectar à API de cotação';
+
+  @override
+  String get homeTotalBalanceLabel => 'Saldo Total';
+
+  @override
+  String get homeYourCoinsTitle => 'Suas Moedas';
+
+  @override
+  String get homeCoinNotConfigured => 'Não configurado';
+
+  @override
+  String get homeCoinSetUp => 'Configurar';
 
   @override
   String get receiveTitle => 'Receber';

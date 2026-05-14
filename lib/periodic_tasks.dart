@@ -1,10 +1,11 @@
 import 'dart:io';
 
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
 
@@ -13,16 +14,22 @@ class PeriodicTasks {
 }
 
 Future<bool> runTxNotifier() async {
-  final wallet = WalletModel();
+  final walletManager = WalletManager();
 
-  if (!await wallet.hasExistingWallet()) {
+  if (!await walletManager.hasAnyExistingWallet()) {
     return true;
   }
 
-  await wallet.openExisting();
-  await wallet.loadPersistedConnection();
+  await walletManager.openAll();
 
-  if (wallet.usingTor) {
+  final wallets = walletManager.loadedWallets;
+  if (wallets.isEmpty) return true;
+
+  for (final w in wallets) {
+    await w.loadPersistedConnection();
+  }
+
+  if (wallets.any((w) => w.usingTor)) {
     await TorService.sharedInstance.start();
     await TorService.sharedInstance.waitUntilConnected().timeout(
       Duration(minutes: 2),
@@ -30,50 +37,60 @@ Future<bool> runTxNotifier() async {
     );
   }
 
+  await Future.wait(wallets.map(_prepareWalletForNotifier));
+
+  for (final w in wallets) {
+    await _notifyNewTxsForWallet(w);
+  }
+
+  return true;
+}
+
+Future<void> _prepareWalletForNotifier(CryptoWallet wallet) async {
+  if (wallet.connectionAddress.isEmpty) return;
   await wallet.refresh();
   await wallet.connectToDaemon();
   await wallet.loadTxHistory(persistCount: false);
 
-  int itersBeforeSynced = 0;
-
+  var iters = 0;
   while (true) {
-    if (wallet.isConnected && wallet.isSynced) {
-      break;
-    }
-
+    if (wallet.isConnected && wallet.isSynced) break;
     await Future.delayed(Duration(seconds: 2));
-
-    itersBeforeSynced++;
-
-    if (itersBeforeSynced == 20) {
-      log(LogLevel.warn, '[TX Notifier] Wallet connection timed out');
-      return false;
+    iters++;
+    if (iters == 20) {
+      log(
+        LogLevel.warn,
+        '[TX Notifier] [${wallet.coinSymbol}] Connection timed out',
+      );
+      return;
     }
   }
+}
 
-  final persistedTxCount = await wallet.getPersistedTxHistoryCount();
-  final currentTxCount = wallet.txHistory.length;
-  final countOfNewTxs = currentTxCount - persistedTxCount;
+Future<void> _notifyNewTxsForWallet(CryptoWallet wallet) async {
+  if (wallet.connectionAddress.isEmpty) return;
 
-  if (countOfNewTxs > 0 && currentTxCount != 0) {
-    log(LogLevel.info, '[TX Notifier] Found new transactions');
+  final persistedCount = await wallet.getPersistedTxHistoryCount();
+  final currentCount = wallet.txHistory.length;
+  final countOfNewTxs = currentCount - persistedCount;
+
+  if (countOfNewTxs > 0 && currentCount != 0) {
+    log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] Found new transactions');
 
     for (int i = 0; i < countOfNewTxs; i++) {
       final tx = wallet.txHistory[i];
       if (tx.direction == consts.txDirectionIncoming) {
-        log(LogLevel.info, '[TX Notifier] Notifying transaction $i');
+        log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] Notifying tx $i');
         NotificationService().showIncomingTxNotification(tx.amount);
       } else {
-        log(LogLevel.info, '[TX Notifier] Not notifying outgoing transaction');
+        log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] Skipping outgoing tx');
       }
     }
 
     await wallet.persistTxHistoryCount();
   } else {
-    log(LogLevel.info, '[TX Notifier] No new transactions found');
+    log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] No new transactions');
   }
-
-  return true;
 }
 
 @pragma('vm:entry-point')
@@ -103,8 +120,6 @@ Future<void> registerTxNotifierTaskIfAllowed() async {
     return;
   }
 
-  // Cancelling will replace an existing task, so we can prevent code from an
-  // old release from remaining forever.
   await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
   await Workmanager().registerPeriodicTask(
     PeriodicTasks.txNotifier,

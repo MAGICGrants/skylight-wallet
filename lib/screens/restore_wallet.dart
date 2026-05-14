@@ -1,13 +1,11 @@
+import 'package:bip39/bip39.dart' as bip39;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:polyseed/polyseed.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/util/get_height_by_date.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});
@@ -18,81 +16,81 @@ class RestoreWalletScreen extends StatefulWidget {
 
 class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   final _mnemonicController = TextEditingController();
-  final _restoreHeightController = TextEditingController();
-  bool _isPolyseed = false;
+  final _restoreDateController = TextEditingController();
+  DateTime _restoreDate = DateTime.now();
   bool _isLoading = false;
   String? _mnemonicError;
-  String? _restoreHeightError;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreDateController.text = _formatDate(_restoreDate);
+  }
 
   @override
   void dispose() {
     _mnemonicController.dispose();
-    _restoreHeightController.dispose();
+    _restoreDateController.dispose();
     super.dispose();
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _restoreDate,
+      firstDate: DateTime(2014, 4),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _restoreDate = picked;
+        _restoreDateController.text = _formatDate(picked);
+      });
+    }
   }
 
   Future<void> _restore() async {
     if (_isLoading) return;
 
     final i18n = AppLocalizations.of(context)!;
+    final manager = Provider.of<WalletManager>(context, listen: false);
 
     setState(() {
       _mnemonicError = null;
-      _restoreHeightError = null;
     });
 
-    if (_mnemonicController.text.isEmpty) {
+    final mnemonic = _mnemonicController.text.trim();
+
+    if (mnemonic.isEmpty) {
       setState(() {
         _mnemonicError = i18n.fieldEmptyError;
       });
       return;
     }
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
-    final mnemonic = _mnemonicController.text.trim();
-    final restoreHeight = int.tryParse(_restoreHeightController.text) ?? 0;
+    if (!bip39.validateMnemonic(mnemonic)) {
+      setState(() {
+        _mnemonicError = i18n.restoreWalletInvalidMnemonic;
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await wallet.restoreFromMnemonic(mnemonic, restoreHeight);
-    } on Exception catch (error) {
-      final errorMsg = error.toString().replaceFirst('Exception: ', '');
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (errorMsg == 'Invalid mnemonic.') {
-        setState(() {
-          _mnemonicError = i18n.restoreWalletInvalidMnemonic;
-        });
-
-        return;
-      } else if (errorMsg != '') {
-        setState(() {
-          _mnemonicError = i18n.unknownError;
-        });
-        return;
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
-      }
-      return;
+      await manager.restoreAll(bip39Mnemonic: mnemonic, restoreDate: _restoreDate);
     } catch (error) {
       log(LogLevel.error, error.toString());
       setState(() {
         _isLoading = false;
+        _mnemonicError = i18n.unknownError;
       });
-      if (mounted) {
-        final i18n = AppLocalizations.of(context)!;
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
-      }
       return;
     }
 
@@ -100,7 +98,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       _isLoading = false;
     });
 
-    wallet.load();
+    manager.loadAll();
 
     if (mounted) {
       Provider.of<FiatRateModel>(context, listen: false).startService();
@@ -108,50 +106,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     }
   }
 
-  Future<void> _calculatePolyseedHeight() async {
-    final mnemonic = _mnemonicController.text.trim();
-
-    if (!Polyseed.isValidSeed(mnemonic)) {
-      if (_isPolyseed) {
-        setState(() {
-          _isPolyseed = false;
-          _restoreHeightController.text = '';
-        });
-      }
-      return;
-    }
-
-    final polyseed = Polyseed.decode(
-      mnemonic,
-      PolyseedLang.getByPhrase(mnemonic),
-      PolyseedCoin.POLYSEED_MONERO,
-    );
-
-    final birthday = polyseed.birthday;
-    final restoreHeight = getHeightByDate(
-      date: DateTime.fromMillisecondsSinceEpoch(birthday * 1000),
-    );
-
-    setState(() {
-      _isPolyseed = true;
-      _restoreHeightController.text = restoreHeight.toString();
-    });
-  }
-
   void _onMnemonicChanged(String value) {
-    _calculatePolyseedHeight();
-
     if (_mnemonicError != null) {
       setState(() {
         _mnemonicError = null;
-      });
-    }
-  }
-
-  void _onRestoreHeightChanged(String value) {
-    if (_restoreHeightError != null) {
-      setState(() {
-        _restoreHeightError = null;
       });
     }
   }
@@ -162,7 +120,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
+      appBar: AppBar(title: Text('Skylight Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),
@@ -197,14 +155,13 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: TextFormField(
-                  controller: _restoreHeightController,
-                  onChanged: _onRestoreHeightChanged,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                  controller: _restoreDateController,
+                  readOnly: true,
+                  onTap: _pickDate,
                   decoration: InputDecoration(
-                    labelText: i18n.restoreWalletRestoreHeightLabel,
-                    errorText: _restoreHeightError,
+                    labelText: i18n.restoreWalletRestoreDateLabel,
                     border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
                   ),
                 ),
               ),

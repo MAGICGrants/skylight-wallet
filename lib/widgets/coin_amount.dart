@@ -14,8 +14,8 @@ class CoinAmount extends StatelessWidget {
     super.key,
     required this.amount,
     required this.maxFontSize,
-    this.decimals = 12,
-    this.smallerDigits = 9,
+    required this.decimals,
+    required this.smallerDigits,
   });
 
   @override
@@ -39,10 +39,7 @@ class CoinAmount extends StatelessWidget {
           margin: EdgeInsetsGeometry.only(top: maxFontSize * 0.16),
           child: Text(
             smallerSlice,
-            style: TextStyle(
-              fontSize: maxFontSize / 2,
-              fontWeight: FontWeight.w400,
-            ),
+            style: TextStyle(fontSize: maxFontSize / 2, fontWeight: FontWeight.w400),
           ),
         ),
       ],

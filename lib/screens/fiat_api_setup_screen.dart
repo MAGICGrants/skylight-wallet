@@ -19,7 +19,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
   Future<void> _onContinue() async {
     await FiatRateModel.saveFiatApiMode(_fiatMode);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _fiatCurrency);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
+    await FiatRateModel.clearPersistedRates();
 
     if (!mounted) return;
     Navigator.pushNamed(context, '/create_wallet_password');

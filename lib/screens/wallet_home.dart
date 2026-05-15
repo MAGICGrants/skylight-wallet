@@ -7,12 +7,13 @@ import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/coin_home.dart';
+import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/coin_amount.dart';
 import 'package:skylight_wallet/widgets/fiat_amount.dart';
-import 'package:skylight_wallet/widgets/status_icon.dart';
+import 'package:skylight_wallet/widgets/connection_status_indicator.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
 class WalletHomeScreen extends StatelessWidget {
@@ -26,7 +27,7 @@ class WalletHomeScreen extends StatelessWidget {
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
 
     final ratesBySymbol = <String, double?>{
-      for (final w in walletManager.allWallets) w.coinSymbol: fiatRate.rate,
+      for (final w in walletManager.allWallets) w.coinSymbol: fiatRate.rateFor(w.coinSymbol),
     };
     final totalFiat = walletManager.totalUnlockedFiat(ratesBySymbol);
 
@@ -40,7 +41,11 @@ class WalletHomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _TotalBalanceHeader(totalFiat: totalFiat, fiatSymbol: fiatSymbol, fiatRate: fiatRate),
+                _TotalBalanceHeader(
+                  totalFiat: totalFiat,
+                  fiatSymbol: fiatSymbol,
+                  fiatRate: fiatRate,
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: Text(
@@ -57,11 +62,7 @@ class WalletHomeScreen extends StatelessWidget {
                     itemCount: walletManager.allWallets.length,
                     itemBuilder: (context, index) {
                       final wallet = walletManager.allWallets[index];
-                      return _CoinRow(
-                        wallet: wallet,
-                        fiatRate: fiatRate,
-                        fiatSymbol: fiatSymbol,
-                      );
+                      return _CoinRow(wallet: wallet, fiatRate: fiatRate, fiatSymbol: fiatSymbol);
                     },
                   ),
                 ),
@@ -95,9 +96,9 @@ class _TotalBalanceHeader extends StatelessWidget {
         children: [
           Text(
             i18n.homeTotalBalanceLabel,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           SizedBox(height: 6),
           if (totalFiat is double)
@@ -134,28 +135,50 @@ class _CoinRow extends StatefulWidget {
 class _CoinRowState extends State<_CoinRow> {
   bool _isHovered = false;
 
-  StatusIconStatus _connectionIconStatus() {
+  ConnectionIndicatorState _connectionIndicatorState() {
     final wallet = widget.wallet;
-    if (wallet.connectionAddress.isEmpty) return StatusIconStatus.fail;
+    if (wallet.connectionAddress.isEmpty) return ConnectionIndicatorState.error;
     if (wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) > 0) {
-      return StatusIconStatus.complete;
+      return ConnectionIndicatorState.ok;
     }
-    if (wallet.usingTor &&
-            TorService.sharedInstance.status == TorConnectionStatus.connecting ||
+    if (wallet.usingTor && TorService.sharedInstance.status == TorConnectionStatus.connecting ||
         !wallet.hasAttemptedConnection ||
         wallet.isConnected && !wallet.isSynced ||
         wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) == 0) {
-      return StatusIconStatus.loading;
+      return ConnectionIndicatorState.loading;
     }
-    return StatusIconStatus.fail;
+    return ConnectionIndicatorState.error;
   }
 
-  void _openCoinHome() {
-    Navigator.pushNamed(
-      context,
-      '/coin_home',
-      arguments: CoinHomeScreenArgs(coinSymbol: widget.wallet.coinSymbol),
-    );
+  String _connectionRowTooltip(AppLocalizations i18n) {
+    final wallet = widget.wallet;
+    switch (_connectionIndicatorState()) {
+      case ConnectionIndicatorState.ok:
+        return '';
+      case ConnectionIndicatorState.loading:
+        return i18n.homeConnecting;
+      case ConnectionIndicatorState.error:
+        return wallet.connectionAddress.isEmpty
+            ? i18n.homeCoinNotConfigured
+            : i18n.homeConnectionErrorTooltip;
+    }
+  }
+
+  void _openCoin() {
+    final wallet = widget.wallet;
+    if (wallet.connectionAddress.isEmpty) {
+      Navigator.pushNamed(
+        context,
+        '/connection_setup',
+        arguments: ConnectionSetupScreenArgs(coinSymbol: wallet.coinSymbol),
+      );
+    } else {
+      Navigator.pushNamed(
+        context,
+        '/coin_home',
+        arguments: CoinHomeScreenArgs(coinSymbol: wallet.coinSymbol),
+      );
+    }
   }
 
   @override
@@ -164,9 +187,8 @@ class _CoinRowState extends State<_CoinRow> {
     final wallet = widget.wallet;
     final hasConnection = wallet.connectionAddress.isNotEmpty;
     final balance = wallet.unlockedBalance;
-    final balanceFiat = widget.fiatRate.rate is double && balance is double
-        ? balance * widget.fiatRate.rate!
-        : null;
+    final coinRate = widget.fiatRate.rateFor(wallet.coinSymbol);
+    final balanceFiat = coinRate != null && balance is double ? balance * coinRate : null;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -180,7 +202,7 @@ class _CoinRowState extends State<_CoinRow> {
         ),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: _openCoinHome,
+          onTap: _openCoin,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             child: Row(
@@ -198,17 +220,15 @@ class _CoinRowState extends State<_CoinRow> {
                             wallet.coinName,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
-                          StatusIcon(
-                            status: _connectionIconStatus(),
-                            torIsEnabled: wallet.usingTor,
+                          ConnectionStatusIndicator(
+                            state: _connectionIndicatorState(),
+                            tooltipMessage: _connectionRowTooltip(i18n),
                           ),
                         ],
                       ),
                       SizedBox(height: 2),
                       Text(
-                        hasConnection
-                            ? wallet.coinSymbol
-                            : i18n.homeCoinNotConfigured,
+                        hasConnection ? wallet.coinSymbol : i18n.homeCoinNotConfigured,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -223,19 +243,16 @@ class _CoinRowState extends State<_CoinRow> {
                       CoinAmount(
                         amount: balance ?? 0,
                         decimals: wallet.decimals,
+                        smallerDigits: wallet.smallerDigits,
                         maxFontSize: 16,
                       ),
                       if (balanceFiat is double && !widget.fiatRate.isDisabled)
-                        FiatAmount(
-                          prefix: widget.fiatSymbol,
-                          amount: balanceFiat,
-                          maxFontSize: 12,
-                        ),
+                        FiatAmount(prefix: widget.fiatSymbol, amount: balanceFiat, maxFontSize: 12),
                     ],
                   )
                 else
                   TextButton.icon(
-                    onPressed: _openCoinHome,
+                    onPressed: _openCoin,
                     icon: Icon(Icons.settings, size: 16),
                     label: Text(i18n.homeCoinSetUp),
                   ),

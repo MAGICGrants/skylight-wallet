@@ -50,10 +50,6 @@ dependencies:
     git:
       url: https://github.com/cypherstack/tor
       ref: main
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-
   monero:
     git:
       url: https://github.com/vtnerd/monero_c
@@ -86,9 +82,19 @@ dependencies:
   bip39: 1.0.6
   bip32: 2.0.0
   package_info_plus: 8.3.0
+  pointycastle: 3.9.1
+  bitcoin_base:
+    git:
+      url: https://github.com/cake-tech/bitcoin_base
+      ref: cake-update-v11
+  blockchain_utils:
+    git:
+      url: https://github.com/cake-tech/blockchain_utils
+      ref: cake-update-v2
 
 dependency_overrides:
   hashlib: 1.19.2
+  intl: any
 
 dev_dependencies:
   flutter_test:

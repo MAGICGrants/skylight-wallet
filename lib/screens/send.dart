@@ -232,12 +232,7 @@ class _SendScreenState extends State<SendScreen> {
 
     for (int i = 0; i < maxRetries; i++) {
       try {
-        return await wallet.createTx(
-          destinationAddress,
-          amount,
-          _isSweepAll,
-          priority: priority,
-        );
+        return await wallet.createTx(destinationAddress, amount, _isSweepAll, priority: priority);
       } catch (error) {
         if (error.toString().contains('Unlocked funds too low')) {
           return null;
@@ -412,6 +407,7 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
     final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
+    final coinRate = fiatRate.rateFor(wallet.coinSymbol);
 
     showModalBottomSheet(
       context: context,
@@ -430,7 +426,7 @@ class _SendScreenState extends State<SendScreen> {
                 fees: _fees,
                 wallet: wallet,
                 fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rate,
+                fiatRate: coinRate,
                 isSelected: _selectedPriority == 0,
                 onTap: () {
                   setState(() {
@@ -446,7 +442,7 @@ class _SendScreenState extends State<SendScreen> {
                 fees: _fees,
                 wallet: wallet,
                 fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rate,
+                fiatRate: coinRate,
                 isSelected: _selectedPriority == 1,
                 onTap: () {
                   setState(() {
@@ -462,7 +458,7 @@ class _SendScreenState extends State<SendScreen> {
                 fees: _fees,
                 wallet: wallet,
                 fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rate,
+                fiatRate: coinRate,
                 isSelected: _selectedPriority == 2,
                 onTap: () {
                   setState(() {
@@ -674,14 +670,11 @@ class _SendScreenState extends State<SendScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     spacing: 4,
                                     children: [
-                                      SvgPicture.asset(
-                                        wallet.iconAsset,
-                                        width: 14,
-                                        height: 14,
-                                      ),
+                                      SvgPicture.asset(wallet.iconAsset, width: 14, height: 14),
                                       CoinAmount(
                                         amount: selectedTx.fee,
                                         decimals: wallet.decimals,
+                                        smallerDigits: wallet.smallerDigits,
                                         maxFontSize: 14,
                                       ),
                                     ],
@@ -727,6 +720,7 @@ class _SendScreenState extends State<SendScreen> {
                           CoinAmount(
                             amount: wallet.unlockedBalance ?? 0,
                             decimals: wallet.decimals,
+                            smallerDigits: wallet.smallerDigits,
                             maxFontSize: 18,
                           ),
                         ],
@@ -949,7 +943,12 @@ class _PriorityOption extends StatelessWidget {
                         ),
                       ),
                       SvgPicture.asset(wallet.iconAsset, width: 14, height: 14),
-                      CoinAmount(amount: fee, decimals: wallet.decimals, maxFontSize: 14),
+                      CoinAmount(
+                        amount: fee,
+                        decimals: wallet.decimals,
+                        smallerDigits: wallet.smallerDigits,
+                        maxFontSize: 14,
+                      ),
                     ],
                   ),
                   if (currentFiatRate != null)

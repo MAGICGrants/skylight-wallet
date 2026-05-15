@@ -6,8 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
+import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:skylight_wallet/wallets/master_seed_store.dart';
 
 /// Top-level state holder shared by every screen.
 ///
@@ -25,6 +27,7 @@ class WalletManager with ChangeNotifier {
 
   WalletManager() : _wallets = {} {
     _register(MoneroWallet());
+    _register(BitcoinWallet());
   }
 
   void _register(CryptoWallet wallet) {
@@ -102,14 +105,41 @@ class WalletManager with ChangeNotifier {
       }
     }
 
+    // Load the master seed (if any) up-front so we can bootstrap any
+    // coin that was added after the wallet was originally created.
+    ({String mnemonic, DateTime restoreDate})? masterSeed;
+    try {
+      masterSeed = await MasterSeedStore.load(_password!);
+    } catch (e) {
+      log(LogLevel.error, '[WalletManager] Failed to read master seed: $e');
+    }
+
     for (final w in _wallets.values) {
       try {
         if (await w.hasExistingWallet()) {
           await w.openExisting(password: _password!);
-          await w.loadPersistedConnection();
+        } else if (masterSeed != null) {
+          // Coin was added after the wallet existed (or its file was
+          // never written for some reason). Lazily bootstrap it from
+          // the persisted BIP39 master seed.
+          log(LogLevel.info, '[WalletManager] Bootstrapping ${w.coinSymbol} from master seed.');
+          await w.restoreFromMasterSeed(
+            bip39Mnemonic: masterSeed.mnemonic,
+            restoreDate: masterSeed.restoreDate,
+            password: _password!,
+          );
         }
       } catch (e) {
         log(LogLevel.error, '[WalletManager] Failed to open ${w.coinSymbol}: $e');
+      }
+
+      // Always restore any persisted connection state, even if the
+      // wallet couldn't be opened/bootstrapped — the user shouldn't
+      // lose their server settings on restart.
+      try {
+        await w.loadPersistedConnection();
+      } catch (e) {
+        log(LogLevel.error, '[WalletManager] Failed to load ${w.coinSymbol} connection: $e');
       }
     }
   }
@@ -151,6 +181,14 @@ class WalletManager with ChangeNotifier {
       );
     }
 
+    // Persist the master seed so coins added in future releases can be
+    // bootstrapped on next unlock without re-prompting for the seed.
+    await MasterSeedStore.save(
+      bip39Mnemonic: bip39Mnemonic,
+      restoreDate: restoreDate,
+      password: _password!,
+    );
+
     await persistMobileWalletPassword();
   }
 
@@ -163,6 +201,12 @@ class WalletManager with ChangeNotifier {
       } catch (e) {
         log(LogLevel.error, '[WalletManager] Failed to delete ${w.coinSymbol}: $e');
       }
+    }
+
+    try {
+      await MasterSeedStore.delete();
+    } catch (e) {
+      log(LogLevel.error, '[WalletManager] Failed to delete master seed: $e');
     }
 
     _password = null;

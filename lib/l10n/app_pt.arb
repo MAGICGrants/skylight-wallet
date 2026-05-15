@@ -20,6 +20,15 @@
   "restoreWarningContinueButton": "Continuar",
   "lwsSetupTitle": "Configuração do LWS",
   "lwsSetupDescription": "Informe o endereço do seu servidor light-wallet Monero (LWS).",
+  "connectionSetupTitle": "Configuração da Conexão",
+  "connectionSetupDescription": "Informe o endereço do seu {type}.",
+  "@connectionSetupDescription": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
   "lwsSetupAddressHint": "ex: 192.168.1.1:18090 ou exemplo.com:18090",
   "lwsSetupProxyPortLabel": "Porta do Proxy HTTP (opcional)",
   "lwsSetupProxyPortHint": "ex: 4444 para I2P",
@@ -80,6 +89,8 @@
   "homeYourCoinsTitle": "Suas Moedas",
   "homeCoinNotConfigured": "Não configurado",
   "homeCoinSetUp": "Configurar",
+  "homeConnectionErrorTooltip": "Não foi possível conectar ao servidor",
+  "coinHomeServerConnectionButton": "Conexão com o servidor",
   "receiveTitle": "Receber",
   "receivePrimaryAddressWarn": "Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.",
   "receiveShareButton": "Compartilhar",

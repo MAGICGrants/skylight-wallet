@@ -131,11 +131,12 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final fiatRate = context.watch<FiatRateModel>();
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
-    final amountFiat = fiatRate.rate is double ? _amount * fiatRate.rate! : null;
-    final networkFeeFiat = fiatRate.rate is double ? _fee * fiatRate.rate! : null;
     final wallet = context.watch<WalletManager>().getWallet(_coinSymbol);
     final decimals = wallet?.decimals ?? 12;
     final coinSymbol = wallet?.coinSymbol ?? _coinSymbol;
+    final coinRate = fiatRate.rateFor(coinSymbol);
+    final amountFiat = coinRate != null ? _amount * coinRate : null;
+    final networkFeeFiat = coinRate != null ? _fee * coinRate : null;
 
     return Scaffold(
       appBar: AppBar(),

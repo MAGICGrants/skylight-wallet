@@ -71,6 +71,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lwsSetupDescription => 'Enter the address of your Monero light-wallet server (LWS).';
 
   @override
+  String get connectionSetupTitle => 'Connection Setup';
+
+  @override
+  String connectionSetupDescription(String type) {
+    return 'Enter the address of your $type.';
+  }
+
+  @override
   String get lwsSetupAddressHint => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
@@ -253,6 +261,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeCoinSetUp => 'Set up';
+
+  @override
+  String get homeConnectionErrorTooltip => 'Couldn\'t connect to the server';
+
+  @override
+  String get coinHomeServerConnectionButton => 'Server connection';
 
   @override
   String get receiveTitle => 'Receive';

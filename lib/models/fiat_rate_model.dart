@@ -12,7 +12,17 @@ import 'package:skylight_wallet/util/socks_http.dart';
 
 enum FiatApiMode { torOnly, clearnet, disabled }
 
+// Tracks the latest fiat exchange rate (in [fiatCode]) for every coin
+// the wallet supports. Each coin is fetched independently so a Kraken
+// outage on one pair doesn't blank out the others.
 class FiatRateModel with ChangeNotifier {
+  // Mapping coinSymbol -> Kraken base code prefix used to build the
+  // pair name. Kraken uses the legacy "X<asset>Z<fiat>" notation for its
+  // original assets (e.g. XMR is `XXMRZ`, BTC is `XXBTZ`).
+  static const Map<String, String> _krakenBase = {'XMR': 'XXMRZ', 'BTC': 'XXBTZ'};
+
+  static List<String> get supportedCoins => _krakenBase.keys.toList();
+
   static Future<FiatApiMode> loadFiatApiMode() async {
     final s = await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatApiMode);
     if (s == null) {
@@ -28,7 +38,15 @@ class FiatRateModel with ChangeNotifier {
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatApiMode, mode.name);
   }
 
-  double? _rate;
+  /// Clears every persisted per-coin rate. Called when the user changes the fiat currency or
+  /// API mode so the UI doesn't briefly show a stale rate quoted in the previous fiat.
+  static Future<void> clearPersistedRates() async {
+    for (final coin in _krakenBase.keys) {
+      await SharedPreferencesService.remove(_persistKeyFor(coin));
+    }
+  }
+
+  final Map<String, double?> _rates = {};
   bool _isLoading = false;
   bool _hasFailed = false;
   bool _isDisabled = false;
@@ -36,11 +54,18 @@ class FiatRateModel with ChangeNotifier {
   FiatApiMode _fiatApiMode = FiatApiMode.torOnly;
   Timer? _rateFetchTimer;
 
-  double? get rate => _rate;
+  /// Latest fiat rate for [coinSymbol], or `null` if it hasn't been
+  /// fetched yet (or the most recent fetch failed).
+  double? rateFor(String coinSymbol) => _rates[coinSymbol.toUpperCase()];
+
+  Map<String, double?> get rates => Map.unmodifiable(_rates);
   bool get isLoading => _isLoading;
   bool get hasFailed => _hasFailed;
   bool get isDisabled => _isDisabled;
   String get fiatCode => _fiatCode;
+
+  static String _persistKeyFor(String coinSymbol) =>
+      '${SharedPreferencesKeys.fiatRate}_${coinSymbol.toLowerCase()}';
 
   void _startRateFetchTimer() {
     if (_fiatApiMode == FiatApiMode.disabled) {
@@ -63,12 +88,14 @@ class FiatRateModel with ChangeNotifier {
   Future<void> _loadPersisted() async {
     _fiatCode =
         await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
-    _rate = await SharedPreferencesService.get<double>(SharedPreferencesKeys.fiatRate);
     _fiatApiMode = await FiatRateModel.loadFiatApiMode();
+    for (final coin in _krakenBase.keys) {
+      _rates[coin] = await SharedPreferencesService.get<double>(_persistKeyFor(coin));
+    }
   }
 
-  Future<void> _persist(double rate) async {
-    await SharedPreferencesService.set<double>(SharedPreferencesKeys.fiatRate, rate);
+  Future<void> _persist(String coin, double rate) async {
+    await SharedPreferencesService.set<double>(_persistKeyFor(coin), rate);
   }
 
   Future<double> _requestPairRateClearnet(String pair) async {
@@ -135,6 +162,21 @@ class FiatRateModel with ChangeNotifier {
     return _requestPairRateTor(pair);
   }
 
+  /// Fetches the rate for one coin, applying the USD->fiat bridge for
+  /// fiat codes Kraken doesn't quote directly.
+  Future<double> _fetchCoinRate(String coin) async {
+    final base = _krakenBase[coin]!;
+    final isIndirect = indirectPairCurrencies.contains(_fiatCode);
+    final pair1 = isIndirect ? '${base}USD' : '$base$_fiatCode';
+    final pair2 = isIndirect ? 'USDT$_fiatCode' : null;
+
+    final rates = await Future.wait([
+      _requestPairRate(pair1),
+      pair2 != null ? _requestPairRate(pair2) : Future.value(null),
+    ]);
+    return rates[0]! * (rates[1] ?? 1);
+  }
+
   Future<void> _loadRate() async {
     _fiatApiMode = await FiatRateModel.loadFiatApiMode();
     if (_fiatApiMode == FiatApiMode.disabled) {
@@ -149,30 +191,30 @@ class FiatRateModel with ChangeNotifier {
     _fiatCode =
         await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
 
-    final pair1 = indirectPairCurrencies.contains(_fiatCode) ? 'XXMRZUSD' : 'XXMRZ$_fiatCode';
-    final pair2 = indirectPairCurrencies.contains(fiatCode) ? 'USDT$fiatCode' : null;
+    _isLoading = true;
+    notifyListeners();
 
-    try {
-      _isLoading = true;
-      notifyListeners();
+    var anySucceeded = false;
+    var anyFailed = false;
 
-      final rates = await Future.wait([
-        _requestPairRate(pair1),
-        pair2 != null ? _requestPairRate(pair2) : Future.value(null),
-      ]);
+    await Future.wait(
+      _krakenBase.keys.map((coin) async {
+        try {
+          final rate = await _fetchCoinRate(coin);
+          _rates[coin] = rate;
+          await _persist(coin, rate);
+          anySucceeded = true;
+          log(LogLevel.info, '$_fiatCode/$coin rate: $rate');
+        } catch (error) {
+          log(LogLevel.error, 'Failed to get $coin/$_fiatCode rate. $error');
+          anyFailed = true;
+        }
+      }),
+    );
 
-      final finalRate = rates[0]! * (rates[1] ?? 1);
-      _rate = finalRate;
-      _persist(finalRate);
-      _hasFailed = false;
-      log(LogLevel.info, '$_fiatCode rate: $finalRate');
-    } catch (error) {
-      log(LogLevel.error, 'Failed to get fiat rate. ${error.toString()}');
-      _hasFailed = true;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    _hasFailed = anyFailed && !anySucceeded;
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> startService() async {

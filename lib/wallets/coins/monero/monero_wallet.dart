@@ -13,6 +13,7 @@ import 'package:monero/src/wallet2.dart';
 
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/bip39.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
@@ -54,6 +55,15 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   int get decimals => 12;
+
+  @override
+  int get smallerDigits => 9;
+
+  @override
+  String get connectionTypeName => 'Monero LWS server';
+
+  @override
+  String get connectionAddressExample => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   // ----- Lifecycle -----
 
@@ -273,6 +283,54 @@ class MoneroWallet extends CryptoWallet {
     final connectError = _w2Wallet!.errorString();
     if (connectError != '') {
       log(LogLevel.warn, 'Wallet_connectToDaemon error: $connectError');
+    }
+  }
+
+  @override
+  Future<void> testConnection({
+    required String address,
+    String? proxyPort,
+    required bool useSsl,
+    required bool useTor,
+  }) async {
+    final url = '${useSsl ? 'https' : 'http'}://$address/get_address_info';
+    log(LogLevel.info, '[XMR] Probing LWS server: $url (tor=$useTor, proxyPort=$proxyPort)');
+
+    late int statusCode;
+    if (useTor) {
+      final torSettings = TorSettingsService.sharedInstance;
+      if (torSettings.torMode == TorMode.disabled) {
+        throw Exception('Tor is disabled. Please go back and enable it.');
+      }
+      final proxyInfo = await torSettings.getProxy();
+      if (proxyInfo == null) {
+        throw Exception('Could not resolve a Tor proxy.');
+      }
+      final response = await makeSocksHttpRequest(
+        'POST',
+        url,
+        proxyInfo,
+      ).timeout(const Duration(seconds: 20));
+      statusCode = response.statusCode;
+    } else {
+      var httpClient = HttpClient();
+      if (proxyPort != null && proxyPort.isNotEmpty) {
+        httpClient.findProxy = (_) => 'PROXY localhost:$proxyPort';
+      }
+      try {
+        final request = await httpClient.postUrl(Uri.parse(url));
+        final response = await request.close().timeout(const Duration(seconds: 10));
+        statusCode = response.statusCode;
+      } finally {
+        httpClient.close(force: true);
+      }
+    }
+
+    // LWS responds with 500 to an unauthenticated POST to
+    // /get_address_info. Anything else means we're not talking to a
+    // real LWS endpoint.
+    if (statusCode != HttpStatus.internalServerError) {
+      throw Exception('Unexpected status $statusCode from $url');
     }
   }
 

@@ -8,12 +8,10 @@ import 'package:local_auth/local_auth.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
 import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -299,42 +297,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showConnectionSettingsDialog(CryptoWallet wallet) {
-    final i18n = AppLocalizations.of(context)!;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final dialogWidth = screenWidth.clamp(0.0, 500.0);
-
-    void onSaved() {
-      wallet.load();
-
-      final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-      fiatRate.startService();
-
-      Navigator.pop(context);
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        constraints: BoxConstraints.tightFor(width: dialogWidth),
-        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        title: Text('${wallet.coinName} ${i18n.settingsLwsSettingsLabel}'),
-        content: ConnectionSettingsForm(
-          coinSymbol: wallet.coinSymbol,
-          saveButtonLabel: i18n.torSettingsSaveButton,
-          onSaved: onSaved,
-          isInDialog: true,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final language = context.watch<LanguageModel>();
     final theme = context.watch<ThemeModel>();
-    final walletManager = context.watch<WalletManager>();
 
     return Scaffold(
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 2),
@@ -423,21 +390,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onPressed: _verboseLoggingEnabled ? _exportLogs : null,
                     icon: Icon(Icons.ios_share),
                     label: Text(i18n.settingsExportLogsButton),
-                  ),
-                ],
-              ),
-            for (final wallet in walletManager.allWallets)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${wallet.coinName} ${i18n.settingsLwsSettingsLabel}',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => _showConnectionSettingsDialog(wallet),
-                    icon: Icon(Icons.dns),
-                    label: Text(i18n.settingsLwsViewKeysButton),
                   ),
                 ],
               ),

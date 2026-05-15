@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/screens/coin_home.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 
@@ -20,14 +21,18 @@ class ConnectionSetupScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
     final args = ModalRoute.of(context)?.settings.arguments as ConnectionSetupScreenArgs?;
     final coinSymbol = args?.coinSymbol ?? 'XMR';
+    final manager = Provider.of<WalletManager>(context);
+    final wallet = manager.getWallet(coinSymbol);
+    final connectionTypeName = wallet?.connectionTypeName ?? 'server';
 
     void onSaved() {
-      final manager = Provider.of<WalletManager>(context, listen: false);
       manager.getWallet(coinSymbol)?.load();
 
       final route = args?.successRoute;
       if (route != null) {
-        Navigator.pushNamedAndRemoveUntil(context, route, (r) => false);
+        final arguments =
+            route == '/coin_home' ? CoinHomeScreenArgs(coinSymbol: coinSymbol) : null;
+        Navigator.pushNamedAndRemoveUntil(context, route, (r) => false, arguments: arguments);
       } else {
         Navigator.pop(context);
       }
@@ -47,9 +52,12 @@ class ConnectionSetupScreen extends StatelessWidget {
                 Column(
                   spacing: 10,
                   children: [
-                    Text(i18n.lwsSetupTitle, style: Theme.of(context).textTheme.headlineMedium),
                     Text(
-                      i18n.lwsSetupDescription,
+                      i18n.connectionSetupTitle,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    Text(
+                      i18n.connectionSetupDescription(connectionTypeName),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),

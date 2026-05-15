@@ -120,6 +120,16 @@ abstract class CryptoWallet with ChangeNotifier {
   String get coinName;
   String get iconAsset;
   int get decimals;
+  int get smallerDigits;
+
+  /// Human-readable name of the kind of server this coin connects to,
+  /// used in connection-setup copy (e.g. "LWS server", "Electrum server").
+  String get connectionTypeName;
+
+  /// Example address shown as the placeholder in the connection-setup
+  /// form's address field (e.g. `192.168.1.1:18090` for Monero LWS,
+  /// `electrum.example.com:50002` for an Electrum server).
+  String get connectionAddressExample;
 
   // ----- Internal state -----
 
@@ -192,6 +202,23 @@ abstract class CryptoWallet with ChangeNotifier {
     String? proxyPort,
     required bool useSsl,
   });
+
+  /// Coin-specific connectivity probe for the connection-setup form.
+  ///
+  /// Performs a single round-trip to the supplied [address] using
+  /// whatever protocol this coin's daemon speaks (HTTP POST for Monero
+  /// LWS, JSON-RPC over TCP for Electrum, etc). Throws on failure with
+  /// a human-readable error.
+  ///
+  /// Implementations MUST NOT mutate the wallet's live connection state;
+  /// the probe should be entirely standalone.
+  Future<void> testConnection({
+    required String address,
+    String? proxyPort,
+    required bool useSsl,
+    required bool useTor,
+  });
+
   Future<bool> getIsConnected();
   Future<void> refresh();
   Future<void> loadIsSynced();

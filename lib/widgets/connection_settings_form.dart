@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
@@ -210,82 +209,72 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     });
   }
 
+  /// Resolves the SOCKS proxy port to pass to `wallet.testConnection`.
+  /// When the user enabled Tor, this comes from the running TorService;
+  /// otherwise it's the optional custom HTTP/SOCKS proxy field.
+  Future<String?> _resolveProxyPort() async {
+    if (_useTor) {
+      final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
+      return proxyInfo?.port.toString();
+    }
+    final custom = _customProxyPortController.text.trim();
+    return custom.isEmpty ? null : custom;
+  }
+
   Future _testConnection() async {
     final i18n = AppLocalizations.of(context)!;
-    final proto = _useSsl ? 'https' : 'http';
-    final daemonAddress = _cleanAddress(_addressController.text);
-    final customProxyPort = _customProxyPortController.text;
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final wallet = manager.getWallet(widget.coinSymbol);
+    if (wallet == null) return;
 
-    // Handle demo mode
-    if (isDemoMode) {
-      if (daemonAddress == 'demo') {
-        setState(() {
-          _hasTested = true;
-          _connectionSuccess = true;
-        });
-        return;
-      }
+    final daemonAddress = _cleanAddress(_addressController.text);
+
+    if (isDemoMode && daemonAddress == 'demo') {
+      setState(() {
+        _hasTested = true;
+        _connectionSuccess = true;
+      });
+      return;
+    }
+
+    if (_useTor && TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(i18n.lwsSetupTorDisabledError)));
+      return;
     }
 
     setState(() {
       _hasTested = true;
       _connectionTestIsLoading = true;
+      _connectionSuccess = false;
+      _errorMessage = null;
     });
 
-    final url = '$proto://$daemonAddress/get_address_info';
-
     try {
-      if (_useTor) {
-        if (!mounted) {
-          return;
-        }
-
-        final torSettings = TorSettingsService.sharedInstance;
-
-        if (torSettings.torMode == TorMode.disabled) {
-          // show error toast
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.lwsSetupTorDisabledError)));
-          return;
-        }
-
-        final proxyInfo = await torSettings.getProxy();
-
-        final response = await makeSocksHttpRequest(
-          'POST',
-          url,
-          proxyInfo!,
-        ).timeout(Duration(seconds: 20));
-
-        setState(() {
-          _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
-        });
-      } else {
-        var httpClient = HttpClient();
-
-        if (customProxyPort != '') {
-          httpClient = httpClient
-            ..findProxy = (uri) {
-              return "PROXY localhost:$customProxyPort";
-            };
-        }
-
-        final request = await httpClient.postUrl(Uri.parse(url));
-        final response = await request.close().timeout(Duration(seconds: 10));
-
-        setState(() {
-          _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
-        });
-      }
+      final proxyPort = await _resolveProxyPort();
+      await wallet.testConnection(
+        address: daemonAddress,
+        proxyPort: proxyPort,
+        useSsl: _useSsl,
+        useTor: _useTor,
+      );
+      if (!mounted) return;
+      setState(() {
+        _connectionSuccess = true;
+      });
     } catch (error) {
+      log(LogLevel.warn, '[${widget.coinSymbol}] testConnection failed: $error');
+      if (!mounted) return;
       setState(() {
         _connectionSuccess = false;
       });
     } finally {
-      setState(() {
-        _connectionTestIsLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _connectionTestIsLoading = false;
+        });
+      }
     }
   }
 
@@ -314,6 +303,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
+    final wallet =
+        Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
+    final addressHint = wallet?.connectionAddressExample ?? i18n.lwsSetupAddressHint;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -325,7 +317,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           onChanged: _onAddressChange,
           decoration: InputDecoration(
             labelText: i18n.address,
-            hintText: i18n.lwsSetupAddressHint,
+            hintText: addressHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
             suffixIcon: Row(
               mainAxisSize: MainAxisSize.min,

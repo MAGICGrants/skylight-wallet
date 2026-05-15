@@ -213,6 +213,18 @@ abstract class AppLocalizations {
   /// **'Enter the address of your Monero light-wallet server (LWS).'**
   String get lwsSetupDescription;
 
+  /// No description provided for @connectionSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Setup'**
+  String get connectionSetupTitle;
+
+  /// No description provided for @connectionSetupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the address of your {type}.'**
+  String connectionSetupDescription(String type);
+
   /// No description provided for @lwsSetupAddressHint.
   ///
   /// In en, this message translates to:
@@ -572,6 +584,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set up'**
   String get homeCoinSetUp;
+
+  /// No description provided for @homeConnectionErrorTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect to the server'**
+  String get homeConnectionErrorTooltip;
+
+  /// No description provided for @coinHomeServerConnectionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Server connection'**
+  String get coinHomeServerConnectionButton;
 
   /// No description provided for @receiveTitle.
   ///

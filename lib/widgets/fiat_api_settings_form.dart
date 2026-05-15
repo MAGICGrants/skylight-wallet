@@ -42,7 +42,7 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
   Future<void> _save() async {
     await FiatRateModel.saveFiatApiMode(_mode);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _currency);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
+    await FiatRateModel.clearPersistedRates();
     await widget.onSaved();
   }
 

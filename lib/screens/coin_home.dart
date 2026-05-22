@@ -123,12 +123,18 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
           spacing: 10,
           children: [
             SvgPicture.asset(wallet.iconAsset, width: 22, height: 22),
-            CoinAmount(
-              amount: wallet.unlockedBalance ?? 0,
-              decimals: wallet.decimals,
-              smallerDigits: wallet.smallerDigits,
-              maxFontSize: 30,
-            ),
+            if (wallet.unlockedBalance == null)
+              Skeletonizer(
+                enabled: true,
+                child: Text('0.000000', style: TextStyle(fontSize: 30)),
+              )
+            else
+              CoinAmount(
+                amount: wallet.unlockedBalance!,
+                decimals: wallet.decimals,
+                smallerDigits: wallet.smallerDigits,
+                maxFontSize: 30,
+              ),
           ],
         ),
         if (lockedBalance > 0)
@@ -141,14 +147,14 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 4,
           children: [
-            if (fiatRate.hasFailed)
+            if (!wallet.isTestnet && fiatRate.hasFailed)
               Tooltip(
                 message: i18n.homeFiatApiError,
                 child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),
               ),
-            if (unlockedBalanceFiat == null && !fiatRate.isDisabled)
+            if (!wallet.isTestnet && unlockedBalanceFiat == null && !fiatRate.isDisabled)
               Skeletonizer(enabled: true, child: Text('Potato', style: TextStyle(fontSize: 18))),
-            if (unlockedBalanceFiat is double && !fiatRate.isDisabled)
+            if (!wallet.isTestnet && unlockedBalanceFiat is double && !fiatRate.isDisabled)
               FiatAmount(prefix: fiatSymbol, amount: unlockedBalanceFiat, maxFontSize: 18),
           ],
         ),
@@ -156,63 +162,49 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     );
   }
 
+  void _openConnectionSetup(CryptoWallet wallet) {
+    Navigator.pushNamed(
+      context,
+      '/connection_setup',
+      arguments: ConnectionSetupScreenArgs(
+        coinSymbol: wallet.coinSymbol,
+        successRoute: '/coin_home',
+      ),
+    );
+  }
+
   Widget _buildActionButtons(AppLocalizations i18n, CryptoWallet wallet) {
     final coinSymbol = wallet.coinSymbol;
     final hasConnection = wallet.connectionAddress.isNotEmpty;
 
-    void openConnectionSetup() {
-      Navigator.pushNamed(
-        context,
-        '/connection_setup',
-        arguments: ConnectionSetupScreenArgs(
-          coinSymbol: coinSymbol,
-          successRoute: '/coin_home',
-        ),
-      );
-    }
-
-    return Column(
+    return Row(
       spacing: 10,
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            icon: Icon(Icons.dns_outlined, size: 18),
-            label: Text(i18n.coinHomeServerConnectionButton),
-            onPressed: openConnectionSetup,
+        FilledButton.icon(
+          label: Text(i18n.homeReceive),
+          icon: Transform.rotate(
+            angle: 90 * math.pi / 180,
+            child: Icon(Icons.arrow_outward_rounded),
           ),
+          onPressed: hasConnection
+              ? () => Navigator.pushNamed(
+                  context,
+                  '/receive',
+                  arguments: ReceiveScreenArgs(coinSymbol: coinSymbol),
+                )
+              : null,
         ),
-        Row(
-          spacing: 10,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FilledButton.icon(
-              label: Text(i18n.homeReceive),
-              icon: Transform.rotate(
-                angle: 90 * math.pi / 180,
-                child: Icon(Icons.arrow_outward_rounded),
-              ),
-              onPressed: hasConnection
-                  ? () => Navigator.pushNamed(
-                        context,
-                        '/receive',
-                        arguments: ReceiveScreenArgs(coinSymbol: coinSymbol),
-                      )
-                  : null,
-            ),
-            FilledButton.icon(
-              label: Text(i18n.homeSend),
-              icon: Icon(Icons.arrow_outward_rounded),
-              onPressed: hasConnection
-                  ? () => Navigator.pushNamed(
-                        context,
-                        '/send',
-                        arguments: SendScreenArgs(coinSymbol: coinSymbol, destinationAddress: ''),
-                      )
-                  : null,
-            ),
-          ],
+        FilledButton.icon(
+          label: Text(i18n.homeSend),
+          icon: Icon(Icons.arrow_outward_rounded),
+          onPressed: hasConnection
+              ? () => Navigator.pushNamed(
+                  context,
+                  '/send',
+                  arguments: SendScreenArgs(coinSymbol: coinSymbol, destinationAddress: ''),
+                )
+              : null,
         ),
       ],
     );
@@ -282,15 +274,24 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
       );
     }
 
-    final coinRate = fiatRate.rateFor(wallet.coinSymbol);
-    final unlockedBalanceFiat = coinRate != null && wallet.unlockedBalance is double
+    final coinRate = fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
+    final unlockedBalanceFiat = !wallet.isTestnet && coinRate != null && wallet.unlockedBalance is double
         ? wallet.unlockedBalance! * coinRate
         : null;
     final lockedBalance = (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
 
     return Scaffold(
-      appBar: AppBar(title: Text(wallet.coinName)),
+      appBar: AppBar(
+        title: Text(wallet.coinName),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.dns_outlined),
+            tooltip: i18n.coinHomeServerConnectionButton,
+            onPressed: () => _openConnectionSetup(wallet),
+          ),
+        ],
+      ),
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
       body: SafeArea(
         child: _buildResponsiveLayout(
@@ -446,8 +447,13 @@ class _TransactionListItemState extends State<_TransactionListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final coinRate = widget.fiatRate.rateFor(widget.wallet.coinSymbol);
-    final amountFiat = coinRate != null ? widget.tx.amount * coinRate : null;
+    final coinRate = widget.fiatRate.rateFor(
+      widget.wallet.coinSymbol,
+      isTestnet: widget.wallet.isTestnet,
+    );
+    final amountFiat = !widget.wallet.isTestnet && coinRate != null
+        ? widget.tx.amount * coinRate
+        : null;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -497,12 +503,12 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                       smallerDigits: widget.wallet.smallerDigits,
                       maxFontSize: 16,
                     ),
-                    if (amountFiat == null && !widget.fiatRate.isDisabled)
+                    if (!widget.wallet.isTestnet && amountFiat == null && !widget.fiatRate.isDisabled)
                       Skeletonizer(
                         enabled: true,
                         child: Text('Potato', style: TextStyle(fontSize: 14)),
                       ),
-                    if (amountFiat is double && !widget.fiatRate.isDisabled)
+                    if (!widget.wallet.isTestnet && amountFiat is double && !widget.fiatRate.isDisabled)
                       FiatAmount(prefix: widget.fiatSymbol, amount: amountFiat, maxFontSize: 14),
                   ],
                 ),
@@ -511,17 +517,16 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    if (widget.tx.confirmations < 10 || widget.tx.height == -1)
+                    if (!widget.wallet.isTxConfirmed(widget.tx))
                       Row(
                         children: [
                           Text(
-                            '${widget.tx.height == -1 ? '0' : widget.tx.confirmations}/10',
+                            '${widget.tx.height == -1 ? '0' : widget.tx.confirmations}/${widget.wallet.requiredConfirmations}',
                             style: TextStyle(color: Colors.amber.shade700),
                           ),
                           Icon(Icons.hourglass_top_rounded, color: Colors.amber.shade700, size: 20),
                         ],
                       ),
-                    if (widget.tx.confirmations >= 10 && widget.tx.height != -1) Text(''),
                     Text(
                       timeago.format(
                         DateTime.fromMillisecondsSinceEpoch(widget.tx.timestamp * 1000),

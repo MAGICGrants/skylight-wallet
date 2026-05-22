@@ -25,7 +25,21 @@ class WalletFileCrypto {
   static const _tagLenBits = 128;
   static const _pbkdf2Iterations = 200000;
 
+  /// Smallest on-disk blob that [decrypt] accepts (empty plaintext + GCM tag).
+  static const int minBlobLength = 4 + 1 + 32 + 12 + 16;
+
   static final _random = Random.secure();
+
+  /// Returns false for empty, truncated, or non-base64 wallet files.
+  static bool isValidEncryptedBlobBase64(String base64Blob) {
+    final trimmed = base64Blob.trim();
+    if (trimmed.isEmpty) return false;
+    try {
+      return base64.decode(trimmed).length >= minBlobLength;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Encrypts [plaintext] with [password]. Returns a base64-encoded blob
   /// suitable for writing to a text file.
@@ -64,14 +78,14 @@ class WalletFileCrypto {
   }
 
   static Uint8List decrypt(List<int> blob, String password) {
-    if (blob.length < _magic.length + 1 + _saltLen + _ivLen + 16) {
-      throw const FormatException('Wallet blob is too short');
+    if (blob.length < minBlobLength) {
+      throw FormatException('Wallet blob is too short');
     }
 
     var offset = 0;
     for (var i = 0; i < _magic.length; i++) {
       if (blob[offset + i] != _magic[i]) {
-        throw const FormatException('Wallet blob magic mismatch');
+        throw FormatException('Wallet blob magic mismatch');
       }
     }
     offset += _magic.length;
@@ -97,7 +111,7 @@ class WalletFileCrypto {
     try {
       return cipher.process(ciphertext);
     } on InvalidCipherTextException {
-      throw const FormatException('Wallet decryption failed (wrong password or corrupt file)');
+      throw FormatException('Wallet decryption failed (wrong password or corrupt file)');
     }
   }
 

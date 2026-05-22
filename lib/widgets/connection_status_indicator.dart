@@ -21,7 +21,7 @@ class ConnectionStatusIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state == ConnectionIndicatorState.ok) {
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     final Widget indicator = state == ConnectionIndicatorState.loading
@@ -29,7 +29,7 @@ class ConnectionStatusIndicator extends StatelessWidget {
             width: indicatorSize,
             height: indicatorSize,
             child: Padding(
-              padding: const EdgeInsets.all(2),
+              padding: EdgeInsets.all(2),
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           )

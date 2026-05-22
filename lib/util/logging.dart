@@ -21,6 +21,13 @@ final _logQueue = _LogQueue();
 
 String _timestamp() => DateTime.now().toUtc().toIso8601String();
 
+String _withCoinPrefix(String message, String? coin) {
+  if (coin == null || coin.isEmpty) return message;
+  final prefix = '[$coin]';
+  if (message.startsWith(prefix)) return message;
+  return '$prefix $message';
+}
+
 Future<File> _getLogFile() async {
   Directory? directory;
 
@@ -68,9 +75,9 @@ Future<void> cleanOldLogFiles() async {
     }
 
     // Get current time and calculate cutoff date
-    const daysToKeep = 30;
+    final daysToKeep = 30;
     final now = DateTime.now();
-    final cutoffDate = now.subtract(const Duration(days: daysToKeep));
+    final cutoffDate = now.subtract(Duration(days: daysToKeep));
 
     // List all files in logs directory
     final files = await logsDir.list().toList();
@@ -92,7 +99,12 @@ Future<void> cleanOldLogFiles() async {
   }
 }
 
-Future<void> log(LogLevel level, String message, [Map<String, dynamic>? meta]) async {
+Future<void> log(
+  LogLevel level,
+  String message, {
+  Map<String, dynamic>? meta,
+  String? coin,
+}) async {
   final verboseLoggingEnabled =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
       false;
@@ -106,7 +118,7 @@ Future<void> log(LogLevel level, String message, [Map<String, dynamic>? meta]) a
   final ts = _timestamp();
   final label = level.toString().split('.').last.toUpperCase();
   final metaStr = (meta == null || meta.isEmpty) ? '' : ' ${meta.toString()}';
-  final output = '[$ts] [$label] $message $metaStr';
+  final output = '[$ts] [$label] ${_withCoinPrefix(message, coin)}$metaStr';
 
   if (level == LogLevel.error) {
     debugPrint(output);

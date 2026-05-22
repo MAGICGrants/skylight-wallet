@@ -30,7 +30,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
     try {
       final result = await manager.createFromNewSeed();
-      manager.loadAll();
+      manager.syncInBackground();
 
       setState(() {
         _seed = result.mnemonic.split(' ');
@@ -48,7 +48,8 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
   }
 
   void _continue() {
-    Provider.of<FiatRateModel>(context, listen: false).startService();
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    Provider.of<FiatRateModel>(context, listen: false).startService(walletManager: manager);
     Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
   }
 

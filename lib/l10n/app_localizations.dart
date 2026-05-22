@@ -717,6 +717,18 @@ abstract class AppLocalizations {
   /// **'Verbose Logging'**
   String get settingsVerboseLoggingLabel;
 
+  /// No description provided for @settingsTestnetCoinsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Testnet Coins'**
+  String get settingsTestnetCoinsLabel;
+
+  /// No description provided for @settingsTestnetCoinsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show testnet coins (e.g. Bitcoin Testnet) in your coin list.'**
+  String get settingsTestnetCoinsDescription;
+
   /// No description provided for @settingsVerboseLoggingDescription.
   ///
   /// In en, this message translates to:

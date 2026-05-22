@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -44,11 +45,13 @@ class _SendScreenState extends State<SendScreen> {
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0;
   String _lastFeeFetchKey = '';
+  Timer? _feeDebounce;
 
   String _destinationAddressError = '';
   String _amountError = '';
 
   String _coinSymbol = 'XMR';
+  bool _argsLoaded = false;
 
   CryptoWallet _wallet(BuildContext context) {
     final manager = Provider.of<WalletManager>(context, listen: false);
@@ -68,7 +71,15 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _destinationAddressController.addListener(_onAddressChanged);
+    _amountController.addListener(_onAmountChanged);
+  }
+
+  @override
   void dispose() {
+    _feeDebounce?.cancel();
     _destinationAddressController.removeListener(_onAddressChanged);
     _amountController.removeListener(_onAmountChanged);
     _destinationAddressController.dispose();
@@ -79,10 +90,9 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
+    if (_argsLoaded) return;
+    _argsLoaded = true;
     _loadFormFromArgs();
-    _destinationAddressController.addListener(_onAddressChanged);
-    _amountController.addListener(_onAmountChanged);
   }
 
   void _loadFormFromArgs() {
@@ -215,8 +225,8 @@ class _SendScreenState extends State<SendScreen> {
         setState(() {
           _amountError = i18n.sendInsufficientBalanceError;
         });
-        return false;
       }
+      return false;
     }
 
     return true;
@@ -228,7 +238,7 @@ class _SendScreenState extends State<SendScreen> {
     int priority,
   ) async {
     final wallet = _wallet(context);
-    const maxRetries = 10;
+    final maxRetries = 10;
 
     for (int i = 0; i < maxRetries; i++) {
       try {
@@ -270,15 +280,32 @@ class _SendScreenState extends State<SendScreen> {
     final amount = double.parse(_amountController.text);
 
     try {
-      final txs = await Future.wait([
-        _createTxForPriority(destinationAddress, amount, 1),
-        _createTxForPriority(destinationAddress, amount, 2),
-        _createTxForPriority(destinationAddress, amount, 3),
-      ]);
+      final fees = List<PendingTransaction?>.filled(3, null);
+      final priorityOrder = [
+        _selectedPriority,
+        for (var i = 0; i < 3; i++)
+          if (i != _selectedPriority) i,
+      ];
+
+      for (final idx in priorityOrder) {
+        if (currentRequest != _feeCalculationCounter) return;
+
+        await Future<void>.delayed(Duration.zero);
+
+        fees[idx] = await _createTxForPriority(destinationAddress, amount, idx + 1);
+
+        if (currentRequest == _feeCalculationCounter && mounted) {
+          setState(() {
+            _fees = List.from(fees);
+            if (idx == _selectedPriority) {
+              _isLoadingFees = false;
+            }
+          });
+        }
+      }
 
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
-          _fees = txs;
           _isLoadingFees = false;
 
           if (_fees?[_selectedPriority] == null) {
@@ -407,7 +434,7 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
     final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
-    final coinRate = fiatRate.rateFor(wallet.coinSymbol);
+    final coinRate = fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
 
     showModalBottomSheet(
       context: context,
@@ -474,13 +501,11 @@ class _SendScreenState extends State<SendScreen> {
     );
   }
 
-  Future<void> _onAddressChanged() async {
-    if (await _validateForm(setErrors: false)) {
-      _calculateFees();
-    }
+  void _onAddressChanged() {
+    _scheduleFeeCalculation();
   }
 
-  Future<void> _onAmountChanged() async {
+  void _onAmountChanged() {
     final wallet = _wallet(context);
     final amount = double.tryParse(_amountController.text) ?? 0;
 
@@ -496,8 +521,34 @@ class _SendScreenState extends State<SendScreen> {
       });
     }
 
+    _scheduleFeeCalculation();
+  }
+
+  void _scheduleFeeCalculation() {
+    _feeDebounce?.cancel();
+    _feeDebounce = Timer(Duration(milliseconds: 400), () {
+      unawaited(_calculateFeesIfValid());
+    });
+  }
+
+  Future<void> _calculateFeesIfValid() async {
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    final balance = _wallet(context).unlockedBalance ?? 0;
+
+    if (amount == 0 || amount > balance) {
+      _feeCalculationCounter++;
+      _lastFeeFetchKey = '';
+      if (mounted) {
+        setState(() {
+          _isLoadingFees = false;
+          _fees = null;
+        });
+      }
+      return;
+    }
+
     if (await _validateForm(setErrors: false)) {
-      _calculateFees();
+      await _calculateFees();
     }
   }
 
@@ -951,7 +1002,7 @@ class _PriorityOption extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (currentFiatRate != null)
+                  if (currentFiatRate != null && !wallet.isTestnet)
                     FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
                 ],
               )

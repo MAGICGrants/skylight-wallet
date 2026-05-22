@@ -362,7 +362,7 @@ class SOCKSSocket {
   ///   A Future that resolves to void.
   Future<void> sendServerFeaturesCommand() async {
     // The server.features command.
-    const String command = '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
+    final String command = '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
 
     if (!sslEnabled) {
       // Send the command to the proxy server.

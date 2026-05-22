@@ -9,6 +9,7 @@ import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 enum FiatApiMode { torOnly, clearnet, disabled }
 
@@ -53,10 +54,20 @@ class FiatRateModel with ChangeNotifier {
   String _fiatCode = 'USD';
   FiatApiMode _fiatApiMode = FiatApiMode.torOnly;
   Timer? _rateFetchTimer;
+  WalletManager? _walletManager;
+  Set<String> _lastFetchedActiveCoins = {};
 
   /// Latest fiat rate for [coinSymbol], or `null` if it hasn't been
-  /// fetched yet (or the most recent fetch failed).
-  double? rateFor(String coinSymbol) => _rates[coinSymbol.toUpperCase()];
+  /// fetched yet (or the most recent fetch failed). Returns `null` for
+  /// unconfigured coins. Testnet wallets always return `0`.
+  double? rateFor(String coinSymbol, {bool? walletActive, bool? isTestnet}) {
+    final symbol = coinSymbol.toUpperCase();
+    final wallet = _walletManager?.getWallet(symbol);
+    if (isTestnet == true || wallet?.isTestnet == true) return 0;
+    if (walletActive == false) return null;
+    if (wallet != null && wallet.connectionAddress.isEmpty) return null;
+    return _rates[symbol];
+  }
 
   Map<String, double?> get rates => Map.unmodifiable(_rates);
   bool get isLoading => _isLoading;
@@ -66,6 +77,38 @@ class FiatRateModel with ChangeNotifier {
 
   static String _persistKeyFor(String coinSymbol) =>
       '${SharedPreferencesKeys.fiatRate}_${coinSymbol.toLowerCase()}';
+
+  void attachWalletManager(WalletManager manager) {
+    if (identical(_walletManager, manager)) return;
+    _walletManager?.removeListener(_onWalletManagerChanged);
+    _walletManager = manager;
+    manager.addListener(_onWalletManagerChanged);
+  }
+
+  void _onWalletManagerChanged() {
+    final active = _activeKrakenCoins().toSet();
+    if (_setEquals(active, _lastFetchedActiveCoins)) return;
+    if (_rateFetchTimer != null && !_isDisabled) {
+      _loadRate();
+    }
+  }
+
+  bool _setEquals(Set<String> a, Set<String> b) {
+    if (a.length != b.length) return false;
+    for (final item in a) {
+      if (!b.contains(item)) return false;
+    }
+    return true;
+  }
+
+  Iterable<String> _activeKrakenCoins() {
+    final manager = _walletManager;
+    if (manager == null) return [];
+    return manager.allWallets
+        .where((w) => w.connectionAddress.isNotEmpty && !w.isTestnet)
+        .map((w) => w.coinSymbol.toUpperCase())
+        .where(_krakenBase.containsKey);
+  }
 
   void _startRateFetchTimer() {
     if (_fiatApiMode == FiatApiMode.disabled) {
@@ -194,11 +237,21 @@ class FiatRateModel with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    final coinsToFetch = _activeKrakenCoins().toList();
+    _lastFetchedActiveCoins = coinsToFetch.toSet();
+
+    if (coinsToFetch.isEmpty) {
+      _hasFailed = false;
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     var anySucceeded = false;
     var anyFailed = false;
 
     await Future.wait(
-      _krakenBase.keys.map((coin) async {
+      coinsToFetch.map((coin) async {
         try {
           final rate = await _fetchCoinRate(coin);
           _rates[coin] = rate;
@@ -217,7 +270,10 @@ class FiatRateModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> startService() async {
+  Future<void> startService({WalletManager? walletManager}) async {
+    if (walletManager != null) {
+      attachWalletManager(walletManager);
+    }
     _rateFetchTimer?.cancel();
     _rateFetchTimer = null;
     await _loadPersisted();

@@ -6,14 +6,14 @@ class NotificationService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    const initSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettingsIOS = DarwinInitializationSettings(
+    final initSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    final initSettingsIOS = DarwinInitializationSettings(
       // We'll request permissions manually
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
-    const initSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open wallet');
+    final initSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open wallet');
 
     // Windows requires an absolute path to an .ico file
     final initSettingsWindows = WindowsInitializationSettings(
@@ -57,13 +57,13 @@ class NotificationService {
   }
 
   Future<void> showIncomingTxNotification(double amountReceived) async {
-    const notificationChannelId = 'incoming_transactions';
+    final notificationChannelId = 'incoming_transactions';
 
     await notificationsPlugin.show(
       0,
       'Incoming transaction',
       'You received $amountReceived XMR',
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           notificationChannelId,
           'Transactions',

@@ -264,7 +264,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         _connectionSuccess = true;
       });
     } catch (error) {
-      log(LogLevel.warn, '[${widget.coinSymbol}] testConnection failed: $error');
+      log(LogLevel.warn, 'testConnection failed: $error', coin: widget.coinSymbol);
       if (!mounted) return;
       setState(() {
         _connectionSuccess = false;

@@ -30,7 +30,30 @@ import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 /// (subaddresses, polyseed/legacy seeds, OpenAlias resolution, etc.) into
 /// the coin-agnostic surface defined by [CryptoWallet].
 class MoneroWallet extends CryptoWallet {
-  final _w2WalletManager = monero_ffi.Monero().walletManagerFactory().getLWSFWalletManager();
+  Wallet2WalletManager? _w2WalletManager;
+  Future<Wallet2WalletManager>? _w2WalletManagerFuture;
+
+  MoneroWallet() {
+    scheduleMicrotask(warmUpWalletManager);
+  }
+
+  /// Loads the Monero FFI wallet manager after the first frame so app
+  /// startup and unlock stay responsive.
+  Future<Wallet2WalletManager> warmUpWalletManager() {
+    _w2WalletManagerFuture ??= _initWalletManager();
+    return _w2WalletManagerFuture!;
+  }
+
+  Future<Wallet2WalletManager> _initWalletManager() async {
+    if (_w2WalletManager != null) return _w2WalletManager!;
+    await Future<void>.delayed(Duration.zero);
+    _w2WalletManager = monero_ffi.Monero().walletManagerFactory().getLWSFWalletManager();
+    return _w2WalletManager!;
+  }
+
+  Future<Wallet2WalletManager> _walletManager() async {
+    return _w2WalletManager ?? await warmUpWalletManager();
+  }
 
   Wallet2Wallet? _w2Wallet;
   Wallet2TransactionHistory? _w2TxHistory;
@@ -60,6 +83,9 @@ class MoneroWallet extends CryptoWallet {
   int get smallerDigits => 9;
 
   @override
+  int get requiredConfirmations => 10;
+
+  @override
   String get connectionTypeName => 'Monero LWS server';
 
   @override
@@ -69,18 +95,23 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<bool> hasExistingWallet() async {
-    final path = await getWalletPath(coinSymbol);
+    final wm = await _walletManager();
+    final wmFfiAddr = wm.ffiAddress();
+    final walletPath = await getWalletPath(coinSymbol);
 
-    log(LogLevel.info, 'Calling WalletManager_walletExists with parameters:');
-    log(LogLevel.info, '  path: $path');
+    walletLog(LogLevel.info, 'Calling WalletManager_walletExists with parameters:');
+    walletLog(LogLevel.info, '  path: $walletPath');
 
-    final exists = _w2WalletManager.walletExists(path);
+    final exists = await Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.WalletManager_walletExists(Pointer.fromAddress(wmFfiAddr), walletPath);
+    });
 
-    log(LogLevel.info, 'WalletManager_walletExists result: $exists');
+    walletLog(LogLevel.info, 'WalletManager_walletExists result: $exists');
 
-    final errorString = _w2WalletManager.errorString();
+    final errorString = wm.errorString();
     if (errorString != '') {
-      log(LogLevel.error, 'WalletManager_walletExists error: $errorString');
+      walletLog(LogLevel.error, 'WalletManager_walletExists error: $errorString');
     }
 
     return exists;
@@ -88,21 +119,32 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<void> openExisting({required String password}) async {
-    final path = await getWalletPath(coinSymbol);
+    final wm = await _walletManager();
+    final wmFfiAddr = wm.ffiAddress();
+    final walletPath = await getWalletPath(coinSymbol);
 
-    log(LogLevel.info, 'Calling WalletManager_openWallet with parameters:');
-    log(LogLevel.info, '  path: $path');
-    log(LogLevel.info, '  password: <hidden>');
+    walletLog(LogLevel.info, 'Calling WalletManager_openWallet with parameters:');
+    walletLog(LogLevel.info, '  path: $walletPath');
+    walletLog(LogLevel.info, '  password: <hidden>');
 
-    final w2Wallet = _w2WalletManager.openWallet(path: path, password: password);
+    final w2WalletFfiAddr = await Isolate.run(() {
+      // ignore: deprecated_member_use
+      return monero.WalletManager_openWallet(
+        Pointer.fromAddress(wmFfiAddr),
+        path: walletPath,
+        password: password,
+      ).address;
+    });
+
+    final w2Wallet = monero_ffi.MoneroWallet(Pointer<Void>.fromAddress(w2WalletFfiAddr));
 
     if (w2Wallet.errorString() != '') {
       final errorMsg = 'WalletManager_openWallet error: ${w2Wallet.errorString()}';
-      log(LogLevel.error, errorMsg);
+      walletLog(LogLevel.error, errorMsg);
       throw Exception(errorMsg);
     }
 
-    log(LogLevel.info, 'WalletManager_openWallet completed');
+    walletLog(LogLevel.info, 'WalletManager_openWallet completed');
 
     _w2Wallet = w2Wallet;
     _w2TxHistory = _w2Wallet!.history();
@@ -129,7 +171,7 @@ class MoneroWallet extends CryptoWallet {
     final legacyMnemonic = getLegacySeedFromBip39(bip39Mnemonic);
     final restoreHeight = getHeightByDate(date: restoreDate);
 
-    log(LogLevel.info, '[XMR] Using blockchain height: $restoreHeight');
+    walletLog(LogLevel.info, 'Using blockchain height: $restoreHeight');
 
     final wallet = await _walletFromLegacySeed(
       mnemonic: legacyMnemonic,
@@ -147,7 +189,7 @@ class MoneroWallet extends CryptoWallet {
         throw Exception('Invalid mnemonic.');
       }
 
-      log(LogLevel.error, 'Error restoring from mnemonic: ${wallet.errorString()}');
+      walletLog(LogLevel.error, 'Error restoring from mnemonic: ${wallet.errorString()}');
       throw Exception('Error restoring from mnemonic: ${wallet.errorString()}');
     }
 
@@ -165,14 +207,15 @@ class MoneroWallet extends CryptoWallet {
     required int restoreHeight,
     required String password,
   }) async {
-    final wmFfiAddr = _w2WalletManager.ffiAddress();
+    final wm = await _walletManager();
+    final wmFfiAddr = wm.ffiAddress();
     final walletPath = await getWalletPath(coinSymbol);
 
-    log(LogLevel.info, 'Calling WalletManager_recoveryWallet with parameters:');
-    log(LogLevel.info, '  mnemonic: <hidden>');
-    log(LogLevel.info, '  restoreHeight: $restoreHeight');
-    log(LogLevel.info, '  password: <hidden>');
-    log(LogLevel.info, '  path: $walletPath');
+    walletLog(LogLevel.info, 'Calling WalletManager_recoveryWallet with parameters:');
+    walletLog(LogLevel.info, '  mnemonic: <hidden>');
+    walletLog(LogLevel.info, '  restoreHeight: $restoreHeight');
+    walletLog(LogLevel.info, '  password: <hidden>');
+    walletLog(LogLevel.info, '  path: $walletPath');
 
     final walletFfiAddr = await Isolate.run(() {
       // ignore: deprecated_member_use
@@ -186,7 +229,7 @@ class MoneroWallet extends CryptoWallet {
       ).address;
     });
 
-    log(LogLevel.info, 'WalletManager_recoveryWallet completed');
+    walletLog(LogLevel.info, 'WalletManager_recoveryWallet completed');
 
     return monero_ffi.MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
   }
@@ -196,21 +239,22 @@ class MoneroWallet extends CryptoWallet {
     if (_w2Wallet == null) return false;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
-    log(LogLevel.info, 'Calling Wallet_store');
+    walletLog(LogLevel.info, 'Calling Wallet_store');
 
     final result = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_store(Pointer<Void>.fromAddress(walletFfiAddr)),
     );
 
-    log(LogLevel.info, 'Wallet_store result: $result');
+    walletLog(LogLevel.info, 'Wallet_store result: $result');
     return result;
   }
 
   @override
   Future<void> deleteFiles() async {
     if (_w2Wallet != null) {
-      _w2WalletManager.closeWallet(_w2Wallet!, false);
+      final wm = await _walletManager();
+      wm.closeWallet(_w2Wallet!, false);
       _w2Wallet = null;
       _w2TxHistory = null;
     }
@@ -252,13 +296,13 @@ class MoneroWallet extends CryptoWallet {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
     final daemonAddress = '${useSsl ? 'https://' : 'http://'}$address';
     final proxyAddress = proxyPort != null && proxyPort != '' ? '127.0.0.1:$proxyPort' : '';
-    const lightWallet = true;
+    final lightWallet = true;
 
-    log(LogLevel.info, 'Calling Wallet_init with parameters:');
-    log(LogLevel.info, '  daemonAddress: $daemonAddress');
-    log(LogLevel.info, '  proxyAddress: $proxyAddress');
-    log(LogLevel.info, '  useSsl: $useSsl');
-    log(LogLevel.info, '  lightWallet: $lightWallet');
+    walletLog(LogLevel.info, 'Calling Wallet_init with parameters:');
+    walletLog(LogLevel.info, '  daemonAddress: $daemonAddress');
+    walletLog(LogLevel.info, '  proxyAddress: $proxyAddress');
+    walletLog(LogLevel.info, '  useSsl: $useSsl');
+    walletLog(LogLevel.info, '  lightWallet: $lightWallet');
 
     final initResult = await Isolate.run(
       // ignore: deprecated_member_use
@@ -271,18 +315,18 @@ class MoneroWallet extends CryptoWallet {
       ),
     );
 
-    log(LogLevel.info, 'Wallet_init result: $initResult');
+    walletLog(LogLevel.info, 'Wallet_init result: $initResult');
 
     final connectResult = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_connectToDaemon(Pointer.fromAddress(walletFfiAddr)),
     );
 
-    log(LogLevel.info, 'Wallet_connectToDaemon result: $connectResult');
+    walletLog(LogLevel.info, 'Wallet_connectToDaemon result: $connectResult');
 
     final connectError = _w2Wallet!.errorString();
     if (connectError != '') {
-      log(LogLevel.warn, 'Wallet_connectToDaemon error: $connectError');
+      walletLog(LogLevel.warn, 'Wallet_connectToDaemon error: $connectError');
     }
   }
 
@@ -294,7 +338,7 @@ class MoneroWallet extends CryptoWallet {
     required bool useTor,
   }) async {
     final url = '${useSsl ? 'https' : 'http'}://$address/get_address_info';
-    log(LogLevel.info, '[XMR] Probing LWS server: $url (tor=$useTor, proxyPort=$proxyPort)');
+    walletLog(LogLevel.info, 'Probing LWS server: $url (tor=$useTor, proxyPort=$proxyPort)');
 
     late int statusCode;
     if (useTor) {
@@ -310,7 +354,7 @@ class MoneroWallet extends CryptoWallet {
         'POST',
         url,
         proxyInfo,
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(Duration(seconds: 20));
       statusCode = response.statusCode;
     } else {
       var httpClient = HttpClient();
@@ -319,7 +363,7 @@ class MoneroWallet extends CryptoWallet {
       }
       try {
         final request = await httpClient.postUrl(Uri.parse(url));
-        final response = await request.close().timeout(const Duration(seconds: 10));
+        final response = await request.close().timeout(Duration(seconds: 10));
         statusCode = response.statusCode;
       } finally {
         httpClient.close(force: true);
@@ -353,7 +397,7 @@ class MoneroWallet extends CryptoWallet {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
     final historyFfiAddr = _w2TxHistory!.ffiAddress();
 
-    log(
+    walletLog(
       LogLevel.info,
       'Calling Wallet_startRefresh, Wallet_refresh, and TransactionHistory_refresh',
     );
@@ -368,7 +412,7 @@ class MoneroWallet extends CryptoWallet {
       () => monero.TransactionHistory_refresh(Pointer.fromAddress(historyFfiAddr)),
     );
 
-    log(LogLevel.info, 'Wallet refresh methods completed successfully');
+    walletLog(LogLevel.info, 'Wallet refresh methods completed successfully');
   }
 
   @override
@@ -376,14 +420,14 @@ class MoneroWallet extends CryptoWallet {
     if (_w2Wallet == null) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
-    log(LogLevel.info, 'Calling Wallet_synchronized:');
+    walletLog(LogLevel.info, 'Calling Wallet_synchronized:');
 
     final synced = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_synchronized(Pointer<Void>.fromAddress(walletFfiAddr)),
     );
 
-    log(LogLevel.info, 'Wallet_synchronized result: $synced');
+    walletLog(LogLevel.info, 'Wallet_synchronized result: $synced');
     setIsSynced(synced);
   }
 
@@ -392,14 +436,14 @@ class MoneroWallet extends CryptoWallet {
     if (_w2Wallet == null) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
-    log(LogLevel.info, 'Calling Wallet_blockChainHeight:');
+    walletLog(LogLevel.info, 'Calling Wallet_blockChainHeight:');
 
     final height = await Isolate.run(
       // ignore: deprecated_member_use
       () => monero.Wallet_blockChainHeight(Pointer<Void>.fromAddress(walletFfiAddr)),
     );
 
-    log(LogLevel.info, 'Wallet_blockChainHeight result: $height');
+    walletLog(LogLevel.info, 'Wallet_blockChainHeight result: $height');
     setSyncedHeight(height);
   }
 
@@ -407,10 +451,10 @@ class MoneroWallet extends CryptoWallet {
   Future<void> loadTotalBalance() async {
     if (_w2Wallet == null) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
-    const accountIndex = 0;
+    final accountIndex = 0;
 
-    log(LogLevel.info, 'Calling Wallet_balance with parameters:');
-    log(LogLevel.info, '  accountIndex: $accountIndex');
+    walletLog(LogLevel.info, 'Calling Wallet_balance with parameters:');
+    walletLog(LogLevel.info, '  accountIndex: $accountIndex');
 
     final amount = await Isolate.run(
       // ignore: deprecated_member_use
@@ -420,7 +464,7 @@ class MoneroWallet extends CryptoWallet {
       ),
     );
 
-    log(LogLevel.info, 'Wallet_balance result: $amount');
+    walletLog(LogLevel.info, 'Wallet_balance result: $amount');
     setTotalBalance(doubleAmountFromInt(amount));
   }
 
@@ -428,10 +472,10 @@ class MoneroWallet extends CryptoWallet {
   Future<void> loadUnlockedBalance() async {
     if (_w2Wallet == null) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
-    const accountIndex = 0;
+    final accountIndex = 0;
 
-    log(LogLevel.info, 'Calling Wallet_unlockedBalance with parameters:');
-    log(LogLevel.info, '  accountIndex: $accountIndex');
+    walletLog(LogLevel.info, 'Calling Wallet_unlockedBalance with parameters:');
+    walletLog(LogLevel.info, '  accountIndex: $accountIndex');
 
     final amount = await Isolate.run(
       // ignore: deprecated_member_use
@@ -441,22 +485,23 @@ class MoneroWallet extends CryptoWallet {
       ),
     );
 
-    log(LogLevel.info, 'Wallet_unlockedBalance result: $amount');
+    walletLog(LogLevel.info, 'Wallet_unlockedBalance result: $amount');
     setUnlockedBalance(doubleAmountFromInt(amount));
   }
 
   @override
   Future<int> getCurrentHeight() async {
-    final wmFfiAddr = _w2WalletManager.ffiAddress();
+    final wm = await _walletManager();
+    final wmFfiAddr = wm.ffiAddress();
 
-    log(LogLevel.info, 'Calling WalletManager_blockchainHeight');
+    walletLog(LogLevel.info, 'Calling WalletManager_blockchainHeight');
 
     final height = await Isolate.run(() {
       // ignore: deprecated_member_use
       return monero.WalletManager_blockchainHeight(Pointer.fromAddress(wmFfiAddr));
     });
 
-    log(LogLevel.info, 'WalletManager_blockchainHeight result: $height');
+    walletLog(LogLevel.info, 'WalletManager_blockchainHeight result: $height');
     return height;
   }
 
@@ -466,9 +511,9 @@ class MoneroWallet extends CryptoWallet {
       return await SharedPreferencesService.get<int>(prefKey('walletRestoreHeight')) ?? 0;
     }
 
-    log(LogLevel.info, 'Calling Wallet_getRefreshFromBlockHeight');
+    walletLog(LogLevel.info, 'Calling Wallet_getRefreshFromBlockHeight');
     final w2RestoreHeight = _w2Wallet!.getRefreshFromBlockHeight();
-    log(LogLevel.info, 'Wallet_getRefreshFromBlockHeight result: $w2RestoreHeight');
+    walletLog(LogLevel.info, 'Wallet_getRefreshFromBlockHeight result: $w2RestoreHeight');
 
     if (w2RestoreHeight > 0) {
       return w2RestoreHeight;
@@ -538,14 +583,14 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   String getPrimaryAddress() {
-    const accountIndex = 0;
+    final accountIndex = 0;
 
-    log(LogLevel.info, 'Calling Wallet_address with parameters:');
-    log(LogLevel.info, '  accountIndex: $accountIndex');
+    walletLog(LogLevel.info, 'Calling Wallet_address with parameters:');
+    walletLog(LogLevel.info, '  accountIndex: $accountIndex');
 
     final address = _w2Wallet!.address(accountIndex: accountIndex);
 
-    log(LogLevel.info, 'Wallet_address result: $address');
+    walletLog(LogLevel.info, 'Wallet_address result: $address');
     return address;
   }
 
@@ -567,13 +612,13 @@ class MoneroWallet extends CryptoWallet {
       subaddrIndex -= 1;
     }
 
-    log(LogLevel.info, 'Calling Wallet_address with parameters:');
-    log(LogLevel.info, '  accountIndex: 0');
-    log(LogLevel.info, '  addressIndex: $subaddrIndex');
+    walletLog(LogLevel.info, 'Calling Wallet_address with parameters:');
+    walletLog(LogLevel.info, '  accountIndex: 0');
+    walletLog(LogLevel.info, '  addressIndex: $subaddrIndex');
 
     final subaddress = _w2Wallet!.address(accountIndex: 0, addressIndex: subaddrIndex);
 
-    log(LogLevel.info, 'Wallet_address result: $subaddress');
+    walletLog(LogLevel.info, 'Wallet_address result: $subaddress');
     return subaddress;
   }
 
@@ -589,17 +634,17 @@ class MoneroWallet extends CryptoWallet {
 
     final dstAddr = [destinationAddress];
     final amounts = [amountInt];
-    const mixinCount = 15;
-    const subaddrAccount = 0;
+    final mixinCount = 15;
+    final subaddrAccount = 0;
 
-    log(LogLevel.info, 'Calling Wallet_createTransactionMultDest with parameters:');
-    log(LogLevel.info, '  walletFfiAddr: $walletFfiAddr');
-    log(LogLevel.info, '  isSweepAll: $isSweepAll');
-    log(LogLevel.info, '  dstAddr: $dstAddr');
-    log(LogLevel.info, '  amounts: $amounts');
-    log(LogLevel.info, '  mixinCount: $mixinCount');
-    log(LogLevel.info, '  pendingTransactionPriority: $priority');
-    log(LogLevel.info, '  subaddr_account: $subaddrAccount');
+    walletLog(LogLevel.info, 'Calling Wallet_createTransactionMultDest with parameters:');
+    walletLog(LogLevel.info, '  walletFfiAddr: $walletFfiAddr');
+    walletLog(LogLevel.info, '  isSweepAll: $isSweepAll');
+    walletLog(LogLevel.info, '  dstAddr: $dstAddr');
+    walletLog(LogLevel.info, '  amounts: $amounts');
+    walletLog(LogLevel.info, '  mixinCount: $mixinCount');
+    walletLog(LogLevel.info, '  pendingTransactionPriority: $priority');
+    walletLog(LogLevel.info, '  subaddr_account: $subaddrAccount');
 
     final txPointer = Pointer<Void>.fromAddress(
       await Isolate.run(() {
@@ -616,12 +661,12 @@ class MoneroWallet extends CryptoWallet {
       }),
     );
 
-    log(LogLevel.info, 'Wallet_createTransactionMultDest completed');
+    walletLog(LogLevel.info, 'Wallet_createTransactionMultDest completed');
 
     final pendingTx = monero_ffi.MoneroPendingTransaction(txPointer);
 
     if (pendingTx.errorString() != '') {
-      log(LogLevel.error, 'Failed to create transaction: ${pendingTx.errorString()}');
+      walletLog(LogLevel.error, 'Failed to create transaction: ${pendingTx.errorString()}');
       throw Exception(pendingTx.errorString());
     }
 
@@ -635,9 +680,9 @@ class MoneroWallet extends CryptoWallet {
     }
     final txFfiAddr = tx.raw.ffiAddress();
 
-    log(LogLevel.info, 'Calling PendingTransaction_commit with parameters:');
-    log(LogLevel.info, '  filename: ');
-    log(LogLevel.info, '  overwrite: false');
+    walletLog(LogLevel.info, 'Calling PendingTransaction_commit with parameters:');
+    walletLog(LogLevel.info, '  filename: ');
+    walletLog(LogLevel.info, '  overwrite: false');
 
     final commitResult = await Isolate.run(() {
       // ignore: deprecated_member_use
@@ -648,11 +693,11 @@ class MoneroWallet extends CryptoWallet {
       );
     });
 
-    log(LogLevel.info, 'PendingTransaction_commit result: $commitResult');
+    walletLog(LogLevel.info, 'PendingTransaction_commit result: $commitResult');
 
     final errorMsg = tx.errorString;
     if (errorMsg != '' && errorMsg != 'Schema expected string') {
-      log(LogLevel.error, 'PendingTransaction_commit error: $errorMsg');
+      walletLog(LogLevel.error, 'PendingTransaction_commit error: $errorMsg');
       throw FormatException(errorMsg);
     }
 
@@ -663,13 +708,14 @@ class MoneroWallet extends CryptoWallet {
   // ----- Monero-specific extras -----
 
   Future<String> resolveOpenAlias(String address) async {
-    const dnssecValid = true;
+    final dnssecValid = true;
 
-    log(LogLevel.info, 'Calling WalletManager_resolveOpenAlias with parameters:');
-    log(LogLevel.info, '  address: $address');
-    log(LogLevel.info, '  dnssecValid: $dnssecValid');
+    walletLog(LogLevel.info, 'Calling WalletManager_resolveOpenAlias with parameters:');
+    walletLog(LogLevel.info, '  address: $address');
+    walletLog(LogLevel.info, '  dnssecValid: $dnssecValid');
 
-    final wmFfiAddr = _w2WalletManager.ffiAddress();
+    final wm = await _walletManager();
+    final wmFfiAddr = wm.ffiAddress();
 
     final resolved = await Isolate.run(
       // ignore: deprecated_member_use
@@ -680,7 +726,7 @@ class MoneroWallet extends CryptoWallet {
       ),
     );
 
-    log(LogLevel.info, 'WalletManager_resolveOpenAlias result: $resolved');
+    walletLog(LogLevel.info, 'WalletManager_resolveOpenAlias result: $resolved');
     return resolved;
   }
 
@@ -767,7 +813,7 @@ class MoneroWallet extends CryptoWallet {
         ],
       },
     ];
-    const getAll = false;
+    final getAll = false;
 
     final body = json.encode({
       'address': primaryAddress,
@@ -776,12 +822,12 @@ class MoneroWallet extends CryptoWallet {
       'get_all': getAll,
     });
 
-    log(LogLevel.info, 'Checking subaddress support:');
-    log(LogLevel.info, '  url: $url');
-    log(LogLevel.info, '  primaryAddress: $primaryAddress');
-    log(LogLevel.info, '  viewKey: <hidden>');
-    log(LogLevel.info, '  subaddrs: $subaddrs');
-    log(LogLevel.info, '  getAll: $getAll');
+    walletLog(LogLevel.info, 'Checking subaddress support:');
+    walletLog(LogLevel.info, '  url: $url');
+    walletLog(LogLevel.info, '  primaryAddress: $primaryAddress');
+    walletLog(LogLevel.info, '  viewKey: <hidden>');
+    walletLog(LogLevel.info, '  subaddrs: $subaddrs');
+    walletLog(LogLevel.info, '  getAll: $getAll');
 
     var httpStatus = 0;
 
@@ -809,8 +855,8 @@ class MoneroWallet extends CryptoWallet {
         break;
       } catch (e) {
         if (i == 2) {
-          log(LogLevel.warn, 'Failed to check subaddress support after ${i + 1} attempts.');
-          log(LogLevel.warn, 'Error: $e');
+          walletLog(LogLevel.warn, 'Failed to check subaddress support after ${i + 1} attempts.');
+          walletLog(LogLevel.warn, 'Error: $e');
           rethrow;
         }
       }
@@ -818,7 +864,7 @@ class MoneroWallet extends CryptoWallet {
 
     final result = httpStatus == 200;
 
-    log(
+    walletLog(
       LogLevel.info,
       'Subaddress support check result for subaddress $subaddrIndex: $result (status: $httpStatus)',
     );
@@ -830,7 +876,7 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<void> load() async {
-    if (!isLoaded) return;
+    if (!isActive) return;
     await loadPersistedSubaddressSupport();
     await loadPersistedUnusedSubaddressIndex();
     await super.load();

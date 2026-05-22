@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +28,7 @@ class ConnectionSetupScreen extends StatelessWidget {
     final connectionTypeName = wallet?.connectionTypeName ?? 'server';
 
     void onSaved() {
-      manager.getWallet(coinSymbol)?.load();
+      unawaited(manager.getWallet(coinSymbol)?.load());
 
       final route = args?.successRoute;
       if (route != null) {

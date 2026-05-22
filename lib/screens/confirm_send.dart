@@ -41,10 +41,13 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   List<String> _destinationAddressSliced = [];
   String? _destinationContactName;
   String _coinSymbol = 'XMR';
+  bool _argsLoaded = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_argsLoaded) return;
+    _argsLoaded = true;
     _loadTxDetails();
   }
 
@@ -97,9 +100,11 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
       });
 
       if (mounted) {
-        Navigator.pushNamed(
+        Navigator.pushNamedAndRemoveUntil(
           context,
           '/coin_home',
+          // remove until the coin home screen is reached
+          (route) => route.settings.name == '/wallet_home',
           arguments: CoinHomeScreenArgs(coinSymbol: _coinSymbol, showTxSuccessToast: true),
         );
       }
@@ -134,9 +139,9 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final wallet = context.watch<WalletManager>().getWallet(_coinSymbol);
     final decimals = wallet?.decimals ?? 12;
     final coinSymbol = wallet?.coinSymbol ?? _coinSymbol;
-    final coinRate = fiatRate.rateFor(coinSymbol);
-    final amountFiat = coinRate != null ? _amount * coinRate : null;
-    final networkFeeFiat = coinRate != null ? _fee * coinRate : null;
+    final coinRate = fiatRate.rateFor(coinSymbol, isTestnet: wallet?.isTestnet);
+    final amountFiat = wallet?.isTestnet != true && coinRate != null ? _amount * coinRate : null;
+    final networkFeeFiat = wallet?.isTestnet != true && coinRate != null ? _fee * coinRate : null;
 
     return Scaffold(
       appBar: AppBar(),

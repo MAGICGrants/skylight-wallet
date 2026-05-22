@@ -41,6 +41,8 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
+import 'package:skylight_wallet/util/wallet.dart';
+import 'package:skylight_wallet/util/wallet_file_crypto.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
@@ -92,17 +94,17 @@ void main() async {
   );
 }
 
-Future<bool> loadExistingWalletsIfAny(WalletManager walletManager) async {
-  if (!await walletManager.hasAnyExistingWallet()) {
-    return false;
+/// Fast wallet-file probe for startup routing (no FFI / network).
+Future<bool> _anyWalletFileExists() async {
+  for (final symbol in ['XMR', 'BTC', 'TBTC']) {
+    final path = await getWalletPath(symbol);
+    final file = File(path);
+    if (!await file.exists()) continue;
+    if (symbol == 'XMR') return true;
+    final length = await file.length();
+    if (length >= WalletFileCrypto.minBlobLength) return true;
   }
-
-  if (isMobile) {
-    await walletManager.openAll();
-    walletManager.loadAll();
-  }
-
-  return true;
+  return false;
 }
 
 class MyApp extends StatelessWidget {
@@ -118,104 +120,122 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => FiatRateModel()),
         ChangeNotifierProvider(create: (_) => ContactModel()),
       ],
-      child: Consumer2<LanguageModel, ThemeModel>(
-        builder: (context, languageProvider, themeProvider, child) {
-          final walletManager = Provider.of<WalletManager>(context, listen: false);
-          final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+      child: _RootApp(),
+    );
+  }
+}
 
-          return FutureBuilder(
-            future: Future.wait([
-              SharedPreferences.getInstance(),
-              loadExistingWalletsIfAny(walletManager),
-            ]),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
-                TorSettingsService.sharedInstance.loadSettings();
-                TorService.sharedInstance.start();
+/// Loads prefs and picks the initial route, then builds a single [MaterialApp].
+class _RootApp extends StatefulWidget {
+  const _RootApp();
 
-                final sharedPreferences = snapshot.data![0] as SharedPreferences;
-                final walletExists = snapshot.data![1] as bool;
+  @override
+  State<_RootApp> createState() => _RootAppState();
+}
 
-                final theme = sharedPreferences.getString(SharedPreferencesKeys.theme) ?? 'system';
+class _RootAppState extends State<_RootApp> {
+  String? _initialRoute;
+  bool _startedServices = false;
 
-                final appLockEnabled =
-                    sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
 
-                final initialRoute = walletExists
-                    ? appLockEnabled || isDesktop
-                          ? '/unlock'
-                          : '/wallet_home'
-                    : '/welcome';
+  Future<void> _bootstrap() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final walletExists = await _anyWalletFileExists();
 
-                if (walletExists) {
-                  fiatRate.startService();
-                }
+      if (mounted) {
+        unawaited(context.read<WalletManager>().loadPreferences());
+      }
 
-                return MaterialApp(
-                  title: 'Skylight Wallet',
-                  localizationsDelegates: AppLocalizations.localizationsDelegates,
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-                  darkTheme: ThemeData(
-                    colorScheme: ColorScheme.fromSeed(
-                      seedColor: Colors.blue,
-                      brightness: Brightness.dark,
-                    ),
-                  ),
-                  themeMode: theme == 'dark'
-                      ? ThemeMode.dark
-                      : theme == 'light'
-                      ? ThemeMode.light
-                      : ThemeMode.system,
-                  initialRoute: initialRoute,
-                  locale: Locale.fromSubtags(languageCode: languageProvider.language),
-                  routes: {
-                    '/welcome': (context) => WelcomeScreen(),
-                    '/tor_info': (context) => TorInfoScreen(),
-                    '/tor_settings': (context) => TorSettingsScreen(),
-                    '/connection_setup': (context) => ConnectionSetupScreen(),
-                    '/fiat_api_setup': (context) => FiatApiSetupScreen(),
-                    '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
-                    '/create_wallet': (context) => CreateWalletScreen(),
-                    '/generate_seed': (context) => GenerateSeedScreen(),
-                    '/restore_warning': (context) => RestoreWarningScreen(),
-                    '/restore_wallet': (context) => RestoreWalletScreen(),
-                    '/unlock': (context) => UnlockScreen(),
-                    '/wallet_home': (context) => WalletHomeScreen(),
-                    '/coin_home': (context) => CoinHomeScreen(),
-                    '/settings': (context) => SettingsScreen(),
-                    '/send': (context) => SendScreen(),
-                    '/confirm_send': (context) => ConfirmSendScreen(),
-                    '/scan_qr': (context) => ScanQrScreen(),
-                    '/receive': (context) => ReceiveScreen(),
-                    '/address_book': (context) => AddressBookScreen(),
-                    '/terms_of_service': (context) => TermsOfService(),
-                    '/privacy_policy': (context) => PrivacyPolicy(),
-                  },
-                );
-              }
+      if (walletExists && mounted) {
+        unawaited(context.read<WalletManager>().loadCachedDisplayState());
+      }
 
-              if (snapshot.data == null) {
-                log(LogLevel.error, 'Future builder snapshot data is null.');
-                log(LogLevel.error, snapshot.error.toString());
-              }
+      final appLockEnabled = prefs.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
+      final initialRoute = walletExists
+          ? appLockEnabled || isDesktop
+                ? '/unlock'
+                : '/wallet_home'
+          : '/welcome';
 
-              return MaterialApp(
-                title: 'Skylight Wallet',
-                theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-                darkTheme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: Colors.blue,
-                    brightness: Brightness.dark,
-                  ),
-                ),
-                themeMode: ThemeMode.system,
-                builder: (context, child) => Scaffold(),
-              );
-            },
-          );
-        },
-      ),
+      if (!mounted) return;
+      setState(() {
+        _initialRoute = initialRoute;
+      });
+
+      if (walletExists) {
+        context.read<FiatRateModel>().startService(walletManager: context.read<WalletManager>());
+      }
+    } catch (e) {
+      log(LogLevel.error, 'App bootstrap failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _initialRoute = '/welcome';
+      });
+    }
+  }
+
+  ThemeData get _themeData => ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue));
+
+  ThemeData get _darkThemeData => ThemeData(
+    colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+  );
+
+  Map<String, WidgetBuilder> get _routes => {
+    '/welcome': (context) => WelcomeScreen(),
+    '/tor_info': (context) => TorInfoScreen(),
+    '/tor_settings': (context) => TorSettingsScreen(),
+    '/connection_setup': (context) => ConnectionSetupScreen(),
+    '/fiat_api_setup': (context) => FiatApiSetupScreen(),
+    '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
+    '/create_wallet': (context) => CreateWalletScreen(),
+    '/generate_seed': (context) => GenerateSeedScreen(),
+    '/restore_warning': (context) => RestoreWarningScreen(),
+    '/restore_wallet': (context) => RestoreWalletScreen(),
+    '/unlock': (context) => UnlockScreen(),
+    '/wallet_home': (context) => WalletHomeScreen(),
+    '/coin_home': (context) => CoinHomeScreen(),
+    '/settings': (context) => SettingsScreen(),
+    '/send': (context) => SendScreen(),
+    '/confirm_send': (context) => ConfirmSendScreen(),
+    '/scan_qr': (context) => ScanQrScreen(),
+    '/receive': (context) => ReceiveScreen(),
+    '/address_book': (context) => AddressBookScreen(),
+    '/terms_of_service': (context) => TermsOfService(),
+    '/privacy_policy': (context) => PrivacyPolicy(),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final languageProvider = context.watch<LanguageModel>();
+    final themeMode = context.watch<ThemeModel>().themeMode;
+    final initialRoute = _initialRoute ?? '/loading';
+
+    if (_initialRoute != null && !_startedServices) {
+      _startedServices = true;
+      TorSettingsService.sharedInstance.loadSettings();
+      TorService.sharedInstance.start();
+    }
+
+    return MaterialApp(
+      key: ValueKey(initialRoute),
+      title: 'Skylight Wallet',
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: _themeData,
+      darkTheme: _darkThemeData,
+      themeMode: themeMode,
+      initialRoute: initialRoute,
+      locale: Locale.fromSubtags(languageCode: languageProvider.language),
+      routes: {
+        '/loading': (context) => Scaffold(body: Center(child: CircularProgressIndicator())),
+        ..._routes,
+      },
     );
   }
 }

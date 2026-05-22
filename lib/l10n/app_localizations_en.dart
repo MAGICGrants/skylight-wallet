@@ -334,6 +334,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsVerboseLoggingLabel => 'Verbose Logging';
 
   @override
+  String get settingsTestnetCoinsLabel => 'Testnet Coins';
+
+  @override
+  String get settingsTestnetCoinsDescription =>
+      'Show testnet coins (e.g. Bitcoin Testnet) in your coin list.';
+
+  @override
   String get settingsVerboseLoggingDescription =>
       'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.';
 

@@ -111,6 +111,8 @@
   "settingsAppLockUnlockReason": "Desbloquear carteira",
   "settingsAppLockUnableToAuthError": "Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.",
   "settingsVerboseLoggingLabel": "Logs Detalhados",
+  "settingsTestnetCoinsLabel": "Moedas Testnet",
+  "settingsTestnetCoinsDescription": "Mostrar moedas testnet (ex.: Bitcoin Testnet) na lista de moedas.",
   "settingsVerboseLoggingDescription": "Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.",
   "settingsVerboseLoggingDescriptionIos": "Registra operações da carteira e permite exportar os logs para um arquivo de texto.",
   "settingsExportLogsLabel": "Exportar Logs",

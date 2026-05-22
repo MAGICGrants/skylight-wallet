@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/wallet_file_crypto.dart';
@@ -45,11 +46,15 @@ class MasterSeedStore {
     final file = await _file();
     if (!await file.exists()) return null;
     final blob = await file.readAsString();
+    return Isolate.run(() => _decryptSeed(blob, password));
+  }
+
+  static ({String mnemonic, DateTime restoreDate}) _decryptSeed(String blob, String password) {
     final body = jsonDecode(WalletFileCrypto.decryptFromBase64(blob, password))
         as Map<String, dynamic>;
     final mnemonic = body['mnemonic'] as String;
-    final restoreDate = DateTime.tryParse(body['restore_date_iso'] as String? ?? '') ??
-        DateTime.now();
+    final restoreDate =
+        DateTime.tryParse(body['restore_date_iso'] as String? ?? '') ?? DateTime.now();
     return (mnemonic: mnemonic, restoreDate: restoreDate);
   }
 

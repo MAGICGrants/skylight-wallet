@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bip39/bip39.dart' as bip39;
@@ -6,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
+import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_testnet_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
@@ -25,28 +27,76 @@ class WalletManager with ChangeNotifier {
 
   String? _password;
 
+  bool _testnetCoinsEnabled = false;
+
   WalletManager() : _wallets = {} {
     _register(MoneroWallet());
     _register(BitcoinWallet());
+    _register(BitcoinTestnetWallet());
   }
+
+  /// Loads persisted app preferences that affect which wallets are shown.
+  Future<void> loadPreferences() async {
+    _testnetCoinsEnabled =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.testnetCoinsEnabled) ??
+        false;
+    _applyTestnetVisibility();
+    notifyListeners();
+  }
+
+  bool get testnetCoinsEnabled => _testnetCoinsEnabled;
+
+  Future<void> setTestnetCoinsEnabled(bool enabled) async {
+    if (_testnetCoinsEnabled == enabled) return;
+    _testnetCoinsEnabled = enabled;
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.testnetCoinsEnabled, enabled);
+    _applyTestnetVisibility();
+    notifyListeners();
+    if (enabled && _password != null) {
+      openWalletFilesAndSync();
+    }
+  }
+
+  void _applyTestnetVisibility() {
+    for (final w in _wallets.values) {
+      if (w.isTestnet) {
+        w.setEnabledInApp(_testnetCoinsEnabled);
+      }
+    }
+  }
+
+  bool _isWalletVisible(CryptoWallet w) => !w.isTestnet || _testnetCoinsEnabled;
+
+  Iterable<CryptoWallet> get _visibleWallets => _wallets.values.where(_isWalletVisible);
 
   void _register(CryptoWallet wallet) {
     _wallets[wallet.coinSymbol] = wallet;
     wallet.addListener(_onWalletChanged);
   }
 
-  void _onWalletChanged() => notifyListeners();
+  Timer? _notifyDebounce;
+
+  void _onWalletChanged() {
+    _notifyDebounce?.cancel();
+    _notifyDebounce = Timer(Duration(milliseconds: 100), () {
+      notifyListeners();
+    });
+  }
 
   // ----- Public surface -----
 
   Map<String, CryptoWallet> get wallets => Map.unmodifiable(_wallets);
-  List<CryptoWallet> get allWallets => List.unmodifiable(_wallets.values);
+  List<CryptoWallet> get allWallets => List.unmodifiable(_visibleWallets);
   List<CryptoWallet> get activeWallets =>
-      _wallets.values.where((w) => w.isActive).toList(growable: false);
+      _visibleWallets.where((w) => w.isActive).toList(growable: false);
   List<CryptoWallet> get loadedWallets =>
-      _wallets.values.where((w) => w.isLoaded).toList(growable: false);
+      _visibleWallets.where((w) => w.isLoaded).toList(growable: false);
 
-  CryptoWallet? getWallet(String coinSymbol) => _wallets[coinSymbol.toUpperCase()];
+  CryptoWallet? getWallet(String coinSymbol) {
+    final wallet = _wallets[coinSymbol.toUpperCase()];
+    if (wallet == null || !_isWalletVisible(wallet)) return null;
+    return wallet;
+  }
 
   /// True if the user has set the shared wallet password in this session
   /// (or it was just loaded from secure storage on mobile).
@@ -92,12 +142,19 @@ class WalletManager with ChangeNotifier {
   /// Opens every wallet that has a file on disk using the shared
   /// password. Use [password] to override the in-memory password (e.g.
   /// from the desktop unlock screen).
-  Future<void> openAll({String? password}) async {
+  ///
+  /// When [displayOnly] is true, only restores connection settings and
+  /// cached balance/tx display — no wallet files or network I/O.
+  Future<void> openAll({String? password, bool displayOnly = false}) async {
     if (password != null) {
       _password = password;
     }
+
+    await loadCachedDisplayState();
+
+    if (displayOnly) return;
+
     if (_password == null) {
-      // Mobile auto-unlock path: try secure storage.
       final loaded = await loadMobileWalletPassword();
       if (!loaded) {
         log(LogLevel.warn, '[WalletManager] openAll called without a password');
@@ -105,52 +162,136 @@ class WalletManager with ChangeNotifier {
       }
     }
 
-    // Load the master seed (if any) up-front so we can bootstrap any
-    // coin that was added after the wallet was originally created.
-    ({String mnemonic, DateTime restoreDate})? masterSeed;
-    try {
-      masterSeed = await MasterSeedStore.load(_password!);
-    } catch (e) {
-      log(LogLevel.error, '[WalletManager] Failed to read master seed: $e');
-    }
+    await _openWalletFiles();
+  }
 
-    for (final w in _wallets.values) {
-      try {
-        if (await w.hasExistingWallet()) {
-          await w.openExisting(password: _password!);
-        } else if (masterSeed != null) {
-          // Coin was added after the wallet existed (or its file was
-          // never written for some reason). Lazily bootstrap it from
-          // the persisted BIP39 master seed.
-          log(LogLevel.info, '[WalletManager] Bootstrapping ${w.coinSymbol} from master seed.');
-          await w.restoreFromMasterSeed(
-            bip39Mnemonic: masterSeed.mnemonic,
-            restoreDate: masterSeed.restoreDate,
-            password: _password!,
-          );
+  /// Restores persisted connection settings and cached balances/tx lists.
+  /// Fast — intended to run before navigating to the home screen.
+  Future<void> loadCachedDisplayState() async {
+    await Future.wait(
+      _visibleWallets.map((w) async {
+        try {
+          await w.loadPersistedConnection();
+          await w.loadPersistedSnapshot();
+        } catch (e) {
+          log(LogLevel.error, 'Failed to load cached display state: $e', coin: w.coinSymbol);
         }
+      }),
+    );
+  }
+
+  /// Opens on-disk wallet files (slow; Monero FFI, decrypt, etc.).
+  /// Concurrent callers share one in-flight open.
+  Future<void> _openWalletFiles() async {
+    _openWalletFilesInFlight ??= _openWalletFilesOnce();
+    await _openWalletFilesInFlight!;
+  }
+
+  Future<void>? _openWalletFilesInFlight;
+
+  Future<void> _openWalletFilesOnce() async {
+    try {
+      ({String mnemonic, DateTime restoreDate})? masterSeed;
+      try {
+        masterSeed = await MasterSeedStore.load(_password!);
       } catch (e) {
-        log(LogLevel.error, '[WalletManager] Failed to open ${w.coinSymbol}: $e');
+        log(LogLevel.error, '[WalletManager] Failed to read master seed: $e');
       }
 
-      // Always restore any persisted connection state, even if the
-      // wallet couldn't be opened/bootstrapped — the user shouldn't
-      // lose their server settings on restart.
-      try {
-        await w.loadPersistedConnection();
-      } catch (e) {
-        log(LogLevel.error, '[WalletManager] Failed to load ${w.coinSymbol} connection: $e');
+      for (final w in _visibleWallets) {
+        await Future<void>.delayed(Duration.zero);
+        try {
+          if (await w.hasExistingWallet()) {
+            final timer = Stopwatch()..start();
+            await w.openExisting(password: _password!);
+            timer.stop();
+            log(
+              LogLevel.info,
+              'Wallet opened in ${timer.elapsedMilliseconds}ms',
+              coin: w.coinSymbol,
+            );
+          } else if (masterSeed != null) {
+            log(LogLevel.info, 'Bootstrapping from master seed.', coin: w.coinSymbol);
+            await w.restoreFromMasterSeed(
+              bip39Mnemonic: masterSeed.mnemonic,
+              restoreDate: masterSeed.restoreDate,
+              password: _password!,
+            );
+          }
+        } catch (e) {
+          log(LogLevel.error, 'Failed to open: $e', coin: w.coinSymbol);
+          if (masterSeed != null && _isCorruptWalletFile(e)) {
+            try {
+              log(
+                LogLevel.warn,
+                'Removing corrupt wallet file and re-bootstrapping.',
+                coin: w.coinSymbol,
+              );
+              await w.deleteFiles();
+              await w.restoreFromMasterSeed(
+                bip39Mnemonic: masterSeed.mnemonic,
+                restoreDate: masterSeed.restoreDate,
+                password: _password!,
+              );
+            } catch (e2) {
+              log(LogLevel.error, 'Failed to re-bootstrap: $e2', coin: w.coinSymbol);
+            }
+          }
+        }
       }
+    } finally {
+      _openWalletFilesInFlight = null;
     }
   }
 
-  /// Steady-state refresh for every loaded wallet.
+  /// Opens wallet files then syncs active coins in the background.
+  void openWalletFilesAndSync() {
+    unawaited(() async {
+      if (_password == null) {
+        await loadMobileWalletPassword();
+      }
+      if (_password == null) return;
+      await _openWalletFiles();
+      syncInBackground();
+    }());
+  }
+
+  /// Steady-state refresh for every configured wallet.
   Future<void> loadAll() async {
-    for (final w in _wallets.values) {
-      if (w.isLoaded) {
-        w.load();
+    for (final w in _visibleWallets) {
+      if (!w.isActive) continue;
+      await w.load();
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
+  /// Opens wallets if needed, then refreshes active ones without blocking the UI.
+  Future<void> bootstrap() async {
+    await loadCachedDisplayState();
+    if (loadedWallets.isEmpty) {
+      if (_password == null) {
+        await loadMobileWalletPassword();
+      }
+      if (_password != null) {
+        await _openWalletFiles();
       }
     }
+    syncInBackground();
+  }
+
+  /// Refreshes every configured wallet in the background.
+  void syncInBackground() {
+    unawaited(loadAll());
+  }
+
+  static bool _isCorruptWalletFile(Object error) {
+    if (error is! FormatException) return false;
+    final msg = error.message.toLowerCase();
+    return msg.contains('too short') ||
+        msg.contains('magic mismatch') ||
+        msg.contains('corrupt') ||
+        msg.contains('decryption failed') ||
+        msg.contains('unsupported wallet blob');
   }
 
   /// Generates a brand new 15-word BIP39 mnemonic, restores wallets for
@@ -173,7 +314,7 @@ class WalletManager with ChangeNotifier {
       throw Exception('Invalid mnemonic.');
     }
 
-    for (final w in _wallets.values) {
+    for (final w in _visibleWallets) {
       await w.restoreFromMasterSeed(
         bip39Mnemonic: bip39Mnemonic,
         restoreDate: restoreDate,
@@ -199,7 +340,7 @@ class WalletManager with ChangeNotifier {
       try {
         await w.delete();
       } catch (e) {
-        log(LogLevel.error, '[WalletManager] Failed to delete ${w.coinSymbol}: $e');
+        log(LogLevel.error, 'Failed to delete: $e', coin: w.coinSymbol);
       }
     }
 
@@ -218,24 +359,22 @@ class WalletManager with ChangeNotifier {
 
   // ----- Aggregate getters -----
 
-  /// Sum of `unlockedBalance` across active wallets, weighted by each
-  /// wallet's fiat rate. Wallets whose balance or rate is `null` are
-  /// skipped.
-  double? totalUnlockedFiat(Map<String, double?> ratesBySymbol) {
+  /// Sum of unlocked balance × fiat rate across all coins. Missing rates
+  /// count as zero so the home-screen total never waits on a fetch.
+  double totalUnlockedFiat(Map<String, double?> ratesBySymbol) {
     double total = 0;
-    var anyKnown = false;
-    for (final w in activeWallets) {
-      final balance = w.unlockedBalance;
-      final rate = ratesBySymbol[w.coinSymbol];
-      if (balance == null || rate == null) continue;
+    for (final w in _visibleWallets) {
+      if (w.isTestnet) continue;
+      final balance = w.unlockedBalance ?? 0;
+      final rate = ratesBySymbol[w.coinSymbol] ?? 0;
       total += balance * rate;
-      anyKnown = true;
     }
-    return anyKnown ? total : null;
+    return total;
   }
 
   @override
   void dispose() {
+    _notifyDebounce?.cancel();
     for (final w in _wallets.values) {
       w.removeListener(_onWalletChanged);
       w.dispose();

@@ -22,7 +22,7 @@ Future<bool> runTxNotifier() async {
 
   await walletManager.openAll();
 
-  final wallets = walletManager.loadedWallets;
+  final wallets = walletManager.activeWallets;
   if (wallets.isEmpty) return true;
 
   for (final w in wallets) {
@@ -60,7 +60,8 @@ Future<void> _prepareWalletForNotifier(CryptoWallet wallet) async {
     if (iters == 20) {
       log(
         LogLevel.warn,
-        '[TX Notifier] [${wallet.coinSymbol}] Connection timed out',
+        '[TX Notifier] Connection timed out',
+        coin: wallet.coinSymbol,
       );
       return;
     }
@@ -75,21 +76,21 @@ Future<void> _notifyNewTxsForWallet(CryptoWallet wallet) async {
   final countOfNewTxs = currentCount - persistedCount;
 
   if (countOfNewTxs > 0 && currentCount != 0) {
-    log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] Found new transactions');
+    log(LogLevel.info, '[TX Notifier] Found new transactions', coin: wallet.coinSymbol);
 
     for (int i = 0; i < countOfNewTxs; i++) {
       final tx = wallet.txHistory[i];
       if (tx.direction == consts.txDirectionIncoming) {
-        log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] Notifying tx $i');
+        log(LogLevel.info, '[TX Notifier] Notifying tx $i', coin: wallet.coinSymbol);
         NotificationService().showIncomingTxNotification(tx.amount);
       } else {
-        log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] Skipping outgoing tx');
+        log(LogLevel.info, '[TX Notifier] Skipping outgoing tx', coin: wallet.coinSymbol);
       }
     }
 
     await wallet.persistTxHistoryCount();
   } else {
-    log(LogLevel.info, '[TX Notifier] [${wallet.coinSymbol}] No new transactions');
+    log(LogLevel.info, '[TX Notifier] No new transactions', coin: wallet.coinSymbol);
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -16,8 +18,32 @@ import 'package:skylight_wallet/widgets/fiat_amount.dart';
 import 'package:skylight_wallet/widgets/connection_status_indicator.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
-class WalletHomeScreen extends StatelessWidget {
+class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});
+
+  @override
+  State<WalletHomeScreen> createState() => _WalletHomeScreenState();
+}
+
+class _WalletHomeScreenState extends State<WalletHomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapIfNeeded());
+  }
+
+  Future<void> _bootstrapIfNeeded() async {
+    final manager = context.read<WalletManager>();
+    if (manager.loadedWallets.isNotEmpty) {
+      manager.syncInBackground();
+      return;
+    }
+    if (manager.hasPassword) {
+      manager.openWalletFilesAndSync();
+      return;
+    }
+    unawaited(manager.bootstrap());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +53,18 @@ class WalletHomeScreen extends StatelessWidget {
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
 
     final ratesBySymbol = <String, double?>{
-      for (final w in walletManager.allWallets) w.coinSymbol: fiatRate.rateFor(w.coinSymbol),
+      for (final w in walletManager.allWallets)
+        w.coinSymbol: fiatRate.rateFor(w.coinSymbol, isTestnet: w.isTestnet),
     };
     final totalFiat = walletManager.totalUnlockedFiat(ratesBySymbol);
+
+    final wallets = [...walletManager.allWallets]
+      ..sort((a, b) {
+        final aConfigured = a.connectionAddress.isNotEmpty;
+        final bConfigured = b.connectionAddress.isNotEmpty;
+        if (aConfigured != bConfigured) return aConfigured ? -1 : 1;
+        return 0;
+      });
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Wallet')),
@@ -59,9 +94,9 @@ class WalletHomeScreen extends StatelessWidget {
                       height: 1,
                       color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
-                    itemCount: walletManager.allWallets.length,
+                    itemCount: wallets.length,
                     itemBuilder: (context, index) {
-                      final wallet = walletManager.allWallets[index];
+                      final wallet = wallets[index];
                       return _CoinRow(wallet: wallet, fiatRate: fiatRate, fiatSymbol: fiatSymbol);
                     },
                   ),
@@ -76,7 +111,7 @@ class WalletHomeScreen extends StatelessWidget {
 }
 
 class _TotalBalanceHeader extends StatelessWidget {
-  final double? totalFiat;
+  final double totalFiat;
   final String fiatSymbol;
   final FiatRateModel fiatRate;
 
@@ -101,10 +136,8 @@ class _TotalBalanceHeader extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           SizedBox(height: 6),
-          if (totalFiat is double)
-            FiatAmount(prefix: fiatSymbol, amount: totalFiat!, maxFontSize: 32)
-          else if (!fiatRate.isDisabled)
-            Skeletonizer(enabled: true, child: Text('Potato', style: TextStyle(fontSize: 32)))
+          if (!fiatRate.isDisabled)
+            FiatAmount(prefix: fiatSymbol, amount: totalFiat, maxFontSize: 32)
           else
             Text('--', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
           if (fiatRate.hasFailed)
@@ -187,8 +220,10 @@ class _CoinRowState extends State<_CoinRow> {
     final wallet = widget.wallet;
     final hasConnection = wallet.connectionAddress.isNotEmpty;
     final balance = wallet.unlockedBalance;
-    final coinRate = widget.fiatRate.rateFor(wallet.coinSymbol);
-    final balanceFiat = coinRate != null && balance is double ? balance * coinRate : null;
+    final coinRate = widget.fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
+    final balanceFiat = !wallet.isTestnet && coinRate != null && balance is double
+        ? balance * coinRate
+        : null;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -240,12 +275,18 @@ class _CoinRowState extends State<_CoinRow> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      CoinAmount(
-                        amount: balance ?? 0,
-                        decimals: wallet.decimals,
-                        smallerDigits: wallet.smallerDigits,
-                        maxFontSize: 16,
-                      ),
+                      if (balance == null)
+                        Skeletonizer(
+                          enabled: true,
+                          child: Text('0.000000', style: TextStyle(fontSize: 16)),
+                        )
+                      else
+                        CoinAmount(
+                          amount: balance,
+                          decimals: wallet.decimals,
+                          smallerDigits: wallet.smallerDigits,
+                          maxFontSize: 16,
+                        ),
                       if (balanceFiat is double && !widget.fiatRate.isDisabled)
                         FiatAmount(prefix: widget.fiatSymbol, amount: balanceFiat, maxFontSize: 12),
                     ],

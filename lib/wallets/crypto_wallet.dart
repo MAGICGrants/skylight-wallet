@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -83,6 +84,11 @@ class TxDetails {
   );
 }
 
+List<TxDetails> parseCachedTxHistory(String txJson) {
+  final list = jsonDecode(txJson) as List<dynamic>;
+  return list.map((j) => TxDetails.fromJson(j as Map<String, dynamic>)).toList();
+}
+
 /// Coin-agnostic handle for a transaction that has been built but not
 /// yet broadcast to the network.
 abstract class PendingTransaction {
@@ -131,6 +137,23 @@ abstract class CryptoWallet with ChangeNotifier {
   /// `electrum.example.com:50002` for an Electrum server).
   String get connectionAddressExample;
 
+  /// Confirmations required before a transaction is treated as fully
+  /// confirmed in the UI (no pending indicator).
+  int get requiredConfirmations;
+
+  /// True for testnet / regtest coins that should not use mainnet fiat
+  /// pricing or other mainnet-only behaviour.
+  bool get isTestnet => false;
+
+  /// True when [tx] has enough confirmations to hide the pending indicator.
+  bool isTxConfirmed(TxDetails tx) => tx.height != -1 && tx.confirmations >= requiredConfirmations;
+
+  /// Logs [message] prefixed with [coinSymbol].
+  @protected
+  void walletLog(LogLevel level, String message, {Map<String, dynamic>? meta}) {
+    log(level, message, meta: meta, coin: coinSymbol);
+  }
+
   // ----- Internal state -----
 
   final int _sessionStartedAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -150,6 +173,19 @@ abstract class CryptoWallet with ChangeNotifier {
 
   Timer? _connectionTimer;
   Timer? _refreshTimer;
+  bool _connectionCheckInFlight = false;
+  bool _refreshInFlight = false;
+
+  bool _enabledInApp = true;
+
+  /// When false, the wallet is hidden from the UI and excluded from sync.
+  bool get enabledInApp => _enabledInApp;
+
+  void setEnabledInApp(bool value) {
+    if (_enabledInApp == value) return;
+    _enabledInApp = value;
+    notifyListeners();
+  }
 
   // ----- Public getters -----
 
@@ -170,7 +206,7 @@ abstract class CryptoWallet with ChangeNotifier {
   /// True when the wallet has been opened/restored AND a server connection
   /// is configured. Inactive wallets show only as "Set up" entries in the
   /// home screen.
-  bool get isActive => _isLoaded && _connectionAddress.isNotEmpty;
+  bool get isActive => _enabledInApp && _isLoaded && _connectionAddress.isNotEmpty;
 
   // ----- Namespaced SharedPreferences -----
 
@@ -291,23 +327,66 @@ abstract class CryptoWallet with ChangeNotifier {
     setConnection(address: c.address, proxyPort: c.proxyPort, useTor: c.useTor, useSsl: c.useSsl);
   }
 
+  /// Restores the last known balance and tx list for immediate display on
+  /// reopen while a fresh sync runs in the background. Does not require the
+  /// wallet file to be opened yet — only a configured connection.
+  Future<void> loadPersistedSnapshot() async {
+    if (_connectionAddress.isEmpty) return;
+
+    final unlocked = await SharedPreferencesService.get<double>(prefKey('cachedUnlockedBalance'));
+    final total = await SharedPreferencesService.get<double>(prefKey('cachedTotalBalance'));
+    if (unlocked != null) {
+      setUnlockedBalance(unlocked);
+      setTotalBalance(total ?? unlocked);
+    }
+
+    final txJson = await SharedPreferencesService.get<String>(prefKey('cachedTxHistory'));
+    if (txJson != null && txJson.isNotEmpty) {
+      try {
+        _txHistory = await compute(parseCachedTxHistory, txJson);
+      } catch (e) {
+        walletLog(LogLevel.warn, 'Failed to load cached tx history: $e');
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// Persists the current balance and tx list after a successful refresh.
+  Future<void> persistWalletSnapshot() async {
+    if (!isActive || _unlockedBalance == null) return;
+
+    await SharedPreferencesService.set<double>(prefKey('cachedUnlockedBalance'), _unlockedBalance!);
+    await SharedPreferencesService.set<double>(
+      prefKey('cachedTotalBalance'),
+      _totalBalance ?? _unlockedBalance!,
+    );
+    await SharedPreferencesService.set<String>(
+      prefKey('cachedTxHistory'),
+      jsonEncode(_txHistory.map((t) => t.toJson()).toList()),
+    );
+  }
+
   // ----- Tx history persistence (concrete) -----
 
   Future<void> loadTxHistory({bool persistCount = true}) async {
+    final previousLength = _txHistory.length;
     final newHistory = readTxHistory();
     var hasPendingTx = false;
 
-    if (_txHistory.isNotEmpty) {
-      final lastTx = _txHistory[0];
-      if (lastTx.confirmations < 10) hasPendingTx = true;
+    if (newHistory.isNotEmpty && newHistory.first.confirmations < requiredConfirmations) {
+      hasPendingTx = true;
     }
 
-    final txCountDiff = newHistory.length - _txHistory.length;
+    final txCountDiff = newHistory.length - previousLength;
     final hadGrowth = txCountDiff > 0;
 
-    if (hadGrowth || hasPendingTx) {
+    // Keep cached/previous txs when a sync returns nothing (e.g. not connected yet).
+    if (newHistory.isNotEmpty || previousLength == 0) {
       _txHistory = newHistory;
+    }
 
+    if (hadGrowth || hasPendingTx) {
       if ((Platform.isLinux || Platform.isWindows || Platform.isMacOS) &&
           _isConnected &&
           _isSynced &&
@@ -343,23 +422,18 @@ abstract class CryptoWallet with ChangeNotifier {
 
   // ----- High-level orchestration -----
 
-  /// Steady-state refresh: pulls latest state from the daemon, loads stats,
-  /// and (if a connection is configured) connects to the daemon. Safe to
-  /// call when the wallet has not been opened yet.
+  /// Steady-state refresh: connects to the daemon, pulls latest state,
+  /// and loads stats. No-op when the wallet is not loaded or has no server
+  /// connection configured.
   Future<void> load() async {
-    if (!_isLoaded) return;
+    if (!isActive) return;
+    await connectToDaemon();
     await refresh();
     await loadAllStats();
-    if (_connectionAddress.isNotEmpty) {
-      await connectToDaemon();
-    }
   }
 
   Future<void> loadAllStats() async {
-    if (!_isLoaded) {
-      log(LogLevel.warn, '[$coinSymbol] Attempted loadAllStats but wallet is not loaded.');
-      return;
-    }
+    if (!isActive) return;
 
     await Future.wait([
       loadIsSynced(),
@@ -370,9 +444,14 @@ abstract class CryptoWallet with ChangeNotifier {
     ]);
 
     notifyListeners();
+
+    if (await getIsConnected()) {
+      await persistWalletSnapshot();
+    }
   }
 
   Future<void> connectToDaemon() async {
+    if (!isActive) return;
     if (!_isLoaded) {
       throw Exception('[$coinSymbol] Cannot connect: wallet not loaded.');
     }
@@ -393,6 +472,7 @@ abstract class CryptoWallet with ChangeNotifier {
     );
 
     _hasAttemptedConnection = true;
+    _isConnected = await getIsConnected();
     notifyListeners();
   }
 
@@ -404,13 +484,16 @@ abstract class CryptoWallet with ChangeNotifier {
 
   /// Clears all SharedPreferences keys namespaced under this wallet.
   Future<void> clearPersistedState() async {
-    const keys = [
+    final keys = [
       'connectionAddress',
       'connectionProxyPort',
       'connectionUseTor',
       'connectionUseSsl',
       'walletRestoreHeight',
       'txHistoryCount',
+      'cachedUnlockedBalance',
+      'cachedTotalBalance',
+      'cachedTxHistory',
     ];
     for (final k in keys) {
       await SharedPreferencesService.remove(prefKey(k));
@@ -465,29 +548,46 @@ abstract class CryptoWallet with ChangeNotifier {
   // ----- Timers -----
 
   void _startTimers() {
-    _connectionTimer = Timer.periodic(Duration(seconds: 1), (_) => _checkConnectionTask());
+    _connectionTimer = Timer.periodic(Duration(seconds: 5), (_) => _checkConnectionTask());
     _refreshTimer = Timer.periodic(Duration(seconds: 20), (_) => _refreshTask());
   }
 
   Future<void> _checkConnectionTask() async {
-    if (!_isLoaded) return;
-    final connected = await getIsConnected();
-    if (connected != _isConnected) {
-      log(LogLevel.info, '[$coinSymbol] Connection status changed to: $connected');
-      _isConnected = connected;
-      notifyListeners();
+    if (!isActive || _connectionCheckInFlight) return;
+    _connectionCheckInFlight = true;
+    try {
+      final connected = await getIsConnected();
+      if (connected != _isConnected) {
+        walletLog(LogLevel.info, 'Connection status changed to: $connected');
+        _isConnected = connected;
+        notifyListeners();
+      }
+    } finally {
+      _connectionCheckInFlight = false;
     }
   }
 
   Future<void> _refreshTask() async {
-    if (!_isLoaded) return;
-    await refresh();
+    if (!isActive || _refreshInFlight) return;
+    _refreshInFlight = true;
     try {
-      await loadAllStats().timeout(Duration(seconds: 20));
-    } catch (e) {
-      log(LogLevel.error, '[$coinSymbol] Error loading all stats: $e');
+      try {
+        if (!_isConnected) {
+          await connectToDaemon();
+        }
+        await refresh();
+      } catch (e) {
+        walletLog(LogLevel.warn, 'refresh failed: $e');
+      }
+      try {
+        await loadAllStats().timeout(Duration(seconds: 20));
+      } catch (e) {
+        walletLog(LogLevel.error, 'Error loading all stats: $e');
+      }
+      await store();
+    } finally {
+      _refreshInFlight = false;
     }
-    await store();
   }
 
   @override

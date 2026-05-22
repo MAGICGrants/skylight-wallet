@@ -98,10 +98,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
       _isLoading = false;
     });
 
-    manager.loadAll();
+    manager.syncInBackground();
 
     if (mounted) {
-      Provider.of<FiatRateModel>(context, listen: false).startService();
+      Provider.of<FiatRateModel>(context, listen: false).startService(walletManager: manager);
       Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
     }
   }

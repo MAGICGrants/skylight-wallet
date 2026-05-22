@@ -334,6 +334,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsVerboseLoggingLabel => 'Logs Detalhados';
 
   @override
+  String get settingsTestnetCoinsLabel => 'Moedas Testnet';
+
+  @override
+  String get settingsTestnetCoinsDescription =>
+      'Mostrar moedas testnet (ex.: Bitcoin Testnet) na lista de moedas.';
+
+  @override
   String get settingsVerboseLoggingDescription =>
       'Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
 

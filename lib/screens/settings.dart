@@ -29,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
   var _appLockEnabled = false;
   var _verboseLoggingEnabled = false;
+  var _testnetCoinsEnabled = false;
   String _appVersion = '';
   String _buildNumber = '';
 
@@ -59,11 +60,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
         false;
 
+    final testnetCoinsEnabled =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.testnetCoinsEnabled) ??
+        false;
+
     setState(() {
       _newTxNotificationsEnabled = newTxNotificationsEnabled;
       _appLockEnabled = appLockEnabled;
       _verboseLoggingEnabled = verboseLoggingEnabled;
+      _testnetCoinsEnabled = testnetCoinsEnabled;
     });
+  }
+
+  void _setTestnetCoinsEnabled(bool value) async {
+    setState(() {
+      _testnetCoinsEnabled = value;
+    });
+
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    await manager.setTestnetCoinsEnabled(value);
+
+    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+    fiatRate.startService(walletManager: manager);
   }
 
   void _setTxNotificationsEnabled(bool value) async {
@@ -251,12 +269,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth.clamp(0.0, 500.0);
 
-    void onSaved() {
+    Future<void> onSaved() async {
       final manager = Provider.of<WalletManager>(context, listen: false);
-      manager.loadAll();
+      manager.syncInBackground();
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-      fiatRate.startService();
+      fiatRate.startService(walletManager: manager);
 
       Navigator.pop(context);
     }
@@ -286,8 +304,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: FiatApiSettingsForm(
           saveButtonLabel: i18n.torSettingsSaveButton,
           onSaved: () async {
+            final manager = Provider.of<WalletManager>(context, listen: false);
             final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-            await fiatRate.startService();
+            await fiatRate.startService(walletManager: manager);
             if (dialogContext.mounted) {
               Navigator.of(dialogContext).pop();
             }
@@ -361,6 +380,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Switch(value: _newTxNotificationsEnabled, onChanged: _setTxNotificationsEnabled),
                 ],
               ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(i18n.settingsTestnetCoinsLabel, style: TextStyle(fontSize: 18)),
+                      Text(
+                        i18n.settingsTestnetCoinsDescription,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(value: _testnetCoinsEnabled, onChanged: _setTestnetCoinsEnabled),
+              ],
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

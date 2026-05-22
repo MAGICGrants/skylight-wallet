@@ -75,12 +75,13 @@ class _UnlockScreenState extends State<UnlockScreen> {
       final enteredPassword = _passwordController.text;
       final manager = Provider.of<WalletManager>(context, listen: false);
 
-      await manager.openAll(password: enteredPassword);
-      manager.loadAll();
+      manager.setWalletPassword(enteredPassword);
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
       }
+
+      manager.openWalletFilesAndSync();
     } catch (e) {
       if (mounted) {
         final i18n = AppLocalizations.of(context)!;

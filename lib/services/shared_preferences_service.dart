@@ -14,13 +14,20 @@ class SharedPreferencesKeys {
   static const String torMode = 'torMode';
   static const String torSocksPort = 'torSocksPort';
   static const String torUseOrbot = 'torUseOrbot';
+  static const String testnetCoinsEnabled = 'testnetCoinsEnabled';
 }
 
 class SharedPreferencesService {
   SharedPreferencesService._();
 
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> _instance() async {
+    return _prefs ??= await SharedPreferences.getInstance();
+  }
+
   static Future<T?> get<T>(String key) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance();
     final String keyString = key.toString();
 
     switch (T) {
@@ -42,7 +49,7 @@ class SharedPreferencesService {
   }
 
   static Future<void> set<T>(String key, T value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance();
     final String keyString = key.toString();
 
     if (value is bool) {
@@ -57,7 +64,7 @@ class SharedPreferencesService {
   }
 
   static Future<void> remove(String key) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _instance();
     await prefs.remove(key);
   }
 }

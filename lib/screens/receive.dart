@@ -95,7 +95,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 
     String? address;
     if (monero == null) {
-      address = primaryAddress;
+      address = receiveAddress ?? primaryAddress;
     } else if (serverSupportsSubaddresses == false || isDemoMode) {
       address = primaryAddress;
     } else if (serverSupportsSubaddresses == true) {

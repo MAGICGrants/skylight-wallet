@@ -18,10 +18,13 @@ import 'package:skylight_wallet/util/socks_socket.dart';
 ///  - SOCKS5 via [SOCKSSocket] when [socksHost]/[socksPort] are set,
 ///    again optionally upgraded to TLS at the SOCKS endpoint.
 class ElectrumClient {
-  ElectrumClient();
+  ElectrumClient({this.coinSymbol});
 
-  static const Duration _requestTimeout = Duration(seconds: 30);
-  static const Duration _aliveInterval = Duration(seconds: 30);
+  /// Coin tag for log lines (e.g. `BTC`, `TBTC`).
+  final String? coinSymbol;
+
+  static final Duration _requestTimeout = Duration(seconds: 30);
+  static final Duration _aliveInterval = Duration(seconds: 30);
 
   Socket? _plainSocket;
   SOCKSSocket? _socksSocket;
@@ -41,6 +44,8 @@ class ElectrumClient {
   void Function(bool connected)? onConnectionChanged;
 
   bool get isConnected => _connected;
+
+  void _log(LogLevel level, String message) => log(level, message, coin: coinSymbol);
 
   // ----- Connection -----
 
@@ -69,17 +74,12 @@ class ElectrumClient {
         cancelOnError: false,
       );
     } else {
-      Socket socket = await Socket.connect(host, port, timeout: const Duration(seconds: 10));
+      Socket socket = await Socket.connect(host, port, timeout: Duration(seconds: 10));
       if (useSsl) {
         socket = await SecureSocket.secure(socket, host: host);
       }
       _plainSocket = socket;
-      _socketSub = socket.listen(
-        _onData,
-        onError: _onError,
-        onDone: _onDone,
-        cancelOnError: false,
-      );
+      _socketSub = socket.listen(_onData, onError: _onError, onDone: _onDone, cancelOnError: false);
     }
 
     _setConnected(true);
@@ -102,7 +102,7 @@ class ElectrumClient {
 
     for (final c in _pendingById.values) {
       if (!c.isCompleted) {
-        c.completeError(StateError('Electrum connection closed'));
+        c.completeError(ElectrumDisconnectException());
       }
     }
     _pendingById.clear();
@@ -117,7 +117,7 @@ class ElectrumClient {
       try {
         await ping();
       } catch (e) {
-        log(LogLevel.warn, '[Electrum] ping failed: $e');
+        _log(LogLevel.warn, 'ping failed: $e');
         await close();
       }
     });
@@ -139,7 +139,7 @@ class ElectrumClient {
     } else if (_plainSocket != null) {
       _plainSocket!.add(utf8.encode(line));
     } else {
-      throw StateError('Electrum: not connected');
+      throw ElectrumDisconnectException('Electrum: not connected');
     }
   }
 
@@ -154,18 +154,18 @@ class ElectrumClient {
       try {
         _dispatch(json.decode(line));
       } catch (e) {
-        log(LogLevel.warn, '[Electrum] parse error: $e (line=$line)');
+        _log(LogLevel.warn, 'parse error: $e (line=$line)');
       }
     }
   }
 
   void _onError(Object error, [StackTrace? st]) {
-    log(LogLevel.error, '[Electrum] socket error: $error');
+    _log(LogLevel.error, 'socket error: $error');
     close();
   }
 
   void _onDone() {
-    log(LogLevel.info, '[Electrum] socket closed');
+    _log(LogLevel.info, 'socket closed');
     close();
   }
 
@@ -196,15 +196,14 @@ class ElectrumClient {
   }
 
   Future<dynamic> _call(String method, List<Object?> params, {Duration? timeout}) {
+    if (!_connected) {
+      return Future.error(ElectrumDisconnectException());
+    }
+
     final id = _nextId++;
     final completer = Completer<dynamic>();
     _pendingById[id] = completer;
-    final body = json.encode({
-      'jsonrpc': '2.0',
-      'id': id,
-      'method': method,
-      'params': params,
-    });
+    final body = json.encode({'jsonrpc': '2.0', 'id': id, 'method': method, 'params': params});
     try {
       _send('$body\n');
     } catch (e) {
@@ -263,6 +262,21 @@ class ElectrumClient {
     return _call('blockchain.transaction.get', [hash, verbose]);
   }
 
+  /// Some Electrum servers reject `verbose: true` ("verbose transactions are
+  /// currently unsupported"). Try verbose first, then fall back to raw hex.
+  Future<dynamic> getTransactionBestEffort(String hash) async {
+    try {
+      return await getTransaction(hash, verbose: true);
+    } catch (e) {
+      if (isElectrumDisconnectError(e)) rethrow;
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('verbose') || msg.contains('not supported') || msg.contains('unsupported')) {
+        return await getTransaction(hash, verbose: false);
+      }
+      rethrow;
+    }
+  }
+
   Future<String> broadcastTransaction(String rawHex) async {
     final result = await _call('blockchain.transaction.broadcast', [rawHex]);
     if (result is String) return result;
@@ -292,6 +306,22 @@ class ElectrumClient {
     if (result is Map) return result.cast<String, dynamic>();
     return {};
   }
+
+  /// Returns the 80-byte block header at [height] as hex.
+  Future<String> getBlockHeader(int height) async {
+    final result = await _call('blockchain.block.header', [height]);
+    if (result is String && result.isNotEmpty) return result;
+    throw _ElectrumError('Unexpected block header response: $result');
+  }
+}
+
+class ElectrumDisconnectException implements Exception {
+  const ElectrumDisconnectException([this.message = 'Electrum connection closed']);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 class _ElectrumError implements Exception {
@@ -299,6 +329,17 @@ class _ElectrumError implements Exception {
   _ElectrumError(this.raw);
   @override
   String toString() => 'ElectrumError: $raw';
+}
+
+/// True when an RPC failed because the socket was closed or is unavailable.
+bool isElectrumDisconnectError(Object error) {
+  if (error is ElectrumDisconnectException) return true;
+  if (error is StateError) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('electrum') &&
+        (msg.contains('connection closed') || msg.contains('not connected'));
+  }
+  return false;
 }
 
 /// Standalone one-shot probe used by the connection-setup form to
@@ -375,12 +416,14 @@ Future<void> probeElectrumServer({
       await socks.connectTo(host, port);
       socksSocket = socks;
       sub = socks.inputStream.listen(onData);
-      socks.write('${jsonEncode({
-            'jsonrpc': '2.0',
-            'method': 'server.version',
-            'params': ['', '1.4'],
-            'id': 0,
-          })}\n');
+      socks.write(
+        '${jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'server.version',
+          'params': ['', '1.4'],
+          'id': 0,
+        })}\n',
+      );
     } else {
       Socket s = await Socket.connect(host, port, timeout: timeout);
       if (useSsl) {
@@ -388,12 +431,16 @@ Future<void> probeElectrumServer({
       }
       plainSocket = s;
       sub = s.listen(onData);
-      s.add(utf8.encode('${jsonEncode({
+      s.add(
+        utf8.encode(
+          '${jsonEncode({
             'jsonrpc': '2.0',
             'method': 'server.version',
             'params': ['', '1.4'],
             'id': 0,
-          })}\n'));
+          })}\n',
+        ),
+      );
     }
 
     await completer.future.timeout(timeout);

@@ -206,6 +206,11 @@ class _TxDetailsDialog extends StatelessWidget {
                               onTap: () =>
                                   Clipboard.setData(ClipboardData(text: recipient.address)),
                             ),
+                            if (recipient.isChange)
+                              Text(
+                                i18n.txDetailsChangeRecipientLabel,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                             Text('$amountStr ${wallet.coinSymbol}', softWrap: true),
                           ],
                         );

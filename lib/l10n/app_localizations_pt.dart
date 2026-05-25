@@ -433,6 +433,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Destinatários';
 
   @override
+  String get txDetailsChangeRecipientLabel => 'Troco';
+
+  @override
   String get lwsKeysTitle => 'Chaves do LWS';
 
   @override
@@ -515,6 +518,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get addressBookSave => 'Salvar';
+
+  @override
+  String get addressBookAtLeastOneAddressError => 'Informe pelo menos um endereço';
+
+  @override
+  String addressBookNoContactsForCoin(String coinSymbol) {
+    return 'Nenhum contato com endereço $coinSymbol';
+  }
 
   @override
   String get sendSelectedContact => 'Contato selecionado';

@@ -142,6 +142,7 @@
   "txDetailsConfirmationsLabel": "Confirmations",
   "txDetailsViewKeyLabel": "View Key",
   "txDetailsRecipientsLabel": "Recipients",
+  "txDetailsChangeRecipientLabel": "Change",
   "lwsKeysTitle": "LWS Keys",
   "lwsKeysPrimaryAddress": "Primary Address",
   "lwsKeysRestoreHeight": "Restore Height",
@@ -176,6 +177,15 @@
   "addressBookContactName": "Contact Name",
   "addressBookUpdate": "Update",
   "addressBookSave": "Save",
+  "addressBookAtLeastOneAddressError": "Enter at least one address",
+  "addressBookNoContactsForCoin": "No contacts with a {coinSymbol} address",
+  "@addressBookNoContactsForCoin": {
+    "placeholders": {
+      "coinSymbol": {
+        "type": "String"
+      }
+    }
+  },
   "sendSelectedContact": "Selected contact",
   "sendClearSelectedContact": "Clear selected contact",
   "sendPriorityLow": "Low",

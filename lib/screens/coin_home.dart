@@ -278,7 +278,9 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     final unlockedBalanceFiat = !wallet.isTestnet && coinRate != null && wallet.unlockedBalance is double
         ? wallet.unlockedBalance! * coinRate
         : null;
-    final lockedBalance = (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
+    final lockedBalance = wallet.canSpendPendingBalance
+        ? 0.0
+        : (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
 
     return Scaffold(

@@ -13,13 +13,21 @@ import 'package:skylight_wallet/util/logging.dart';
 class TxRecipient {
   final String address;
   final double amount;
+  final bool isChange;
 
-  TxRecipient(this.address, this.amount);
+  TxRecipient(this.address, this.amount, {this.isChange = false});
 
-  Map<String, dynamic> toJson() => {'address': address, 'amount': amount};
+  Map<String, dynamic> toJson() => {
+    'address': address,
+    'amount': amount,
+    if (isChange) 'isChange': true,
+  };
 
-  factory TxRecipient.fromJson(Map<String, dynamic> json) =>
-      TxRecipient(json['address'] as String, (json['amount'] as num).toDouble());
+  factory TxRecipient.fromJson(Map<String, dynamic> json) => TxRecipient(
+    json['address'] as String,
+    (json['amount'] as num).toDouble(),
+    isChange: json['isChange'] as bool? ?? false,
+  );
 }
 
 class TxDetails {
@@ -35,6 +43,9 @@ class TxDetails {
   final int height;
   final int confirmations;
   final String key;
+  /// Unix seconds when the tx was first seen in the mempool or broadcast by
+  /// this wallet. Used for display instead of block time when set.
+  final int? broadcastAt;
 
   TxDetails({
     required this.index,
@@ -49,6 +60,7 @@ class TxDetails {
     required this.height,
     required this.confirmations,
     required this.key,
+    this.broadcastAt,
   });
 
   Map<String, dynamic> toJson() => {
@@ -64,6 +76,7 @@ class TxDetails {
     'height': height,
     'confirmations': confirmations,
     'key': key,
+    if (broadcastAt != null) 'broadcastAt': broadcastAt,
   };
 
   factory TxDetails.fromJson(Map<String, dynamic> json) => TxDetails(
@@ -81,6 +94,7 @@ class TxDetails {
     height: json['height'] as int,
     confirmations: json['confirmations'] as int,
     key: json['key'] as String,
+    broadcastAt: json['broadcastAt'] as int?,
   );
 }
 
@@ -144,6 +158,10 @@ abstract class CryptoWallet with ChangeNotifier {
   /// True for testnet / regtest coins that should not use mainnet fiat
   /// pricing or other mainnet-only behaviour.
   bool get isTestnet => false;
+
+  /// When true, unconfirmed (pending) balance is spendable and the UI should
+  /// not show a separate pending amount below the main balance.
+  bool get canSpendPendingBalance => false;
 
   /// True when [tx] has enough confirmations to hide the pending indicator.
   bool isTxConfirmed(TxDetails tx) => tx.height != -1 && tx.confirmations >= requiredConfirmations;

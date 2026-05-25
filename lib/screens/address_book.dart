@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:monero/monero.dart' as monero;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
+import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
 class AddressBookScreen extends StatefulWidget {
@@ -164,10 +165,10 @@ class _ContactListItem extends StatelessWidget {
 
   const _ContactListItem({required this.contact, required this.onEdit, required this.onDelete});
 
-  void _copyAddressToClipboard(BuildContext context) {
+  void _copyAddressesToClipboard(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
 
-    Clipboard.setData(ClipboardData(text: contact.address));
+    Clipboard.setData(ClipboardData(text: contact.addressesForClipboard()));
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.addressCopied)));
   }
@@ -175,6 +176,8 @@ class _ContactListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final sortedEntries = contact.addresses.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
 
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -190,17 +193,37 @@ class _ContactListItem extends StatelessWidget {
           ),
         ),
         title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text(
-          contact.address,
-          style: TextStyle(fontFamily: 'monospace', fontSize: 12),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final entry in sortedEntries)
+              Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${entry.key}: ',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                      ),
+                      TextSpan(
+                        text: entry.value,
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
         ),
+        isThreeLine: sortedEntries.length > 1,
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             switch (value) {
               case 'copy':
-                _copyAddressToClipboard(context);
+                _copyAddressesToClipboard(context);
                 break;
               case 'edit':
                 onEdit();
@@ -235,7 +258,7 @@ class _ContactListItem extends StatelessWidget {
             ),
           ],
         ),
-        onTap: () => _copyAddressToClipboard(context),
+        onTap: () => _copyAddressesToClipboard(context),
       ),
     );
   }
@@ -253,22 +276,35 @@ class _ContactDialog extends StatefulWidget {
 class _ContactDialogState extends State<_ContactDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
+  final Map<String, TextEditingController> _addressControllers = {};
   bool _isLoading = false;
+  bool _controllersReady = false;
+  String? _addressesError;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_controllersReady) return;
+    _controllersReady = true;
+
     if (widget.contact != null) {
       _nameController.text = widget.contact!.name;
-      _addressController.text = widget.contact!.address;
+    }
+
+    final wallets = context.read<WalletManager>().allWallets;
+    for (final wallet in wallets) {
+      _addressControllers[wallet.coinSymbol] = TextEditingController(
+        text: widget.contact?.addressFor(wallet.coinSymbol) ?? '',
+      );
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _addressController.dispose();
+    for (final controller in _addressControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -280,23 +316,35 @@ class _ContactDialogState extends State<_ContactDialog> {
     return null;
   }
 
-  String? _validateAddress(String? value) {
+  String? _validateAddress(String? value, CryptoWallet wallet) {
     final i18n = AppLocalizations.of(context)!;
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return null;
 
-    if (value == null || value.trim().isEmpty) {
-      return i18n.fieldEmptyError;
-    }
-
-    // ignore: deprecated_member_use
-    if (!monero.Wallet_addressValid(value.trim(), 0)) {
+    if (!wallet.isAddressValid(trimmed)) {
       return i18n.sendInvalidAddressError;
     }
     return null;
   }
 
+  Map<String, String> _collectAddresses() {
+    return {
+      for (final entry in _addressControllers.entries)
+        if (entry.value.text.trim().isNotEmpty) entry.key: entry.value.text.trim(),
+    };
+  }
+
   Future<void> _saveContact() async {
     final i18n = AppLocalizations.of(context)!;
+    setState(() => _addressesError = null);
+
     if (!_formKey.currentState!.validate()) return;
+
+    final addresses = _collectAddresses();
+    if (addresses.isEmpty) {
+      setState(() => _addressesError = i18n.addressBookAtLeastOneAddressError);
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -306,13 +354,9 @@ class _ContactDialogState extends State<_ContactDialog> {
       final contactModel = Provider.of<ContactModel>(context, listen: false);
 
       if (widget.contact == null) {
-        await contactModel.addContact(_nameController.text.trim(), _addressController.text.trim());
+        await contactModel.addContact(_nameController.text.trim(), addresses);
       } else {
-        await contactModel.updateContact(
-          widget.contact!.id,
-          _nameController.text.trim(),
-          _addressController.text.trim(),
-        );
+        await contactModel.updateContact(widget.contact!.id, _nameController.text.trim(), addresses);
       }
 
       if (mounted) {
@@ -338,6 +382,7 @@ class _ContactDialogState extends State<_ContactDialog> {
     final i18n = AppLocalizations.of(context)!;
     final isEditing = widget.contact != null;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final wallets = context.watch<WalletManager>().allWallets;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth.clamp(0.0, 400.0);
@@ -348,29 +393,42 @@ class _ContactDialogState extends State<_ContactDialog> {
       title: Text(isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: i18n.addressBookContactName,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: i18n.addressBookContactName,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                ),
+                validator: _validateName,
+                textCapitalization: TextCapitalization.words,
               ),
-              validator: _validateName,
-              textCapitalization: TextCapitalization.words,
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: _addressController,
-              decoration: InputDecoration(
-                labelText: i18n.address,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-              ),
-              validator: _validateAddress,
-              maxLines: 3,
-            ),
-          ],
+              SizedBox(height: 16),
+              for (final wallet in wallets) ...[
+                TextFormField(
+                  controller: _addressControllers[wallet.coinSymbol],
+                  decoration: InputDecoration(
+                    labelText: '${wallet.coinName} (${wallet.coinSymbol})',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                  ),
+                  validator: (value) => _validateAddress(value, wallet),
+                  maxLines: 2,
+                ),
+                SizedBox(height: 12),
+              ],
+              if (_addressesError != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _addressesError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
       actions: [

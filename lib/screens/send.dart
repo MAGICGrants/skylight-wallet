@@ -161,10 +161,14 @@ class _SendScreenState extends State<SendScreen> {
     showDialog(
       context: context,
       builder: (context) => _ContactPickerDialog(
+        coinSymbol: _coinSymbol,
         onContactSelected: (contact) {
+          final address = contact.addressFor(_coinSymbol);
+          if (address == null) return;
+
           setState(() {
             _selectedContact = contact;
-            _destinationAddressController.text = contact.address;
+            _destinationAddressController.text = address;
           });
           Navigator.of(context).pop();
         },
@@ -812,9 +816,10 @@ class _SendScreenState extends State<SendScreen> {
 }
 
 class _ContactPickerDialog extends StatefulWidget {
+  final String coinSymbol;
   final Function(Contact) onContactSelected;
 
-  const _ContactPickerDialog({required this.onContactSelected});
+  const _ContactPickerDialog({required this.coinSymbol, required this.onContactSelected});
 
   @override
   State<_ContactPickerDialog> createState() => _ContactPickerDialogState();
@@ -864,17 +869,21 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
             Expanded(
               child: Consumer<ContactModel>(
                 builder: (context, contactModel, child) {
-                  final filteredContacts = contactModel.searchContacts(_searchQuery);
+                  final filteredContacts = contactModel.searchContacts(
+                    _searchQuery,
+                    coinSymbol: widget.coinSymbol,
+                  );
 
                   if (filteredContacts.isEmpty) {
                     return Center(
                       child: Text(
                         _searchQuery.isEmpty
-                            ? i18n.addressBookNoContacts
+                            ? i18n.addressBookNoContactsForCoin(widget.coinSymbol)
                             : i18n.addressBookNoSearchResults,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     );
                   }
@@ -883,6 +892,8 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
                     itemCount: filteredContacts.length,
                     itemBuilder: (context, index) {
                       final contact = filteredContacts[index];
+                      final address = contact.addressFor(widget.coinSymbol)!;
+
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -896,7 +907,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
                         ),
                         title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500)),
                         subtitle: Text(
-                          contact.address,
+                          address,
                           style: TextStyle(fontFamily: 'monospace', fontSize: 12),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

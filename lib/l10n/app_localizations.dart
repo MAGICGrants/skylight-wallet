@@ -903,6 +903,12 @@ abstract class AppLocalizations {
   /// **'Recipients'**
   String get txDetailsRecipientsLabel;
 
+  /// No description provided for @txDetailsChangeRecipientLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get txDetailsChangeRecipientLabel;
+
   /// No description provided for @lwsKeysTitle.
   ///
   /// In en, this message translates to:
@@ -1064,6 +1070,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get addressBookSave;
+
+  /// No description provided for @addressBookAtLeastOneAddressError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least one address'**
+  String get addressBookAtLeastOneAddressError;
+
+  /// No description provided for @addressBookNoContactsForCoin.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts with a {coinSymbol} address'**
+  String addressBookNoContactsForCoin(String coinSymbol);
 
   /// No description provided for @sendSelectedContact.
   ///

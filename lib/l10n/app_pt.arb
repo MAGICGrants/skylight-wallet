@@ -142,6 +142,7 @@
   "txDetailsConfirmationsLabel": "Confirmações",
   "txDetailsViewKeyLabel": "Chave de Visualização",
   "txDetailsRecipientsLabel": "Destinatários",
+  "txDetailsChangeRecipientLabel": "Troco",
   "lwsKeysTitle": "Chaves do LWS",
   "lwsKeysPrimaryAddress": "Endereço Primário",
   "lwsKeysRestoreHeight": "Bloco de Restauração",
@@ -176,6 +177,15 @@
   "addressBookContactName": "Nome do Contato",
   "addressBookUpdate": "Atualizar",
   "addressBookSave": "Salvar",
+  "addressBookAtLeastOneAddressError": "Informe pelo menos um endereço",
+  "addressBookNoContactsForCoin": "Nenhum contato com endereço {coinSymbol}",
+  "@addressBookNoContactsForCoin": {
+    "placeholders": {
+      "coinSymbol": {
+        "type": "String"
+      }
+    }
+  },
   "sendSelectedContact": "Contato selecionado",
   "sendClearSelectedContact": "Limpar contato selecionado",
   "sendPriorityLow": "Baixa",

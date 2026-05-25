@@ -434,6 +434,17 @@ class BitcoinChainWallet extends CryptoWallet {
 
   // ----- Stats -----
 
+  int _sumBalanceSats() {
+    var sats = 0;
+    for (final s in _scripthashState.values) {
+      sats += s.confirmed + s.unconfirmed;
+    }
+    return sats;
+  }
+
+  @override
+  bool get canSpendPendingBalance => true;
+
   @override
   Future<void> loadIsSynced() async {
     setIsSynced(_client.isConnected && _bestHeight > 0);
@@ -447,21 +458,13 @@ class BitcoinChainWallet extends CryptoWallet {
   @override
   Future<void> loadTotalBalance() async {
     if (!_client.isConnected) return;
-    var sats = 0;
-    for (final s in _scripthashState.values) {
-      sats += s.confirmed + s.unconfirmed;
-    }
-    setTotalBalance(sats / _satsPerBtc);
+    setTotalBalance(_sumBalanceSats() / _satsPerBtc);
   }
 
   @override
   Future<void> loadUnlockedBalance() async {
     if (!_client.isConnected) return;
-    var sats = 0;
-    for (final s in _scripthashState.values) {
-      sats += s.confirmed;
-    }
-    setUnlockedBalance(sats / _satsPerBtc);
+    setUnlockedBalance(_sumBalanceSats() / _satsPerBtc);
   }
 
   @override
@@ -522,6 +525,8 @@ class BitcoinChainWallet extends CryptoWallet {
           outputsToUsSats += valueSats;
           if (!isOutgoing) {
             recipients.add(TxRecipient(addr, valueBtc));
+          } else {
+            recipients.add(TxRecipient(addr, valueBtc, isChange: true));
           }
         } else {
           outputsToOthersSats += valueSats;
@@ -552,7 +557,7 @@ class BitcoinChainWallet extends CryptoWallet {
       final confirmations = blockHeight > 0 && chainTip >= blockHeight
           ? chainTip - blockHeight + 1
           : 0;
-      final timestamp = _txTimestamp(tx, entry);
+      final timestamp = _displayTxTimestamp(tx, entry);
 
       entries.add(
         TxDetails(
@@ -568,6 +573,7 @@ class BitcoinChainWallet extends CryptoWallet {
           height: blockHeight,
           confirmations: confirmations,
           key: '',
+          broadcastAt: entry.broadcastAt,
         ),
       );
     }
@@ -579,6 +585,11 @@ class BitcoinChainWallet extends CryptoWallet {
   @override
   Future<void> loadTxHistory({bool persistCount = true}) async {
     if (!_client.isConnected) return;
+
+    final priorBroadcastAt = {
+      for (final tx in txHistory)
+        if (tx.broadcastAt != null && tx.broadcastAt! > 0) tx.hash: tx.broadcastAt!,
+    };
 
     // Discover new tx hashes from each scripthash's history; fetch full
     // verbose tx for any we haven't cached yet.
@@ -603,6 +614,12 @@ class BitcoinChainWallet extends CryptoWallet {
           verbose: cached.verbose,
           height: entry.value,
           firstSeenAt: cached.firstSeenAt,
+          broadcastAt: _resolveBroadcastAt(
+            txHash: entry.key,
+            historyHeight: entry.value,
+            cached: cached,
+            priorBroadcastAt: priorBroadcastAt,
+          ),
         );
         if (entry.value > 0) {
           continue;
@@ -624,10 +641,18 @@ class BitcoinChainWallet extends CryptoWallet {
         } else {
           continue;
         }
+        final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         _txCache[entry.key] = _TxCacheEntry(
           verbose: verbose,
           height: entry.value,
-          firstSeenAt: cached?.firstSeenAt ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          firstSeenAt: cached?.firstSeenAt ?? now,
+          broadcastAt: _resolveBroadcastAt(
+            txHash: entry.key,
+            historyHeight: entry.value,
+            cached: cached,
+            priorBroadcastAt: priorBroadcastAt,
+            now: now,
+          ),
         );
       } catch (e) {
         if (isElectrumDisconnectError(e)) {
@@ -800,6 +825,15 @@ class BitcoinChainWallet extends CryptoWallet {
     final txid = await _client.broadcastTransaction(tx.rawHex);
     walletLog(LogLevel.info, 'broadcast ok: $txid');
 
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final cached = _txCache[txid];
+    _txCache[txid] = _TxCacheEntry(
+      verbose: cached?.verbose ?? {'hash': txid, 'txid': txid},
+      height: cached?.height ?? 0,
+      firstSeenAt: cached?.firstSeenAt ?? now,
+      broadcastAt: now,
+    );
+
     // Optimistically remove spent UTXOs from the cache so the next
     // refresh doesn't double-spend before the server has indexed the new tx.
     for (final state in _scripthashState.values) {
@@ -942,9 +976,16 @@ class BitcoinChainWallet extends CryptoWallet {
     return null;
   }
 
-  /// Unix seconds for [tx], using verbose fields, cached block time, or
-  /// [firstSeenAt] for unconfirmed txs.
-  int _txTimestamp(Map<String, dynamic> tx, _TxCacheEntry entry) {
+  /// Unix seconds for display, preferring mempool/broadcast time when known.
+  int _displayTxTimestamp(Map<String, dynamic> tx, _TxCacheEntry entry) {
+    if (entry.broadcastAt != null && entry.broadcastAt! > 0) {
+      return entry.broadcastAt!;
+    }
+    return _txBlockTimestamp(tx, entry);
+  }
+
+  /// Unix seconds from block inclusion, verbose fields, or cached header time.
+  int _txBlockTimestamp(Map<String, dynamic> tx, _TxCacheEntry entry) {
     final fromVerbose = (tx['blocktime'] as num?)?.toInt() ?? (tx['time'] as num?)?.toInt();
     if (fromVerbose != null && fromVerbose > 0) return fromVerbose;
 
@@ -955,6 +996,23 @@ class BitcoinChainWallet extends CryptoWallet {
     }
 
     return entry.firstSeenAt;
+  }
+
+  int? _resolveBroadcastAt({
+    required String txHash,
+    required int historyHeight,
+    _TxCacheEntry? cached,
+    required Map<String, int> priorBroadcastAt,
+    int? now,
+  }) {
+    if (cached?.broadcastAt != null && cached!.broadcastAt! > 0) {
+      return cached.broadcastAt;
+    }
+    final prior = priorBroadcastAt[txHash];
+    if (prior != null && prior > 0) return prior;
+    if (historyHeight == 0) return now;
+    if (cached != null && cached.height == 0) return cached.firstSeenAt;
+    return null;
   }
 
   void _cacheBlockTimeFromHeader(Map<String, dynamic> header) {
@@ -1147,7 +1205,14 @@ class _TxCacheEntry {
   final Map<String, dynamic> verbose;
   final int height;
   final int firstSeenAt;
-  _TxCacheEntry({required this.verbose, required this.height, required this.firstSeenAt});
+  final int? broadcastAt;
+
+  _TxCacheEntry({
+    required this.verbose,
+    required this.height,
+    required this.firstSeenAt,
+    this.broadcastAt,
+  });
 }
 
 class _SpendableUtxo {

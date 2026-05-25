@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/coin_home.dart';
+import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
@@ -38,7 +39,6 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   double _fee = 0.0;
   String? _destinationOpenAlias;
   String _destinationAddress = '';
-  List<String> _destinationAddressSliced = [];
   String? _destinationContactName;
   String _coinSymbol = 'XMR';
   bool _argsLoaded = false;
@@ -65,20 +65,28 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
       _fee = args.tx.fee;
       _destinationOpenAlias = args.destinationOpenAlias;
       _destinationAddress = args.destinationAddress;
-      _destinationAddressSliced = _sliceAddress(args.destinationAddress);
       _destinationContactName = args.destinationContactName;
     });
   }
 
-  List<String> _sliceAddress(String address) {
-    final List<String> result = [];
+  Widget _buildVerifiableAddress(String address) {
+    final parts = addressDisplayParts(address);
 
-    for (int i = 0; i < address.length; i += 5) {
-      final substring = address.substring(i, i + 5 > address.length ? address.length : i + 5);
-      result.add(substring);
-    }
-
-    return result;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: 200),
+      child: Text.rich(
+        TextSpan(
+          style: TextStyle(fontFamily: 'monospace', fontSize: 14),
+          children: [
+            TextSpan(text: parts.prefix, style: TextStyle(fontWeight: FontWeight.w700)),
+            if (parts.middle.isNotEmpty)
+              TextSpan(text: parts.middle, style: TextStyle(fontWeight: FontWeight.w300)),
+            TextSpan(text: parts.suffix, style: TextStyle(fontWeight: FontWeight.w700)),
+          ],
+        ),
+        textAlign: TextAlign.end,
+      ),
+    );
   }
 
   Future<void> _confirmSend() async {
@@ -220,28 +228,8 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Container(
-                            margin: EdgeInsetsGeometry.only(left: 40),
-                            child: Wrap(
-                              spacing: 4,
-                              alignment: WrapAlignment.end,
-                              children: _destinationAddressSliced
-                                  .asMap()
-                                  .entries
-                                  .map(
-                                    (item) => Text(
-                                      item.value,
-                                      style: TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontWeight:
-                                            item.key == 0 ||
-                                                item.key == _destinationAddressSliced.length - 1
-                                            ? FontWeight.w700
-                                            : FontWeight.w300,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
+                            margin: EdgeInsets.only(left: 40),
+                            child: _buildVerifiableAddress(_destinationAddress),
                           ),
                           if (_destinationContactName is String) Text('($_destinationContactName)'),
                         ],

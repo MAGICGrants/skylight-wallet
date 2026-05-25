@@ -136,18 +136,22 @@ class _TotalBalanceHeader extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           SizedBox(height: 6),
-          if (!fiatRate.isDisabled)
-            FiatAmount(prefix: fiatSymbol, amount: totalFiat, maxFontSize: 32)
-          else
-            Text('--', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
-          if (fiatRate.hasFailed)
-            Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: Tooltip(
-                message: i18n.homeFiatApiError,
-                child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),
-              ),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 4,
+            children: [
+              if (!fiatRate.isDisabled)
+                FiatAmount(prefix: fiatSymbol, amount: totalFiat, maxFontSize: 32)
+              else
+                Text('--', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
+              if (fiatRate.hasFailed)
+                Tooltip(
+                  message: i18n.homeFiatApiError,
+                  child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),
+                ),
+            ],
+          ),
         ],
       ),
     );

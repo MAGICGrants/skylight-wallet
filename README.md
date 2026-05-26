@@ -21,6 +21,44 @@ Download from [latest release](https://github.com/MAGICGrants/skylight-wallet/re
 
 Download from [latest release](https://github.com/MAGICGrants/skylight-wallet/releases/latest) the ``.exe`` file.
 
+### Verify release signatures
+
+Each release artifact has a detached GPG signature (``.asc``). Verify downloads before installing. This applies to all signed files (``.deb``, ``.AppImage``, ``.exe``, ``.apk``, ``.aab``, etc.).
+
+**1. Import the signing key** (one-time):
+
+```bash
+curl -LO https://magicgrants.org/files/app-signing-key.asc
+gpg --import app-signing-key.asc
+```
+
+Confirm the fingerprint matches:
+
+```
+65C4 1CFC AE37 B3B2 72AC  40BE A555 F5F7 B1FF 5885
+```
+
+```bash
+gpg --fingerprint '65C4 1CFC AE37 B3B2 72AC  40BE A555 F5F7 B1FF 5885'
+```
+
+The key owner should be `MAGIC Grants <info@magicgrants.org>`.
+
+**2. Download the artifact and its signature** from the release page. Example for v1.0.10 on amd64:
+
+```bash
+curl -LO https://github.com/MAGICGrants/skylight-wallet/releases/download/v1.0.10/skylight-wallet-v1.0.10-amd64.deb
+curl -LO https://github.com/MAGICGrants/skylight-wallet/releases/download/v1.0.10/skylight-wallet-v1.0.10-amd64.deb.asc
+```
+
+**3. Verify the signature**:
+
+```bash
+gpg --verify skylight-wallet-v1.0.10-amd64.deb.asc skylight-wallet-v1.0.10-amd64.deb
+```
+
+A successful verification prints `Good signature from "MAGIC Grants <info@magicgrants.org>"`. Substitute the artifact and ``.asc`` filenames for other platforms (e.g. ``.AppImage``, ``.exe``, ``.apk``).
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:

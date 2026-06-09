@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
+import 'package:webcrypto/webcrypto.dart' show Hash, Pbkdf2SecretKey;
 
 /// Symmetric encryption used to seal individual wallet files (e.g. the
 /// Bitcoin wallet's BIP39 mnemonic + xpub) at rest.
@@ -23,7 +24,7 @@ class WalletFileCrypto {
   static const _ivLen = 12;
   static const _keyLen = 32;
   static const _tagLenBits = 128;
-  static const _pbkdf2Iterations = 200000;
+  static const _pbkdf2Iterations = 100000;
 
   /// Smallest on-disk blob that [decrypt] accepts (empty plaintext + GCM tag).
   static const int minBlobLength = 4 + 1 + 32 + 12 + 16;
@@ -43,22 +44,22 @@ class WalletFileCrypto {
 
   /// Encrypts [plaintext] with [password]. Returns a base64-encoded blob
   /// suitable for writing to a text file.
-  static String encryptToBase64(String plaintext, String password) {
-    final blob = encrypt(utf8.encode(plaintext), password);
+  static Future<String> encryptToBase64(String plaintext, String password) async {
+    final blob = await encrypt(utf8.encode(plaintext), password);
     return base64.encode(blob);
   }
 
   /// Decrypts a blob previously produced by [encryptToBase64].
-  static String decryptFromBase64(String base64Blob, String password) {
+  static Future<String> decryptFromBase64(String base64Blob, String password) async {
     final blob = base64.decode(base64Blob);
-    final plaintext = decrypt(blob, password);
+    final plaintext = await decrypt(blob, password);
     return utf8.decode(plaintext);
   }
 
-  static Uint8List encrypt(List<int> plaintext, String password) {
+  static Future<Uint8List> encrypt(List<int> plaintext, String password) async {
     final salt = _randomBytes(_saltLen);
     final iv = _randomBytes(_ivLen);
-    final key = _deriveKey(password, salt);
+    final key = await _deriveKey(password, salt);
 
     final cipher = GCMBlockCipher(AESEngine())
       ..init(
@@ -77,7 +78,7 @@ class WalletFileCrypto {
     return out.toBytes();
   }
 
-  static Uint8List decrypt(List<int> blob, String password) {
+  static Future<Uint8List> decrypt(List<int> blob, String password) async {
     if (blob.length < minBlobLength) {
       throw FormatException('Wallet blob is too short');
     }
@@ -101,7 +102,7 @@ class WalletFileCrypto {
     offset += _ivLen;
     final ciphertext = Uint8List.fromList(blob.sublist(offset));
 
-    final key = _deriveKey(password, salt);
+    final key = await _deriveKey(password, salt);
     final cipher = GCMBlockCipher(AESEngine())
       ..init(
         false,
@@ -115,10 +116,11 @@ class WalletFileCrypto {
     }
   }
 
-  static Uint8List _deriveKey(String password, Uint8List salt) {
-    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, _pbkdf2Iterations, _keyLen));
-    return pbkdf2.process(Uint8List.fromList(utf8.encode(password)));
+  // Native PBKDF2 (BoringSSL via FFI) — ~10-50x faster than pure-Dart and
+  // safe to call inside Isolate.run (no platform channel).
+  static Future<Uint8List> _deriveKey(String password, Uint8List salt) async {
+    final key = await Pbkdf2SecretKey.importRawKey(utf8.encode(password));
+    return key.deriveBits(_keyLen * 8, Hash.sha256, salt, _pbkdf2Iterations);
   }
 
   static Uint8List _randomBytes(int length) {

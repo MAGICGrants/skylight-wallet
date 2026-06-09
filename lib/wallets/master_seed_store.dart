@@ -36,7 +36,7 @@ class MasterSeedStore {
       'restore_date_iso': restoreDate.toIso8601String(),
     });
     final file = await _file();
-    await file.writeAsString(WalletFileCrypto.encryptToBase64(body, password));
+    await file.writeAsString(await WalletFileCrypto.encryptToBase64(body, password));
   }
 
   /// Decrypts and returns the stored seed. Returns `null` if no file
@@ -49,8 +49,11 @@ class MasterSeedStore {
     return Isolate.run(() => _decryptSeed(blob, password));
   }
 
-  static ({String mnemonic, DateTime restoreDate}) _decryptSeed(String blob, String password) {
-    final body = jsonDecode(WalletFileCrypto.decryptFromBase64(blob, password))
+  static Future<({String mnemonic, DateTime restoreDate})> _decryptSeed(
+    String blob,
+    String password,
+  ) async {
+    final body = jsonDecode(await WalletFileCrypto.decryptFromBase64(blob, password))
         as Map<String, dynamic>;
     final mnemonic = body['mnemonic'] as String;
     final restoreDate =

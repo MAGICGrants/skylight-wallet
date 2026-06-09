@@ -26,6 +26,12 @@ class ElectrumClient {
   static final Duration _requestTimeout = Duration(seconds: 30);
   static final Duration _aliveInterval = Duration(seconds: 30);
 
+  /// Max number of in-flight pipelined requests for a single [callBatch] call.
+  /// Most Electrum servers happily handle 10+ concurrent requests, but a few
+  /// (ElectrumX with low `max_concurrent`, lightweight mobile servers) drop
+  /// the socket under heavy load. Eight is a conservative sweet spot.
+  static const int _pipelineChunk = 8;
+
   Socket? _plainSocket;
   SOCKSSocket? _socksSocket;
   StreamSubscription<List<int>>? _socketSub;
@@ -35,11 +41,31 @@ class ElectrumClient {
   String _buffer = '';
   bool _connected = false;
 
+  /// JSON-RPC 2.0 batch (array) mode. Stays true until a batch frame is
+  /// observed to hard-fail before the server ever returned an array reply,
+  /// at which point we fall back to pipelined per-request frames for the
+  /// life of this client (and any subsequent reconnects on the same client).
+  bool _supportsBatch = true;
+
+  /// Set the first time we receive evidence (array reply OR any successful
+  /// per-id reply during a batch frame) that the server is actually
+  /// processing batches. Gates the auto-demotion above.
+  bool _batchProven = false;
+
   final Map<int, Completer<dynamic>> _pendingById = {};
 
   /// Latest header notification handler (Electrum sends these as
   /// `blockchain.headers.subscribe` server pushes after the initial call).
   void Function(Map<String, dynamic>)? _onHeader;
+
+  /// Push handler for `blockchain.scripthash.subscribe` notifications. The
+  /// server fires this with `[scripthash, status]` whenever a subscribed
+  /// scripthash's history fingerprint changes (incl. confirmation depth).
+  void Function(String scripthash, String? status)? _onScripthashStatus;
+
+  void setScripthashStatusHandler(void Function(String scripthash, String? status) handler) {
+    _onScripthashStatus = handler;
+  }
 
   void Function(bool connected)? onConnectionChanged;
 
@@ -107,6 +133,7 @@ class ElectrumClient {
     }
     _pendingById.clear();
     _onHeader = null;
+    _onScripthashStatus = null;
     _buffer = '';
     _setConnected(false);
   }
@@ -165,11 +192,23 @@ class ElectrumClient {
   }
 
   void _onDone() {
-    _log(LogLevel.info, 'socket closed');
+    _log(
+      LogLevel.info,
+      'socket closed (pending=${_pendingById.length}, '
+      'buffer=${_buffer.length} bytes)',
+    );
     close();
   }
 
   void _dispatch(dynamic message) {
+    // JSON-RPC 2.0 batch response. Receiving one is hard proof the server
+    // speaks batch — lock in [_batchProven] so a later transient disconnect
+    // can't trick us into demoting.
+    if (message is List) {
+      _batchProven = true;
+      for (final entry in message) _dispatch(entry);
+      return;
+    }
     if (message is! Map<String, dynamic>) return;
 
     if (message.containsKey('id') && message['id'] != null) {
@@ -192,6 +231,18 @@ class ElectrumClient {
         final first = params.first;
         if (first is Map) _onHeader?.call(first.cast<String, dynamic>());
       }
+      return;
+    }
+    if (method == 'blockchain.scripthash.subscribe') {
+      final params = message['params'];
+      if (params is List && params.length >= 2) {
+        final sh = params[0];
+        final status = params[1];
+        if (sh is String) {
+          _onScripthashStatus?.call(sh, status is String ? status : null);
+        }
+      }
+      return;
     }
   }
 
@@ -217,6 +268,139 @@ class ElectrumClient {
         throw TimeoutException('Electrum call $method timed out');
       },
     );
+  }
+
+  /// Multi-request RPC. Sends [requests] in one JSON-RPC 2.0 array frame
+  /// when [_supportsBatch] is true (auto-demoted on first all-disconnect
+  /// failure against a server that never returned a batch reply); otherwise
+  /// pipelines individual frames over the socket capped at [_pipelineChunk]
+  /// in flight. Throws the first per-request error.
+  Future<List<dynamic>> callBatch(List<BatchRpc> requests, {Duration? timeout}) async {
+    final results = await callBatchTolerant(requests, timeout: timeout);
+    for (final r in results) {
+      if (r.error != null) throw r.error!;
+    }
+    return [for (final r in results) r.result];
+  }
+
+  /// Like [callBatch] but exposes per-request errors instead of throwing.
+  Future<List<BatchRpcResult>> callBatchTolerant(
+    List<BatchRpc> requests, {
+    Duration? timeout,
+  }) async {
+    if (!_connected) {
+      throw ElectrumDisconnectException();
+    }
+    if (requests.isEmpty) return const [];
+
+    // Cap any single wire frame at [_pipelineChunk]. Big batches get split
+    // into sequential sub-frames; many public Electrum servers (Blockstream
+    // electrs, public ElectrumX nodes) cap response size / request count
+    // per frame and silently drop the socket when exceeded.
+    if (_supportsBatch) {
+      final results = <BatchRpcResult>[];
+      for (var start = 0; start < requests.length; start += _pipelineChunk) {
+        final end = (start + _pipelineChunk).clamp(0, requests.length);
+        results.addAll(await _callArrayBatch(requests.sublist(start, end), timeout: timeout));
+        // Auto-demote inside _callArrayBatch may flip us mid-loop.
+        if (!_supportsBatch) {
+          final remaining = requests.sublist(end);
+          if (remaining.isNotEmpty) {
+            results.addAll(await _callPipelined(remaining, timeout: timeout));
+          }
+          break;
+        }
+      }
+      return results;
+    }
+    return _callPipelined(requests, timeout: timeout);
+  }
+
+  /// Single JSON-RPC 2.0 array frame. The big win when the server supports
+  /// it: one TCP round-trip instead of N (subject to server send buffer).
+  Future<List<BatchRpcResult>> _callArrayBatch(List<BatchRpc> requests, {Duration? timeout}) async {
+    final ids = <int>[];
+    final completers = <Completer<dynamic>>[];
+    for (var i = 0; i < requests.length; i++) {
+      final id = _nextId++;
+      final c = Completer<dynamic>();
+      ids.add(id);
+      completers.add(c);
+      _pendingById[id] = c;
+    }
+
+    final body = json.encode([
+      for (var i = 0; i < requests.length; i++)
+        {
+          'jsonrpc': '2.0',
+          'id': ids[i],
+          'method': requests[i].method,
+          'params': requests[i].params,
+        },
+    ]);
+
+    try {
+      _send('$body\n');
+    } catch (e) {
+      for (final id in ids) {
+        _pendingById.remove(id);
+      }
+      rethrow;
+    }
+
+    final deadline = timeout ?? _requestTimeout;
+    final results = <BatchRpcResult>[];
+    for (var i = 0; i < completers.length; i++) {
+      try {
+        final r = await completers[i].future.timeout(
+          deadline,
+          onTimeout: () {
+            _pendingById.remove(ids[i]);
+            throw TimeoutException('Electrum batch entry timed out');
+          },
+        );
+        results.add(BatchRpcResult(result: r));
+      } catch (e) {
+        results.add(BatchRpcResult(error: e));
+      }
+    }
+
+    // Any non-disconnect reply (success or RPC error) proves the server
+    // accepted the array frame, even if it streams replies as separate
+    // lines instead of a wrapping array.
+    if (results.any((r) => r.error == null || !isElectrumDisconnectError(r.error!))) {
+      _batchProven = true;
+    }
+
+    // Auto-demote: array frame failed wholesale and the server has never
+    // proven batch support — assume it can't handle JSON-RPC arrays and
+    // retry transparently as a pipelined batch on the next call.
+    if (!_batchProven && results.every((r) => r.error != null)) {
+      _supportsBatch = false;
+      _log(
+        LogLevel.warn,
+        'server rejected JSON-RPC batch frame; falling back to pipelined requests',
+      );
+    }
+
+    return results;
+  }
+
+  /// Pipelined fallback: many individual `{…}\n` frames in flight at once,
+  /// capped at [_pipelineChunk] per round so we don't bury a slow server.
+  Future<List<BatchRpcResult>> _callPipelined(List<BatchRpc> requests, {Duration? timeout}) async {
+    final results = <BatchRpcResult>[];
+    for (var start = 0; start < requests.length; start += _pipelineChunk) {
+      final end = (start + _pipelineChunk).clamp(0, requests.length);
+      final futures = [
+        for (var i = start; i < end; i++)
+          _call(requests[i].method, requests[i].params, timeout: timeout)
+              .then<BatchRpcResult>((r) => BatchRpcResult(result: r))
+              .catchError((Object e) => BatchRpcResult(error: e)),
+      ];
+      results.addAll(await Future.wait(futures));
+    }
+    return results;
   }
 
   // ----- Public RPC surface -----
@@ -250,6 +434,15 @@ class ElectrumClient {
     return [];
   }
 
+  /// Subscribes to state changes for [scripthash]. Returns the current status
+  /// hash (a fingerprint of the scripthash's history), or `null` when the
+  /// scripthash has no history. Subsequent state changes arrive via the
+  /// handler registered with [setScripthashStatusHandler].
+  Future<String?> subscribeScripthash(String scripthash) async {
+    final result = await _call('blockchain.scripthash.subscribe', [scripthash]);
+    return result is String ? result : null;
+  }
+
   Future<List<Map<String, dynamic>>> listUnspent(String scripthash) async {
     final result = await _call('blockchain.scripthash.listunspent', [scripthash]);
     if (result is List) {
@@ -260,21 +453,6 @@ class ElectrumClient {
 
   Future<dynamic> getTransaction(String hash, {bool verbose = false}) async {
     return _call('blockchain.transaction.get', [hash, verbose]);
-  }
-
-  /// Some Electrum servers reject `verbose: true` ("verbose transactions are
-  /// currently unsupported"). Try verbose first, then fall back to raw hex.
-  Future<dynamic> getTransactionBestEffort(String hash) async {
-    try {
-      return await getTransaction(hash, verbose: true);
-    } catch (e) {
-      if (isElectrumDisconnectError(e)) rethrow;
-      final msg = e.toString().toLowerCase();
-      if (msg.contains('verbose') || msg.contains('not supported') || msg.contains('unsupported')) {
-        return await getTransaction(hash, verbose: false);
-      }
-      rethrow;
-    }
   }
 
   Future<String> broadcastTransaction(String rawHex) async {
@@ -313,6 +491,22 @@ class ElectrumClient {
     if (result is String && result.isNotEmpty) return result;
     throw _ElectrumError('Unexpected block header response: $result');
   }
+}
+
+/// One leg of a batched JSON-RPC call. Named with the `BatchRpc` prefix so
+/// it doesn't collide with `package:bitcoin_base`'s `ElectrumRequest`.
+class BatchRpc {
+  const BatchRpc(this.method, this.params);
+  final String method;
+  final List<Object?> params;
+}
+
+/// Per-entry outcome of [ElectrumClient.callBatchTolerant]. Exactly one of
+/// [result] / [error] is set.
+class BatchRpcResult {
+  const BatchRpcResult({this.result, this.error});
+  final dynamic result;
+  final Object? error;
 }
 
 class ElectrumDisconnectException implements Exception {

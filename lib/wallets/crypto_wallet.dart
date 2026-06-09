@@ -445,27 +445,71 @@ abstract class CryptoWallet with ChangeNotifier {
   /// connection configured.
   Future<void> load() async {
     if (!isActive) return;
+    final total = Stopwatch()..start();
+
+    final connectTimer = Stopwatch()..start();
     await connectToDaemon();
+    connectTimer.stop();
+
+    final refreshTimer = Stopwatch()..start();
     await refresh();
+    refreshTimer.stop();
+
+    final statsTimer = Stopwatch()..start();
     await loadAllStats();
+    statsTimer.stop();
+
+    total.stop();
+    walletLog(
+      LogLevel.info,
+      'load in ${total.elapsedMilliseconds}ms '
+      '(connect ${connectTimer.elapsedMilliseconds}ms, '
+      'refresh ${refreshTimer.elapsedMilliseconds}ms, '
+      'loadAllStats ${statsTimer.elapsedMilliseconds}ms)',
+    );
   }
 
   Future<void> loadAllStats() async {
     if (!isActive) return;
 
-    await Future.wait([
-      loadIsSynced(),
-      loadSyncedHeight(),
-      loadUnlockedBalance(),
-      loadTotalBalance(),
-      loadTxHistory(),
-    ]);
+    final timer = Stopwatch()..start();
 
+    // Per-task clocks expose which one dominates (usually loadTxHistory).
+    final isSyncedTimer = Stopwatch()..start();
+    final syncedHeightTimer = Stopwatch()..start();
+    final unlockedTimer = Stopwatch()..start();
+    final totalBalTimer = Stopwatch()..start();
+    final txHistoryTimer = Stopwatch()..start();
+
+    // Render balance + sync state first; don't block it on tx history.
+    await Future.wait([
+      loadIsSynced().whenComplete(isSyncedTimer.stop),
+      loadSyncedHeight().whenComplete(syncedHeightTimer.stop),
+      loadUnlockedBalance().whenComplete(unlockedTimer.stop),
+      loadTotalBalance().whenComplete(totalBalTimer.stop),
+    ]);
     notifyListeners();
 
+    await loadTxHistory().whenComplete(txHistoryTimer.stop);
+    notifyListeners();
+
+    final persistTimer = Stopwatch()..start();
     if (await getIsConnected()) {
       await persistWalletSnapshot();
     }
+    persistTimer.stop();
+
+    timer.stop();
+    walletLog(
+      LogLevel.info,
+      'loadAllStats in ${timer.elapsedMilliseconds}ms '
+      '(isSynced ${isSyncedTimer.elapsedMilliseconds}ms, '
+      'syncedHeight ${syncedHeightTimer.elapsedMilliseconds}ms, '
+      'unlocked ${unlockedTimer.elapsedMilliseconds}ms, '
+      'total ${totalBalTimer.elapsedMilliseconds}ms, '
+      'txHistory ${txHistoryTimer.elapsedMilliseconds}ms, '
+      'persist ${persistTimer.elapsedMilliseconds}ms)',
+    );
   }
 
   Future<void> connectToDaemon() async {
@@ -473,7 +517,43 @@ abstract class CryptoWallet with ChangeNotifier {
     if (!_isLoaded) {
       throw Exception('[$coinSymbol] Cannot connect: wallet not loaded.');
     }
+    await _doConnect();
+  }
 
+  /// True when [connectToDaemonImpl] only needs the persisted connection
+  /// settings — not the wallet's mnemonic / address state — so the wallet
+  /// manager can run it in parallel with [openExisting].
+  ///
+  /// Default false. Coins whose daemon connect path opens an FFI handle on
+  /// the wallet object (e.g. Monero) must leave this false.
+  bool get canConnectBeforeOpen => false;
+
+  /// Best-effort connect that runs before [openExisting]. Skips when the
+  /// coin doesn't support it or when no connection is configured.
+  Future<void> connectBeforeOpen() async {
+    if (!canConnectBeforeOpen) return;
+    if (!_enabledInApp || _connectionAddress.isEmpty) return;
+    await _doConnect();
+  }
+
+  /// In-flight connect future, shared between [connectBeforeOpen] and a
+  /// later [connectToDaemon]. Prevents the periodic refresh task from
+  /// firing a duplicate socket while a pre-open connect is still settling.
+  Future<void>? _connectInFlight;
+
+  Future<void> _doConnect() async {
+    final existing = _connectInFlight;
+    if (existing != null) return existing;
+    final future = _connectImpl();
+    _connectInFlight = future;
+    try {
+      await future;
+    } finally {
+      _connectInFlight = null;
+    }
+  }
+
+  Future<void> _connectImpl() async {
     String? torProxyPort;
     if (_connectionUseTor) {
       final proxyInfo = await TorSettingsService.sharedInstance.getProxy();

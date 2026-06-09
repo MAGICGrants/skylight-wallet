@@ -198,49 +198,80 @@ class WalletManager with ChangeNotifier {
         log(LogLevel.error, '[WalletManager] Failed to read master seed: $e');
       }
 
-      for (final w in _visibleWallets) {
-        await Future<void>.delayed(Duration.zero);
-        try {
-          if (await w.hasExistingWallet()) {
-            final timer = Stopwatch()..start();
-            await w.openExisting(password: _password!);
-            timer.stop();
-            log(
-              LogLevel.info,
-              'Wallet opened in ${timer.elapsedMilliseconds}ms',
-              coin: w.coinSymbol,
-            );
-          } else if (masterSeed != null) {
-            log(LogLevel.info, 'Bootstrapping from master seed.', coin: w.coinSymbol);
-            await w.restoreFromMasterSeed(
-              bip39Mnemonic: masterSeed.mnemonic,
-              restoreDate: masterSeed.restoreDate,
-              password: _password!,
-            );
-          }
-        } catch (e) {
-          log(LogLevel.error, 'Failed to open: $e', coin: w.coinSymbol);
-          if (masterSeed != null && _isCorruptWalletFile(e)) {
-            try {
-              log(
-                LogLevel.warn,
-                'Removing corrupt wallet file and re-bootstrapping.',
-                coin: w.coinSymbol,
-              );
-              await w.deleteFiles();
-              await w.restoreFromMasterSeed(
-                bip39Mnemonic: masterSeed.mnemonic,
-                restoreDate: masterSeed.restoreDate,
-                password: _password!,
-              );
-            } catch (e2) {
-              log(LogLevel.error, 'Failed to re-bootstrap: $e2', coin: w.coinSymbol);
-            }
-          }
-        }
-      }
+      // Fan out so per-wallet opens (each runs in its own isolate or FFI
+      // thread) overlap. A failure in one wallet must not cancel the others.
+      await Future.wait([
+        for (final w in _visibleWallets) _openOneWallet(w, masterSeed),
+      ]);
     } finally {
       _openWalletFilesInFlight = null;
+    }
+  }
+
+  Future<void> _openOneWallet(
+    CryptoWallet w,
+    ({String mnemonic, DateTime restoreDate})? masterSeed,
+  ) async {
+    // Coins that don't need wallet state for their daemon connect (e.g.
+    // Bitcoin Electrum) can hand-shake in the shadow of the file open so the
+    // background sync that follows already has a live socket. Don't await:
+    // a slow Tor handshake must not stall the open path, and `load()` will
+    // dedupe via the connect's in-flight future.
+    unawaited(_connectBeforeOpenSafely(w));
+
+    try {
+      if (await w.hasExistingWallet()) {
+        final timer = Stopwatch()..start();
+        await w.openExisting(password: _password!);
+        timer.stop();
+        log(
+          LogLevel.info,
+          'Wallet opened in ${timer.elapsedMilliseconds}ms',
+          coin: w.coinSymbol,
+        );
+      } else if (masterSeed != null) {
+        log(LogLevel.info, 'Bootstrapping from master seed.', coin: w.coinSymbol);
+        await w.restoreFromMasterSeed(
+          bip39Mnemonic: masterSeed.mnemonic,
+          restoreDate: masterSeed.restoreDate,
+          password: _password!,
+        );
+      }
+    } catch (e) {
+      log(LogLevel.error, 'Failed to open: $e', coin: w.coinSymbol);
+      if (masterSeed != null && _isCorruptWalletFile(e)) {
+        try {
+          log(
+            LogLevel.warn,
+            'Removing corrupt wallet file and re-bootstrapping.',
+            coin: w.coinSymbol,
+          );
+          await w.deleteFiles();
+          await w.restoreFromMasterSeed(
+            bip39Mnemonic: masterSeed.mnemonic,
+            restoreDate: masterSeed.restoreDate,
+            password: _password!,
+          );
+        } catch (e2) {
+          log(LogLevel.error, 'Failed to re-bootstrap: $e2', coin: w.coinSymbol);
+        }
+      }
+    }
+  }
+
+  Future<void> _connectBeforeOpenSafely(CryptoWallet w) async {
+    if (!w.canConnectBeforeOpen) return;
+    try {
+      final timer = Stopwatch()..start();
+      await w.connectBeforeOpen();
+      timer.stop();
+      log(
+        LogLevel.info,
+        'Pre-open connect in ${timer.elapsedMilliseconds}ms',
+        coin: w.coinSymbol,
+      );
+    } catch (e) {
+      log(LogLevel.warn, 'Pre-open connect failed: $e', coin: w.coinSymbol);
     }
   }
 

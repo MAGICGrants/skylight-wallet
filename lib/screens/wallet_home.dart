@@ -174,14 +174,12 @@ class _CoinRowState extends State<_CoinRow> {
 
   ConnectionIndicatorState _connectionIndicatorState() {
     final wallet = widget.wallet;
-    if (wallet.connectionAddress.isEmpty) return ConnectionIndicatorState.error;
-    if (wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) > 0) {
+    if (wallet.connectionAddress.isEmpty) return ConnectionIndicatorState.ok;
+    if (wallet.isConnected) {
       return ConnectionIndicatorState.ok;
     }
     if (wallet.usingTor && TorService.sharedInstance.status == TorConnectionStatus.connecting ||
-        !wallet.hasAttemptedConnection ||
-        wallet.isConnected && !wallet.isSynced ||
-        wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) == 0) {
+        !wallet.hasAttemptedConnection) {
       return ConnectionIndicatorState.loading;
     }
     return ConnectionIndicatorState.error;

@@ -473,6 +473,20 @@ class ElectrumClient {
     return null;
   }
 
+  /// Current mempool fee histogram: `[[feerateSatVb, vsize], ...]` sorted by
+  /// fee rate descending. Empty when the server has no mempool data.
+  Future<List<List<num>>> getFeeHistogram() async {
+    final result = await _call('mempool.get_fee_histogram', []);
+    if (result is! List) return const [];
+    final out = <List<num>>[];
+    for (final entry in result) {
+      if (entry is List && entry.length >= 2 && entry[0] is num && entry[1] is num) {
+        out.add([entry[0] as num, entry[1] as num]);
+      }
+    }
+    return out;
+  }
+
   /// Subscribes to new block headers. [onHeader] receives every push from
   /// the server; the returned map is the initial response (with `height`
   /// and `hex`).

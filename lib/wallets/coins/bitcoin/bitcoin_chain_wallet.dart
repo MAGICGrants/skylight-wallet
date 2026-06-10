@@ -13,6 +13,8 @@ import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_file_crypto.dart';
+import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_coin_selection.dart';
+import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_fees.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_pending_tx.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet_open.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/electrum_client.dart';
@@ -30,6 +32,12 @@ class BitcoinChainWallet extends CryptoWallet {
 
   static const int _externalChain = 0;
   static const int _internalChain = 1;
+
+  // P2WPKH virtual sizes (vbytes) for fee/selection estimates.
+  static const int _txOverheadVsize = 10;
+  static const int _inputVsize = 68;
+  static const int _outputVsize = 31;
+  static const int _dustThresholdSats = 546;
 
   // TEMP TESTING TOGGLE. Flip back to false before shipping.
   // When true: skip persisting/loading the address cache (omits the
@@ -1352,38 +1360,45 @@ class BitcoinChainWallet extends CryptoWallet {
     final amountSats = (amount * _satsPerBtc).round();
     final destAddress = _decodeDestinationAddress(destinationAddress);
 
-    final selection = isSweepAll
-        ? _selectAllUtxos(allUtxos)
-        : _selectUtxos(allUtxos, amountSats, feeRateSatVb);
+    final List<_SpendableUtxo> selection;
+    final bool useChange;
+    if (isSweepAll) {
+      selection = _selectAllUtxos(allUtxos);
+      useChange = false;
+    } else {
+      final r = _selectCoins(allUtxos, amountSats, feeRateSatVb);
+      selection = r.inputs;
+      useChange = r.useChange;
+    }
 
-    var changeAddress = _nextChangeAddress();
+    final changeAddress = _nextChangeAddress();
     final outputs = <BitcoinOutput>[];
     int sendAmountSats;
     int feeSats;
     bool hasChange;
 
+    final inputSum = selection.fold<int>(0, (s, u) => s + u.value);
+
     if (isSweepAll) {
       final estSizeNoChange = _estimateVsize(selection.length, 1);
       feeSats = (estSizeNoChange * feeRateSatVb).ceil();
-      sendAmountSats = selection.fold<int>(0, (s, u) => s + u.value) - feeSats;
+      sendAmountSats = inputSum - feeSats;
       if (sendAmountSats <= 0) throw Exception('Insufficient funds for fee.');
       outputs.add(BitcoinOutput(address: destAddress, value: BigInt.from(sendAmountSats)));
       hasChange = false;
     } else {
       sendAmountSats = amountSats;
-      // Pre-compute fee with change output, then drop change if it would
-      // be dust.
-      final estSizeWithChange = _estimateVsize(selection.length, 2);
-      feeSats = (estSizeWithChange * feeRateSatVb).ceil();
-      final inputSum = selection.fold<int>(0, (s, u) => s + u.value);
-      final changeSats = inputSum - sendAmountSats - feeSats;
-      if (changeSats < 0) {
-        throw Exception('Insufficient funds.');
-      }
-
       outputs.add(BitcoinOutput(address: destAddress, value: BigInt.from(sendAmountSats)));
-      hasChange = changeSats > 546; // dust threshold
+
+      // Pre-compute change against a 2-output tx. Branch-and-bound returns a
+      // changeless set (useChange == false); for the fallback, drop change if
+      // it'd be dust.
+      final estSizeWithChange = _estimateVsize(selection.length, 2);
+      final changeSats = inputSum - sendAmountSats - (estSizeWithChange * feeRateSatVb).ceil();
+      hasChange = useChange && changeSats > _dustThresholdSats;
+
       if (hasChange) {
+        feeSats = inputSum - sendAmountSats - changeSats;
         outputs.add(
           BitcoinOutput(
             address: P2wpkhAddress.fromAddress(address: changeAddress, network: _network),
@@ -1391,10 +1406,9 @@ class BitcoinChainWallet extends CryptoWallet {
           ),
         );
       } else {
-        // Recompute fee for size without change output.
-        final estSizeNoChange = _estimateVsize(selection.length, 1);
+        // No change: the remainder becomes fee. Guard it covers a 1-output tx.
         feeSats = inputSum - sendAmountSats;
-        if (feeSats < (estSizeNoChange * feeRateSatVb).ceil()) {
+        if (feeSats < 0 || feeSats < (_estimateVsize(selection.length, 1) * feeRateSatVb).ceil()) {
           throw Exception('Insufficient funds for fee.');
         }
       }
@@ -1503,8 +1517,52 @@ class BitcoinChainWallet extends CryptoWallet {
     return out;
   }
 
-  /// Largest-first selection: simple, deterministic, good enough for v1.
-  List<_SpendableUtxo> _selectUtxos(
+  /// Selects inputs for [amountSats]. Tries branch-and-bound for a changeless
+  /// spend first; falls back to largest-first (which yields a change output).
+  ({List<_SpendableUtxo> inputs, bool useChange}) _selectCoins(
+    List<_SpendableUtxo> utxos,
+    int amountSats,
+    double feeRateSatVb,
+  ) {
+    final exact = _selectBranchAndBound(utxos, amountSats, feeRateSatVb);
+    if (exact != null && exact.isNotEmpty) return (inputs: exact, useChange: false);
+    return (inputs: _selectLargestFirst(utxos, amountSats, feeRateSatVb), useChange: true);
+  }
+
+  /// Branch-and-bound: a changeless input set, or null if none fits the window.
+  List<_SpendableUtxo>? _selectBranchAndBound(
+    List<_SpendableUtxo> utxos,
+    int amountSats,
+    double feeRateSatVb,
+  ) {
+    final inputFee = (feeRateSatVb * _inputVsize).round();
+    // Effective value nets out each input's own spending fee. Drop UTXOs that
+    // cost more to spend than they're worth.
+    final keep = <_SpendableUtxo>[];
+    final eff = <int>[];
+    for (final u in utxos) {
+      final ev = u.value - inputFee;
+      if (ev > 0) {
+        keep.add(u);
+        eff.add(ev);
+      }
+    }
+    // Input-independent fee (overhead + single recipient output).
+    final fixedFee = (feeRateSatVb * (_txOverheadVsize + _outputVsize)).ceil();
+    final costOfChange = (feeRateSatVb * (_outputVsize + _inputVsize)).ceil();
+
+    final picked = branchAndBoundSelect(
+      effectiveValues: eff,
+      target: amountSats + fixedFee,
+      costOfChange: costOfChange,
+    );
+    if (picked == null) return null;
+    return [for (final i in picked) keep[i]];
+  }
+
+  /// Largest-first accumulation. Yields a change output; used when
+  /// branch-and-bound finds no changeless match.
+  List<_SpendableUtxo> _selectLargestFirst(
     List<_SpendableUtxo> utxos,
     int amountSats,
     double feeRateSatVb,
@@ -1526,7 +1584,7 @@ class BitcoinChainWallet extends CryptoWallet {
 
   /// Conservative virtual-size estimate for a P2WPKH spend.
   int _estimateVsize(int inputs, int outputs) {
-    return 10 + inputs * 68 + outputs * 31;
+    return _txOverheadVsize + inputs * _inputVsize + outputs * _outputVsize;
   }
 
   Future<double> _resolveFeeRateSatVb(int priority) async {
@@ -1536,6 +1594,18 @@ class BitcoinChainWallet extends CryptoWallet {
       3 => 2,
       _ => 6,
     };
+
+    // Prefer the live mempool histogram; it's current and usually available.
+    try {
+      final histogram = await _client.getFeeHistogram();
+      if (histogram.isNotEmpty) {
+        return feeRateForBlocks(histogram, blocks).clamp(1, 1000).toDouble();
+      }
+    } catch (e) {
+      walletLog(LogLevel.warn, 'getFeeHistogram failed: $e');
+    }
+
+    // Fall back to the node's estimator, then a static default.
     try {
       final btcPerKb = await _client.estimateFee(blocks);
       if (btcPerKb != null) {

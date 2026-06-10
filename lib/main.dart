@@ -133,14 +133,51 @@ class _RootApp extends StatefulWidget {
   State<_RootApp> createState() => _RootAppState();
 }
 
-class _RootAppState extends State<_RootApp> {
-  String? _initialRoute;
+class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
   bool _startedServices = false;
+  bool _walletExists = false;
+  bool _relockPending = false;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  void _startServicesOnce() {
+    if (_startedServices) return;
+    _startedServices = true;
+    TorSettingsService.sharedInstance.loadSettings();
+    TorService.sharedInstance.start();
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!isMobile) return;
+    if (state == AppLifecycleState.paused) {
+      _maybeArmRelock();
+    } else if (state == AppLifecycleState.resumed && _relockPending) {
+      _relockPending = false;
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil('/unlock', (route) => false);
+    }
+  }
+
+  /// On background: if app lock is on and a wallet exists, clear the in-memory
+  /// password and arm a re-lock so resume returns to the unlock screen.
+  Future<void> _maybeArmRelock() async {
+    if (!_walletExists) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool(SharedPreferencesKeys.appLockEnabled) ?? false)) return;
+    _relockPending = true;
+    if (mounted) context.read<WalletManager>().clearPassword();
   }
 
   Future<void> _bootstrap() async {
@@ -164,9 +201,9 @@ class _RootAppState extends State<_RootApp> {
           : '/welcome';
 
       if (!mounted) return;
-      setState(() {
-        _initialRoute = initialRoute;
-      });
+      _walletExists = walletExists;
+      _startServicesOnce();
+      _navigatorKey.currentState?.pushReplacementNamed(initialRoute);
 
       if (walletExists) {
         context.read<FiatRateModel>().startService(walletManager: context.read<WalletManager>());
@@ -174,9 +211,8 @@ class _RootAppState extends State<_RootApp> {
     } catch (e) {
       log(LogLevel.error, 'App bootstrap failed: $e');
       if (!mounted) return;
-      setState(() {
-        _initialRoute = '/welcome';
-      });
+      _startServicesOnce();
+      _navigatorKey.currentState?.pushReplacementNamed('/welcome');
     }
   }
 
@@ -214,23 +250,16 @@ class _RootAppState extends State<_RootApp> {
   Widget build(BuildContext context) {
     final languageProvider = context.watch<LanguageModel>();
     final themeMode = context.watch<ThemeModel>().themeMode;
-    final initialRoute = _initialRoute ?? '/loading';
-
-    if (_initialRoute != null && !_startedServices) {
-      _startedServices = true;
-      TorSettingsService.sharedInstance.loadSettings();
-      TorService.sharedInstance.start();
-    }
 
     return MaterialApp(
-      key: ValueKey(initialRoute),
+      navigatorKey: _navigatorKey,
       title: 'Skylight Wallet',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: _themeData,
       darkTheme: _darkThemeData,
       themeMode: themeMode,
-      initialRoute: initialRoute,
+      initialRoute: '/loading',
       locale: Locale.fromSubtags(languageCode: languageProvider.language),
       routes: {
         '/loading': (context) => Scaffold(body: Center(child: CircularProgressIndicator())),

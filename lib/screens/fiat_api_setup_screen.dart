@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 class FiatApiSetupScreen extends StatefulWidget {
   const FiatApiSetupScreen({super.key});
@@ -22,7 +26,14 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
     await FiatRateModel.clearPersistedRates();
 
     if (!mounted) return;
-    Navigator.pushNamed(context, '/create_wallet_password');
+    // Mobile auto-generates the wallet password (the user unlocks via the
+    // device), so skip the password-entry screen. Desktop prompts for one.
+    if (Platform.isAndroid || Platform.isIOS) {
+      context.read<WalletManager>().useGeneratedPassword();
+      Navigator.pushNamed(context, '/create_wallet');
+    } else {
+      Navigator.pushNamed(context, '/create_wallet_password');
+    }
   }
 
   @override

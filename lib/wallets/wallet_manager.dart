@@ -108,6 +108,20 @@ class WalletManager with ChangeNotifier {
     _password = password;
   }
 
+  /// Sets a freshly generated random password. Used on mobile onboarding,
+  /// where the user authenticates via the device (biometrics/PIN) instead of
+  /// typing a password; the generated value is persisted to secure storage by
+  /// [restoreAll].
+  void useGeneratedPassword() {
+    _password = genWalletPassword();
+  }
+
+  /// Clears the in-memory password (e.g. when the app is backgrounded with
+  /// app lock enabled). The next unlock reloads it from secure storage.
+  void clearPassword() {
+    _password = null;
+  }
+
   /// Persists the current password to mobile secure storage. No-op on
   /// desktop (the user is expected to enter the password on every unlock).
   Future<void> persistMobileWalletPassword() async {

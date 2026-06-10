@@ -37,22 +37,37 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
   Future<void> _promptUnlock() async {
     final auth = LocalAuthentication();
+    final i18n = AppLocalizations.of(context)!;
 
     try {
-      final i18n = AppLocalizations.of(context)!;
       final didAuthenticate = await auth.authenticate(
         localizedReason: i18n.unlockReason,
         options: AuthenticationOptions(useErrorDialogs: true, sensitiveTransaction: true),
       );
 
-      if (didAuthenticate) {
-        if (mounted) Navigator.pushReplacementNamed(context, '/wallet_home');
+      if (!didAuthenticate) return;
+
+      if (!mounted) return;
+      final manager = Provider.of<WalletManager>(context, listen: false);
+      final loaded = await manager.loadMobileWalletPassword();
+      if (!loaded) {
+        log(LogLevel.error, 'Biometric auth succeeded but no stored wallet password');
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(i18n.unlockUnableToAuthError)));
+        }
+        return;
       }
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);
+      }
+      manager.openWalletFilesAndSync();
     } catch (error) {
       log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
 
       if (mounted) {
-        final i18n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(i18n.unlockUnableToAuthError)));

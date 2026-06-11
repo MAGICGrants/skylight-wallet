@@ -206,7 +206,9 @@ class ElectrumClient {
     // can't trick us into demoting.
     if (message is List) {
       _batchProven = true;
-      for (final entry in message) _dispatch(entry);
+      for (final entry in message) {
+        _dispatch(entry);
+      }
       return;
     }
     if (message is! Map<String, dynamic>) return;

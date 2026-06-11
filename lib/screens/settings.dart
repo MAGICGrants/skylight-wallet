@@ -80,8 +80,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final manager = Provider.of<WalletManager>(context, listen: false);
     await manager.setTestnetCoinsEnabled(value);
 
-    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-    fiatRate.startService(walletManager: manager);
+    if (mounted) {
+      final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+      fiatRate.startService(walletManager: manager);
+    }
   }
 
   void _setTxNotificationsEnabled(bool value) async {

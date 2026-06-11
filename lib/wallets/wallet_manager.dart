@@ -182,6 +182,7 @@ class WalletManager with ChangeNotifier {
   /// Restores persisted connection settings and cached balances/tx lists.
   /// Fast — intended to run before navigating to the home screen.
   Future<void> loadCachedDisplayState() async {
+    await loadPreferences();
     await Future.wait(
       _visibleWallets.map((w) async {
         try {

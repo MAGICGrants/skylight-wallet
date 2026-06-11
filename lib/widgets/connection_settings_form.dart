@@ -175,15 +175,13 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     setState(() {
       _useTor = value ?? false;
-      _useSsl = value == true ? false : _useSsl;
       _hasTested = false;
     });
 
     if (value == true) {
       _customProxyPortController.text = '';
 
-      if (TorSettingsService.sharedInstance.torMode == TorMode.builtIn &&
-          TorService.sharedInstance.status != TorConnectionStatus.connected) {
+      if (TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
         _pollTorStatus();
       }
     }
@@ -191,13 +189,20 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
   void _pollTorStatus() {
     _torStatusTimer?.cancel();
-    _torStatusTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+
+    // Sync to the live status now so a stale snapshot can't keep the
+    // "starting" indicator up.
+    final current = TorService.sharedInstance.status;
+    if (current != _torStatus) {
+      setState(() => _torStatus = current);
+    }
+    if (current == TorConnectionStatus.connected) return;
+
+    _torStatusTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       final status = TorService.sharedInstance.status;
       if (status == TorConnectionStatus.connected) {
-        setState(() {
-          _torStatus = status;
-        });
         timer.cancel();
+        if (mounted) setState(() => _torStatus = status);
       }
     });
   }
@@ -303,8 +308,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
-    final wallet =
-        Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
+    final wallet = Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
     final addressHint = wallet?.connectionAddressExample ?? i18n.lwsSetupAddressHint;
 
     return Column(
@@ -354,14 +358,14 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         CheckboxListTile(
           title: Text(i18n.lwsSetupUseTorLabel),
           value: _useTor,
-          onChanged: _useSsl || torMode == TorMode.disabled ? null : _setUseTor,
+          onChanged: torMode == TorMode.disabled ? null : _setUseTor,
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),
         CheckboxListTile(
           title: Text(i18n.lwsSetupUseSslLabel),
           value: _useSsl,
-          onChanged: !_useTor ? _setUseSsl : null,
+          onChanged: _setUseSsl,
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),

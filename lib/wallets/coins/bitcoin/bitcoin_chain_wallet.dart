@@ -67,6 +67,9 @@ class BitcoinChainWallet extends CryptoWallet {
         // on reconnect. _statusByScripthash kept so unchanged scripthashes
         // skip the refetch when subscribe returns the same status.
         _subscribedScripthashes.clear();
+        // Retry fee methods against whatever server we reconnect to.
+        _feeHistogramUnavailable = false;
+        _estimateFeeUnavailable = false;
       }
     };
   }
@@ -125,6 +128,11 @@ class BitcoinChainWallet extends CryptoWallet {
   /// run don't interleave their gap-limit walks.
   bool _refreshing = false;
 
+  /// Set when a fee RPC times out or errors so we don't re-wait on it every
+  /// send. Reset on reconnect.
+  bool _feeHistogramUnavailable = false;
+  bool _estimateFeeUnavailable = false;
+
   /// Off by default: most public Electrum servers reject verbose tx
   /// responses. The verbose path stays in the code for self-hosted Fulcrum
   /// users; flip this true if you know your server supports it.
@@ -160,7 +168,7 @@ class BitcoinChainWallet extends CryptoWallet {
   int get smallerDigits => 3;
 
   @override
-  int get requiredConfirmations => 3;
+  int get requiredConfirmations => 1;
 
   @override
   bool get isTestnet => _isTestnet;
@@ -1595,25 +1603,52 @@ class BitcoinChainWallet extends CryptoWallet {
       _ => 6,
     };
 
+    // Best-effort, short timeout: fee lookups must not stall the send screen.
+    const feeTimeout = Duration(seconds: 6);
+
     // Prefer the live mempool histogram; it's current and usually available.
-    try {
-      final histogram = await _client.getFeeHistogram();
-      if (histogram.isNotEmpty) {
-        return feeRateForBlocks(histogram, blocks).clamp(1, 1000).toDouble();
+    if (!_feeHistogramUnavailable) {
+      try {
+        final histogram = await _client.getFeeHistogram(timeout: feeTimeout);
+        if (histogram.isNotEmpty) {
+          final rate = feeRateForBlocks(histogram, blocks).clamp(1, 1000).toDouble();
+          walletLog(
+            LogLevel.info,
+            'fee rate $rate sat/vB (histogram, priority $priority → $blocks blocks, '
+            '${histogram.length} buckets)',
+          );
+          return rate;
+        }
+        walletLog(LogLevel.info, 'fee histogram empty; falling back to estimatefee');
+      } catch (e) {
+        _feeHistogramUnavailable = true;
+        walletLog(LogLevel.warn, 'getFeeHistogram failed: $e');
       }
-    } catch (e) {
-      walletLog(LogLevel.warn, 'getFeeHistogram failed: $e');
     }
 
     // Fall back to the node's estimator, then a static default.
-    try {
-      final btcPerKb = await _client.estimateFee(blocks);
-      if (btcPerKb != null) {
-        return (btcPerKb * _satsPerBtc / 1000).clamp(1, 1000).toDouble();
+    if (!_estimateFeeUnavailable) {
+      try {
+        final btcPerKb = await _client.estimateFee(blocks, timeout: feeTimeout);
+        if (btcPerKb != null) {
+          final rate = (btcPerKb * _satsPerBtc / 1000).clamp(1, 1000).toDouble();
+          walletLog(
+            LogLevel.info,
+            'fee rate $rate sat/vB (estimatefee, priority $priority → $blocks blocks, '
+            '$btcPerKb BTC/kB)',
+          );
+          return rate;
+        }
+        walletLog(LogLevel.info, 'estimatefee unavailable; using default');
+      } catch (e) {
+        _estimateFeeUnavailable = true;
+        walletLog(LogLevel.warn, 'estimateFee($blocks) failed: $e');
       }
-    } catch (e) {
-      walletLog(LogLevel.warn, 'estimateFee($blocks) failed: $e');
     }
+    walletLog(
+      LogLevel.info,
+      'fee rate $_defaultFeeRateSatVb sat/vB (default, priority $priority → $blocks blocks)',
+    );
     return _defaultFeeRateSatVb;
   }
 

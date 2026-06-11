@@ -10,7 +10,6 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/coin_home.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/coin_amount.dart';
@@ -173,16 +172,9 @@ class _CoinRowState extends State<_CoinRow> {
   bool _isHovered = false;
 
   ConnectionIndicatorState _connectionIndicatorState() {
-    final wallet = widget.wallet;
-    if (wallet.connectionAddress.isEmpty) return ConnectionIndicatorState.ok;
-    if (wallet.isConnected) {
-      return ConnectionIndicatorState.ok;
-    }
-    if (wallet.usingTor && TorService.sharedInstance.status == TorConnectionStatus.connecting ||
-        !wallet.hasAttemptedConnection) {
-      return ConnectionIndicatorState.loading;
-    }
-    return ConnectionIndicatorState.error;
+    // Unconfigured coins show the "Set up" button, not a red indicator.
+    if (widget.wallet.connectionAddress.isEmpty) return ConnectionIndicatorState.ok;
+    return connectionIndicatorStateFor(widget.wallet);
   }
 
   String _connectionRowTooltip(AppLocalizations i18n) {

@@ -10,33 +10,42 @@ import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 
 class ConnectionSetupScreenArgs {
   final String coinSymbol;
-  final String? successRoute;
 
-  ConnectionSetupScreenArgs({required this.coinSymbol, this.successRoute});
+  ConnectionSetupScreenArgs({required this.coinSymbol});
 }
 
-class ConnectionSetupScreen extends StatelessWidget {
+class ConnectionSetupScreen extends StatefulWidget {
   const ConnectionSetupScreen({super.key});
+
+  @override
+  State<ConnectionSetupScreen> createState() => _ConnectionSetupScreenState();
+}
+
+class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
+  bool? _wasConfigured;
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final args = ModalRoute.of(context)?.settings.arguments as ConnectionSetupScreenArgs?;
     final coinSymbol = args?.coinSymbol ?? 'XMR';
-    final manager = Provider.of<WalletManager>(context);
+    final manager = Provider.of<WalletManager>(context, listen: false);
     final wallet = manager.getWallet(coinSymbol);
     final connectionTypeName = wallet?.connectionTypeName ?? 'server';
+
+    _wasConfigured ??= wallet?.connectionAddress.isNotEmpty ?? false;
 
     void onSaved() {
       unawaited(manager.getWallet(coinSymbol)?.load());
 
-      final route = args?.successRoute;
-      if (route != null) {
-        final arguments =
-            route == '/coin_home' ? CoinHomeScreenArgs(coinSymbol: coinSymbol) : null;
-        Navigator.pushNamedAndRemoveUntil(context, route, (r) => false, arguments: arguments);
-      } else {
+      if (_wasConfigured == true) {
         Navigator.pop(context);
+      } else {
+        Navigator.pushReplacementNamed(
+          context,
+          '/coin_home',
+          arguments: CoinHomeScreenArgs(coinSymbol: coinSymbol),
+        );
       }
     }
 

@@ -168,7 +168,9 @@ class MoneroWallet extends CryptoWallet {
       throw Exception('Invalid mnemonic.');
     }
 
-    final legacyMnemonic = getLegacySeedFromBip39(bip39Mnemonic);
+    // Off the UI thread: mnemonicToSeed (PBKDF2) here is the sync prefix that
+    // would otherwise block before the restore spinner can paint.
+    final legacyMnemonic = await Isolate.run(() => getLegacySeedFromBip39(bip39Mnemonic));
     final restoreHeight = getHeightByDate(date: restoreDate);
 
     walletLog(LogLevel.info, 'Using blockchain height: $restoreHeight');
@@ -527,17 +529,19 @@ class MoneroWallet extends CryptoWallet {
     if (_w2TxHistory == null || _w2Wallet == null) return [];
 
     final txCount = _w2TxHistory!.count();
+    // Hoist the chain-tip FFI call out of the per-tx loop (invariant).
+    final chainHeight = _w2Wallet!.blockChainHeight();
     final List<TxDetails> txs = [];
 
     for (int i = 0; i < txCount; i++) {
-      txs.add(_buildTxDetails(i));
+      txs.add(_buildTxDetails(i, chainHeight));
     }
 
     txs.sort((a, b) => a.timestamp < b.timestamp ? 1 : -1);
     return txs;
   }
 
-  TxDetails _buildTxDetails(int txIndex) {
+  TxDetails _buildTxDetails(int txIndex, int chainHeight) {
     final tx = _w2TxHistory!.transaction(txIndex);
     final direction = tx.direction();
     final hash = tx.hash();
@@ -545,7 +549,7 @@ class MoneroWallet extends CryptoWallet {
     final fee = doubleAmountFromInt(tx.fee());
     final timestamp = tx.timestamp();
     final height = tx.blockHeight();
-    final confirmations = height > -1 ? _w2Wallet!.blockChainHeight() - height + 1 : 0;
+    final confirmations = height > -1 ? chainHeight - height + 1 : 0;
     final key = _w2Wallet!.getTxKey(txid: hash);
 
     final List<TxRecipient> recipients = [];

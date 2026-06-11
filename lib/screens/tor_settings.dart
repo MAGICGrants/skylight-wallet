@@ -23,7 +23,7 @@ class TorSettingsScreen extends StatelessWidget {
                 Text(i18n.torSettingsTitle, style: Theme.of(context).textTheme.headlineMedium),
                 TorSettingsForm(
                   saveButtonLabel: i18n.continueText,
-                  onSaved: () => Navigator.pushNamed(context, '/connection_setup'),
+                  onSaved: () => Navigator.pushNamed(context, '/fiat_api_setup'),
                 ),
               ],
             ),

@@ -12,7 +12,6 @@ import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/receive.dart';
 import 'package:skylight_wallet/screens/send.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/coin_amount.dart';
@@ -166,10 +165,7 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     Navigator.pushNamed(
       context,
       '/connection_setup',
-      arguments: ConnectionSetupScreenArgs(
-        coinSymbol: wallet.coinSymbol,
-        successRoute: '/coin_home',
-      ),
+      arguments: ConnectionSetupScreenArgs(coinSymbol: wallet.coinSymbol),
     );
   }
 
@@ -243,19 +239,8 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     );
   }
 
-  ConnectionIndicatorState _connectionIndicatorState(CryptoWallet wallet) {
-    if (wallet.connectionAddress.isEmpty) return ConnectionIndicatorState.error;
-    if (wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) > 0) {
-      return ConnectionIndicatorState.ok;
-    }
-    if (wallet.usingTor && TorService.sharedInstance.status == TorConnectionStatus.connecting ||
-        !wallet.hasAttemptedConnection ||
-        wallet.isConnected && !wallet.isSynced ||
-        wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) == 0) {
-      return ConnectionIndicatorState.loading;
-    }
-    return ConnectionIndicatorState.error;
-  }
+  ConnectionIndicatorState _connectionIndicatorState(CryptoWallet wallet) =>
+      connectionIndicatorStateFor(wallet);
 
   @override
   Widget build(BuildContext context) {

@@ -464,8 +464,8 @@ class ElectrumClient {
   /// Returns BTC/kB. Convert to sat/vB by `result * 1e8 / 1000`. Returns
   /// `null` when the server cannot provide an estimate (some servers
   /// return -1).
-  Future<double?> estimateFee(int blocks) async {
-    final result = await _call('blockchain.estimatefee', [blocks]);
+  Future<double?> estimateFee(int blocks, {Duration? timeout}) async {
+    final result = await _call('blockchain.estimatefee', [blocks], timeout: timeout);
     if (result is num) {
       final v = result.toDouble();
       return v <= 0 ? null : v;
@@ -475,8 +475,8 @@ class ElectrumClient {
 
   /// Current mempool fee histogram: `[[feerateSatVb, vsize], ...]` sorted by
   /// fee rate descending. Empty when the server has no mempool data.
-  Future<List<List<num>>> getFeeHistogram() async {
-    final result = await _call('mempool.get_fee_histogram', []);
+  Future<List<List<num>>> getFeeHistogram({Duration? timeout}) async {
+    final result = await _call('mempool.get_fee_histogram', [], timeout: timeout);
     if (result is! List) return const [];
     final out = <List<num>>[];
     for (final entry in result) {

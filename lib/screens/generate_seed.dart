@@ -18,6 +18,7 @@ class GenerateSeedScreen extends StatefulWidget {
 
 class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
   List<String> _seed = [];
+  DateTime? _restoreDate;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
 
       setState(() {
         _seed = result.mnemonic.split(' ');
+        _restoreDate = result.restoreDate;
       });
     } catch (error) {
       log(LogLevel.error, error.toString());
@@ -82,8 +84,14 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                     Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 10,
-                      runSpacing: 10,
+                      runSpacing: 4,
                       children: _seed.map((word) => Chip(label: Text(word))).toList(),
+                    ),
+                  if (_seed.isNotEmpty && _restoreDate != null)
+                    Text(
+                      '${i18n.restoreWalletRestoreDateLabel}: ${MaterialLocalizations.of(context).formatCompactDate(_restoreDate!)}',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   if (_seed.isNotEmpty)
                     FilledButton(

@@ -43,6 +43,7 @@ class TxDetails {
   final int height;
   final int confirmations;
   final String key;
+
   /// Unix seconds when the tx was first seen in the mempool or broadcast by
   /// this wallet. Used for display instead of block time when set.
   final int? broadcastAt;
@@ -580,13 +581,8 @@ abstract class CryptoWallet with ChangeNotifier {
     setIsLoaded(false);
   }
 
-  /// Clears all SharedPreferences keys namespaced under this wallet.
   Future<void> clearPersistedState() async {
     final keys = [
-      'connectionAddress',
-      'connectionProxyPort',
-      'connectionUseTor',
-      'connectionUseSsl',
       'walletRestoreHeight',
       'txHistoryCount',
       'cachedUnlockedBalance',

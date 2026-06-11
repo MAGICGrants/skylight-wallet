@@ -253,7 +253,7 @@ class SOCKSSocket {
 
     // Upgrade to SSL if needed.
     if (sslEnabled) {
-      // Upgrade to SSL.
+      _subscription?.pause();
       _secureSocksSocket = await SecureSocket.secure(
         _socksSocket,
         host: domain,

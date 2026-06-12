@@ -974,6 +974,7 @@ class BitcoinChainWallet extends CryptoWallet {
   @override
   List<TxDetails> readTxHistory() {
     final ourAddresses = _addresses.map((a) => a.address).toSet();
+    final ourChangeAddresses = _addresses.where((a) => a.isChange).map((a) => a.address).toSet();
     final entries = <TxDetails>[];
 
     for (final entry in _txCache.values) {
@@ -1020,7 +1021,7 @@ class BitcoinChainWallet extends CryptoWallet {
           if (!isOutgoing) {
             recipients.add(TxRecipient(addr, valueBtc));
           } else {
-            recipients.add(TxRecipient(addr, valueBtc, isChange: true));
+            recipients.add(TxRecipient(addr, valueBtc, isChange: ourChangeAddresses.contains(addr)));
           }
         } else {
           outputsToOthersSats += valueSats;
@@ -1114,19 +1115,25 @@ class BitcoinChainWallet extends CryptoWallet {
         toFetch.add(txid);
         continue;
       }
-      if (cached.height != height) {
+      // A cached entry without outputs is a placeholder (e.g. a just-broadcast
+      // tx) and must be replaced with the real fetched tx data.
+      final incomplete = (cached.verbose['vout'] as List?)?.isNotEmpty != true;
+      // Monotonic height: don't downgrade a known confirmation back to mempool
+      // (0) on a transient/stale history read.
+      final effectiveHeight = height > 0 ? height : cached.height;
+      if (cached.height != effectiveHeight || incomplete) {
         _txCache[txid] = _TxCacheEntry(
           verbose: cached.verbose,
-          height: height,
+          height: effectiveHeight,
           firstSeenAt: cached.firstSeenAt,
           broadcastAt: _resolveBroadcastAt(
             txHash: txid,
-            historyHeight: height,
+            historyHeight: effectiveHeight,
             cached: cached,
             priorBroadcastAt: priorBroadcastAt,
           ),
         );
-        if (height <= 0) toFetch.add(txid);
+        if (effectiveHeight <= 0 || incomplete) toFetch.add(txid);
       }
     }
     discoverTimer.stop();
@@ -1163,11 +1170,12 @@ class BitcoinChainWallet extends CryptoWallet {
         final hydrateTimer = Stopwatch()..start();
         for (final txid in rawsToHydrate) {
           try {
+            final h = newHashes[txid] ?? 0;
             verboseByTxid[txid] = await _verboseMapFromRaw(
               rawHexByTxid[txid]!,
               txid,
               rawHexByTxid,
-              blockHeight: newHashes[txid] ?? 0,
+              blockHeight: h > 0 ? h : (_txCache[txid]?.height ?? 0),
             );
           } catch (e) {
             if (isElectrumDisconnectError(e)) rethrow;
@@ -1183,7 +1191,8 @@ class BitcoinChainWallet extends CryptoWallet {
           final verbose = verboseByTxid[txid];
           if (verbose == null) continue;
           final cached = _txCache[txid];
-          final height = newHashes[txid] ?? 0;
+          final rawHeight = newHashes[txid] ?? 0;
+          final height = rawHeight > 0 ? rawHeight : (cached?.height ?? 0);
           _txCache[txid] = _TxCacheEntry(
             verbose: verbose,
             height: height,

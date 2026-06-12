@@ -340,14 +340,11 @@ class WalletManager with ChangeNotifier {
         msg.contains('unsupported wallet blob');
   }
 
-  /// Generates a brand new 15-word BIP39 mnemonic, restores wallets for
-  /// every supported coin from it, and returns the mnemonic so the UI can
-  /// display it to the user along with the restore date.
-  Future<({String mnemonic, DateTime restoreDate})> createFromNewSeed() async {
-    final mnemonic = bip39.generateMnemonic(strength: 160);
-    final restoreDate = DateTime.now();
-    await restoreAll(bip39Mnemonic: mnemonic, restoreDate: restoreDate);
-    return (mnemonic: mnemonic, restoreDate: restoreDate);
+  /// Generates a brand new 15-word BIP39 mnemonic + restore date for display.
+  /// No wallets are created or persisted until [restoreAll] is called (after
+  /// the user confirms they've written the seed down).
+  ({String mnemonic, DateTime restoreDate}) generateSeed() {
+    return (mnemonic: bip39.generateMnemonic(strength: 160), restoreDate: DateTime.now());
   }
 
   /// Restores wallets for every supported coin from the same BIP39 master
@@ -377,6 +374,11 @@ class WalletManager with ChangeNotifier {
     );
 
     await persistMobileWalletPassword();
+
+    // Load persisted connections so the home screen shows configured servers.
+    for (final w in _visibleWallets) {
+      await w.loadPersistedConnection();
+    }
   }
 
   /// Deletes every wallet file and clears every wallet's namespaced prefs

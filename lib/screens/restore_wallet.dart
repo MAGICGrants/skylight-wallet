@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
@@ -117,7 +118,6 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Wallet')),
@@ -170,21 +170,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
-                  FilledButton.icon(
+                  LoadingButton(
+                    isLoading: _isLoading,
                     onPressed: _restore,
-                    label: Text(i18n.restoreWalletRestoreButton),
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isDarkTheme
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Colors.white,
-                            ),
-                          )
-                        : null,
+                    label: i18n.restoreWalletRestoreButton,
                   ),
                 ],
               ),

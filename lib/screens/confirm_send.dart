@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/coin_home.dart';
 import 'package:skylight_wallet/util/formatting.dart';
@@ -141,7 +142,6 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final fiatRate = context.watch<FiatRateModel>();
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
     final wallet = context.watch<WalletManager>().getWallet(_coinSymbol);
@@ -237,21 +237,11 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                     ),
                   ],
                 ),
-                FilledButton.icon(
+                LoadingButton(
+                  isLoading: _isLoading,
                   onPressed: _confirmSend,
-                  icon: !_isLoading
-                      ? Icon(Icons.arrow_outward_rounded)
-                      : SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: isDarkTheme
-                                ? Theme.of(context).colorScheme.onPrimary
-                                : Colors.white,
-                          ),
-                        ),
-                  label: Text(i18n.sendSendButton),
+                  label: i18n.sendSendButton,
+                  icon: Icons.arrow_outward_rounded,
                 ),
               ],
             ),

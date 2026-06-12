@@ -8,6 +8,7 @@ import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 
 class GenerateSeedScreen extends StatefulWidget {
   const GenerateSeedScreen({super.key});
@@ -19,40 +20,50 @@ class GenerateSeedScreen extends StatefulWidget {
 class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
   List<String> _seed = [];
   DateTime? _restoreDate;
+  String? _mnemonic;
+  bool _isCreating = false;
 
   @override
   void initState() {
     super.initState();
-    _createWallet();
+    final result = Provider.of<WalletManager>(context, listen: false).generateSeed();
+    _mnemonic = result.mnemonic;
+    _seed = result.mnemonic.split(' ');
+    _restoreDate = result.restoreDate;
   }
 
-  Future<void> _createWallet() async {
+  Future<void> _continue() async {
+    if (_isCreating || _mnemonic == null || _restoreDate == null) return;
+
+    setState(() {
+      _isCreating = true;
+    });
+
     final manager = Provider.of<WalletManager>(context, listen: false);
 
     try {
-      final result = await manager.createFromNewSeed();
-      manager.syncInBackground();
-
-      setState(() {
-        _seed = result.mnemonic.split(' ');
-        _restoreDate = result.restoreDate;
-      });
+      await manager.restoreAll(bip39Mnemonic: _mnemonic!, restoreDate: _restoreDate!);
     } catch (error) {
       log(LogLevel.error, error.toString());
       if (mounted) {
+        setState(() {
+          _isCreating = false;
+        });
         Navigator.pushNamed(
           context,
           '/create_wallet',
           arguments: CreateWalletScreenArgs(toastMessage: 'Sorry, something went wrong.'),
         );
       }
+      return;
     }
-  }
 
-  void _continue() {
-    final manager = Provider.of<WalletManager>(context, listen: false);
-    Provider.of<FiatRateModel>(context, listen: false).startService(walletManager: manager);
-    Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
+    manager.syncInBackground();
+
+    if (mounted) {
+      Provider.of<FiatRateModel>(context, listen: false).startService(walletManager: manager);
+      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
+    }
   }
 
   @override
@@ -79,25 +90,23 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
-                  if (_seed.isEmpty) CircularProgressIndicator(),
-                  if (_seed.isNotEmpty)
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 10,
-                      runSpacing: 4,
-                      children: _seed.map((word) => Chip(label: Text(word))).toList(),
-                    ),
-                  if (_seed.isNotEmpty && _restoreDate != null)
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: _seed.map((word) => Chip(label: Text(word))).toList(),
+                  ),
+                  if (_restoreDate != null)
                     Text(
                       '${i18n.restoreWalletRestoreDateLabel}: ${MaterialLocalizations.of(context).formatCompactDate(_restoreDate!)}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                  if (_seed.isNotEmpty)
-                    FilledButton(
-                      onPressed: _continue,
-                      child: Text(i18n.generateSeedContinueButton),
-                    ),
+                  LoadingButton(
+                    isLoading: _isCreating,
+                    onPressed: _continue,
+                    label: i18n.generateSeedContinueButton,
+                  ),
                 ],
               ),
             ),

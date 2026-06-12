@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:provider/provider.dart';
 
 class CreateWalletPasswordScreen extends StatefulWidget {
@@ -80,7 +81,6 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Wallet')),
@@ -153,20 +153,10 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
                         enabled: !_isLoading,
                         onFieldSubmitted: (_) => _savePassword(),
                       ),
-                      FilledButton(
-                        onPressed: _isLoading ? null : _savePassword,
-                        child: _isLoading
-                            ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: isDarkTheme
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : Colors.white,
-                                ),
-                              )
-                            : Text(i18n.continueText),
+                      LoadingButton(
+                        isLoading: _isLoading,
+                        onPressed: _savePassword,
+                        label: i18n.continueText,
                       ),
                     ],
                   ),

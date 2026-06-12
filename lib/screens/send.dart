@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
@@ -561,7 +562,6 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
     final walletManager = context.watch<WalletManager>();
     final wallet = walletManager.getWallet(_coinSymbol);
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     if (wallet == null) {
       return Scaffold(
@@ -788,21 +788,11 @@ class _SendScreenState extends State<SendScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
-                    FilledButton.icon(
+                    LoadingButton(
+                      isLoading: _isLoading,
                       onPressed: _send,
-                      icon: !_isLoading
-                          ? Icon(Icons.arrow_outward_rounded)
-                          : SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: isDarkTheme
-                                    ? Theme.of(context).colorScheme.onPrimary
-                                    : Colors.white,
-                              ),
-                            ),
-                      label: Text(i18n.sendSendButton),
+                      label: i18n.sendSendButton,
+                      icon: Icons.arrow_outward_rounded,
                     ),
                   ],
                 ),

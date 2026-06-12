@@ -14,6 +14,24 @@ class TxDetailsDialog {
   }
 }
 
+/// Splits [s] into [lines] newline-separated segments of near-equal length
+/// (sizes differ by at most one char).
+String _chunkIntoLines(String s, int lines) {
+  if (lines <= 1 || s.length <= lines) return s;
+  final base = s.length ~/ lines;
+  final remainder = s.length % lines;
+  final buffer = StringBuffer();
+  var start = 0;
+  for (var i = 0; i < lines; i++) {
+    final size = base + (i < remainder ? 1 : 0);
+    final end = start + size;
+    if (i > 0) buffer.write('\n');
+    buffer.write(s.substring(start, end));
+    start = end;
+  }
+  return buffer.toString();
+}
+
 class _TxDetailsDialog extends StatelessWidget {
   final CryptoWallet wallet;
   final TxDetails txDetails;
@@ -34,6 +52,8 @@ class _TxDetailsDialog extends StatelessWidget {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
+    final addressLines = wallet.coinSymbol == 'XMR' ? 3 : 2;
 
     return AlertDialog(
       constraints: BoxConstraints.tightFor(width: dialogWidth),
@@ -56,10 +76,9 @@ class _TxDetailsDialog extends StatelessWidget {
                     constraints: BoxConstraints(maxWidth: 280),
                     child: GestureDetector(
                       child: Text(
-                        txDetails.hash,
+                        _chunkIntoLines(txDetails.hash, 3),
                         textAlign: TextAlign.end,
                         style: TextStyle(fontFamily: 'monospace'),
-                        softWrap: true,
                       ),
                       onTap: () => Clipboard.setData(ClipboardData(text: txDetails.hash)),
                     ),
@@ -197,21 +216,20 @@ class _TxDetailsDialog extends StatelessWidget {
                               child: Container(
                                 constraints: BoxConstraints(maxWidth: 280),
                                 child: Text(
-                                  recipient.address,
+                                  _chunkIntoLines(recipient.address, addressLines),
                                   style: TextStyle(fontFamily: 'monospace'),
-                                  softWrap: true,
                                   textAlign: TextAlign.end,
                                 ),
                               ),
                               onTap: () =>
                                   Clipboard.setData(ClipboardData(text: recipient.address)),
                             ),
+                            Text('$amountStr ${wallet.coinSymbol}', softWrap: true),
                             if (recipient.isChange)
                               Text(
                                 i18n.txDetailsChangeRecipientLabel,
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
-                            Text('$amountStr ${wallet.coinSymbol}', softWrap: true),
                           ],
                         );
                       },

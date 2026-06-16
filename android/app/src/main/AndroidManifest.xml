@@ -12,7 +12,13 @@
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true">
-        
+
+        <!-- Use Skia instead of Impeller: Impeller has antialiasing gaps on
+             small SVG icon edges. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false"/>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="incoming_transactions"/>

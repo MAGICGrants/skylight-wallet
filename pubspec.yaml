@@ -91,11 +91,16 @@ dependencies:
     git:
       url: https://github.com/cake-tech/blockchain_utils
       ref: cake-update-v2
-  webcrypto: ^0.6.0
+  webcrypto: 0.6.0
+  web3dart: 2.7.1
 
 dependency_overrides:
   hashlib: 1.19.2
   intl: any
+  web3dart:
+    git:
+      url: https://github.com/cake-tech/web3dart.git
+      ref: cake
 
 dev_dependencies:
   flutter_test:

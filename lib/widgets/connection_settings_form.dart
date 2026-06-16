@@ -48,6 +48,7 @@ class ConnectionSettingsForm extends StatefulWidget {
 class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _customProxyPortController = TextEditingController();
+  final TextEditingController _explorerUrlController = TextEditingController();
 
   bool _useTor = false;
   bool _useSsl = false;
@@ -69,6 +70,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     _torStatusTimer?.cancel();
     _addressController.dispose();
     _customProxyPortController.dispose();
+    _explorerUrlController.dispose();
     super.dispose();
   }
 
@@ -82,6 +84,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     setState(() {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
+      _explorerUrlController.text = conn.explorerUrl;
       _useTor = conn.useTor;
       _useSsl = conn.useSsl;
     });
@@ -296,6 +299,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       proxyPort: proxyAddress,
       useTor: _useTor,
       useSsl: _useSsl,
+      explorerUrl: wallet.supportsExplorerUrl ? _explorerUrlController.text.trim() : '',
     );
 
     await wallet.persistCurrentConnection();
@@ -355,6 +359,17 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
         ),
+        if (wallet?.supportsExplorerUrl ?? false)
+          TextFormField(
+            controller: _explorerUrlController,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              labelText: 'Explorer URL (optional)',
+              hintText: 'e.g. https://eth-sepolia.blockscout.com',
+              helperText: 'For transaction history (Blockscout/Etherscan-compatible).',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+            ),
+          ),
         CheckboxListTile(
           title: Text(i18n.lwsSetupUseTorLabel),
           value: _useTor,

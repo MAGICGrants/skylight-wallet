@@ -51,15 +51,20 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Wallet')),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 500),
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 20,
-              children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(maxWidth: 500),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 20,
+                    children: [
                 Column(
                   spacing: 10,
                   children: [
@@ -79,7 +84,10 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                   saveButtonLabel: i18n.lwsSetupContinueButton,
                   onSaved: onSaved,
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),

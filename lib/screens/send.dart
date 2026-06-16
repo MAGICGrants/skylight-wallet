@@ -38,6 +38,7 @@ final domainRegex = RegExp(r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$');
 class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
   bool _isLoadingFees = false;
+  bool _feesInProgress = false;
   final _destinationAddressController = TextEditingController(text: '');
   final _amountController = TextEditingController(text: '');
   bool _isSweepAll = false;
@@ -47,6 +48,9 @@ class _SendScreenState extends State<SendScreen> {
   int _feeCalculationCounter = 0;
   String _lastFeeFetchKey = '';
   Timer? _feeDebounce;
+  // Bumped on every fee-state change so the (separately-routed) priority
+  // selector sheet can rebuild live via a ValueListenableBuilder.
+  final ValueNotifier<int> _feeRevision = ValueNotifier(0);
 
   String _destinationAddressError = '';
   String _amountError = '';
@@ -85,6 +89,7 @@ class _SendScreenState extends State<SendScreen> {
     _amountController.removeListener(_onAmountChanged);
     _destinationAddressController.dispose();
     _amountController.dispose();
+    _feeRevision.dispose();
     super.dispose();
   }
 
@@ -278,8 +283,10 @@ class _SendScreenState extends State<SendScreen> {
 
     setState(() {
       _isLoadingFees = true;
+      _feesInProgress = true;
       _fees = null;
     });
+    _feeRevision.value++;
 
     final destinationAddress = await _resolveDestinationAddress();
     final amount = double.parse(_amountController.text);
@@ -306,12 +313,14 @@ class _SendScreenState extends State<SendScreen> {
               _isLoadingFees = false;
             }
           });
+          _feeRevision.value++;
         }
       }
 
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
           _isLoadingFees = false;
+          _feesInProgress = false;
 
           if (_fees?[_selectedPriority] == null) {
             for (int i = _selectedPriority; i >= 0; i--) {
@@ -322,12 +331,15 @@ class _SendScreenState extends State<SendScreen> {
             }
           }
         });
+        _feeRevision.value++;
       }
     } catch (error) {
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
           _isLoadingFees = false;
+          _feesInProgress = false;
         });
+        _feeRevision.value++;
 
         ScaffoldMessenger.of(
           context,
@@ -443,63 +455,69 @@ class _SendScreenState extends State<SendScreen> {
 
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
-        child: Container(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(i18n.sendTransactionPriority, style: Theme.of(context).textTheme.titleLarge),
-              SizedBox(height: 20),
-              _PriorityOption(
-                label: i18n.sendPriorityLow,
-                priority: 0,
-                fees: _fees,
-                wallet: wallet,
-                fiatSymbol: fiatSymbol,
-                fiatRate: coinRate,
-                isSelected: _selectedPriority == 0,
-                onTap: () {
-                  setState(() {
-                    _selectedPriority = 0;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              SizedBox(height: 12),
-              _PriorityOption(
-                label: i18n.sendPriorityNormal,
-                priority: 1,
-                fees: _fees,
-                wallet: wallet,
-                fiatSymbol: fiatSymbol,
-                fiatRate: coinRate,
-                isSelected: _selectedPriority == 1,
-                onTap: () {
-                  setState(() {
-                    _selectedPriority = 1;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              SizedBox(height: 12),
-              _PriorityOption(
-                label: i18n.sendPriorityHigh,
-                priority: 2,
-                fees: _fees,
-                wallet: wallet,
-                fiatSymbol: fiatSymbol,
-                fiatRate: coinRate,
-                isSelected: _selectedPriority == 2,
-                onTap: () {
-                  setState(() {
-                    _selectedPriority = 2;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+      builder: (context) => ValueListenableBuilder<int>(
+        valueListenable: _feeRevision,
+        builder: (context, _, __) => SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(i18n.sendTransactionPriority, style: Theme.of(context).textTheme.titleLarge),
+                SizedBox(height: 20),
+                _PriorityOption(
+                  label: i18n.sendPriorityLow,
+                  priority: 0,
+                  fees: _fees,
+                  isLoading: _feesInProgress,
+                  wallet: wallet,
+                  fiatSymbol: fiatSymbol,
+                  fiatRate: coinRate,
+                  isSelected: _selectedPriority == 0,
+                  onTap: () {
+                    setState(() {
+                      _selectedPriority = 0;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+                SizedBox(height: 12),
+                _PriorityOption(
+                  label: i18n.sendPriorityNormal,
+                  priority: 1,
+                  fees: _fees,
+                  isLoading: _feesInProgress,
+                  wallet: wallet,
+                  fiatSymbol: fiatSymbol,
+                  fiatRate: coinRate,
+                  isSelected: _selectedPriority == 1,
+                  onTap: () {
+                    setState(() {
+                      _selectedPriority = 1;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+                SizedBox(height: 12),
+                _PriorityOption(
+                  label: i18n.sendPriorityHigh,
+                  priority: 2,
+                  fees: _fees,
+                  isLoading: _feesInProgress,
+                  wallet: wallet,
+                  fiatSymbol: fiatSymbol,
+                  fiatRate: coinRate,
+                  isSelected: _selectedPriority == 2,
+                  onTap: () {
+                    setState(() {
+                      _selectedPriority = 2;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -546,8 +564,10 @@ class _SendScreenState extends State<SendScreen> {
       if (mounted) {
         setState(() {
           _isLoadingFees = false;
+          _feesInProgress = false;
           _fees = null;
         });
+        _feeRevision.value++;
       }
       return;
     }
@@ -921,6 +941,7 @@ class _PriorityOption extends StatelessWidget {
   final String label;
   final int priority;
   final List<PendingTransaction?>? fees;
+  final bool isLoading;
   final CryptoWallet wallet;
   final String fiatSymbol;
   final double? fiatRate;
@@ -931,6 +952,7 @@ class _PriorityOption extends StatelessWidget {
     required this.label,
     required this.priority,
     required this.fees,
+    required this.isLoading,
     required this.wallet,
     required this.fiatSymbol,
     required this.fiatRate,
@@ -1007,6 +1029,8 @@ class _PriorityOption extends StatelessWidget {
                     FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
                 ],
               )
+            else if (isLoading)
+              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
             else if (fees != null)
               Text(
                 i18n.sendInsufficientBalanceError,

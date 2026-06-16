@@ -9,6 +9,8 @@ import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_testnet_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet.dart';
+import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_sepolia_wallet.dart';
+import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 import 'package:skylight_wallet/wallets/master_seed_store.dart';
@@ -33,6 +35,8 @@ class WalletManager with ChangeNotifier {
     _register(MoneroWallet());
     _register(BitcoinWallet());
     _register(BitcoinTestnetWallet());
+    _register(EthereumWallet());
+    _register(EthereumSepoliaWallet());
   }
 
   /// Loads persisted app preferences that affect which wallets are shown.
@@ -302,13 +306,17 @@ class WalletManager with ChangeNotifier {
     }());
   }
 
-  /// Steady-state refresh for every configured wallet.
+  /// Steady-state refresh for every configured wallet. Runs coins in parallel
+  /// so a slow/offline node for one coin doesn't block the others, and isolates
+  /// per-coin failures so one bad node can't sink the rest.
   Future<void> loadAll() async {
-    for (final w in _visibleWallets) {
-      if (!w.isActive) continue;
-      await w.load();
-      await Future<void>.delayed(Duration.zero);
-    }
+    await Future.wait([
+      for (final w in _visibleWallets)
+        if (w.isActive)
+          w.load().catchError((Object e) {
+            log(LogLevel.warn, 'load failed: $e', coin: w.coinSymbol);
+          }),
+    ]);
   }
 
   /// Opens wallets if needed, then refreshes active ones without blocking the UI.

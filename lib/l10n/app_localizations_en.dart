@@ -622,4 +622,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lwsSetupInvalidQrCode => 'Invalid connection address.';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get explorerSetupTitle => 'Block Explorer Setup';
+
+  @override
+  String get explorerSetupDescription =>
+      'Optionally set a Blockscout instance to load full transaction history. Leave empty to disable — future sent transactions still appear without it.';
+
+  @override
+  String get explorerAddressLabel => 'Explorer Address';
+
+  @override
+  String get explorerRemoveButton => 'Remove Explorer';
+
+  @override
+  String get explorerRemovedMessage => 'Explorer removed.';
+
+  @override
+  String get explorerSetupButton => 'Set Up Explorer';
+
+  @override
+  String get explorerSetupHint => 'Set up a block explorer to see your full transaction history.';
 }

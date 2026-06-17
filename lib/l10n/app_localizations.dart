@@ -1268,6 +1268,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid connection address.'**
   String get lwsSetupInvalidQrCode;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @explorerSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block Explorer Setup'**
+  String get explorerSetupTitle;
+
+  /// No description provided for @explorerSetupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Optionally set a Blockscout instance to load full transaction history. Leave empty to disable — future sent transactions still appear without it.'**
+  String get explorerSetupDescription;
+
+  /// No description provided for @explorerAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Explorer Address'**
+  String get explorerAddressLabel;
+
+  /// No description provided for @explorerRemoveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Explorer'**
+  String get explorerRemoveButton;
+
+  /// No description provided for @explorerRemovedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Explorer removed.'**
+  String get explorerRemovedMessage;
+
+  /// No description provided for @explorerSetupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Up Explorer'**
+  String get explorerSetupButton;
+
+  /// No description provided for @explorerSetupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a block explorer to see your full transaction history.'**
+  String get explorerSetupHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

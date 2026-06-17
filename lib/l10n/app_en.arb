@@ -223,5 +223,13 @@
     }
   },
   "lwsSetupTorDisabledError": "Tor is disabled. Please go back and enable it.",
-  "lwsSetupInvalidQrCode": "Invalid connection address."
+  "lwsSetupInvalidQrCode": "Invalid connection address.",
+  "save": "Save",
+  "explorerSetupTitle": "Block Explorer Setup",
+  "explorerSetupDescription": "Optionally set a Blockscout instance to load full transaction history. Leave empty to disable — future sent transactions still appear without it.",
+  "explorerAddressLabel": "Explorer Address",
+  "explorerRemoveButton": "Remove Explorer",
+  "explorerRemovedMessage": "Explorer removed.",
+  "explorerSetupButton": "Set Up Explorer",
+  "explorerSetupHint": "Set up a block explorer to see your full transaction history."
 }

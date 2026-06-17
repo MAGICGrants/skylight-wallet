@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 
@@ -19,6 +20,7 @@ class ExplorerSetupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
     final args = ModalRoute.of(context)?.settings.arguments as ExplorerSetupScreenArgs?;
     final coinSymbol = args?.coinSymbol ?? '';
     final manager = Provider.of<WalletManager>(context);
@@ -37,7 +39,7 @@ class ExplorerSetupScreen extends StatelessWidget {
       unawaited(wallet?.loadTxHistory());
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      messenger.showSnackBar(SnackBar(content: Text('Explorer removed.')));
+      messenger.showSnackBar(SnackBar(content: Text(i18n.explorerRemovedMessage)));
     }
 
     return Scaffold(
@@ -55,25 +57,23 @@ class ExplorerSetupScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   spacing: 20,
                   children: [
-                    Text('Block Explorer Setup', style: Theme.of(context).textTheme.headlineMedium),
+                    Text(i18n.explorerSetupTitle, style: Theme.of(context).textTheme.headlineMedium),
                     Text(
-                      'Optionally set a Blockscout instance to load full transaction '
-                      'history. Leave empty to disable — sent transactions still '
-                      'appear without it.',
+                      i18n.explorerSetupDescription,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     ConnectionSettingsForm(
                       coinSymbol: coinSymbol,
                       target: ConnectionTarget.explorer,
-                      saveButtonLabel: 'Save',
+                      saveButtonLabel: i18n.save,
                       onSaved: onSaved,
                     ),
                     if (wallet?.explorerAddress.isNotEmpty ?? false)
                       TextButton.icon(
                         onPressed: onRemove,
                         icon: Icon(Icons.delete),
-                        label: Text('Remove Explorer'),
+                        label: Text(i18n.explorerRemoveButton),
                         style: ButtonStyle(foregroundColor: WidgetStateProperty.all(Colors.red)),
                       ),
                   ],

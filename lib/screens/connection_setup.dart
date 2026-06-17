@@ -81,7 +81,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                 ),
                 ConnectionSettingsForm(
                   coinSymbol: coinSymbol,
-                  saveButtonLabel: 'Save',
+                  saveButtonLabel: i18n.save,
                   onSaved: onSaved,
                 ),
                     ],

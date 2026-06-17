@@ -223,5 +223,13 @@
     }
   },
   "lwsSetupTorDisabledError": "O Tor está desativado. Por favor, volte e ative-o.",
-  "lwsSetupInvalidQrCode": "Endereço de conexão inválido."
+  "lwsSetupInvalidQrCode": "Endereço de conexão inválido.",
+  "save": "Salvar",
+  "explorerSetupTitle": "Configuração do Explorador de Blocos",
+  "explorerSetupDescription": "Opcionalmente, defina uma instância Blockscout para carregar o histórico completo de transações. Deixe em branco para desativar — as transações enviadas futuras continuam aparecendo sem ele.",
+  "explorerAddressLabel": "Endereço do Explorador",
+  "explorerRemoveButton": "Remover Explorador",
+  "explorerRemovedMessage": "Explorador removido.",
+  "explorerSetupButton": "Configurar Explorador",
+  "explorerSetupHint": "Configure um explorador de blocos para ver seu histórico completo de transações."
 }

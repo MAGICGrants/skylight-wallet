@@ -337,7 +337,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final wallet = Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
     final addressHint = (_isExplorer ? wallet?.explorerAddressExample : wallet?.connectionAddressExample) ??
         i18n.lwsSetupAddressHint;
-    final addressLabel = _isExplorer ? 'Explorer address' : i18n.address;
+    final addressLabel = _isExplorer ? i18n.explorerAddressLabel : i18n.address;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

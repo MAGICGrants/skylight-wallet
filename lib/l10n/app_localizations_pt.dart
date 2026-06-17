@@ -622,4 +622,30 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsSetupInvalidQrCode => 'Endereço de conexão inválido.';
+
+  @override
+  String get save => 'Salvar';
+
+  @override
+  String get explorerSetupTitle => 'Configuração do Explorador de Blocos';
+
+  @override
+  String get explorerSetupDescription =>
+      'Opcionalmente, defina uma instância Blockscout para carregar o histórico completo de transações. Deixe em branco para desativar — as transações enviadas futuras continuam aparecendo sem ele.';
+
+  @override
+  String get explorerAddressLabel => 'Endereço do Explorador';
+
+  @override
+  String get explorerRemoveButton => 'Remover Explorador';
+
+  @override
+  String get explorerRemovedMessage => 'Explorador removido.';
+
+  @override
+  String get explorerSetupButton => 'Configurar Explorador';
+
+  @override
+  String get explorerSetupHint =>
+      'Configure um explorador de blocos para ver seu histórico completo de transações.';
 }

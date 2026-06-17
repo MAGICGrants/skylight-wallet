@@ -236,7 +236,7 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
             Text(i18n.homeNoTransactions, textAlign: TextAlign.center),
             SizedBox(height: 12),
             Text(
-              'Set up a block explorer to see your full transaction history.',
+              i18n.explorerSetupHint,
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -246,7 +246,7 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
             FilledButton.icon(
               onPressed: () => _openExplorerSetup(wallet),
               icon: Icon(Icons.travel_explore),
-              label: Text('Set up explorer'),
+              label: Text(i18n.explorerSetupButton),
             ),
           ],
         ),
@@ -310,7 +310,7 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
           if (wallet.supportsExplorerUrl)
             IconButton(
               icon: Icon(Icons.travel_explore),
-              tooltip: 'Blockscout Explorer Setup',
+              tooltip: i18n.explorerSetupTitle,
               onPressed: () => _openExplorerSetup(wallet),
             ),
           IconButton(

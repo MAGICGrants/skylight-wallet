@@ -10,6 +10,7 @@ import 'package:web3dart/web3dart.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_file_crypto.dart';
@@ -104,6 +105,9 @@ class EthereumChainWallet extends CryptoWallet {
   String get connectionTypeName => 'RPC endpoint';
   @override
   String get connectionAddressExample => _connectionAddressExample;
+  @override
+  String get explorerAddressExample =>
+      _isTestnet ? 'e.g. eth-sepolia.blockscout.com' : 'e.g. eth.blockscout.com';
 
   // ----- Persistence -----
 
@@ -229,6 +233,26 @@ class EthereumChainWallet extends CryptoWallet {
   }
 
   @override
+  Future<void> testExplorerConnection({
+    required String address,
+    String? proxyPort,
+    required bool useSsl,
+    required bool useTor,
+  }) async {
+    final socks = (proxyPort != null && proxyPort.isNotEmpty) ? int.tryParse(proxyPort) : null;
+    await EthereumExplorerClient().probe(address, socksPort: socks);
+  }
+
+  /// Resolves the explorer's own SOCKS port (its Tor proxy, or a custom one).
+  Future<int?> _explorerSocksPort() async {
+    if (explorerUseTor) {
+      final proxy = await TorSettingsService.sharedInstance.getProxy();
+      return proxy?.port;
+    }
+    return explorerProxyPort.isNotEmpty ? int.tryParse(explorerProxyPort) : null;
+  }
+
+  @override
   Future<bool> getIsConnected() async => _rpc.isConfigured && _connected;
 
   @override
@@ -321,9 +345,10 @@ class EthereumChainWallet extends CryptoWallet {
   Future<void> loadTxHistory({bool persistCount = true}) async {
     // Optional explorer fills in incoming + historical txs (RPC can't list an
     // address's history). Local records (current outgoing) take precedence.
-    if (explorerUrl.isNotEmpty && _address != null) {
+    if (explorerAddress.isNotEmpty && _address != null) {
       try {
-        final txs = await _explorer.fetchTxList(explorerUrl, _address!, socksPort: _socksPort);
+        final socks = await _explorerSocksPort();
+        final txs = await _explorer.fetchTxList(explorerAddress, _address!, socksPort: socks);
         final me = _address!.toLowerCase();
         for (final t in txs) {
           final isOut = t.from.toLowerCase() == me;

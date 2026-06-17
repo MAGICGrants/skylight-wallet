@@ -20,17 +20,20 @@ final domainAddressRegex = RegExp(
 );
 final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
 
-/// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog.
-///
-/// Operates against the wallet identified by [coinSymbol]; the form reads
-/// and writes connection details on that wallet through the
-/// [WalletManager].
+/// Which connection a [ConnectionSettingsForm] reads/writes/tests: the wallet's
+/// node server, or its optional explorer.
+enum ConnectionTarget { node, explorer }
+
+/// Shared form widget for editing a server connection (address + Tor/SSL/proxy
+/// + test). Operates against the wallet identified by [coinSymbol], on either
+/// the node or the explorer connection per [target].
 class ConnectionSettingsForm extends StatefulWidget {
   final String coinSymbol;
   final String saveButtonLabel;
   final VoidCallback onSaved;
   final bool isInDialog;
   final Future<void> Function()? onBeforeSave;
+  final ConnectionTarget target;
 
   const ConnectionSettingsForm({
     super.key,
@@ -39,6 +42,7 @@ class ConnectionSettingsForm extends StatefulWidget {
     required this.onSaved,
     this.isInDialog = false,
     this.onBeforeSave,
+    this.target = ConnectionTarget.node,
   });
 
   @override
@@ -48,7 +52,6 @@ class ConnectionSettingsForm extends StatefulWidget {
 class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _customProxyPortController = TextEditingController();
-  final TextEditingController _explorerUrlController = TextEditingController();
 
   bool _useTor = false;
   bool _useSsl = false;
@@ -70,21 +73,23 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     _torStatusTimer?.cancel();
     _addressController.dispose();
     _customProxyPortController.dispose();
-    _explorerUrlController.dispose();
     super.dispose();
   }
+
+  bool get _isExplorer => widget.target == ConnectionTarget.explorer;
 
   Future<void> _loadPersistedConnection() async {
     final manager = Provider.of<WalletManager>(context, listen: false);
     final wallet = manager.getWallet(widget.coinSymbol);
     if (wallet == null) return;
 
-    final conn = await wallet.getPersistedConnection();
+    final conn = await (_isExplorer
+        ? wallet.getPersistedExplorerConnection()
+        : wallet.getPersistedConnection());
 
     setState(() {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
-      _explorerUrlController.text = conn.explorerUrl;
       _useTor = conn.useTor;
       _useSsl = conn.useSsl;
     });
@@ -261,12 +266,21 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     try {
       final proxyPort = await _resolveProxyPort();
-      await wallet.testConnection(
-        address: daemonAddress,
-        proxyPort: proxyPort,
-        useSsl: _useSsl,
-        useTor: _useTor,
-      );
+      if (_isExplorer) {
+        await wallet.testExplorerConnection(
+          address: daemonAddress,
+          proxyPort: proxyPort,
+          useSsl: _useSsl,
+          useTor: _useTor,
+        );
+      } else {
+        await wallet.testConnection(
+          address: daemonAddress,
+          proxyPort: proxyPort,
+          useSsl: _useSsl,
+          useTor: _useTor,
+        );
+      }
       if (!mounted) return;
       setState(() {
         _connectionSuccess = true;
@@ -294,15 +308,23 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final wallet = manager.getWallet(widget.coinSymbol);
     if (wallet == null) return;
 
-    wallet.setConnection(
-      address: daemonAddress,
-      proxyPort: proxyAddress,
-      useTor: _useTor,
-      useSsl: _useSsl,
-      explorerUrl: wallet.supportsExplorerUrl ? _explorerUrlController.text.trim() : '',
-    );
-
-    await wallet.persistCurrentConnection();
+    if (_isExplorer) {
+      wallet.setExplorerConnection(
+        address: daemonAddress,
+        proxyPort: proxyAddress,
+        useTor: _useTor,
+        useSsl: _useSsl,
+      );
+      await wallet.persistExplorerConnection();
+    } else {
+      wallet.setConnection(
+        address: daemonAddress,
+        proxyPort: proxyAddress,
+        useTor: _useTor,
+        useSsl: _useSsl,
+      );
+      await wallet.persistCurrentConnection();
+    }
     await widget.onBeforeSave?.call();
 
     widget.onSaved();
@@ -313,7 +335,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
     final wallet = Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
-    final addressHint = wallet?.connectionAddressExample ?? i18n.lwsSetupAddressHint;
+    final addressHint = (_isExplorer ? wallet?.explorerAddressExample : wallet?.connectionAddressExample) ??
+        i18n.lwsSetupAddressHint;
+    final addressLabel = _isExplorer ? 'Explorer address' : i18n.address;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -324,7 +348,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           controller: _addressController,
           onChanged: _onAddressChange,
           decoration: InputDecoration(
-            labelText: i18n.address,
+            labelText: addressLabel,
             hintText: addressHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
             suffixIcon: Row(
@@ -359,17 +383,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
         ),
-        if (wallet?.supportsExplorerUrl ?? false)
-          TextFormField(
-            controller: _explorerUrlController,
-            keyboardType: TextInputType.url,
-            decoration: InputDecoration(
-              labelText: 'Explorer URL (optional)',
-              hintText: 'e.g. https://eth-sepolia.blockscout.com',
-              helperText: 'For transaction history (Blockscout/Etherscan-compatible).',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-            ),
-          ),
         CheckboxListTile(
           title: Text(i18n.lwsSetupUseTorLabel),
           value: _useTor,

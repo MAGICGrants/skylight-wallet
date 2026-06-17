@@ -117,16 +117,11 @@ class WalletConnectionDetails {
   final bool useTor;
   final bool useSsl;
 
-  /// Optional explorer/indexer API URL (coins that support one — see
-  /// [CryptoWallet.supportsExplorerUrl]). Empty when unset/unsupported.
-  final String explorerUrl;
-
   WalletConnectionDetails({
     required this.address,
     required this.proxyPort,
     required this.useTor,
     required this.useSsl,
-    this.explorerUrl = '',
   });
 }
 
@@ -186,7 +181,12 @@ abstract class CryptoWallet with ChangeNotifier {
   String _connectionProxyPort = '';
   bool _connectionUseTor = false;
   bool _connectionUseSsl = false;
-  String _explorerUrl = '';
+
+  // Optional explorer connection (its own server, parallel to the node above).
+  String _explorerAddress = '';
+  String _explorerProxyPort = '';
+  bool _explorerUseTor = false;
+  bool _explorerUseSsl = false;
   bool _hasAttemptedConnection = false;
   bool _isConnected = false;
   bool _isSynced = false;
@@ -218,11 +218,18 @@ abstract class CryptoWallet with ChangeNotifier {
   String get connectionProxyPort => _connectionProxyPort;
   bool get connectionUseTor => _connectionUseTor;
   bool get connectionUseSsl => _connectionUseSsl;
-  String get explorerUrl => _explorerUrl;
 
-  /// True when this coin can use an optional explorer/indexer URL (shown as a
-  /// second field in the connection form). Default false (BTC/XMR).
+  String get explorerAddress => _explorerAddress;
+  String get explorerProxyPort => _explorerProxyPort;
+  bool get explorerUseTor => _explorerUseTor;
+  bool get explorerUseSsl => _explorerUseSsl;
+
+  /// True when this coin supports an optional explorer (its own setup screen).
+  /// Default false (BTC/XMR).
   bool get supportsExplorerUrl => false;
+
+  /// Placeholder shown in the explorer address field.
+  String get explorerAddressExample => '';
   bool get usingTor => _connectionUseTor;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
   bool get isConnected => _isConnected;
@@ -328,14 +335,37 @@ abstract class CryptoWallet with ChangeNotifier {
     required String proxyPort,
     required bool useTor,
     required bool useSsl,
-    String explorerUrl = '',
   }) {
     _connectionAddress = address;
     _connectionProxyPort = proxyPort;
     _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
-    _explorerUrl = explorerUrl;
     notifyListeners();
+  }
+
+  /// The explorer has its own server (parallel to the node), set/persisted
+  /// independently via its own setup form.
+  void setExplorerConnection({
+    required String address,
+    required String proxyPort,
+    required bool useTor,
+    required bool useSsl,
+  }) {
+    _explorerAddress = address;
+    _explorerProxyPort = proxyPort;
+    _explorerUseTor = useTor;
+    _explorerUseSsl = useSsl;
+    notifyListeners();
+  }
+
+  /// Probes an explorer endpoint. Coins that support an explorer override this.
+  Future<void> testExplorerConnection({
+    required String address,
+    String? proxyPort,
+    required bool useSsl,
+    required bool useTor,
+  }) async {
+    throw UnimplementedError('This coin has no explorer.');
   }
 
   Future<void> persistCurrentConnection() async {
@@ -343,7 +373,13 @@ abstract class CryptoWallet with ChangeNotifier {
     await SharedPreferencesService.set(prefKey('connectionProxyPort'), _connectionProxyPort);
     await SharedPreferencesService.set(prefKey('connectionUseTor'), _connectionUseTor);
     await SharedPreferencesService.set(prefKey('connectionUseSsl'), _connectionUseSsl);
-    await SharedPreferencesService.set(prefKey('explorerUrl'), _explorerUrl);
+  }
+
+  Future<void> persistExplorerConnection() async {
+    await SharedPreferencesService.set(prefKey('explorerAddress'), _explorerAddress);
+    await SharedPreferencesService.set(prefKey('explorerProxyPort'), _explorerProxyPort);
+    await SharedPreferencesService.set(prefKey('explorerUseTor'), _explorerUseTor);
+    await SharedPreferencesService.set(prefKey('explorerUseSsl'), _explorerUseSsl);
   }
 
   Future<WalletConnectionDetails> getPersistedConnection() async {
@@ -352,18 +388,27 @@ abstract class CryptoWallet with ChangeNotifier {
       proxyPort: await SharedPreferencesService.get<String>(prefKey('connectionProxyPort')) ?? '',
       useTor: await SharedPreferencesService.get<bool>(prefKey('connectionUseTor')) ?? false,
       useSsl: await SharedPreferencesService.get<bool>(prefKey('connectionUseSsl')) ?? false,
-      explorerUrl: await SharedPreferencesService.get<String>(prefKey('explorerUrl')) ?? '',
+    );
+  }
+
+  Future<WalletConnectionDetails> getPersistedExplorerConnection() async {
+    return WalletConnectionDetails(
+      address: await SharedPreferencesService.get<String>(prefKey('explorerAddress')) ?? '',
+      proxyPort: await SharedPreferencesService.get<String>(prefKey('explorerProxyPort')) ?? '',
+      useTor: await SharedPreferencesService.get<bool>(prefKey('explorerUseTor')) ?? false,
+      useSsl: await SharedPreferencesService.get<bool>(prefKey('explorerUseSsl')) ?? false,
     );
   }
 
   Future<void> loadPersistedConnection() async {
     final c = await getPersistedConnection();
-    setConnection(
-      address: c.address,
-      proxyPort: c.proxyPort,
-      useTor: c.useTor,
-      useSsl: c.useSsl,
-      explorerUrl: c.explorerUrl,
+    setConnection(address: c.address, proxyPort: c.proxyPort, useTor: c.useTor, useSsl: c.useSsl);
+    final e = await getPersistedExplorerConnection();
+    setExplorerConnection(
+      address: e.address,
+      proxyPort: e.proxyPort,
+      useTor: e.useTor,
+      useSsl: e.useSsl,
     );
   }
 

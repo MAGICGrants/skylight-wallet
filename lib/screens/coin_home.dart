@@ -10,6 +10,7 @@ import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
+import 'package:skylight_wallet/screens/explorer_setup.dart';
 import 'package:skylight_wallet/screens/receive.dart';
 import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
@@ -169,6 +170,14 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     );
   }
 
+  void _openExplorerSetup(CryptoWallet wallet) {
+    Navigator.pushNamed(
+      context,
+      '/explorer_setup',
+      arguments: ExplorerSetupScreenArgs(coinSymbol: wallet.coinSymbol),
+    );
+  }
+
   Widget _buildActionButtons(AppLocalizations i18n, CryptoWallet wallet) {
     final coinSymbol = wallet.coinSymbol;
     final hasConnection = wallet.connectionAddress.isNotEmpty;
@@ -215,7 +224,33 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     required String fiatSymbol,
   }) {
     if (wallet.txHistory.isEmpty) {
-      return Text(i18n.homeNoTransactions);
+      final needsExplorer = wallet.supportsExplorerUrl && wallet.explorerAddress.isEmpty;
+      if (!needsExplorer) {
+        return Text(i18n.homeNoTransactions);
+      }
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(i18n.homeNoTransactions, textAlign: TextAlign.center),
+            SizedBox(height: 12),
+            Text(
+              'Set up a block explorer to see your full transaction history.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+            SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => _openExplorerSetup(wallet),
+              icon: Icon(Icons.travel_explore),
+              label: Text('Set up explorer'),
+            ),
+          ],
+        ),
+      );
     }
 
     return Expanded(
@@ -272,6 +307,12 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
       appBar: AppBar(
         title: Text(wallet.coinName),
         actions: [
+          if (wallet.supportsExplorerUrl)
+            IconButton(
+              icon: Icon(Icons.travel_explore),
+              tooltip: 'Blockscout Explorer Setup',
+              onPressed: () => _openExplorerSetup(wallet),
+            ),
           IconButton(
             icon: Icon(Icons.dns_outlined),
             tooltip: i18n.coinHomeServerConnectionButton,

@@ -19,6 +19,7 @@ import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
+import 'package:skylight_wallet/screens/explorer_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
 import 'package:skylight_wallet/screens/receive.dart';
@@ -227,6 +228,7 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
     '/tor_info': (context) => TorInfoScreen(),
     '/tor_settings': (context) => TorSettingsScreen(),
     '/connection_setup': (context) => ConnectionSetupScreen(),
+    '/explorer_setup': (context) => ExplorerSetupScreen(),
     '/fiat_api_setup': (context) => FiatApiSetupScreen(),
     '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
     '/create_wallet': (context) => CreateWalletScreen(),

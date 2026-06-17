@@ -50,7 +50,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text(wallet?.coinName ?? 'Skylight Wallet')),
       body: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           child: ConstrainedBox(
@@ -81,7 +81,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                 ),
                 ConnectionSettingsForm(
                   coinSymbol: coinSymbol,
-                  saveButtonLabel: i18n.lwsSetupContinueButton,
+                  saveButtonLabel: 'Save',
                   onSaved: onSaved,
                 ),
                     ],

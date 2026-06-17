@@ -70,6 +70,18 @@ class EthereumExplorerClient {
     return out;
   }
 
+  /// Verifies the endpoint speaks the Blockscout v2 API (response is a JSON
+  /// object with an `items` list). Throws otherwise.
+  Future<void> probe(String baseUrl, {int? socksPort}) async {
+    final base = _normalizeBase(baseUrl);
+    final url =
+        '$base/api/v2/addresses/0x0000000000000000000000000000000000000000/transactions';
+    final json = await _getJson(url, socksPort);
+    if (json is! Map || json['items'] is! List) {
+      throw Exception('Not a Blockscout v2 explorer (unexpected response).');
+    }
+  }
+
   /// Normalizes a user-entered base to the host root: adds https if missing,
   /// strips a trailing slash and any `/api` or `/api/v2` they may have pasted.
   String _normalizeBase(String baseUrl) {

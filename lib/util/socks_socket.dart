@@ -430,13 +430,6 @@ class SOCKSSocket {
           if (contentLengthMatch != null) {
             contentLength = int.parse(contentLengthMatch.group(1)!);
           }
-
-          // Check if connection will close (no keep-alive possible)
-          final connectionClose = headers.toLowerCase().contains('connection: close');
-          if (connectionClose) {
-            // Server will close connection, read until EOF
-            contentLength = null;
-          }
         }
       }
 

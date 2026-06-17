@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -70,14 +71,13 @@ class EthereumExplorerClient {
     return out;
   }
 
-  /// Verifies the endpoint speaks the Blockscout v2 API (response is a JSON
-  /// object with an `items` list). Throws otherwise.
+  /// Verifies the endpoint is a Blockscout v2 instance via its lightweight
+  /// `/api/v2/stats` endpoint (a small JSON object with Blockscout-specific
+  /// fields). Throws otherwise.
   Future<void> probe(String baseUrl, {int? socksPort}) async {
     final base = _normalizeBase(baseUrl);
-    final url =
-        '$base/api/v2/addresses/0x0000000000000000000000000000000000000000/transactions';
-    final json = await _getJson(url, socksPort);
-    if (json is! Map || json['items'] is! List) {
+    final json = await _getJson('$base/api/v2/stats', socksPort);
+    if (json is! Map || json['total_blocks'] == null) {
       throw Exception('Not a Blockscout v2 explorer (unexpected response).');
     }
   }
@@ -98,6 +98,8 @@ class EthereumExplorerClient {
     return dt != null ? dt.millisecondsSinceEpoch ~/ 1000 : 0;
   }
 
+  static const Duration _timeout = Duration(seconds: 30);
+
   Future<dynamic> _getJson(String url, int? socksPort) async {
     if (socksPort != null && socksPort > 0) {
       final uri = Uri.parse(url);
@@ -107,19 +109,22 @@ class EthereumExplorerClient {
         sslEnabled: uri.scheme == 'https',
       );
       try {
-        await socket.connect();
-        await socket.connectTo(uri.host, uri.port);
-        final raw = await socket.sendHttpRequest(getRawHttpRequestString('GET', url));
+        await socket.connect().timeout(_timeout);
+        await socket.connectTo(uri.host, uri.port).timeout(_timeout);
+        final raw =
+            await socket.sendHttpRequest(getRawHttpRequestString('GET', url)).timeout(_timeout);
         return parseHttpResponse(raw).jsonBody;
       } finally {
-        await socket.close();
+        // Fire-and-forget: close() can block on flush/cancel and must not stall
+        // the result (the RPC path never closes at all).
+        unawaited(socket.close().catchError((_) {}));
       }
     }
     final client = HttpClient();
     try {
-      final req = await client.getUrl(Uri.parse(url));
-      final resp = await req.close();
-      final text = await resp.transform(utf8.decoder).join();
+      final req = await client.getUrl(Uri.parse(url)).timeout(_timeout);
+      final resp = await req.close().timeout(_timeout);
+      final text = await resp.transform(utf8.decoder).join().timeout(_timeout);
       return jsonDecode(text);
     } finally {
       client.close(force: true);

@@ -43,7 +43,7 @@ class _TxDetailsDialog extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context);
     final amountSent = txDetails.amount.toStringAsFixed(wallet.decimals);
-    final fee = txDetails.fee.toStringAsFixed(wallet.decimals);
+    final fee = txDetails.fee.toStringAsFixed(wallet.feeDecimals);
 
     final dateTime = DateTime.fromMillisecondsSinceEpoch(txDetails.timestamp * 1000);
 
@@ -109,7 +109,7 @@ class _TxDetailsDialog extends StatelessWidget {
                 Text(i18n.networkFee, style: TextStyle(fontWeight: FontWeight.bold)),
                 Flexible(
                   child: Text(
-                    '$fee ${wallet.coinSymbol}',
+                    '$fee ${wallet.feeCoinSymbol}',
                     textAlign: TextAlign.end,
                     softWrap: true,
                   ),

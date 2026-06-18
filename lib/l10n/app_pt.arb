@@ -105,6 +105,7 @@
   "sendInvalidAddressError": "Endereço inválido.",
   "sendInsufficientBalanceError": "Saldo insuficiente.",
   "sendInsufficientBalanceToCoverFeeError": "Saldo insuficiente para cobrir a taxa da rede.",
+  "sendInsufficientGasError": "Saldo de ETH insuficiente para cobrir a taxa da rede.",
   "settingsTitle": "Configurações",
   "settingsNotifyNewTxsLabel": "Notificar Novas Transações",
   "settingsAppLockLabel": "Desbloqueio com PIN/Biometria",

@@ -681,6 +681,12 @@ abstract class AppLocalizations {
   /// **'Insufficient balance to cover the network fee.'**
   String get sendInsufficientBalanceToCoverFeeError;
 
+  /// No description provided for @sendInsufficientGasError.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient ETH to cover the network fee.'**
+  String get sendInsufficientGasError;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:

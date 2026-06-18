@@ -9,6 +9,8 @@ import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_testnet_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet.dart';
+import 'package:skylight_wallet/wallets/coins/ethereum/dai_sepolia_wallet.dart';
+import 'package:skylight_wallet/wallets/coins/ethereum/dai_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_sepolia_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_wallet.dart';
 import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
@@ -37,6 +39,8 @@ class WalletManager with ChangeNotifier {
     _register(BitcoinTestnetWallet());
     _register(EthereumWallet());
     _register(EthereumSepoliaWallet());
+    _register(DaiWallet());
+    _register(DaiSepoliaWallet());
   }
 
   /// Loads persisted app preferences that affect which wallets are shown.

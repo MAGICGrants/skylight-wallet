@@ -105,6 +105,7 @@
   "sendInvalidAddressError": "Invalid address.",
   "sendInsufficientBalanceError": "Insufficient balance.",
   "sendInsufficientBalanceToCoverFeeError": "Insufficient balance to cover the network fee.",
+  "sendInsufficientGasError": "Insufficient ETH to cover the network fee.",
   "settingsTitle": "Settings",
   "settingsNotifyNewTxsLabel": "Notify New Transactions",
   "settingsAppLockLabel": "App Lock",

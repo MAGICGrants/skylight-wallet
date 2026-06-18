@@ -315,6 +315,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Insufficient balance to cover the network fee.';
 
   @override
+  String get sendInsufficientGasError => 'Insufficient ETH to cover the network fee.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

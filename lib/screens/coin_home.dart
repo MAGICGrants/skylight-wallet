@@ -124,10 +124,7 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
           children: [
             SvgPicture.asset(wallet.iconAsset, width: 22, height: 22),
             if (wallet.unlockedBalance == null)
-              Skeletonizer(
-                enabled: true,
-                child: Text('0.000000', style: TextStyle(fontSize: 30)),
-              )
+              Skeletonizer(enabled: true, child: Text('0.000000', style: TextStyle(fontSize: 30)))
             else
               CoinAmount(
                 amount: wallet.unlockedBalance!,
@@ -238,9 +235,9 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
             Text(
               i18n.explorerSetupHint,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             SizedBox(height: 12),
             FilledButton.icon(
@@ -295,7 +292,8 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     }
 
     final coinRate = fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
-    final unlockedBalanceFiat = !wallet.isTestnet && coinRate != null && wallet.unlockedBalance is double
+    final unlockedBalanceFiat =
+        !wallet.isTestnet && coinRate != null && wallet.unlockedBalance is double
         ? wallet.unlockedBalance! * coinRate
         : null;
     final lockedBalance = wallet.canSpendPendingBalance
@@ -531,12 +529,16 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                       smallerDigits: widget.wallet.smallerDigits,
                       maxFontSize: 16,
                     ),
-                    if (!widget.wallet.isTestnet && amountFiat == null && !widget.fiatRate.isDisabled)
+                    if (!widget.wallet.isTestnet &&
+                        amountFiat == null &&
+                        !widget.fiatRate.isDisabled)
                       Skeletonizer(
                         enabled: true,
                         child: Text('Potato', style: TextStyle(fontSize: 14)),
                       ),
-                    if (!widget.wallet.isTestnet && amountFiat is double && !widget.fiatRate.isDisabled)
+                    if (!widget.wallet.isTestnet &&
+                        amountFiat is double &&
+                        !widget.fiatRate.isDisabled)
                       FiatAmount(prefix: widget.fiatSymbol, amount: amountFiat, maxFontSize: 14),
                   ],
                 ),

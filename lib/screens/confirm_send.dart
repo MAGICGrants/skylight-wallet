@@ -147,9 +147,15 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final wallet = context.watch<WalletManager>().getWallet(_coinSymbol);
     final decimals = wallet?.decimals ?? 12;
     final coinSymbol = wallet?.coinSymbol ?? _coinSymbol;
+    final feeDecimals = wallet?.feeDecimals ?? decimals;
+    final feeSymbol = wallet?.feeCoinSymbol ?? coinSymbol;
+    final feeIsForeign = wallet?.feeIsForeign ?? false;
     final coinRate = fiatRate.rateFor(coinSymbol, isTestnet: wallet?.isTestnet);
     final amountFiat = wallet?.isTestnet != true && coinRate != null ? _amount * coinRate : null;
-    final networkFeeFiat = wallet?.isTestnet != true && coinRate != null ? _fee * coinRate : null;
+    // The fee is in ETH for tokens; its fiat can't use the token's rate, so omit it.
+    final networkFeeFiat = wallet?.isTestnet != true && coinRate != null && !feeIsForeign
+        ? _fee * coinRate
+        : null;
 
     return Scaffold(
       appBar: AppBar(),
@@ -201,7 +207,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${_fee.toStringAsFixed(decimals)} $coinSymbol',
+                          '${_fee.toStringAsFixed(feeDecimals)} $feeSymbol',
                           style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                         if (networkFeeFiat is double)

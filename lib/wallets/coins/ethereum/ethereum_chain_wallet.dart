@@ -14,11 +14,16 @@ import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_file_crypto.dart';
+import 'package:flutter/foundation.dart' show protected;
+
+import 'package:skylight_wallet/wallets/coins/ethereum/erc20_abi.dart';
 import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_explorer_client.dart';
 import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_pending_tx.dart';
 import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_rpc_client.dart';
 import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_wallet_open.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+
+part 'erc20_chain_wallet.dart';
 
 /// Account-model EVM wallet backed by a user-supplied JSON-RPC endpoint.
 /// Mainnet [`EthereumWallet`] and [`EthereumSepoliaWallet`] differ only by
@@ -90,7 +95,7 @@ class EthereumChainWallet extends CryptoWallet {
   @override
   int get decimals => 10;
   @override
-  int get smallerDigits => 3;
+  int get smallerDigits => 6;
   @override
   int get requiredConfirmations => _isTestnet ? 6 : 12;
   @override
@@ -289,6 +294,17 @@ class EthereumChainWallet extends CryptoWallet {
 
   double get _balanceEth => _balanceWei.toDouble() / _weiPerEth.toDouble();
 
+  /// Unit a transaction's *amount* is divided by for display (native: wei per
+  /// ETH). ERC-20 tokens override to their token-decimal unit. The *fee* always
+  /// stays in ETH (`_weiPerEth`).
+  @protected
+  BigInt get txAmountUnit => _weiPerEth;
+
+  /// Gas limit used when estimation is unavailable or reverts (native transfer
+  /// is 21000; ERC-20 transfers override to a safe higher value).
+  @protected
+  BigInt get fallbackGasLimit => BigInt.from(21000);
+
   @override
   Future<void> loadIsSynced() async => setIsSynced(_connected && _bestHeight > 0);
 
@@ -320,14 +336,23 @@ class EthereumChainWallet extends CryptoWallet {
     final tip = _bestHeight;
     final entries = _txRecords.values.map((r) {
       final confirmations = r.blockNumber > 0 && tip >= r.blockNumber ? tip - r.blockNumber + 1 : 0;
-      final amountEth = r.valueWei.toDouble() / _weiPerEth.toDouble();
+      final amountUnits = r.valueWei.toDouble() / txAmountUnit.toDouble();
       return TxDetails(
         index: null,
         direction: r.direction,
         hash: r.hash,
-        amount: amountEth,
+        amount: amountUnits,
         fee: r.feeWei.toDouble() / _weiPerEth.toDouble(),
-        recipients: [TxRecipient(r.to, amountEth)],
+        // The recipient is the destination of the transfer: for outgoing it's
+        // the address we sent to; for incoming it's us. (The record's `to` field
+        // historically held the sender for incoming, which is 0x0 for mints, so
+        // resolve incoming to our own address at display time.)
+        recipients: [
+          TxRecipient(
+            r.direction == consts.txDirectionOutgoing ? r.to : (_address ?? r.to),
+            amountUnits,
+          ),
+        ],
         accountIndex: 0,
         subaddrIndexList: const [],
         timestamp: r.timestamp,
@@ -348,7 +373,7 @@ class EthereumChainWallet extends CryptoWallet {
     if (explorerAddress.isNotEmpty && _address != null) {
       try {
         final socks = await _explorerSocksPort();
-        final txs = await _explorer.fetchTxList(explorerAddress, _address!, socksPort: socks);
+        final txs = await fetchExplorerTransfers(socks);
         final me = _address!.toLowerCase();
         for (final t in txs) {
           final isOut = t.from.toLowerCase() == me;
@@ -372,6 +397,12 @@ class EthereumChainWallet extends CryptoWallet {
     }
     await super.loadTxHistory(persistCount: persistCount);
   }
+
+  /// Address history from the explorer. Native ETH transfers by default;
+  /// ERC-20 tokens override to fetch token transfers for their contract.
+  @protected
+  Future<List<ExplorerTx>> fetchExplorerTransfers(int? socksPort) =>
+      _explorer.fetchTxList(explorerAddress, _address!, socksPort: socksPort);
 
   // ----- Send / receive -----
 
@@ -397,13 +428,18 @@ class EthereumChainWallet extends CryptoWallet {
   /// Gas for the send. A native transfer is 21000; estimate (to also cover
   /// contract recipients) with a 1-wei probe so it never reverts on
   /// insufficient funds, falling back to 21000 if the node refuses.
-  Future<BigInt> _resolveGasLimit(String from, String to) async {
+  Future<BigInt> _resolveGasLimit(String from, String to, {String? data}) async {
     try {
-      final est = await _rpc.estimateGas(from: from, to: to, value: BigInt.one);
-      return est > BigInt.zero ? est : BigInt.from(21000);
+      final est = await _rpc.estimateGas(
+        from: from,
+        to: to,
+        value: data == null ? BigInt.one : BigInt.zero,
+        data: data,
+      );
+      return est > BigInt.zero ? est : fallbackGasLimit;
     } catch (e) {
-      walletLog(LogLevel.warn, 'estimateGas fallback to 21000: $e');
-      return BigInt.from(21000);
+      walletLog(LogLevel.warn, 'estimateGas fallback to $fallbackGasLimit: $e');
+      return fallbackGasLimit;
     }
   }
 
@@ -423,8 +459,9 @@ class EthereumChainWallet extends CryptoWallet {
   /// same destination so each priority doesn't re-hit the RPC.
   Future<({BigInt baseFee, BigInt tipBase, int nonce, BigInt gasLimit})> _resolveFeeInputs(
     String from,
-    String to,
-  ) async {
+    String to, {
+    String? data,
+  }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final cached = _feeInputs;
     if (cached != null && cached.to == to && now - cached.atMs < _feeInputsTtlMs) {
@@ -438,7 +475,7 @@ class EthereumChainWallet extends CryptoWallet {
     final baseFee = await _rpc.baseFeePerGas();
     final tipBase = await _rpc.maxPriorityFeePerGas();
     final nonce = await _rpc.getTransactionCount(from);
-    final gasLimit = await _resolveGasLimit(from, to);
+    final gasLimit = await _resolveGasLimit(from, to, data: data);
     _feeInputs = (
       baseFee: baseFee,
       tipBase: tipBase,

@@ -71,6 +71,55 @@ class EthereumExplorerClient {
     return out;
   }
 
+  /// Fetches ERC-20 transfers for [address] involving the token at
+  /// [contractAddress] (Blockscout v2 `addresses/{hash}/token-transfers`).
+  /// The token amount is carried in `valueWei` (raw, token-decimal units);
+  /// `feeWei` is 0 (gas fee belongs to the parent tx, known only locally for
+  /// our own outgoing transfers).
+  Future<List<ExplorerTx>> fetchTokenTransfers(
+    String baseUrl,
+    String address,
+    String contractAddress, {
+    int? socksPort,
+  }) async {
+    final base = _normalizeBase(baseUrl);
+    final url = '$base/api/v2/addresses/$address/token-transfers?type=ERC-20';
+    final contract = contractAddress.toLowerCase();
+
+    final json = await _getJson(url, socksPort);
+    final items = json is Map ? json['items'] : null;
+    if (items is! List) return const [];
+
+    final out = <ExplorerTx>[];
+    for (final t in items) {
+      if (t is! Map) continue;
+      final token = t['token'];
+      final tokenAddr = token is Map
+          ? '${token['address'] ?? token['address_hash'] ?? ''}'.toLowerCase()
+          : '';
+      if (tokenAddr != contract) continue;
+      final hash = (t['transaction_hash'] ?? t['tx_hash']) as String?;
+      if (hash == null) continue;
+      final from = t['from'] is Map ? (t['from']['hash'] as String?) ?? '' : '';
+      final to = t['to'] is Map ? (t['to']['hash'] as String?) ?? '' : '';
+      final total = t['total'];
+      final value = total is Map ? '${total['value']}' : '0';
+      out.add(
+        ExplorerTx(
+          hash: hash,
+          from: from,
+          to: to,
+          valueWei: BigInt.tryParse(value) ?? BigInt.zero,
+          feeWei: BigInt.zero,
+          blockNumber: (t['block_number'] as num?)?.toInt() ?? 0,
+          status: 1,
+          timestamp: _parseTimestamp(t['timestamp']),
+        ),
+      );
+    }
+    return out;
+  }
+
   /// Verifies the endpoint is a Blockscout v2 instance via its lightweight
   /// `/api/v2/stats` endpoint (a small JSON object with Blockscout-specific
   /// fields). Throws otherwise.

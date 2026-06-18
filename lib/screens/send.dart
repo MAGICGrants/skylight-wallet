@@ -416,7 +416,11 @@ class _SendScreenState extends State<SendScreen> {
         );
       }
     } catch (error) {
-      if (error.toString().contains('Unlocked funds too low')) {
+      if (error.toString().contains('Insufficient gas funds')) {
+        setState(() {
+          _amountError = i18n.sendInsufficientGasError;
+        });
+      } else if (error.toString().contains('Unlocked funds too low')) {
         if (wallet.unlockedBalance! > amount) {
           setState(() {
             _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
@@ -745,10 +749,10 @@ class _SendScreenState extends State<SendScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     spacing: 4,
                                     children: [
-                                      SvgPicture.asset(wallet.iconAsset, width: 14, height: 14),
+                                      SvgPicture.asset(wallet.feeIconAsset, width: 14, height: 14),
                                       CoinAmount(
                                         amount: selectedTx.fee,
-                                        decimals: wallet.decimals,
+                                        decimals: wallet.feeDecimals,
                                         smallerDigits: wallet.smallerDigits,
                                         maxFontSize: 14,
                                       ),
@@ -1016,16 +1020,16 @@ class _PriorityOption extends StatelessWidget {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      SvgPicture.asset(wallet.iconAsset, width: 14, height: 14),
+                      SvgPicture.asset(wallet.feeIconAsset, width: 14, height: 14),
                       CoinAmount(
                         amount: fee,
-                        decimals: wallet.decimals,
+                        decimals: wallet.feeDecimals,
                         smallerDigits: wallet.smallerDigits,
                         maxFontSize: 14,
                       ),
                     ],
                   ),
-                  if (currentFiatRate != null && !wallet.isTestnet)
+                  if (currentFiatRate != null && !wallet.isTestnet && !wallet.feeIsForeign)
                     FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
                 ],
               )

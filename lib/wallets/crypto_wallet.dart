@@ -143,6 +143,17 @@ abstract class CryptoWallet with ChangeNotifier {
   int get decimals;
   int get smallerDigits;
 
+  /// Symbol/decimals the network fee is denominated in. Defaults to this
+  /// coin's own; ERC-20 tokens override to the chain's native coin (ETH),
+  /// since gas is paid in ETH, not the token.
+  String get feeCoinSymbol => coinSymbol;
+  int get feeDecimals => decimals;
+  String get feeIconAsset => iconAsset;
+
+  /// True when the network fee is paid in a different currency than the amount
+  /// being sent (ERC-20 tokens: amount in token, fee in ETH).
+  bool get feeIsForeign => feeCoinSymbol != coinSymbol;
+
   /// Human-readable name of the kind of server this coin connects to,
   /// used in connection-setup copy (e.g. "LWS server", "Electrum server").
   String get connectionTypeName;
@@ -249,6 +260,14 @@ abstract class CryptoWallet with ChangeNotifier {
 
   @protected
   String prefKey(String name) => '${coinSymbol.toLowerCase()}_$name';
+
+  /// Coin symbol whose namespace holds the node/explorer connection prefs.
+  /// Defaults to this coin; coins that [usesParentConnection] override it to
+  /// the parent so they read/write the same connection config.
+  @protected
+  String get connectionPrefSymbol => coinSymbol;
+
+  String _connPrefKey(String name) => '${connectionPrefSymbol.toLowerCase()}_$name';
 
   // ----- Lifecycle hooks (subclass) -----
 
@@ -369,34 +388,36 @@ abstract class CryptoWallet with ChangeNotifier {
   }
 
   Future<void> persistCurrentConnection() async {
-    await SharedPreferencesService.set(prefKey('connectionAddress'), _connectionAddress);
-    await SharedPreferencesService.set(prefKey('connectionProxyPort'), _connectionProxyPort);
-    await SharedPreferencesService.set(prefKey('connectionUseTor'), _connectionUseTor);
-    await SharedPreferencesService.set(prefKey('connectionUseSsl'), _connectionUseSsl);
+    await SharedPreferencesService.set(_connPrefKey('connectionAddress'), _connectionAddress);
+    await SharedPreferencesService.set(_connPrefKey('connectionProxyPort'), _connectionProxyPort);
+    await SharedPreferencesService.set(_connPrefKey('connectionUseTor'), _connectionUseTor);
+    await SharedPreferencesService.set(_connPrefKey('connectionUseSsl'), _connectionUseSsl);
   }
 
   Future<void> persistExplorerConnection() async {
-    await SharedPreferencesService.set(prefKey('explorerAddress'), _explorerAddress);
-    await SharedPreferencesService.set(prefKey('explorerProxyPort'), _explorerProxyPort);
-    await SharedPreferencesService.set(prefKey('explorerUseTor'), _explorerUseTor);
-    await SharedPreferencesService.set(prefKey('explorerUseSsl'), _explorerUseSsl);
+    await SharedPreferencesService.set(_connPrefKey('explorerAddress'), _explorerAddress);
+    await SharedPreferencesService.set(_connPrefKey('explorerProxyPort'), _explorerProxyPort);
+    await SharedPreferencesService.set(_connPrefKey('explorerUseTor'), _explorerUseTor);
+    await SharedPreferencesService.set(_connPrefKey('explorerUseSsl'), _explorerUseSsl);
   }
 
   Future<WalletConnectionDetails> getPersistedConnection() async {
     return WalletConnectionDetails(
-      address: await SharedPreferencesService.get<String>(prefKey('connectionAddress')) ?? '',
-      proxyPort: await SharedPreferencesService.get<String>(prefKey('connectionProxyPort')) ?? '',
-      useTor: await SharedPreferencesService.get<bool>(prefKey('connectionUseTor')) ?? false,
-      useSsl: await SharedPreferencesService.get<bool>(prefKey('connectionUseSsl')) ?? false,
+      address: await SharedPreferencesService.get<String>(_connPrefKey('connectionAddress')) ?? '',
+      proxyPort:
+          await SharedPreferencesService.get<String>(_connPrefKey('connectionProxyPort')) ?? '',
+      useTor: await SharedPreferencesService.get<bool>(_connPrefKey('connectionUseTor')) ?? false,
+      useSsl: await SharedPreferencesService.get<bool>(_connPrefKey('connectionUseSsl')) ?? false,
     );
   }
 
   Future<WalletConnectionDetails> getPersistedExplorerConnection() async {
     return WalletConnectionDetails(
-      address: await SharedPreferencesService.get<String>(prefKey('explorerAddress')) ?? '',
-      proxyPort: await SharedPreferencesService.get<String>(prefKey('explorerProxyPort')) ?? '',
-      useTor: await SharedPreferencesService.get<bool>(prefKey('explorerUseTor')) ?? false,
-      useSsl: await SharedPreferencesService.get<bool>(prefKey('explorerUseSsl')) ?? false,
+      address: await SharedPreferencesService.get<String>(_connPrefKey('explorerAddress')) ?? '',
+      proxyPort:
+          await SharedPreferencesService.get<String>(_connPrefKey('explorerProxyPort')) ?? '',
+      useTor: await SharedPreferencesService.get<bool>(_connPrefKey('explorerUseTor')) ?? false,
+      useSsl: await SharedPreferencesService.get<bool>(_connPrefKey('explorerUseSsl')) ?? false,
     );
   }
 

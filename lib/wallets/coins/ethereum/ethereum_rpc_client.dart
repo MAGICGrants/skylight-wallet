@@ -139,10 +139,22 @@ class EthereumRpcClient {
     required String from,
     required String to,
     required BigInt value,
+    String? data,
   }) async {
-    return _hexToBigInt(await call('eth_estimateGas', [
-      {'from': from, 'to': to, 'value': '0x${value.toRadixString(16)}'},
-    ]));
+    final tx = {'from': from, 'to': to, 'value': '0x${value.toRadixString(16)}'};
+    if (data != null && data.isNotEmpty) tx['data'] = data;
+    return _hexToBigInt(await call('eth_estimateGas', [tx]));
+  }
+
+  /// Read-only contract call (`eth_call`) against [to] with ABI-encoded [data];
+  /// returns the raw hex result. Used for ERC-20 reads like `balanceOf`.
+  Future<String> ethCall(String to, String data) async {
+    final r = await call('eth_call', [
+      {'to': to, 'data': data},
+      'latest',
+    ]);
+    if (r is String) return r;
+    throw EthereumRpcException('Unexpected eth_call response: $r');
   }
 
   Future<String> sendRawTransaction(String rawHex) async {

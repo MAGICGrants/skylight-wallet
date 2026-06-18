@@ -315,6 +315,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Saldo insuficiente para cobrir a taxa da rede.';
 
   @override
+  String get sendInsufficientGasError => 'Saldo de ETH insuficiente para cobrir a taxa da rede.';
+
+  @override
   String get settingsTitle => 'Configurações';
 
   @override

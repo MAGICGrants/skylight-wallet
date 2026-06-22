@@ -305,6 +305,12 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
       appBar: AppBar(
         title: Text(wallet.coinName),
         actions: [
+          if (wallet.coinSymbol == 'XMR')
+            IconButton(
+              icon: Icon(Icons.vpn_key_outlined),
+              tooltip: i18n.lwsKeysTitle,
+              onPressed: () => Navigator.pushNamed(context, '/lws_keys'),
+            ),
           if (wallet.supportsExplorerUrl)
             IconButton(
               icon: Icon(Icons.travel_explore),

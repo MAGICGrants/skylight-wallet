@@ -650,4 +650,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get explorerSetupHint => 'Set up a block explorer to see your full transaction history.';
+
+  @override
+  String get legacyTitle => 'Unsupported Wallet';
+
+  @override
+  String get legacyDescription =>
+      'Skylight Wallet is dropping support for legacy and polyseed seed phrases in favor of BIP39. Please write down the seed phrase below, delete this wallet and create a new wallet. You can restore the seed below on another Monero wallet and move the funds to your new BIP39 seed wallet.';
+
+  @override
+  String get legacyShowSeedButton => 'Show seed';
+
+  @override
+  String get legacySeedLabel => 'Seed';
+
+  @override
+  String get legacyError => 'Couldn\'t open the wallet. Check your password and try again.';
 }

@@ -128,7 +128,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get createWalletDescription =>
-      'Você já possui uma semente de carteira Monero ou precisa criar uma nova?';
+      'Você já possui uma seed de carteira Monero ou precisa criar uma nova?';
 
   @override
   String get createWalletRestoreExistingButton => 'Restaurar Existente';
@@ -141,7 +141,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get generateSeedDescription =>
-      'Esta é a sua semente de 15 palavras. Anote-a e guarde-a em um lugar seguro. Ela pode restaurar todas as moedas desta carteira.';
+      'Esta é a sua seed de 15 palavras. Anote-a e guarde-a em um lugar seguro. Ela pode restaurar todas as moedas desta carteira.';
 
   @override
   String get generateSeedContinueButton => 'Eu anotei';
@@ -167,10 +167,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWalletDescription =>
-      'Insira sua semente de 15 palavras para restaurar todas as moedas desta carteira.';
+      'Insira sua seed de 15 palavras para restaurar todas as moedas desta carteira.';
 
   @override
-  String get restoreWalletSeedLabel => 'Semente';
+  String get restoreWalletSeedLabel => 'Seed';
 
   @override
   String get restoreWalletRestoreHeightLabel => 'Bloco de Restauração (opcional)';
@@ -182,7 +182,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletRestoreButton => 'Restaurar';
 
   @override
-  String get restoreWalletInvalidMnemonic => 'Semente inválida.';
+  String get restoreWalletInvalidMnemonic => 'Seed inválida.';
 
   @override
   String get navigationBarWallet => 'Carteira';
@@ -409,7 +409,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsDeleteWalletDialogText =>
-      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua semente.';
+      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua seed.';
 
   @override
   String get settingsDeleteWalletDialogDeleteButton => 'Excluir';
@@ -454,7 +454,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get secretKeysTitle => 'Chaves Privadas de Restauração';
 
   @override
-  String get secretKeysMnemonic => 'Semente';
+  String get secretKeysMnemonic => 'Seed';
 
   @override
   String get secretKeysPublicSpendKey => 'Chave Pública de Gasto';
@@ -651,4 +651,21 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get explorerSetupHint =>
       'Configure um explorador de blocos para ver seu histórico completo de transações.';
+
+  @override
+  String get legacyTitle => 'Carteira Não Suportada';
+
+  @override
+  String get legacyDescription =>
+      'A Skylight Wallet está descontinuando o suporte a frases seed legacy e polyseed em favor do BIP39. Por favor, anote a frase seed abaixo, exclua esta carteira e crie uma nova carteira com seed BIP39. Você pode restaurar esta seed em outra carteira Monero e mover os fundos para sua nova carteira BIP39.';
+
+  @override
+  String get legacyShowSeedButton => 'Mostrar seed';
+
+  @override
+  String get legacySeedLabel => 'Seed';
+
+  @override
+  String get legacyError =>
+      'Não foi possível abrir a carteira. Verifique sua senha e tente novamente.';
 }

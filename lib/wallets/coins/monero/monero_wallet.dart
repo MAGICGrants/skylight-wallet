@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:bip39/bip39.dart' as bip39;
+import 'package:flutter/foundation.dart' show protected;
 import 'package:http/http.dart' as http;
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart' as monero_ffi;
@@ -93,11 +94,16 @@ class MoneroWallet extends CryptoWallet {
 
   // ----- Lifecycle -----
 
+  /// Path of this wallet's file. The migration's [LegacyMoneroWallet] overrides
+  /// it to open v1's `mywallet` instead of the per-coin `mywallet_xmr`.
+  @protected
+  Future<String> resolveWalletPath() => getWalletPath(coinSymbol);
+
   @override
   Future<bool> hasExistingWallet() async {
     final wm = await _walletManager();
     final wmFfiAddr = wm.ffiAddress();
-    final walletPath = await getWalletPath(coinSymbol);
+    final walletPath = await resolveWalletPath();
 
     walletLog(LogLevel.info, 'Calling WalletManager_walletExists with parameters:');
     walletLog(LogLevel.info, '  path: $walletPath');
@@ -121,7 +127,7 @@ class MoneroWallet extends CryptoWallet {
   Future<void> openExisting({required String password}) async {
     final wm = await _walletManager();
     final wmFfiAddr = wm.ffiAddress();
-    final walletPath = await getWalletPath(coinSymbol);
+    final walletPath = await resolveWalletPath();
 
     walletLog(LogLevel.info, 'Calling WalletManager_openWallet with parameters:');
     walletLog(LogLevel.info, '  path: $walletPath');
@@ -211,7 +217,7 @@ class MoneroWallet extends CryptoWallet {
   }) async {
     final wm = await _walletManager();
     final wmFfiAddr = wm.ffiAddress();
-    final walletPath = await getWalletPath(coinSymbol);
+    final walletPath = await resolveWalletPath();
 
     walletLog(LogLevel.info, 'Calling WalletManager_recoveryWallet with parameters:');
     walletLog(LogLevel.info, '  mnemonic: <hidden>');
@@ -261,7 +267,7 @@ class MoneroWallet extends CryptoWallet {
       _w2TxHistory = null;
     }
 
-    final path = await getWalletPath(coinSymbol);
+    final path = await resolveWalletPath();
     final file = File(path);
     if (await file.exists()) {
       await file.delete();

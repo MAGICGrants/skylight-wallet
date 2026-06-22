@@ -22,6 +22,8 @@ import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/explorer_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
+import 'package:skylight_wallet/screens/legacy_wallet_screen.dart';
+import 'package:skylight_wallet/screens/lws_keys.dart';
 import 'package:skylight_wallet/screens/receive.dart';
 import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
@@ -195,6 +197,17 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
       }
 
       final appLockEnabled = prefs.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
+
+      // A v1 (legacy/polyseed) wallet file is no longer supported — send the
+      // user to the unsupported-wallet screen to back up its seed and delete it.
+      final hasLegacyWallet = await File(await getLegacyWalletPath()).exists();
+      if (hasLegacyWallet) {
+        if (!mounted) return;
+        _startServicesOnce();
+        _navigatorKey.currentState?.pushReplacementNamed('/legacy_wallet');
+        return;
+      }
+
       final initialRoute = walletExists
           ? appLockEnabled || isDesktop
                 ? '/unlock'
@@ -233,6 +246,8 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
     '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
     '/create_wallet': (context) => CreateWalletScreen(),
     '/generate_seed': (context) => GenerateSeedScreen(),
+    '/legacy_wallet': (context) => LegacyWalletScreen(),
+    '/lws_keys': (context) => LwsKeysScreen(),
     '/restore_warning': (context) => RestoreWarningScreen(),
     '/restore_wallet': (context) => RestoreWalletScreen(),
     '/unlock': (context) => UnlockScreen(),

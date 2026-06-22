@@ -24,3 +24,8 @@ Future<String?> getMobileWalletPassword() async {
   final storage = FlutterSecureStorage();
   return storage.read(key: walletPasswordStorageKey);
 }
+
+Future<void> deleteMobileWalletPassword() async {
+  final storage = FlutterSecureStorage();
+  await storage.delete(key: walletPasswordStorageKey);
+}

@@ -1322,6 +1322,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set up a block explorer to see your full transaction history.'**
   String get explorerSetupHint;
+
+  /// No description provided for @legacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported Wallet'**
+  String get legacyTitle;
+
+  /// No description provided for @legacyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Skylight Wallet is dropping support for legacy and polyseed seed phrases in favor of BIP39. Please write down the seed phrase below, delete this wallet and create a new wallet. You can restore the seed below on another Monero wallet and move the funds to your new BIP39 seed wallet.'**
+  String get legacyDescription;
+
+  /// No description provided for @legacyShowSeedButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Show seed'**
+  String get legacyShowSeedButton;
+
+  /// No description provided for @legacySeedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed'**
+  String get legacySeedLabel;
+
+  /// No description provided for @legacyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the wallet. Check your password and try again.'**
+  String get legacyError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

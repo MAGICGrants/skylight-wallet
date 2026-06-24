@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:openalias_ffi/openalias_ffi.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -153,6 +154,35 @@ abstract class CryptoWallet with ChangeNotifier {
   /// True when the network fee is paid in a different currency than the amount
   /// being sent (ERC-20 tokens: amount in token, fee in ETH).
   bool get feeIsForeign => feeCoinSymbol != coinSymbol;
+
+  /// OpenAlias asset tag (the `oa1:<asset>` prefix), e.g. `'btc'`, `'xmr'`.
+  /// Empty when the coin has no OpenAlias support. Used by
+  /// [resolveOpenAliasAddress] (DNSSEC-validated, over Tor).
+  String get openAliasAsset => '';
+
+  /// Resolves an OpenAlias [domain] to an address for this coin with end-to-end
+  /// DNSSEC validation, over Tor. Returns the address if valid, else null.
+  /// Throws if Tor isn't available or DNSSEC validation fails.
+  Future<String?> resolveOpenAliasAddress(String domain) async {
+    if (openAliasAsset.isEmpty) return null;
+    walletLog(LogLevel.info, 'openalias: resolving "$domain" (asset=$openAliasAsset)');
+    final proxy = await TorSettingsService.sharedInstance.getProxy();
+    if (proxy == null) {
+      walletLog(LogLevel.warn, 'openalias: Tor proxy unavailable');
+      throw Exception('Tor is required to resolve OpenAlias.');
+    }
+    walletLog(LogLevel.info, 'openalias: using Tor SOCKS port ${proxy.port}');
+    final address = await OpenAliasFfi.resolve(
+      domain: domain,
+      asset: openAliasAsset,
+      socksPort: proxy.port,
+    );
+    walletLog(LogLevel.info, 'openalias: resolved address = ${address ?? '<null>'}');
+    if (address == null) return null;
+    final valid = isAddressValid(address);
+    walletLog(LogLevel.info, 'openalias: isAddressValid=$valid');
+    return valid ? address : null;
+  }
 
   /// Human-readable name of the kind of server this coin connects to,
   /// used in connection-setup copy (e.g. "LWS server", "Electrum server").

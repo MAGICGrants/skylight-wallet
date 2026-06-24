@@ -663,6 +663,12 @@ abstract class AppLocalizations {
   /// **'Invalid OpenAlias.'**
   String get sendOpenAliasResolveError;
 
+  /// No description provided for @sendContactsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get sendContactsButton;
+
   /// No description provided for @sendInvalidAddressError.
   ///
   /// In en, this message translates to:

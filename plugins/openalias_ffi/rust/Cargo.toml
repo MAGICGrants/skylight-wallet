@@ -1,0 +1,22 @@
+[package]
+name = "openalias_ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time"] }
+tokio-socks = "0.5"
+# DoH (https-ring) + bundled CA roots (webpki-roots): Tor exits reject plain DNS
+# (53) and many restrict 853, but 443 is almost always allowed — so queries go
+# over DNS-over-HTTPS through the SOCKS proxy. DNSSEC is still validated locally.
+hickory-resolver = { version = "0.25", default-features = false, features = ["dnssec-ring", "tokio", "https-ring", "webpki-roots"] }
+hickory-proto = { version = "0.25", default-features = false, features = ["dnssec-ring"] }
+lazy_static = "1.4"
+log = "0.4"
+
+[build-dependencies]
+cbindgen = "0.24"
+glob = "0.3"

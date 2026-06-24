@@ -14,4 +14,7 @@ class BitcoinWallet extends BitcoinChainWallet {
         connectionAddressExample: 'e.g. electrum.example.com:50002',
         isTestnet: false,
       );
+
+  @override
+  String get openAliasAsset => 'btc';
 }

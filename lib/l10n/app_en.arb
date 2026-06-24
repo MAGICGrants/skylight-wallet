@@ -102,6 +102,7 @@
   "sendSendButton": "Send",
   "sendTransactionSuccessfullySent": "Transaction successfully sent!",
   "sendOpenAliasResolveError": "Invalid OpenAlias.",
+  "sendContactsButton": "Contacts",
   "sendInvalidAddressError": "Invalid address.",
   "sendInsufficientBalanceError": "Insufficient balance.",
   "sendInsufficientBalanceToCoverFeeError": "Insufficient balance to cover the network fee.",

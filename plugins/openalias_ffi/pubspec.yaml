@@ -1,0 +1,34 @@
+name: openalias_ffi
+description: OpenAlias resolver with end-to-end DNSSEC validation over Tor, via Rust (hickory) FFI.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: '>=3.5.3 <4.0.0'
+  flutter: ">=3.24.3"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.0.1
+  plugin_platform_interface: ^2.0.2
+
+dev_dependencies:
+  ffigen: ^6.1.2
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        ffiPlugin: true
+      ios:
+        ffiPlugin: true
+      linux:
+        ffiPlugin: true
+      macos:
+        ffiPlugin: true
+      windows:
+        ffiPlugin: true

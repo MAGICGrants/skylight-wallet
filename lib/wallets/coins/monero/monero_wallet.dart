@@ -92,6 +92,9 @@ class MoneroWallet extends CryptoWallet {
   @override
   String get connectionAddressExample => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
+  @override
+  String get openAliasAsset => 'xmr';
+
   // ----- Lifecycle -----
 
   /// Path of this wallet's file. The migration's [LegacyMoneroWallet] overrides
@@ -713,31 +716,6 @@ class MoneroWallet extends CryptoWallet {
 
     await refresh();
     await loadTxHistory();
-  }
-
-  // ----- Monero-specific extras -----
-
-  Future<String> resolveOpenAlias(String address) async {
-    final dnssecValid = true;
-
-    walletLog(LogLevel.info, 'Calling WalletManager_resolveOpenAlias with parameters:');
-    walletLog(LogLevel.info, '  address: $address');
-    walletLog(LogLevel.info, '  dnssecValid: $dnssecValid');
-
-    final wm = await _walletManager();
-    final wmFfiAddr = wm.ffiAddress();
-
-    final resolved = await Isolate.run(
-      // ignore: deprecated_member_use
-      () => monero.WalletManager_resolveOpenAlias(
-        Pointer.fromAddress(wmFfiAddr),
-        address: address,
-        dnssecValid: dnssecValid,
-      ),
-    );
-
-    walletLog(LogLevel.info, 'WalletManager_resolveOpenAlias result: $resolved');
-    return resolved;
   }
 
   // ----- Subaddress support tracking -----

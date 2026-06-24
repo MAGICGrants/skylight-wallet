@@ -1,0 +1,5 @@
+# hickory 0.25's dependency tree pulls edition2024 crates, which need cargo >= 1.85.
+# Pin so cargokit (via rustup) builds with a new-enough toolchain regardless of
+# the machine default. rustup auto-installs this channel if missing.
+[toolchain]
+channel = "1.88.0"

@@ -712,6 +712,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  openalias_ffi:
+    dependency: "direct main"
+    description:
+      path: "plugins/openalias_ffi"
+      relative: true
+    source: path
+    version: "0.0.1"
   package_info_plus:
     dependency: "direct main"
     description:

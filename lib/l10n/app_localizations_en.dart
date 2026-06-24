@@ -305,6 +305,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendOpenAliasResolveError => 'Invalid OpenAlias.';
 
   @override
+  String get sendContactsButton => 'Contacts';
+
+  @override
   String get sendInvalidAddressError => 'Invalid address.';
 
   @override

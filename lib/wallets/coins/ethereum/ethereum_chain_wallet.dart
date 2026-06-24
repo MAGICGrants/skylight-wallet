@@ -107,6 +107,8 @@ class EthereumChainWallet extends CryptoWallet {
   @override
   bool get supportsExplorerUrl => true;
   @override
+  String get openAliasAsset => 'eth';
+  @override
   String get connectionTypeName => 'RPC endpoint';
   @override
   String get connectionAddressExample => _connectionAddressExample;

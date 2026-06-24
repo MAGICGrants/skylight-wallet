@@ -50,6 +50,8 @@ dependencies:
     git:
       url: https://github.com/cypherstack/tor
       ref: main
+  openalias_ffi:
+    path: plugins/openalias_ffi
   monero:
     git:
       url: https://github.com/vtnerd/monero_c

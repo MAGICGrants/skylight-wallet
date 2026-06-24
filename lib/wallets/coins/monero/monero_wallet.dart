@@ -558,7 +558,7 @@ class MoneroWallet extends CryptoWallet {
     final fee = doubleAmountFromInt(tx.fee());
     final timestamp = tx.timestamp();
     final height = tx.blockHeight();
-    final confirmations = height > -1 ? chainHeight - height + 1 : 0;
+    final confirmations = height > -1 ? (chainHeight - height).clamp(0, chainHeight) : 0;
     final key = _w2Wallet!.getTxKey(txid: hash);
 
     final List<TxRecipient> recipients = [];

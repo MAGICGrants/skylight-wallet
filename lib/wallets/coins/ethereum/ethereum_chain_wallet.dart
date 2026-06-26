@@ -230,6 +230,7 @@ class EthereumChainWallet extends CryptoWallet {
     String? proxyPort,
     required bool useSsl,
     required bool useTor,
+    String connectionType = '',
   }) async {
     final probe = EthereumRpcClient(coinSymbol: coinSymbol)
       ..configure(url: address, socksPort: _socksPortFrom(proxyPort));
@@ -490,13 +491,13 @@ class EthereumChainWallet extends CryptoWallet {
   }
 
   BigInt _scaleTip(BigInt suggested, int priority) {
-    final base = suggested > BigInt.zero ? suggested : BigInt.from(1000000000); // 1 gwei floor
+    final tipFloor = suggested > BigInt.zero ? suggested : BigInt.from(1000000000); // 1 gwei floor
     final mult = switch (priority) {
       1 => 1, // low
       3 => 3, // high
       _ => 2, // normal / default
     };
-    return base * BigInt.from(mult);
+    return tipFloor * BigInt.from(mult);
   }
 
   @override

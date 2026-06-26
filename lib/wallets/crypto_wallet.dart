@@ -118,11 +118,15 @@ class WalletConnectionDetails {
   final bool useTor;
   final bool useSsl;
 
+  /// Coin-specific server kind (e.g. Monero 'lws' vs 'node'). '' = default.
+  final String connectionType;
+
   WalletConnectionDetails({
     required this.address,
     required this.proxyPort,
     required this.useTor,
     required this.useSsl,
+    this.connectionType = '',
   });
 }
 
@@ -193,6 +197,17 @@ abstract class CryptoWallet with ChangeNotifier {
   /// `electrum.example.com:50002` for an Electrum server).
   String get connectionAddressExample;
 
+  /// Selectable server kinds for this coin (e.g. Monero `['lws','node']`).
+  /// Empty ⇒ the connection form shows no type toggle.
+  List<String> get connectionTypeOptions => const [];
+
+  /// Example address placeholder for a specific [connectionType]. Defaults to
+  /// [connectionAddressExample]; coins with multiple types override this.
+  String connectionAddressExampleForType(String connectionType) => connectionAddressExample;
+
+  /// The currently-configured server kind (one of [connectionTypeOptions]).
+  String get connectionType => _connectionType;
+
   /// Confirmations required before a transaction is treated as fully
   /// confirmed in the UI (no pending indicator).
   int get requiredConfirmations;
@@ -222,6 +237,7 @@ abstract class CryptoWallet with ChangeNotifier {
   String _connectionProxyPort = '';
   bool _connectionUseTor = false;
   bool _connectionUseSsl = false;
+  String _connectionType = '';
 
   // Optional explorer connection (its own server, parallel to the node above).
   String _explorerAddress = '';
@@ -239,6 +255,7 @@ abstract class CryptoWallet with ChangeNotifier {
 
   Timer? _connectionTimer;
   Timer? _refreshTimer;
+  bool _disposed = false;
   bool _connectionCheckInFlight = false;
   bool _refreshInFlight = false;
 
@@ -313,6 +330,11 @@ abstract class CryptoWallet with ChangeNotifier {
 
   Future<bool> store();
 
+  /// True when the open wallet was built for a different connection than the
+  /// one now configured, so it must be deleted and re-recovered from the
+  /// master seed. Default false; Monero overrides this for LWS↔node switches.
+  Future<bool> needsRebuildForCurrentConnection() async => false;
+
   /// Removes the on-disk wallet file(s). The base [delete] orchestration
   /// calls this and then clears namespaced prefs.
   Future<void> deleteFiles();
@@ -339,6 +361,7 @@ abstract class CryptoWallet with ChangeNotifier {
     String? proxyPort,
     required bool useSsl,
     required bool useTor,
+    String connectionType = '',
   });
 
   Future<bool> getIsConnected();
@@ -384,11 +407,13 @@ abstract class CryptoWallet with ChangeNotifier {
     required String proxyPort,
     required bool useTor,
     required bool useSsl,
+    String connectionType = '',
   }) {
     _connectionAddress = address;
     _connectionProxyPort = proxyPort;
     _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
+    _connectionType = connectionType;
     notifyListeners();
   }
 
@@ -422,6 +447,7 @@ abstract class CryptoWallet with ChangeNotifier {
     await SharedPreferencesService.set(_connPrefKey('connectionProxyPort'), _connectionProxyPort);
     await SharedPreferencesService.set(_connPrefKey('connectionUseTor'), _connectionUseTor);
     await SharedPreferencesService.set(_connPrefKey('connectionUseSsl'), _connectionUseSsl);
+    await SharedPreferencesService.set(_connPrefKey('connectionType'), _connectionType);
   }
 
   Future<void> persistExplorerConnection() async {
@@ -438,6 +464,8 @@ abstract class CryptoWallet with ChangeNotifier {
           await SharedPreferencesService.get<String>(_connPrefKey('connectionProxyPort')) ?? '',
       useTor: await SharedPreferencesService.get<bool>(_connPrefKey('connectionUseTor')) ?? false,
       useSsl: await SharedPreferencesService.get<bool>(_connPrefKey('connectionUseSsl')) ?? false,
+      connectionType:
+          await SharedPreferencesService.get<String>(_connPrefKey('connectionType')) ?? '',
     );
   }
 
@@ -453,7 +481,13 @@ abstract class CryptoWallet with ChangeNotifier {
 
   Future<void> loadPersistedConnection() async {
     final c = await getPersistedConnection();
-    setConnection(address: c.address, proxyPort: c.proxyPort, useTor: c.useTor, useSsl: c.useSsl);
+    setConnection(
+      address: c.address,
+      proxyPort: c.proxyPort,
+      useTor: c.useTor,
+      useSsl: c.useSsl,
+      connectionType: c.connectionType,
+    );
     final e = await getPersistedExplorerConnection();
     setExplorerConnection(
       address: e.address,
@@ -759,8 +793,20 @@ abstract class CryptoWallet with ChangeNotifier {
   // ----- Timers -----
 
   void _startTimers() {
-    _connectionTimer = Timer.periodic(Duration(seconds: 5), (_) => _checkConnectionTask());
+    _scheduleConnectionCheck();
     _refreshTimer = Timer.periodic(Duration(seconds: 20), (_) => _refreshTask());
+  }
+
+  /// Self-rescheduling connection/sync poll. Runs every 1s while the wallet is
+  /// still syncing so the UI flips to "synced" within ~1s of catching up, then
+  /// backs off to 20s once synced.
+  void _scheduleConnectionCheck() {
+    if (_disposed) return;
+    final interval = _isSynced ? const Duration(seconds: 20) : const Duration(seconds: 1);
+    _connectionTimer = Timer(interval, () async {
+      await _checkConnectionTask();
+      _scheduleConnectionCheck();
+    });
   }
 
   Future<void> _checkConnectionTask() async {
@@ -773,10 +819,18 @@ abstract class CryptoWallet with ChangeNotifier {
         _isConnected = connected;
         notifyListeners();
       }
+      await pollSyncStatus();
     } finally {
       _connectionCheckInFlight = false;
     }
   }
+
+  /// Runs on the fast (connection-check) cadence. Coins whose sync state can
+  /// flip between the slower refresh cycles — e.g. a Monero full node, where a
+  /// background thread sets "synchronized" on its own — override this to pick
+  /// the change up promptly instead of waiting for the next refresh.
+  @protected
+  Future<void> pollSyncStatus() async {}
 
   Future<void> _refreshTask() async {
     if (!isActive || _refreshInFlight) return;
@@ -803,6 +857,7 @@ abstract class CryptoWallet with ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _connectionTimer?.cancel();
     _refreshTimer?.cancel();
     super.dispose();

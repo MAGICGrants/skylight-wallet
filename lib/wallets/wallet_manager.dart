@@ -231,6 +231,31 @@ class WalletManager with ChangeNotifier {
     }
   }
 
+  /// Re-runs the open path for a single wallet. Used after the connection
+  /// settings change so a coin that must be rebuilt for the new server kind
+  /// (e.g. Monero LWS↔node) is re-recovered from the master seed.
+  Future<void> reopenWallet(String coinSymbol) async {
+    if (_password == null) {
+      await loadMobileWalletPassword();
+    }
+    if (_password == null) return;
+
+    final w = getWallet(coinSymbol);
+    if (w == null) return;
+    // Only a server-kind change needs a rebuild; plain setting tweaks (Tor,
+    // SSL, address) are picked up by the following load() without reopening.
+    if (!await w.needsRebuildForCurrentConnection()) return;
+
+    ({String mnemonic, DateTime restoreDate})? masterSeed;
+    try {
+      masterSeed = await MasterSeedStore.load(_password!);
+    } catch (e) {
+      log(LogLevel.error, '[WalletManager] Failed to read master seed: $e');
+    }
+
+    await _openOneWallet(w, masterSeed);
+  }
+
   Future<void> _openOneWallet(
     CryptoWallet w,
     ({String mnemonic, DateTime restoreDate})? masterSeed,

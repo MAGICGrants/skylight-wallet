@@ -18,12 +18,12 @@ class TxDetailsDialog {
 /// (sizes differ by at most one char).
 String _chunkIntoLines(String s, int lines) {
   if (lines <= 1 || s.length <= lines) return s;
-  final base = s.length ~/ lines;
+  final baseSize = s.length ~/ lines;
   final remainder = s.length % lines;
   final buffer = StringBuffer();
   var start = 0;
   for (var i = 0; i < lines; i++) {
-    final size = base + (i < remainder ? 1 : 0);
+    final size = baseSize + (i < remainder ? 1 : 0);
     final end = start + size;
     if (i > 0) buffer.write('\n');
     buffer.write(s.substring(start, end));

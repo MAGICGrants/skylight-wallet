@@ -40,8 +40,8 @@ class EthereumExplorerClient {
     String address, {
     int? socksPort,
   }) async {
-    final base = _normalizeBase(baseUrl);
-    final url = '$base/api/v2/addresses/$address/transactions';
+    final normalizedBase = _normalizeBase(baseUrl);
+    final url = '$normalizedBase/api/v2/addresses/$address/transactions';
 
     final json = await _getJson(url, socksPort);
     final items = json is Map ? json['items'] : null;
@@ -82,8 +82,8 @@ class EthereumExplorerClient {
     String contractAddress, {
     int? socksPort,
   }) async {
-    final base = _normalizeBase(baseUrl);
-    final url = '$base/api/v2/addresses/$address/token-transfers?type=ERC-20';
+    final normalizedBase = _normalizeBase(baseUrl);
+    final url = '$normalizedBase/api/v2/addresses/$address/token-transfers?type=ERC-20';
     final contract = contractAddress.toLowerCase();
 
     final json = await _getJson(url, socksPort);
@@ -124,8 +124,8 @@ class EthereumExplorerClient {
   /// `/api/v2/stats` endpoint (a small JSON object with Blockscout-specific
   /// fields). Throws otherwise.
   Future<void> probe(String baseUrl, {int? socksPort}) async {
-    final base = _normalizeBase(baseUrl);
-    final json = await _getJson('$base/api/v2/stats', socksPort);
+    final normalizedBase = _normalizeBase(baseUrl);
+    final json = await _getJson('$normalizedBase/api/v2/stats', socksPort);
     if (json is! Map || json['total_blocks'] == null) {
       throw Exception('Not a Blockscout v2 explorer (unexpected response).');
     }

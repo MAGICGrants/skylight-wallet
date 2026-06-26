@@ -79,6 +79,12 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get connectionTypeLws => 'Servidor Light Wallet';
+
+  @override
+  String get connectionTypeNode => 'Nó Monero';
+
+  @override
   String get lwsSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
 
   @override

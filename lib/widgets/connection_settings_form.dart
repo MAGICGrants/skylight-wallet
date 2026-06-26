@@ -55,6 +55,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
   bool _useTor = false;
   bool _useSsl = false;
+  String _connectionType = '';
+  List<String> _connectionTypeOptions = const [];
   bool _hasTested = false;
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
@@ -87,11 +89,17 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         ? wallet.getPersistedExplorerConnection()
         : wallet.getPersistedConnection());
 
+    final options = _isExplorer ? const <String>[] : wallet.connectionTypeOptions;
+
     setState(() {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
       _useTor = conn.useTor;
       _useSsl = conn.useSsl;
+      _connectionTypeOptions = options;
+      _connectionType = options.contains(conn.connectionType)
+          ? conn.connectionType
+          : (options.isNotEmpty ? options.first : '');
     });
 
     if (conn.useTor && TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
@@ -222,6 +230,25 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     });
   }
 
+  void _setConnectionType(String value) {
+    setState(() {
+      _connectionType = value;
+      _hasTested = false;
+      _errorMessage = null;
+    });
+  }
+
+  String _connectionTypeLabel(AppLocalizations i18n, String type) {
+    switch (type) {
+      case 'node':
+        return i18n.connectionTypeNode;
+      case 'lws':
+        return i18n.connectionTypeLws;
+      default:
+        return type;
+    }
+  }
+
   /// Resolves the SOCKS proxy port to pass to `wallet.testConnection`.
   /// When the user enabled Tor, this comes from the running TorService;
   /// otherwise it's the optional custom HTTP/SOCKS proxy field.
@@ -279,6 +306,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           proxyPort: proxyPort,
           useSsl: _useSsl,
           useTor: _useTor,
+          connectionType: _connectionType,
         );
       }
       if (!mounted) return;
@@ -322,6 +350,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         proxyPort: proxyAddress,
         useTor: _useTor,
         useSsl: _useSsl,
+        connectionType: _connectionType,
       );
       await wallet.persistCurrentConnection();
     }
@@ -335,7 +364,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
     final wallet = Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
-    final addressHint = (_isExplorer ? wallet?.explorerAddressExample : wallet?.connectionAddressExample) ??
+    final addressHint = (_isExplorer
+            ? wallet?.explorerAddressExample
+            : wallet?.connectionAddressExampleForType(_connectionType)) ??
         i18n.lwsSetupAddressHint;
     final addressLabel = _isExplorer ? i18n.explorerAddressLabel : i18n.address;
 
@@ -344,6 +375,22 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 10,
       children: [
+        if (_connectionTypeOptions.length > 1)
+          Center(
+            child: SegmentedButton<String>(
+              segments: _connectionTypeOptions
+                  .map(
+                    (type) => ButtonSegment<String>(
+                      value: type,
+                      label: Text(_connectionTypeLabel(i18n, type)),
+                    ),
+                  )
+                  .toList(),
+              selected: {_connectionType},
+              showSelectedIcon: false,
+              onSelectionChanged: (selection) => _setConnectionType(selection.first),
+            ),
+          ),
         TextFormField(
           controller: _addressController,
           onChanged: _onAddressChange,

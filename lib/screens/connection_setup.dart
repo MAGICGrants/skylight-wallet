@@ -36,7 +36,12 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     _wasConfigured ??= wallet?.connectionAddress.isNotEmpty ?? false;
 
     void onSaved() {
-      unawaited(manager.getWallet(coinSymbol)?.load());
+      unawaited(() async {
+        // Rebuild first if the server kind changed (e.g. Monero LWS↔node),
+        // then refresh against the new connection.
+        await manager.reopenWallet(coinSymbol);
+        await manager.getWallet(coinSymbol)?.load();
+      }());
 
       if (_wasConfigured == true) {
         Navigator.pop(context);

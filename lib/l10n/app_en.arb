@@ -29,6 +29,8 @@
       }
     }
   },
+  "connectionTypeLws": "Light Wallet Server",
+  "connectionTypeNode": "Monero Node",
   "lwsSetupAddressHint": "e.g. 192.168.1.1:18090 or example.com:18090",
   "lwsSetupProxyPortLabel": "HTTP Proxy Port (optional)",
   "lwsSetupProxyPortHint": "e.g. 4444 for I2P",

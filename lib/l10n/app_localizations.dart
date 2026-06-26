@@ -225,6 +225,18 @@ abstract class AppLocalizations {
   /// **'Enter the address of your {type}.'**
   String connectionSetupDescription(String type);
 
+  /// No description provided for @connectionTypeLws.
+  ///
+  /// In en, this message translates to:
+  /// **'Light Wallet Server'**
+  String get connectionTypeLws;
+
+  /// No description provided for @connectionTypeNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Monero Node'**
+  String get connectionTypeNode;
+
   /// No description provided for @lwsSetupAddressHint.
   ///
   /// In en, this message translates to:

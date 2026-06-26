@@ -208,9 +208,9 @@ class FiatRateModel with ChangeNotifier {
   /// Fetches the rate for one coin, applying the USD->fiat bridge for
   /// fiat codes Kraken doesn't quote directly.
   Future<double> _fetchCoinRate(String coin) async {
-    final base = _krakenBase[coin]!;
+    final krakenBase = _krakenBase[coin]!;
     final isIndirect = indirectPairCurrencies.contains(_fiatCode);
-    final pair1 = isIndirect ? '${base}USD' : '$base$_fiatCode';
+    final pair1 = isIndirect ? '${krakenBase}USD' : '$krakenBase$_fiatCode';
     final pair2 = isIndirect ? 'USDT$_fiatCode' : null;
 
     final rates = await Future.wait([

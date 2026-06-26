@@ -692,6 +692,7 @@ class BitcoinChainWallet extends CryptoWallet {
     String? proxyPort,
     required bool useSsl,
     required bool useTor,
+    String connectionType = '',
   }) async {
     final parts = address.split(':');
     if (parts.length != 2) {

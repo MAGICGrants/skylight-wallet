@@ -32,7 +32,10 @@ import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 /// the coin-agnostic surface defined by [CryptoWallet].
 class MoneroWallet extends CryptoWallet {
   Wallet2WalletManager? _w2WalletManager;
-  Future<Wallet2WalletManager>? _w2WalletManagerFuture;
+  // Which factory built the cached manager: 'lws' (LWSF) or 'node' (wallet2).
+  String? _managerType;
+  // Mode the currently-open [_w2Wallet] was loaded for ('lws' | 'node').
+  String? _loadedType;
 
   MoneroWallet() {
     scheduleMicrotask(warmUpWalletManager);
@@ -40,20 +43,32 @@ class MoneroWallet extends CryptoWallet {
 
   /// Loads the Monero FFI wallet manager after the first frame so app
   /// startup and unlock stay responsive.
-  Future<Wallet2WalletManager> warmUpWalletManager() {
-    _w2WalletManagerFuture ??= _initWalletManager();
-    return _w2WalletManagerFuture!;
-  }
+  Future<Wallet2WalletManager> warmUpWalletManager() => _walletManager();
 
-  Future<Wallet2WalletManager> _initWalletManager() async {
-    if (_w2WalletManager != null) return _w2WalletManager!;
-    await Future<void>.delayed(Duration.zero);
-    _w2WalletManager = monero_ffi.Monero().walletManagerFactory().getLWSFWalletManager();
-    return _w2WalletManager!;
-  }
-
+  /// Returns the wallet manager built by the factory matching the current
+  /// connection type. LWS uses the LWSF manager (`LWSF_*`); a full node uses
+  /// the standard wallet2 manager (`MONERO_*`). Switching types rebuilds the
+  /// manager and tears down any wallet opened by the previous one.
   Future<Wallet2WalletManager> _walletManager() async {
-    return _w2WalletManager ?? await warmUpWalletManager();
+    final type = _desiredManagerType;
+    if (_w2WalletManager != null && _managerType == type) return _w2WalletManager!;
+
+    // Factory switch: close the wallet the old manager opened before swapping.
+    if (_w2WalletManager != null && _w2Wallet != null) {
+      _w2WalletManager!.closeWallet(_w2Wallet!, false);
+      _w2Wallet = null;
+      _w2TxHistory = null;
+      _loadedType = null;
+      setIsLoaded(false);
+    }
+
+    await Future<void>.delayed(Duration.zero);
+    final managerFactory = monero_ffi.Monero().walletManagerFactory();
+    _w2WalletManager = type == 'node'
+        ? managerFactory.getWalletManager()
+        : managerFactory.getLWSFWalletManager();
+    _managerType = type;
+    return _w2WalletManager!;
   }
 
   Wallet2Wallet? _w2Wallet;
@@ -87,20 +102,40 @@ class MoneroWallet extends CryptoWallet {
   int get requiredConfirmations => 10;
 
   @override
-  String get connectionTypeName => 'Monero LWS server';
+  List<String> get connectionTypeOptions => const ['lws', 'node'];
+
+  /// True when configured to talk to a full Monero node rather than an LWS.
+  bool get _isNodeMode => connectionType == 'node';
+
+  /// Manager factory kind the current connection needs ('lws' | 'node').
+  String get _desiredManagerType => _isNodeMode ? 'node' : 'lws';
+
+  @override
+  String get connectionTypeName => _isNodeMode ? 'Monero node' : 'Monero LWS server';
 
   @override
   String get connectionAddressExample => 'e.g. 192.168.1.1:18090 or example.com:18090';
+
+  @override
+  String connectionAddressExampleForType(String connectionType) => connectionType == 'node'
+      ? 'e.g. node.example.com:18081'
+      : 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
   String get openAliasAsset => 'xmr';
 
   // ----- Lifecycle -----
 
-  /// Path of this wallet's file. The migration's [LegacyMoneroWallet] overrides
-  /// it to open v1's `mywallet` instead of the per-coin `mywallet_xmr`.
+  /// Path of this wallet's file. LWS and full-node modes keep separate cache
+  /// files (same keys/seed) so toggling between them doesn't force a rescan;
+  /// LWS keeps the original `mywallet_xmr` path for back-compat, the node gets
+  /// a `_node` suffix. The migration's [LegacyMoneroWallet] overrides this to
+  /// open v1's `mywallet` instead.
   @protected
-  Future<String> resolveWalletPath() => getWalletPath(coinSymbol);
+  Future<String> resolveWalletPath() async {
+    final basePath = await getWalletPath(coinSymbol);
+    return _isNodeMode ? '${basePath}_node' : basePath;
+  }
 
   @override
   Future<bool> hasExistingWallet() async {
@@ -157,6 +192,7 @@ class MoneroWallet extends CryptoWallet {
 
     _w2Wallet = w2Wallet;
     _w2TxHistory = _w2Wallet!.history();
+    _loadedType = _desiredManagerType;
 
     await loadPersistedSubaddressSupport();
     await loadPersistedUnusedSubaddressIndex();
@@ -208,9 +244,18 @@ class MoneroWallet extends CryptoWallet {
     _w2TxHistory = _w2Wallet!.history();
 
     await SharedPreferencesService.set<int>(prefKey('walletRestoreHeight'), restoreHeight);
+    _loadedType = _desiredManagerType;
 
     setIsLoaded(true);
     await store();
+  }
+
+  @override
+  Future<bool> needsRebuildForCurrentConnection() async {
+    // The open wallet object is bound to the factory/file of the mode it was
+    // loaded for; a server-kind switch must re-open the matching file (which
+    // is recovered from the seed if it doesn't exist yet).
+    return _w2Wallet != null && _loadedType != _desiredManagerType;
   }
 
   Future<monero_ffi.MoneroWallet> _walletFromLegacySeed({
@@ -270,10 +315,19 @@ class MoneroWallet extends CryptoWallet {
       _w2TxHistory = null;
     }
 
-    final path = await resolveWalletPath();
-    final file = File(path);
-    if (await file.exists()) {
-      await file.delete();
+    // Remove both mode files (LWS `mywallet_xmr*` and node `mywallet_xmr_node*`)
+    // plus the companion `.keys` / `.address.txt` Monero writes alongside each.
+    final currentPath = await resolveWalletPath();
+    final lwsBase = currentPath.endsWith('_node')
+        ? currentPath.substring(0, currentPath.length - 5)
+        : currentPath;
+    for (final b in {lwsBase, '${lwsBase}_node'}) {
+      for (final p in [b, '$b.keys', '$b.address.txt']) {
+        final file = File(p);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
     }
   }
 
@@ -307,7 +361,7 @@ class MoneroWallet extends CryptoWallet {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
     final daemonAddress = '${useSsl ? 'https://' : 'http://'}$address';
     final proxyAddress = proxyPort != null && proxyPort != '' ? '127.0.0.1:$proxyPort' : '';
-    final lightWallet = true;
+    final lightWallet = !_isNodeMode;
 
     walletLog(LogLevel.info, 'Calling Wallet_init with parameters:');
     walletLog(LogLevel.info, '  daemonAddress: $daemonAddress');
@@ -315,25 +369,51 @@ class MoneroWallet extends CryptoWallet {
     walletLog(LogLevel.info, '  useSsl: $useSsl');
     walletLog(LogLevel.info, '  lightWallet: $lightWallet');
 
-    final initResult = await Isolate.run(
+    // Run the whole connect sequence in a single isolate hop (instead of one
+    // per native call) and time each step so a slow daemon handshake is
+    // attributable. A full node also needs its background refresh thread
+    // kicked here; LWS lets the server scan, so it skips that.
+    final isNode = _isNodeMode;
+    final r = await Isolate.run(() {
+      final ptr = Pointer<Void>.fromAddress(walletFfiAddr);
+      final sw = Stopwatch()..start();
       // ignore: deprecated_member_use
-      () => monero.Wallet_init(
-        Pointer.fromAddress(walletFfiAddr),
+      final initResult = monero.Wallet_init(
+        ptr,
         daemonAddress: daemonAddress,
         proxyAddress: proxyAddress,
         useSsl: useSsl,
         lightWallet: lightWallet,
-      ),
-    );
-
-    walletLog(LogLevel.info, 'Wallet_init result: $initResult');
-
-    final connectResult = await Isolate.run(
+      );
+      final initMs = sw.elapsedMilliseconds;
+      sw.reset();
       // ignore: deprecated_member_use
-      () => monero.Wallet_connectToDaemon(Pointer.fromAddress(walletFfiAddr)),
-    );
+      final connectResult = monero.Wallet_connectToDaemon(ptr);
+      final connectMs = sw.elapsedMilliseconds;
+      sw.reset();
+      var refreshMs = 0;
+      if (isNode) {
+        // ignore: deprecated_member_use
+        monero.Wallet_setAutoRefreshInterval(ptr, millis: 10000);
+        // ignore: deprecated_member_use
+        monero.Wallet_startRefresh(ptr);
+        refreshMs = sw.elapsedMilliseconds;
+      }
+      return (
+        initResult: initResult,
+        connectResult: connectResult,
+        initMs: initMs,
+        connectMs: connectMs,
+        refreshMs: refreshMs,
+      );
+    });
 
-    walletLog(LogLevel.info, 'Wallet_connectToDaemon result: $connectResult');
+    walletLog(
+      LogLevel.info,
+      'Wallet connect timings: init ${r.initMs}ms (result ${r.initResult}), '
+      'connectToDaemon ${r.connectMs}ms (result ${r.connectResult}), '
+      'startRefresh ${r.refreshMs}ms',
+    );
 
     final connectError = _w2Wallet!.errorString();
     if (connectError != '') {
@@ -347,7 +427,18 @@ class MoneroWallet extends CryptoWallet {
     String? proxyPort,
     required bool useSsl,
     required bool useTor,
+    String connectionType = '',
   }) async {
+    if (connectionType == 'node') {
+      await _testNodeConnection(
+        address: address,
+        proxyPort: proxyPort,
+        useSsl: useSsl,
+        useTor: useTor,
+      );
+      return;
+    }
+
     final url = '${useSsl ? 'https' : 'http'}://$address/get_address_info';
     walletLog(LogLevel.info, 'Probing LWS server: $url (tor=$useTor, proxyPort=$proxyPort)');
 
@@ -389,6 +480,50 @@ class MoneroWallet extends CryptoWallet {
     }
   }
 
+  /// Probes a full Monero node via `GET /get_height`. A real monerod replies
+  /// 200 with a JSON body carrying a `height` (and `status`).
+  Future<void> _testNodeConnection({
+    required String address,
+    String? proxyPort,
+    required bool useSsl,
+    required bool useTor,
+  }) async {
+    final url = '${useSsl ? 'https' : 'http'}://$address/get_height';
+    walletLog(LogLevel.info, 'Probing Monero node: $url (tor=$useTor, proxyPort=$proxyPort)');
+
+    late int statusCode;
+    dynamic jsonBody;
+    if (useTor) {
+      final torSettings = TorSettingsService.sharedInstance;
+      if (torSettings.torMode == TorMode.disabled) {
+        throw Exception('Tor is disabled. Please go back and enable it.');
+      }
+      final proxyInfo = await torSettings.getProxy();
+      if (proxyInfo == null) {
+        throw Exception('Could not resolve a Tor proxy.');
+      }
+      final response = await makeSocksHttpRequest(
+        'GET',
+        url,
+        proxyInfo,
+      ).timeout(Duration(seconds: 20));
+      statusCode = response.statusCode;
+      jsonBody = response.jsonBody;
+    } else {
+      final response = await http.get(Uri.parse(url)).timeout(Duration(seconds: 10));
+      statusCode = response.statusCode;
+      try {
+        jsonBody = json.decode(response.body);
+      } catch (_) {
+        jsonBody = null;
+      }
+    }
+
+    if (statusCode != HttpStatus.ok || jsonBody is! Map || jsonBody['height'] == null) {
+      throw Exception('Unexpected response ($statusCode) from $url');
+    }
+  }
+
   @override
   Future<bool> getIsConnected() async {
     if (_w2Wallet == null) return false;
@@ -408,10 +543,22 @@ class MoneroWallet extends CryptoWallet {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
     final historyFfiAddr = _w2TxHistory!.ffiAddress();
 
-    walletLog(
-      LogLevel.info,
-      'Calling Wallet_startRefresh, Wallet_refresh, and TransactionHistory_refresh',
-    );
+    if (_isNodeMode) {
+      // Background refresh thread does the block scanning; just make sure it's
+      // running and pull the latest tx-history view from the wallet's cache.
+      walletLog(LogLevel.info, 'Ensuring full-node refresh thread + history refresh');
+      await Isolate.run(
+        // ignore: deprecated_member_use
+        () => monero.Wallet_startRefresh(Pointer.fromAddress(walletFfiAddr)),
+      );
+      await Isolate.run(
+        // ignore: deprecated_member_use
+        () => monero.TransactionHistory_refresh(Pointer.fromAddress(historyFfiAddr)),
+      );
+      return;
+    }
+
+    walletLog(LogLevel.info, 'Calling Wallet_refresh and TransactionHistory_refresh');
 
     await Isolate.run(
       // ignore: deprecated_member_use
@@ -427,6 +574,23 @@ class MoneroWallet extends CryptoWallet {
   }
 
   @override
+  Future<void> pollSyncStatus() async {
+    // Only the full node flips "synchronized" off its background thread; LWS
+    // sync state is settled by the blocking refresh in the 20s loop.
+    if (!_isNodeMode || _w2Wallet == null) return;
+
+    final wasSynced = isSynced;
+    await loadIsSynced();
+    await loadSyncedHeight();
+
+    // Just caught up: pull fresh balances + tx now rather than waiting for the
+    // next refresh cycle.
+    if (!wasSynced && isSynced) {
+      await loadAllStats();
+    }
+  }
+
+  @override
   Future<void> loadIsSynced() async {
     if (_w2Wallet == null) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
@@ -439,6 +603,24 @@ class MoneroWallet extends CryptoWallet {
     );
 
     walletLog(LogLevel.info, 'Wallet_synchronized result: $synced');
+
+    if (_isNodeMode && !synced) {
+      // Surface scan progress (wallet height vs daemon tip) while syncing.
+      final heights = await Isolate.run(() {
+        // ignore: deprecated_member_use
+        final wallet = monero.Wallet_blockChainHeight(Pointer<Void>.fromAddress(walletFfiAddr));
+        // ignore: deprecated_member_use
+        final daemon = monero.Wallet_daemonBlockChainHeight(
+          Pointer<Void>.fromAddress(walletFfiAddr),
+        );
+        return (wallet: wallet, daemon: daemon);
+      });
+      walletLog(
+        LogLevel.info,
+        'Node sync progress: wallet ${heights.wallet} / daemon ${heights.daemon}',
+      );
+    }
+
     setIsSynced(synced);
   }
 
@@ -557,8 +739,10 @@ class MoneroWallet extends CryptoWallet {
     final amountSent = doubleAmountFromInt(tx.amount());
     final fee = doubleAmountFromInt(tx.fee());
     final timestamp = tx.timestamp();
-    final height = tx.blockHeight();
-    final confirmations = height > -1 ? (chainHeight - height).clamp(0, chainHeight) : 0;
+    final rawHeight = tx.blockHeight();
+    final isUnconfirmed = rawHeight <= 0;
+    final height = isUnconfirmed ? -1 : rawHeight;
+    final confirmations = isUnconfirmed ? 0 : (chainHeight - rawHeight).clamp(0, chainHeight);
     final key = _w2Wallet!.getTxKey(txid: hash);
 
     final List<TxRecipient> recipients = [];
@@ -715,7 +899,16 @@ class MoneroWallet extends CryptoWallet {
     }
 
     await refresh();
+    // Persist so the just-sent unconfirmed tx (held in the wallet's cache,
+    // not on-chain yet) survives an app restart before it's mined.
+    await store();
+    // Reload balances so the spent/locked amount is reflected right away.
+    await Future.wait([loadTotalBalance(), loadUnlockedBalance()]);
     await loadTxHistory();
+    notifyListeners();
+    // Also refresh the cached display snapshot so the pending tx + reduced
+    // balance show immediately on next launch, before the sync re-reads them.
+    await persistWalletSnapshot();
   }
 
   // ----- Subaddress support tracking -----
@@ -736,6 +929,12 @@ class MoneroWallet extends CryptoWallet {
   }
 
   Future<void> loadSubaddressSupport() async {
+    if (_isNodeMode) {
+      _serverSupportsSubaddresses = true;
+      await SharedPreferencesService.set<bool>(prefKey('serverSupportsSubaddresses'), true);
+      return;
+    }
+
     try {
       final isSupported = await isSubaddressSupported(1);
       _serverSupportsSubaddresses = isSupported;
@@ -767,6 +966,18 @@ class MoneroWallet extends CryptoWallet {
     }
 
     if (_unusedSubaddressIndex == nextSubaddrIndex) return;
+
+    if (_isNodeMode) {
+      _unusedSubaddressIndex = nextSubaddrIndex;
+      _unusedSubaddressIndexIsSupported = true;
+      await SharedPreferencesService.set<int>(
+        prefKey('unusedSubaddressIndex'),
+        _unusedSubaddressIndex!,
+      );
+      await SharedPreferencesService.set<bool>(prefKey('unusedSubaddressIndexIsSupported'), true);
+      notifyListeners();
+      return;
+    }
 
     try {
       final isSupported = await isSubaddressSupported(nextSubaddrIndex);

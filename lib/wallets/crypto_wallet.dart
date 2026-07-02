@@ -246,6 +246,7 @@ abstract class CryptoWallet with ChangeNotifier {
   bool _explorerUseSsl = false;
   bool _hasAttemptedConnection = false;
   bool _isConnected = false;
+  bool _torRequirementBroken = false;
   bool _isSynced = false;
   int? _syncedHeight;
   double? _unlockedBalance;
@@ -289,6 +290,7 @@ abstract class CryptoWallet with ChangeNotifier {
   /// Placeholder shown in the explorer address field.
   String get explorerAddressExample => '';
   bool get usingTor => _connectionUseTor;
+  bool get torRequirementBroken => _torRequirementBroken;
   bool get hasAttemptedConnection => _hasAttemptedConnection;
   bool get isConnected => _isConnected;
   bool get isSynced => _isSynced;
@@ -414,6 +416,16 @@ abstract class CryptoWallet with ChangeNotifier {
     _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
     _connectionType = connectionType;
+    _torRequirementBroken = false;
+    notifyListeners();
+  }
+
+  /// Called when global Tor is disabled. If this connection requires Tor, mark
+  /// it disconnected and block reconnection until it is reconfigured.
+  void onGlobalTorDisabled() {
+    if (!_connectionUseTor || _torRequirementBroken) return;
+    _torRequirementBroken = true;
+    _isConnected = false;
     notifyListeners();
   }
 
@@ -709,9 +721,16 @@ abstract class CryptoWallet with ChangeNotifier {
     String? torProxyPort;
     if (_connectionUseTor) {
       final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
-      if (proxyInfo != null) {
-        torProxyPort = proxyInfo.port.toString();
+      if (proxyInfo == null) {
+        // Fail closed: connection requires Tor but none available. Never fall
+        // back to a direct clearnet connection.
+        walletLog(LogLevel.warn, 'useTor set but no Tor proxy; skipping connect');
+        _torRequirementBroken = true;
+        _isConnected = false;
+        notifyListeners();
+        return;
       }
+      torProxyPort = proxyInfo.port.toString();
     }
     final proxyPort = torProxyPort ?? _connectionProxyPort;
 
@@ -811,6 +830,13 @@ abstract class CryptoWallet with ChangeNotifier {
 
   Future<void> _checkConnectionTask() async {
     if (!isActive || _connectionCheckInFlight) return;
+    if (_torRequirementBroken) {
+      if (_isConnected) {
+        _isConnected = false;
+        notifyListeners();
+      }
+      return;
+    }
     _connectionCheckInFlight = true;
     try {
       final connected = await getIsConnected();

@@ -616,6 +616,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torSettingsTestConnectionButton => 'Test Connection';
 
   @override
+  String get torDisabledWalletsWarningTitle => 'Disable Tor?';
+
+  @override
+  String get torDisabledWalletsWarningBody =>
+      'Some wallets are set to connect over Tor. Disabling Tor will disconnect them, and they will stay disconnected until you reconfigure their connection.';
+
+  @override
+  String get torDisabledWalletsWarningConfirm => 'Disable Tor';
+
+  @override
   String get settingsLwsSettingsLabel => 'LWS Settings';
 
   @override

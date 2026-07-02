@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
+import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 /// Shared form widget used by both TorSettingsScreen and the Tor settings dialog
 class TorSettingsForm extends StatefulWidget {
@@ -51,8 +53,48 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
   }
 
   void _onSavePressed() async {
+    final previousMode = TorSettingsService.sharedInstance.torMode;
+    final disablingTor = _selectedMode == TorMode.disabled && previousMode != TorMode.disabled;
+
+    if (disablingTor) {
+      final affected =
+          Provider.of<WalletManager>(context, listen: false)
+              .allWallets
+              .where((w) => w.usingTor)
+              .toList();
+      if (affected.isNotEmpty) {
+        final confirmed = await _confirmDisableTor();
+        if (confirmed != true) return;
+        for (final wallet in affected) {
+          wallet.onGlobalTorDisabled();
+        }
+      }
+    }
+
     await _saveSettings();
+    if (!mounted) return;
     widget.onSaved();
+  }
+
+  Future<bool?> _confirmDisableTor() async {
+    final i18n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(i18n.torDisabledWalletsWarningTitle),
+        content: Text(i18n.torDisabledWalletsWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(i18n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(i18n.torDisabledWalletsWarningConfirm),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _testConnection() async {

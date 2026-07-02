@@ -1257,6 +1257,24 @@ abstract class AppLocalizations {
   /// **'Test Connection'**
   String get torSettingsTestConnectionButton;
 
+  /// No description provided for @torDisabledWalletsWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Tor?'**
+  String get torDisabledWalletsWarningTitle;
+
+  /// No description provided for @torDisabledWalletsWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some wallets are set to connect over Tor. Disabling Tor will disconnect them, and they will stay disconnected until you reconfigure their connection.'**
+  String get torDisabledWalletsWarningBody;
+
+  /// No description provided for @torDisabledWalletsWarningConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Tor'**
+  String get torDisabledWalletsWarningConfirm;
+
   /// No description provided for @settingsLwsSettingsLabel.
   ///
   /// In en, this message translates to:

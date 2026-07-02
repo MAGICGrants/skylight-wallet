@@ -252,15 +252,12 @@ class EthereumChainWallet extends CryptoWallet {
   }
 
   /// Resolves the explorer's own SOCKS port (its Tor proxy, or a custom one).
-  /// Fails closed: if the explorer requires Tor but none is available, throws
-  /// rather than returning null (which would route the request over clearnet).
+  /// Returns null when [explorerUseTor] is set but no Tor proxy is available;
+  /// callers must fail closed and skip the request rather than go clearnet.
   Future<int?> _explorerSocksPort() async {
     if (explorerUseTor) {
       final proxy = await TorSettingsService.sharedInstance.getProxy();
-      if (proxy == null) {
-        throw Exception('explorer requires Tor but no Tor proxy is available');
-      }
-      return proxy.port;
+      return proxy?.port;
     }
     return explorerProxyPort.isNotEmpty ? int.tryParse(explorerProxyPort) : null;
   }
@@ -381,6 +378,11 @@ class EthereumChainWallet extends CryptoWallet {
     if (explorerAddress.isNotEmpty && _address != null) {
       try {
         final socks = await _explorerSocksPort();
+        if (explorerUseTor && socks == null) {
+          walletLog(LogLevel.warn, 'explorerUseTor set but no Tor proxy; skipping explorer history');
+          await super.loadTxHistory(persistCount: persistCount);
+          return;
+        }
         final txs = await fetchExplorerTransfers(socks);
         final me = _address!.toLowerCase();
         for (final t in txs) {

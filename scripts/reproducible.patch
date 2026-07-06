@@ -1,0 +1,54 @@
+diff --git a/build_single.sh b/build_single.sh
+index 77d5a52..cbff2ef 100755
+--- a/build_single.sh
++++ b/build_single.sh
+@@ -54,12 +54,18 @@ then
+ fi
+ cd $(dirname $0)
+ WDIR=$PWD
++# make 4.4 defaults to a fifo jobserver that breaks depends' recursive makes with
++# -jN ("invalid --jobserver-auth"). Force the classic pipe jobserver where the flag
++# exists (make >= 4.4); on make 4.3 it's already the default, so this stays empty.
++if make --help 2>/dev/null | grep -q -- '--jobserver-style'; then
++    export MAKEFLAGS="${MAKEFLAGS:+$MAKEFLAGS }--jobserver-style=pipe"
++fi
+ pushd contrib/depends
+     if [[ -d $HOST_ABI ]];
+     then
+         echo "Not building depends, directory exists"
+     else
+-        env -i PATH="$PATH" CC=gcc CXX=g++ make "$NPROC" HOST="$HOST_ABI" DEPENDS_UNTRUSTED_FAST_BUILDS=$DEPENDS_UNTRUSTED_FAST_BUILDS
++        env -i PATH="$PATH" MAKEFLAGS="$MAKEFLAGS" CC=gcc CXX=g++ make "$NPROC" HOST="$HOST_ABI" DEPENDS_UNTRUSTED_FAST_BUILDS=$DEPENDS_UNTRUSTED_FAST_BUILDS
+     fi
+ popd
+ 
+diff --git a/contrib/depends/hosts/android.mk b/contrib/depends/hosts/android.mk
+index 827103c..2e186ce 100644
+--- a/contrib/depends/hosts/android.mk
++++ b/contrib/depends/hosts/android.mk
+@@ -18,7 +18,8 @@ android_CXX=$(host_toolchain)clang++
+ android_RANLIB=llvm-ranlib
+ android_AR=llvm-ar
+ 
+-android_CFLAGS=-pipe
++# -ffile-prefix-map: reproducible builds, strip depends work-dir paths (BASEDIR=contrib/depends)
++android_CFLAGS=-pipe -ffile-prefix-map=$(BASEDIR)=.
+ android_CXXFLAGS=$(android_CFLAGS)
+ android_ARFLAGS=crsD
+ 
+diff --git a/contrib/depends/toolchain.cmake.in b/contrib/depends/toolchain.cmake.in
+index cb94cf3..aa44d39 100644
+--- a/contrib/depends/toolchain.cmake.in
++++ b/contrib/depends/toolchain.cmake.in
+@@ -206,3 +206,11 @@ endif()
+ 
+ #Create a new global cmake flag that indicates building with depends
+ set (DEPENDS true)
++
++# Reproducible builds: strip absolute build paths from binaries.
++# Rewrites __FILE__ (epee logging -> .rodata, survives strip) and debug info so
++# output is identical regardless of the checkout directory. Each build maps its
++# own monero_c root to the same sentinel ".".
++get_filename_component(_MONEROC_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
++string(APPEND CMAKE_C_FLAGS_INIT " -ffile-prefix-map=${_MONEROC_ROOT}=.")
++string(APPEND CMAKE_CXX_FLAGS_INIT " -ffile-prefix-map=${_MONEROC_ROOT}=.")

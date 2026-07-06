@@ -136,17 +136,21 @@ jobs:
           storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=/workspace/android/keystore.jks
+          storeFile=/tmp/skylight/android/keystore.jks
           EOF
 
       - name: Build APKs and AAB
         run: |
           VERSION='${{ needs.version.outputs.version }}'
+          # Deterministic timestamp for reproducible builds
+          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          # Fixed build path for reproducibility
           docker run --rm \
-            -v "$PWD:/workspace" \
-            -w /workspace \
+            -v "$PWD:/tmp/skylight" \
+            -w /tmp/skylight \
+            -e SOURCE_DATE_EPOCH \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release"
+            bash -c "export CARGO_HOME=/tmp/skylight-cargo && flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release"
 
           mkdir -p dist
           cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"

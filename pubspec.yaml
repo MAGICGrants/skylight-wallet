@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/vtnerd/monero_c
-      ref: lwsf
+      ref: 8de1614734007782bb2701ab16c49adf0df8e850
       path: impls/monero.dart
   cupertino_icons: 1.0.8
   path: 1.9.1

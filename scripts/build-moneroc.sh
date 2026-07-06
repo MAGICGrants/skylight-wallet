@@ -5,7 +5,8 @@ export DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes
 apt update
 apt install -y apt-utils
 apt install -y build-essential pkg-config autoconf libtool ccache make cmake gcc g++ git curl \
-  lbzip2 libtinfo5 gperf unzip python-is-python3 llvm gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+  lbzip2 gperf unzip python-is-python3 llvm gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+apt install -y libtinfo5 2>/dev/null || echo "libtinfo5 unavailable (trixie) — skipping"
 
 update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
 update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix

@@ -20,6 +20,11 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.1.13356709"
 
+    dependenciesInfo {
+        includeInApk = false // fdroid rejects extra signing blocks
+        includeInBundle = true
+    }
+
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11

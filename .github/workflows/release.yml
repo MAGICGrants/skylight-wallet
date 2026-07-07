@@ -150,7 +150,7 @@ jobs:
             -w /tmp/skylight \
             -e SOURCE_DATE_EPOCH \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "cp -a /opt/cargo /tmp/skylight-cargo && export CARGO_HOME=/tmp/skylight-cargo && flutter pub get && bash scripts/pin-tor-rust-toolchain.sh && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release"
+            bash -c "cp -a /opt/cargo /tmp/skylight-cargo && export CARGO_HOME=/tmp/skylight-cargo && export PUB_CACHE=/tmp/skylight/.pub-cache && flutter pub get && bash scripts/pin-tor-rust-toolchain.sh && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release"
 
           mkdir -p dist
           cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"

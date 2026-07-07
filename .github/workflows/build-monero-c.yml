@@ -20,7 +20,7 @@ jobs:
       - name: Build monero_c
         env:
           TARGET_ARCH: x86_64-linux-gnu
-        run: scripts/build-moneroc.sh
+        run: scripts/build-moneroc-ci.sh
 
       - name: Copy built library
         run: |
@@ -45,7 +45,7 @@ jobs:
       - name: Build monero_c
         env:
           TARGET_ARCH: x86_64-linux-android
-        run: scripts/build-moneroc.sh
+        run: scripts/build-moneroc-ci.sh
 
       - name: Copy built library
         run: |
@@ -70,7 +70,7 @@ jobs:
       - name: Build monero_c
         env:
           TARGET_ARCH: aarch64-linux-android
-        run: scripts/build-moneroc.sh
+        run: scripts/build-moneroc-ci.sh
 
       - name: Copy built library
         run: |
@@ -95,7 +95,7 @@ jobs:
       - name: Build monero_c
         env:
           TARGET_ARCH: armv7a-linux-androideabi
-        run: scripts/build-moneroc.sh
+        run: scripts/build-moneroc-ci.sh
 
       - name: Copy built library
         run: |
@@ -120,7 +120,7 @@ jobs:
       - name: Build monero_c
         env:
           TARGET_ARCH: x86_64-w64-mingw32
-        run: scripts/build-moneroc.sh
+        run: scripts/build-moneroc-ci.sh
 
       - name: Copy built libraries
         run: |

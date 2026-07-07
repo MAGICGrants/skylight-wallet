@@ -28,6 +28,8 @@ NDK=28.1.13356709
 FLUTTER_VERSION=$(grep -E '^\s+flutter:\s+' pubspec.yaml | head -1 | sed 's/.*flutter:\s*//')
 [ -n "$FLUTTER_VERSION" ] || { echo "could not read flutter version from pubspec.yaml" >&2; exit 1; }
 
+# never create $HOME/.gitconfig (fdroiddata CI symlinks it per build)
+export GIT_CONFIG_GLOBAL=/tmp/skylight-gitconfig
 git config --global --add safe.directory '*'
 git config --global user.name 'MAGIC Grants'
 git config --global user.email 'info@magicgrants.org'

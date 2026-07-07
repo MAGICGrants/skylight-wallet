@@ -18,6 +18,8 @@ REPO="$(pwd)"
 COMMIT=$(awk '/^  monero:/{f=1} f&&/resolved-ref:/{gsub(/"/,"",$2);print $2;exit}' pubspec.lock)
 [ -n "$COMMIT" ] || { echo "no monero resolved-ref in pubspec.lock" >&2; exit 1; }
 
+# never create $HOME/.gitconfig (fdroiddata CI symlinks it per build)
+export GIT_CONFIG_GLOBAL=/tmp/skylight-gitconfig
 git config --global --add safe.directory '*'
 git config --global user.name 'MAGIC Grants'
 git config --global user.email 'info@magicgrants.org'

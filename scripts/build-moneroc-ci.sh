@@ -11,6 +11,7 @@ apt install -y libtinfo5 2>/dev/null || echo "libtinfo5 unavailable (trixie) —
 update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
 update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 
+export GIT_CONFIG_GLOBAL=/tmp/skylight-gitconfig # never create $HOME/.gitconfig (fdroiddata CI symlinks it per build)
 git config --global --add safe.directory '*'
 git config --global user.email "info@magicgrants.org"
 git config --global user.name "MAGIC Grants"

@@ -58,6 +58,7 @@ class MoneroWallet extends CryptoWallet {
       _w2WalletManager!.closeWallet(_w2Wallet!, false);
       _w2Wallet = null;
       _w2TxHistory = null;
+      _daemonInitialized = false;
       _loadedType = null;
       setIsLoaded(false);
     }
@@ -73,6 +74,10 @@ class MoneroWallet extends CryptoWallet {
 
   Wallet2Wallet? _w2Wallet;
   Wallet2TransactionHistory? _w2TxHistory;
+
+  // True once Wallet_init has run for the daemon connection. Daemon-dependent
+  // FFI calls (Wallet_connected, etc.) abort if invoked before this.
+  bool _daemonInitialized = false;
 
   bool? _serverSupportsSubaddresses;
   int? _unusedSubaddressIndex;
@@ -313,6 +318,7 @@ class MoneroWallet extends CryptoWallet {
       wm.closeWallet(_w2Wallet!, false);
       _w2Wallet = null;
       _w2TxHistory = null;
+      _daemonInitialized = false;
     }
 
     // Remove both mode files (LWS `mywallet_xmr*` and node `mywallet_xmr_node*`)
@@ -351,6 +357,17 @@ class MoneroWallet extends CryptoWallet {
     required bool useSsl,
   }) async {
     if (_w2Wallet == null) throw Exception('w2wallet is null');
+
+    // The open wallet object is bound to the factory of the mode it was opened
+    // in (LWS vs node). Connecting before the manager is rebuilt for the new
+    // mode would call Wallet_init with a mismatched lightWallet flag and abort.
+    if (_loadedType != _desiredManagerType) {
+      walletLog(
+        LogLevel.warn,
+        'Skipping connect: loaded as "$_loadedType" but connection needs "$_desiredManagerType"; awaiting rebuild',
+      );
+      return;
+    }
 
     if (Platform.isAndroid) {
       // Addresses SSL certificate verification issues on Android.
@@ -414,6 +431,8 @@ class MoneroWallet extends CryptoWallet {
       'connectToDaemon ${r.connectMs}ms (result ${r.connectResult}), '
       'startRefresh ${r.refreshMs}ms',
     );
+
+    _daemonInitialized = true;
 
     final connectError = _w2Wallet!.errorString();
     if (connectError != '') {
@@ -526,7 +545,7 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<bool> getIsConnected() async {
-    if (_w2Wallet == null) return false;
+    if (_w2Wallet == null || !_daemonInitialized) return false;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
     final connected = await Isolate.run(
@@ -539,7 +558,7 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<void> refresh() async {
-    if (_w2Wallet == null || _w2TxHistory == null) return;
+    if (_w2Wallet == null || _w2TxHistory == null || !_daemonInitialized) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
     final historyFfiAddr = _w2TxHistory!.ffiAddress();
 
@@ -592,7 +611,7 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<void> loadIsSynced() async {
-    if (_w2Wallet == null) return;
+    if (_w2Wallet == null || !_daemonInitialized) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
     walletLog(LogLevel.info, 'Calling Wallet_synchronized:');
@@ -626,7 +645,7 @@ class MoneroWallet extends CryptoWallet {
 
   @override
   Future<void> loadSyncedHeight() async {
-    if (_w2Wallet == null) return;
+    if (_w2Wallet == null || !_daemonInitialized) return;
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
     walletLog(LogLevel.info, 'Calling Wallet_blockChainHeight:');

@@ -626,6 +626,30 @@ class AppLocalizationsPt extends AppLocalizations {
   String get torDisabledWalletsWarningConfirm => 'Desativar o Tor';
 
   @override
+  String get connectionRemoteIpNotAllowed =>
+      'Conexões com endereços IP remotos não são permitidas. Use um nome de domínio ou um endereço IP local.';
+
+  @override
+  String get connectionIndicatorTorInternal => 'Tor Interno';
+
+  @override
+  String connectionIndicatorTorExternal(String port) {
+    return 'Usando Porta $port';
+  }
+
+  @override
+  String get connectionIndicatorHttps => 'HTTPS';
+
+  @override
+  String get connectionIndicatorLocal => 'Local';
+
+  @override
+  String get connectionProtocolHttps => 'Removendo protocolo. Usando HTTPS para domínios.';
+
+  @override
+  String get connectionProtocolHttp => 'Removendo protocolo. Usando HTTP para endereços locais.';
+
+  @override
   String get settingsLwsSettingsLabel => 'Configurações do LWS';
 
   @override

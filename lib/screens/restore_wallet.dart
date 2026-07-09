@@ -6,6 +6,7 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
 class RestoreWalletScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class RestoreWalletScreen extends StatefulWidget {
   State<RestoreWalletScreen> createState() => _RestoreWalletScreenState();
 }
 
-class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
+class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureScreenMixin {
   final _mnemonicController = TextEditingController();
   final _restoreDateController = TextEditingController();
   DateTime _restoreDate = DateTime.now();

@@ -218,6 +218,20 @@
   "torDisabledWalletsWarningTitle": "Desativar o Tor?",
   "torDisabledWalletsWarningBody": "Algumas carteiras estão configuradas para conectar via Tor. Desativar o Tor irá desconectá-las, e elas permanecerão desconectadas até que você reconfigure a conexão delas.",
   "torDisabledWalletsWarningConfirm": "Desativar o Tor",
+  "connectionRemoteIpNotAllowed": "Conexões com endereços IP remotos não são permitidas. Use um nome de domínio ou um endereço IP local.",
+  "connectionIndicatorTorInternal": "Tor Interno",
+  "connectionIndicatorTorExternal": "Usando Porta {port}",
+  "@connectionIndicatorTorExternal": {
+    "placeholders": {
+      "port": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionIndicatorHttps": "HTTPS",
+  "connectionIndicatorLocal": "Local",
+  "connectionProtocolHttps": "Removendo protocolo. Usando HTTPS para domínios.",
+  "connectionProtocolHttp": "Removendo protocolo. Usando HTTP para endereços locais.",
   "settingsLwsSettingsLabel": "Configurações do LWS",
   "settingsTorSettingsLabel": "Configurações do Tor",
   "lwsSetupUsingInternalTor": "Usando Tor interno",

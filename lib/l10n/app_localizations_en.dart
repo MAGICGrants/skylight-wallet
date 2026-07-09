@@ -626,6 +626,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torDisabledWalletsWarningConfirm => 'Disable Tor';
 
   @override
+  String get connectionRemoteIpNotAllowed =>
+      'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.';
+
+  @override
+  String get connectionIndicatorTorInternal => 'Internal Tor';
+
+  @override
+  String connectionIndicatorTorExternal(String port) {
+    return 'Using Port $port';
+  }
+
+  @override
+  String get connectionIndicatorHttps => 'HTTPS';
+
+  @override
+  String get connectionIndicatorLocal => 'Local';
+
+  @override
+  String get connectionProtocolHttps => 'Removing protocol. Using HTTPS for domains.';
+
+  @override
+  String get connectionProtocolHttp => 'Removing protocol. Using HTTP for local addresses.';
+
+  @override
   String get settingsLwsSettingsLabel => 'LWS Settings';
 
   @override

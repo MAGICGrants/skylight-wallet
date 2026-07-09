@@ -7,6 +7,7 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 
@@ -17,7 +18,7 @@ class GenerateSeedScreen extends StatefulWidget {
   State<GenerateSeedScreen> createState() => _GenerateSeedScreenState();
 }
 
-class _GenerateSeedScreenState extends State<GenerateSeedScreen> {
+class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScreenMixin {
   List<String> _seed = [];
   DateTime? _restoreDate;
   String? _mnemonic;

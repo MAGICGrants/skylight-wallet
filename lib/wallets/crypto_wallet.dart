@@ -417,6 +417,8 @@ abstract class CryptoWallet with ChangeNotifier {
     _connectionUseSsl = useSsl;
     _connectionType = connectionType;
     _torRequirementBroken = false;
+    _isConnected = false;
+    _connectInFlight = null;
     notifyListeners();
   }
 
@@ -859,13 +861,18 @@ abstract class CryptoWallet with ChangeNotifier {
   Future<void> pollSyncStatus() async {}
 
   Future<void> _refreshTask() async {
-    if (!isActive || _refreshInFlight) return;
+    if (!isActive || _refreshInFlight || _torRequirementBroken) return;
     _refreshInFlight = true;
     try {
       try {
         if (!_isConnected) {
           await connectToDaemon();
         }
+      } catch (e) {
+        walletLog(LogLevel.warn, 'connect failed: $e');
+      }
+      if (!_isConnected) return;
+      try {
         await refresh();
       } catch (e) {
         walletLog(LogLevel.warn, 'refresh failed: $e');

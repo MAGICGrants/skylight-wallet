@@ -218,6 +218,20 @@
   "torDisabledWalletsWarningTitle": "Disable Tor?",
   "torDisabledWalletsWarningBody": "Some wallets are set to connect over Tor. Disabling Tor will disconnect them, and they will stay disconnected until you reconfigure their connection.",
   "torDisabledWalletsWarningConfirm": "Disable Tor",
+  "connectionRemoteIpNotAllowed": "Connections to remote IP addresses aren't allowed. Use a domain name or a local IP address.",
+  "connectionIndicatorTorInternal": "Internal Tor",
+  "connectionIndicatorTorExternal": "Using Port {port}",
+  "@connectionIndicatorTorExternal": {
+    "placeholders": {
+      "port": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionIndicatorHttps": "HTTPS",
+  "connectionIndicatorLocal": "Local",
+  "connectionProtocolHttps": "Removing protocol. Using HTTPS for domains.",
+  "connectionProtocolHttp": "Removing protocol. Using HTTP for local addresses.",
   "settingsLwsSettingsLabel": "LWS Settings",
   "settingsTorSettingsLabel": "Tor Settings",
   "lwsSetupUsingInternalTor": "Using internal Tor",

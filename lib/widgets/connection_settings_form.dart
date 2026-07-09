@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -94,8 +95,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     setState(() {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
-      _useTor = conn.useTor;
-      _useSsl = conn.useSsl;
+      _useTor = conn.useTor && TorSettingsService.sharedInstance.torMode != TorMode.disabled;
+      _useSsl = _sslForAddress(conn.address);
       _connectionTypeOptions = options;
       _connectionType = options.contains(conn.connectionType)
           ? conn.connectionType
@@ -116,7 +117,42 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       [ipAddressRegex.pattern, onionAddressRegex.pattern, domainAddressRegex.pattern].join('|'),
     );
 
-    return connectionUrlRegex.hasMatch(value);
+    if (!connectionUrlRegex.hasMatch(value)) return false;
+    // Remote (public) IP addresses are not allowed: use a domain (SSL) or a
+    // local IP. Only IP literals are checked; domains/onion are fine.
+    return !_isNonLocalIp(value);
+  }
+
+  /// Private/loopback IPv4 ranges that we consider "local network".
+  bool _isLocalIp(String host) {
+    if (host.startsWith('192.168.') || host.startsWith('10.') || host.startsWith('127.')) {
+      return true;
+    }
+    final match = RegExp(r'^172\.(\d{1,3})\.').firstMatch(host);
+    if (match != null) {
+      final second = int.tryParse(match.group(1)!) ?? 0;
+      return second >= 16 && second <= 31;
+    }
+    return false;
+  }
+
+  bool _isNonLocalIp(String value) {
+    final host = value.split(':').first;
+    return ipAddressRegex.hasMatch(value) && !_isLocalIp(host);
+  }
+
+  bool _sslForAddress(String value) {
+    final host = value.split(':').first;
+    if (onionAddressRegex.hasMatch(value)) return false;
+    if (ipAddressRegex.hasMatch(value)) return false;
+    if (host.endsWith('.local')) return false;
+    return domainAddressRegex.hasMatch(value);
+  }
+
+  bool _isLocalAddress(String value) {
+    final host = value.split(':').first;
+    if (ipAddressRegex.hasMatch(value)) return _isLocalIp(host);
+    return host.endsWith('.local');
   }
 
   Future<void> _scanQrCode() async {
@@ -145,36 +181,40 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
   }
 
-  void _onAddressChange(String value) {
-    value = _cleanAddress(value);
+  void _onAddressChange(String rawValue) {
+    final hadProtocol = RegExp(r'https?:\/\/').hasMatch(rawValue);
+    final value = _cleanAddress(rawValue);
 
-    var useTor = false;
-    var useSsl = false;
-
-    if (ipAddressRegex.hasMatch(value)) {
-      useTor = false;
-      useSsl = false;
-    } else if (onionAddressRegex.hasMatch(value)) {
-      useSsl = false;
-      useTor = true;
-    } else if (domainAddressRegex.hasMatch(value)) {
-      useTor = false;
-      useSsl = true;
+    // Strip any http(s):// the user typed from the field itself so it's ignored.
+    if (_addressController.text != value) {
+      _addressController.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
     }
 
-    if (value.startsWith('https://')) {
-      useSsl = true;
-    } else if (value.startsWith('http://')) {
-      useSsl = false;
-    }
+    final useTor = onionAddressRegex.hasMatch(value);
+    final useSsl = _sslForAddress(value);
+    final i18n = AppLocalizations.of(context)!;
 
     _setUseSsl(useSsl);
-    _setUseTor(useTor);
+    // Never auto-disable Tor if the user already turned it on.
+    _setUseTor(useTor || _useTor);
 
     setState(() {
       _hasTested = false;
-      _errorMessage = null;
+      _errorMessage = _isNonLocalIp(value) ? i18n.connectionRemoteIpNotAllowed : null;
     });
+
+    if (hadProtocol) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(useSsl ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp),
+          ),
+        );
+    }
   }
 
   void _onProxyPortChange(String value) {
@@ -277,6 +317,14 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       return;
     }
 
+    if (_isNonLocalIp(daemonAddress)) {
+      setState(() {
+        _hasTested = false;
+        _errorMessage = i18n.connectionRemoteIpNotAllowed;
+      });
+      return;
+    }
+
     if (_useTor && TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
       ScaffoldMessenger.of(
         context,
@@ -332,6 +380,11 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final daemonAddress = _cleanAddress(_addressController.text);
     final proxyAddress = _customProxyPortController.text;
 
+    if (_isNonLocalIp(daemonAddress)) {
+      setState(() => _errorMessage = AppLocalizations.of(context)!.connectionRemoteIpNotAllowed);
+      return;
+    }
+
     final manager = Provider.of<WalletManager>(context, listen: false);
     final wallet = manager.getWallet(widget.coinSymbol);
     if (wallet == null) return;
@@ -359,12 +412,68 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     widget.onSaved();
   }
 
+  /// Right-aligned status chips under the address field (Tor / HTTPS / local).
+  Widget _buildConnectionIndicators(AppLocalizations i18n, TorMode torMode) {
+    final chips = <Widget>[];
+
+    if (_useTor) {
+      chips.add(
+        _statusChip(
+          icon: SvgPicture.asset('assets/icons/tor.svg', width: 13, height: 13),
+          label: torMode == TorMode.builtIn
+              ? i18n.connectionIndicatorTorInternal
+              : i18n.connectionIndicatorTorExternal(TorSettingsService.sharedInstance.socksPort),
+          color: Colors.purple,
+        ),
+      );
+    }
+
+    if (_useSsl) {
+      chips.add(
+        _statusChip(
+          icon: Icon(Icons.lock, size: 13, color: Colors.green),
+          label: i18n.connectionIndicatorHttps,
+          color: Colors.green,
+        ),
+      );
+    } else if (_isLocalAddress(_cleanAddress(_addressController.text))) {
+      chips.add(
+        _statusChip(
+          icon: Icon(Icons.lock_open, size: 13, color: Colors.grey),
+          label: i18n.connectionIndicatorLocal,
+          color: Colors.grey,
+        ),
+      );
+    }
+
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Center(
+      child: Wrap(spacing: 16, alignment: WrapAlignment.center, children: chips),
+    );
+  }
+
+  Widget _statusChip({required Widget icon, required String label, required Color color}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        icon,
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
     final wallet = Provider.of<WalletManager>(context, listen: false).getWallet(widget.coinSymbol);
-    final addressHint = (_isExplorer
+    final addressHint =
+        (_isExplorer
             ? wallet?.explorerAddressExample
             : wallet?.connectionAddressExampleForType(_connectionType)) ??
         i18n.lwsSetupAddressHint;
@@ -437,24 +546,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),
-        CheckboxListTile(
-          title: Text(i18n.lwsSetupUseSslLabel),
-          value: _useSsl,
-          onChanged: _setUseSsl,
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-        ),
-        if (_useTor)
-          Center(
-            child: Text(
-              torMode == TorMode.builtIn
-                  ? i18n.lwsSetupUsingInternalTor
-                  : i18n.lwsSetupUsingExternalTor(
-                      '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
-                    ),
-              style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
-            ),
-          ),
+        _buildConnectionIndicators(i18n, torMode),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 10,

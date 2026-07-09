@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 
@@ -16,7 +17,7 @@ class LwsKeysScreen extends StatefulWidget {
   State<LwsKeysScreen> createState() => _LwsKeysScreenState();
 }
 
-class _LwsKeysScreenState extends State<LwsKeysScreen> {
+class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
   var _restoreHeight = 0;
 
   @override

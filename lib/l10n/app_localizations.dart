@@ -1275,6 +1275,48 @@ abstract class AppLocalizations {
   /// **'Disable Tor'**
   String get torDisabledWalletsWarningConfirm;
 
+  /// No description provided for @connectionRemoteIpNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.'**
+  String get connectionRemoteIpNotAllowed;
+
+  /// No description provided for @connectionIndicatorTorInternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal Tor'**
+  String get connectionIndicatorTorInternal;
+
+  /// No description provided for @connectionIndicatorTorExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Using Port {port}'**
+  String connectionIndicatorTorExternal(String port);
+
+  /// No description provided for @connectionIndicatorHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTPS'**
+  String get connectionIndicatorHttps;
+
+  /// No description provided for @connectionIndicatorLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get connectionIndicatorLocal;
+
+  /// No description provided for @connectionProtocolHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing protocol. Using HTTPS for domains.'**
+  String get connectionProtocolHttps;
+
+  /// No description provided for @connectionProtocolHttp.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing protocol. Using HTTP for local addresses.'**
+  String get connectionProtocolHttp;
+
   /// No description provided for @settingsLwsSettingsLabel.
   ///
   /// In en, this message translates to:

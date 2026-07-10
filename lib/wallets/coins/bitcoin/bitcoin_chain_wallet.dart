@@ -368,17 +368,6 @@ class BitcoinChainWallet extends CryptoWallet {
     }
   }
 
-  /// Pref key for the cached raw-tx blobs. Lives next to the base class's
-  /// `cachedTxHistory` (which holds the rendered list) and lets
-  /// [loadTxHistory] skip refetching every confirmed tx on every unlock.
-  String get _txCachePrefKey => prefKey('cachedTxBlobs');
-
-  /// Pref key for the persisted per-scripthash state (balance + history +
-  /// unspent + status hash). Restored on reopen so [refresh] can diff the
-  /// re-subscribe status against [_ScripthashState.statusAtFetch] and skip
-  /// the history/listunspent refetch for every unchanged scripthash.
-  String get _scripthashStatePrefKey => prefKey('cachedScripthashState');
-
   @override
   Future<void> persistWalletSnapshot() async {
     await super.persistWalletSnapshot();
@@ -391,13 +380,6 @@ class BitcoinChainWallet extends CryptoWallet {
     await super.loadPersistedSnapshot();
     await _loadTxCache();
     await _loadScripthashState();
-  }
-
-  @override
-  Future<void> clearPersistedState() async {
-    await super.clearPersistedState();
-    await SharedPreferencesService.remove(_txCachePrefKey);
-    await SharedPreferencesService.remove(_scripthashStatePrefKey);
   }
 
   Future<void> _persistTxCache() async {
@@ -416,7 +398,7 @@ class BitcoinChainWallet extends CryptoWallet {
             },
         ],
       });
-      await SharedPreferencesService.set<String>(_txCachePrefKey, json);
+      cachePut('cachedTxBlobs', json);
     } catch (e) {
       walletLog(LogLevel.warn, 'persist tx cache: $e');
     }
@@ -425,7 +407,7 @@ class BitcoinChainWallet extends CryptoWallet {
   Future<void> _loadTxCache() async {
     if (_disableCache) return;
     try {
-      final raw = await SharedPreferencesService.get<String>(_txCachePrefKey);
+      final raw = cacheGetString('cachedTxBlobs');
       if (raw == null || raw.isEmpty) return;
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return;
@@ -475,7 +457,7 @@ class BitcoinChainWallet extends CryptoWallet {
             },
         ],
       });
-      await SharedPreferencesService.set<String>(_scripthashStatePrefKey, json);
+      cachePut('cachedScripthashState', json);
     } catch (e) {
       walletLog(LogLevel.warn, 'persist scripthash state: $e');
     }
@@ -484,7 +466,7 @@ class BitcoinChainWallet extends CryptoWallet {
   Future<void> _loadScripthashState() async {
     if (_disableCache) return;
     try {
-      final raw = await SharedPreferencesService.get<String>(_scripthashStatePrefKey);
+      final raw = cacheGetString('cachedScripthashState');
       if (raw == null || raw.isEmpty) return;
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return;

@@ -10,6 +10,7 @@ import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallets/wallet_cache_store.dart';
 
 class TxRecipient {
   final String address;
@@ -259,6 +260,13 @@ abstract class CryptoWallet with ChangeNotifier {
   bool _disposed = false;
   bool _connectionCheckInFlight = false;
   bool _refreshInFlight = false;
+
+  // Encrypted per-coin cache (balances, tx history, raw tx blobs). Held in
+  // memory, decrypted from / flushed to disk with the wallet password.
+  Map<String, dynamic> _cache = {};
+  String? _cachePassword;
+  bool _cacheLoaded = false;
+  bool _cacheDirty = false;
 
   bool _enabledInApp = true;
 
@@ -511,20 +519,60 @@ abstract class CryptoWallet with ChangeNotifier {
     );
   }
 
+  // ----- Encrypted cache (balances, tx history, raw blobs) -----
+
+  /// Sets the password used to decrypt/encrypt this wallet's cache file.
+  void setCachePassword(String? password) => _cachePassword = password;
+
+  /// Decrypts the on-disk cache into memory. No-op without a password or if
+  /// already loaded this session.
+  Future<void> loadCache() async {
+    if (_cacheLoaded || _cachePassword == null) return;
+    _cache = await WalletCacheStore.load(coinSymbol, _cachePassword!);
+    _cacheLoaded = true;
+  }
+
+  /// Flushes the in-memory cache to disk (encrypted) when it changed.
+  Future<void> persistCache() async {
+    if (_cachePassword == null || !_cacheDirty) return;
+    await WalletCacheStore.save(coinSymbol, _cache, _cachePassword!);
+    _cacheDirty = false;
+  }
+
+  @protected
+  double? cacheGetDouble(String key) => (_cache[key] as num?)?.toDouble();
+  @protected
+  String? cacheGetString(String key) => _cache[key] as String?;
+
+  @protected
+  void cachePut(String key, Object? value) {
+    if (value == null) {
+      cacheRemove(key);
+      return;
+    }
+    _cache[key] = value;
+    _cacheDirty = true;
+  }
+
+  @protected
+  void cacheRemove(String key) {
+    if (_cache.remove(key) != null) _cacheDirty = true;
+  }
+
   /// Restores the last known balance and tx list for immediate display on
-  /// reopen while a fresh sync runs in the background. Does not require the
-  /// wallet file to be opened yet — only a configured connection.
+  /// reopen while a fresh sync runs in the background. Reads the decrypted
+  /// in-memory cache; call [loadCache] first.
   Future<void> loadPersistedSnapshot() async {
     if (_connectionAddress.isEmpty) return;
 
-    final unlocked = await SharedPreferencesService.get<double>(prefKey('cachedUnlockedBalance'));
-    final total = await SharedPreferencesService.get<double>(prefKey('cachedTotalBalance'));
+    final unlocked = cacheGetDouble('cachedUnlockedBalance');
+    final total = cacheGetDouble('cachedTotalBalance');
     if (unlocked != null) {
       setUnlockedBalance(unlocked);
       setTotalBalance(total ?? unlocked);
     }
 
-    final txJson = await SharedPreferencesService.get<String>(prefKey('cachedTxHistory'));
+    final txJson = cacheGetString('cachedTxHistory');
     if (txJson != null && txJson.isNotEmpty) {
       try {
         _txHistory = await compute(parseCachedTxHistory, txJson);
@@ -536,19 +584,14 @@ abstract class CryptoWallet with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Persists the current balance and tx list after a successful refresh.
+  /// Updates the current balance and tx list in the cache after a successful
+  /// refresh. Flushed to disk by [persistCache] (called by the orchestration).
   Future<void> persistWalletSnapshot() async {
     if (!isActive || _unlockedBalance == null) return;
 
-    await SharedPreferencesService.set<double>(prefKey('cachedUnlockedBalance'), _unlockedBalance!);
-    await SharedPreferencesService.set<double>(
-      prefKey('cachedTotalBalance'),
-      _totalBalance ?? _unlockedBalance!,
-    );
-    await SharedPreferencesService.set<String>(
-      prefKey('cachedTxHistory'),
-      jsonEncode(_txHistory.map((t) => t.toJson()).toList()),
-    );
+    cachePut('cachedUnlockedBalance', _unlockedBalance);
+    cachePut('cachedTotalBalance', _totalBalance ?? _unlockedBalance);
+    cachePut('cachedTxHistory', jsonEncode(_txHistory.map((t) => t.toJson()).toList()));
   }
 
   // ----- Tx history persistence (concrete) -----
@@ -662,6 +705,7 @@ abstract class CryptoWallet with ChangeNotifier {
     final persistTimer = Stopwatch()..start();
     if (await getIsConnected()) {
       await persistWalletSnapshot();
+      await persistCache();
     }
     persistTimer.stop();
 
@@ -754,16 +798,13 @@ abstract class CryptoWallet with ChangeNotifier {
   }
 
   Future<void> clearPersistedState() async {
-    final keys = [
-      'walletRestoreHeight',
-      'txHistoryCount',
-      'cachedUnlockedBalance',
-      'cachedTotalBalance',
-      'cachedTxHistory',
-    ];
-    for (final k in keys) {
+    for (final k in ['walletRestoreHeight', 'txHistoryCount']) {
       await SharedPreferencesService.remove(prefKey(k));
     }
+    // Encrypted cache (balances, tx history, blobs).
+    _cache = {};
+    _cacheDirty = false;
+    await WalletCacheStore.delete(coinSymbol);
   }
 
   // ----- Protected state mutators (used by subclasses) -----

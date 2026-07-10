@@ -195,12 +195,31 @@ class WalletManager with ChangeNotifier {
       _visibleWallets.map((w) async {
         try {
           await w.loadPersistedConnection();
-          await w.loadPersistedSnapshot();
         } catch (e) {
           log(LogLevel.error, 'Failed to load cached display state: $e', coin: w.coinSymbol);
         }
       }),
     );
+    // The cached balances/tx list live in the password-encrypted cache. When
+    // app lock is off we can auto-load the password from secure storage and
+    // show them immediately; when it's on we must not decrypt before the user
+    // authenticates, so hydration is deferred to the post-unlock open path.
+    final appLockEnabled =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
+    if (_password == null && !appLockEnabled) await loadMobileWalletPassword();
+    await Future.wait(_visibleWallets.map(_hydrateWalletCache));
+  }
+
+  /// Decrypts a wallet's cache and restores its display snapshot. Idempotent.
+  Future<void> _hydrateWalletCache(CryptoWallet w) async {
+    if (_password == null) return;
+    try {
+      w.setCachePassword(_password);
+      await w.loadCache();
+      await w.loadPersistedSnapshot();
+    } catch (e) {
+      log(LogLevel.error, 'Failed to hydrate wallet cache: $e', coin: w.coinSymbol);
+    }
   }
 
   /// Opens on-disk wallet files (slow; Monero FFI, decrypt, etc.).
@@ -266,6 +285,10 @@ class WalletManager with ChangeNotifier {
     // a slow Tor handshake must not stall the open path, and `load()` will
     // dedupe via the connect's in-flight future.
     unawaited(_connectBeforeOpenSafely(w));
+
+    // Decrypt this wallet's cache now that the password is available (covers
+    // desktop unlock, where loadCachedDisplayState ran before the password).
+    await _hydrateWalletCache(w);
 
     try {
       if (await w.hasExistingWallet()) {
@@ -395,6 +418,7 @@ class WalletManager with ChangeNotifier {
     }
 
     for (final w in _visibleWallets) {
+      w.setCachePassword(_password);
       await w.restoreFromMasterSeed(
         bip39Mnemonic: bip39Mnemonic,
         restoreDate: restoreDate,

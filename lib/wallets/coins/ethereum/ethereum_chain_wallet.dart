@@ -9,7 +9,6 @@ import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet.dart';
@@ -79,8 +78,6 @@ class EthereumChainWallet extends CryptoWallet {
   /// broadcast (no indexer needed); an optional explorer adds incoming ones
   /// later. Confirmations come from polling receipts in [refresh].
   final Map<String, _EthTxRecord> _txRecords = {};
-
-  String get _txRecordsPrefKey => prefKey('cachedEthTxs');
 
   int get chainId => _chainId;
 
@@ -646,7 +643,7 @@ class EthereumChainWallet extends CryptoWallet {
       final json = jsonEncode({
         'txs': [for (final r in _txRecords.values) r.toJson()],
       });
-      await SharedPreferencesService.set<String>(_txRecordsPrefKey, json);
+      cachePut('cachedEthTxs', json);
     } catch (e) {
       walletLog(LogLevel.warn, 'persist eth txs: $e');
     }
@@ -656,7 +653,7 @@ class EthereumChainWallet extends CryptoWallet {
   Future<void> loadPersistedSnapshot() async {
     await super.loadPersistedSnapshot();
     try {
-      final raw = await SharedPreferencesService.get<String>(_txRecordsPrefKey);
+      final raw = cacheGetString('cachedEthTxs');
       if (raw == null || raw.isEmpty) return;
       final decoded = jsonDecode(raw);
       final txs = decoded is Map ? decoded['txs'] : null;
@@ -671,11 +668,6 @@ class EthereumChainWallet extends CryptoWallet {
     }
   }
 
-  @override
-  Future<void> clearPersistedState() async {
-    await super.clearPersistedState();
-    await SharedPreferencesService.remove(_txRecordsPrefKey);
-  }
 }
 
 /// Locally-tracked Ethereum transaction (outgoing recorded at broadcast;

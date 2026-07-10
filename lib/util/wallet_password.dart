@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:skylight_wallet/consts.dart';
+import 'package:skylight_wallet/util/secure_storage.dart';
 
 String genWalletPassword() {
   final byteLength = 16;
@@ -16,16 +16,13 @@ String genWalletPassword() {
 }
 
 Future<void> storeMobileWalletPassword(String password) async {
-  final storage = FlutterSecureStorage();
-  await storage.write(key: walletPasswordStorageKey, value: password);
+  await secureStorage.write(key: walletPasswordStorageKey, value: password);
 }
 
 Future<String?> getMobileWalletPassword() async {
-  final storage = FlutterSecureStorage();
-  return storage.read(key: walletPasswordStorageKey);
+  return secureStorage.read(key: walletPasswordStorageKey);
 }
 
 Future<void> deleteMobileWalletPassword() async {
-  final storage = FlutterSecureStorage();
-  await storage.delete(key: walletPasswordStorageKey);
+  await secureStorage.delete(key: walletPasswordStorageKey);
 }

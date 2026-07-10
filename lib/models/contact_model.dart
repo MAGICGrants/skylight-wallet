@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/secure_storage.dart';
 
 class Contact {
   final String id;
@@ -52,7 +52,6 @@ class Contact {
 class ContactModel with ChangeNotifier {
   static const _storageKey = 'contacts';
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   List<Contact> _contacts = [];
 
   List<Contact> get contacts => List.unmodifiable(_contacts);
@@ -67,7 +66,7 @@ class ContactModel with ChangeNotifier {
 
   Future<void> _loadContacts() async {
     try {
-      final stored = await _storage.read(key: _storageKey);
+      final stored = await secureStorage.read(key: _storageKey);
       if (stored != null) {
         _contacts = _decode((json.decode(stored) as List<dynamic>).cast<String>());
         notifyListeners();
@@ -80,7 +79,7 @@ class ContactModel with ChangeNotifier {
   Future<void> _saveContacts() async {
     try {
       final contactsJson = _contacts.map((contact) => json.encode(contact.toJson())).toList();
-      await _storage.write(key: _storageKey, value: json.encode(contactsJson));
+      await secureStorage.write(key: _storageKey, value: json.encode(contactsJson));
     } catch (e) {
       log(LogLevel.error, 'Error saving contacts: $e');
     }

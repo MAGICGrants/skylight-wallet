@@ -914,12 +914,20 @@ class MoneroWallet extends CryptoWallet {
       );
     });
 
-    walletLog(LogLevel.info, 'PendingTransaction_commit result: $commitResult');
+    final status = tx.raw.status();
+    walletLog(LogLevel.info, 'PendingTransaction_commit result: $commitResult, status: $status');
 
     final errorMsg = tx.errorString;
     if (errorMsg != '' && errorMsg != 'Schema expected string') {
       walletLog(LogLevel.error, 'PendingTransaction_commit error: $errorMsg');
       throw FormatException(errorMsg);
+    }
+
+    // The broadcast can fail without setting errorString; gate success on the
+    // commit result and status too so we don't report a send that didn't happen.
+    if (!commitResult || status != 0) {
+      walletLog(LogLevel.error, 'PendingTransaction_commit failed: result=$commitResult status=$status');
+      throw FormatException('Failed to broadcast transaction.');
     }
 
     await refresh();

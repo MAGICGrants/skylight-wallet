@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
 import 'package:skylight_wallet/wallets/coins/monero/legacy_monero_wallet.dart';
@@ -195,7 +195,7 @@ class _LegacyWalletScreenState extends State<LegacyWalletScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
                         suffixIcon: IconButton(
                           icon: Icon(Icons.copy),
-                          onPressed: () => Clipboard.setData(ClipboardData(text: _seed!)),
+                          onPressed: () => SecureClipboard.copy(_seed!),
                         ),
                       ),
                     ),

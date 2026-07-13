@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
@@ -34,7 +35,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
     setState(() => _restoreHeight = restoreHeight);
   }
 
-  Widget _copyField(String label, String value) {
+  Widget _copyField(String label, String value, {bool sensitive = false}) {
     return TextFormField(
       readOnly: true,
       controller: TextEditingController(text: value),
@@ -42,7 +43,9 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
         suffixIcon: IconButton(
-          onPressed: () => Clipboard.setData(ClipboardData(text: value)),
+          onPressed: () => sensitive
+              ? SecureClipboard.copy(value)
+              : Clipboard.setData(ClipboardData(text: value)),
           icon: Icon(Icons.copy),
         ),
       ),
@@ -68,12 +71,9 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 20,
                 children: [
-                  Text(
-                    i18n.lwsDetailsDescription,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  _copyField(i18n.lwsKeysPrimaryAddress, primaryAddress),
-                  _copyField(i18n.lwsKeysSecretViewKey, secretViewKey),
+                  Text(i18n.lwsDetailsDescription, style: Theme.of(context).textTheme.bodyLarge),
+                  _copyField(i18n.lwsKeysPrimaryAddress, primaryAddress, sensitive: true),
+                  _copyField(i18n.lwsKeysSecretViewKey, secretViewKey, sensitive: true),
                   _copyField(i18n.lwsKeysRestoreHeight, _restoreHeight.toString()),
                 ],
               ),

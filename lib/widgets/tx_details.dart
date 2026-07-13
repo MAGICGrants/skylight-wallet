@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallets/crypto_wallet.dart';
 
 class TxDetailsDialog {
@@ -80,7 +80,7 @@ class _TxDetailsDialog extends StatelessWidget {
                         textAlign: TextAlign.end,
                         style: TextStyle(fontFamily: 'monospace'),
                       ),
-                      onTap: () => Clipboard.setData(ClipboardData(text: txDetails.hash)),
+                      onTap: () => SecureClipboard.copy(txDetails.hash),
                     ),
                   ),
                 ),
@@ -184,7 +184,7 @@ class _TxDetailsDialog extends StatelessWidget {
                           style: TextStyle(fontFamily: 'monospace'),
                           softWrap: true,
                         ),
-                        onTap: () => Clipboard.setData(ClipboardData(text: txDetails.key)),
+                        onTap: () => SecureClipboard.copy(txDetails.key),
                       ),
                     ),
                   ),
@@ -222,7 +222,7 @@ class _TxDetailsDialog extends StatelessWidget {
                                 ),
                               ),
                               onTap: () =>
-                                  Clipboard.setData(ClipboardData(text: recipient.address)),
+                                  SecureClipboard.copy(recipient.address),
                             ),
                             Text('$amountStr ${wallet.coinSymbol}', softWrap: true),
                             if (recipient.isChange)

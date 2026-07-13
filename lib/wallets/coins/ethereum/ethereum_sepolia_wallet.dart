@@ -10,4 +10,7 @@ class EthereumSepoliaWallet extends EthereumChainWallet {
         connectionAddressExample: 'e.g. https://ethereum-sepolia-rpc.publicnode.com',
         isTestnet: true,
       );
+
+  @override
+  String get fiatBaseSymbol => 'ETH';
 }

@@ -15,4 +15,7 @@ class BitcoinTestnetWallet extends BitcoinChainWallet {
         connectionAddressExample: 'e.g. blockstream.info:993',
         isTestnet: true,
       );
+
+  @override
+  String get fiatBaseSymbol => 'BTC';
 }

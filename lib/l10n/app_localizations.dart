@@ -1005,6 +1005,12 @@ abstract class AppLocalizations {
   /// **'Transactions are irreversible, so make sure that these details match exactly.'**
   String get confirmSendDescription;
 
+  /// No description provided for @confirmSendHighFeeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The network fee is {percent} of the amount you are sending.'**
+  String confirmSendHighFeeWarning(String percent);
+
   /// No description provided for @addressBookTitle.
   ///
   /// In en, this message translates to:

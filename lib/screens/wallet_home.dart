@@ -53,7 +53,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
     final ratesBySymbol = <String, double?>{
       for (final w in walletManager.allWallets)
-        w.coinSymbol: fiatRate.rateFor(w.coinSymbol, isTestnet: w.isTestnet),
+        w.coinSymbol: fiatRate.rateFor(w.coinSymbol),
     };
     final totalFiat = walletManager.totalUnlockedFiat(ratesBySymbol);
 
@@ -214,10 +214,8 @@ class _CoinRowState extends State<_CoinRow> {
     final wallet = widget.wallet;
     final hasConnection = wallet.connectionAddress.isNotEmpty;
     final balance = wallet.unlockedBalance;
-    final coinRate = widget.fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
-    final balanceFiat = !wallet.isTestnet && coinRate != null && balance is double
-        ? balance * coinRate
-        : null;
+    final coinRate = widget.fiatRate.rateFor(wallet.coinSymbol);
+    final balanceFiat = coinRate != null && balance is double ? balance * coinRate : null;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,

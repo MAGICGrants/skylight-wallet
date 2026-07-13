@@ -213,9 +213,13 @@ abstract class CryptoWallet with ChangeNotifier {
   /// confirmed in the UI (no pending indicator).
   int get requiredConfirmations;
 
-  /// True for testnet / regtest coins that should not use mainnet fiat
-  /// pricing or other mainnet-only behaviour.
+  /// True for testnet / regtest coins.
   bool get isTestnet => false;
+
+  /// Symbol whose fiat rate represents this coin's value. Defaults to
+  /// [coinSymbol]; testnet coins override it to their mainnet equivalent
+  /// (e.g. TBTC → BTC) so they can display an approximate fiat value.
+  String get fiatBaseSymbol => coinSymbol;
 
   /// When true, unconfirmed (pending) balance is spendable and the UI should
   /// not show a separate pending amount below the main balance.

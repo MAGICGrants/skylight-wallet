@@ -485,6 +485,11 @@ class AppLocalizationsPt extends AppLocalizations {
       'As transações são irreversíveis, então verifique se estes detalhes correspondem exatamente.';
 
   @override
+  String confirmSendHighFeeWarning(String percent) {
+    return 'A taxa de rede é $percent do valor que você está enviando.';
+  }
+
+  @override
   String get addressBookTitle => 'Lista de Contatos';
 
   @override

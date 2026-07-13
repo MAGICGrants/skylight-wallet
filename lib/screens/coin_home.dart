@@ -144,14 +144,18 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 4,
           children: [
-            if (!wallet.isTestnet && fiatRate.hasFailed)
+            if (fiatRate.isSupported(wallet.coinSymbol) && fiatRate.hasFailed)
               Tooltip(
                 message: i18n.homeFiatApiError,
                 child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),
               ),
-            if (!wallet.isTestnet && unlockedBalanceFiat == null && !fiatRate.isDisabled)
+            if (fiatRate.isSupported(wallet.coinSymbol) &&
+                unlockedBalanceFiat == null &&
+                !fiatRate.isDisabled)
               Skeletonizer(enabled: true, child: Text('Potato', style: TextStyle(fontSize: 18))),
-            if (!wallet.isTestnet && unlockedBalanceFiat is double && !fiatRate.isDisabled)
+            if (fiatRate.isSupported(wallet.coinSymbol) &&
+                unlockedBalanceFiat is double &&
+                !fiatRate.isDisabled)
               FiatAmount(prefix: fiatSymbol, amount: unlockedBalanceFiat, maxFontSize: 18),
           ],
         ),
@@ -291,9 +295,8 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
       );
     }
 
-    final coinRate = fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
-    final unlockedBalanceFiat =
-        !wallet.isTestnet && coinRate != null && wallet.unlockedBalance is double
+    final coinRate = fiatRate.rateFor(wallet.coinSymbol);
+    final unlockedBalanceFiat = coinRate != null && wallet.unlockedBalance is double
         ? wallet.unlockedBalance! * coinRate
         : null;
     final lockedBalance = wallet.canSpendPendingBalance
@@ -479,13 +482,8 @@ class _TransactionListItemState extends State<_TransactionListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final coinRate = widget.fiatRate.rateFor(
-      widget.wallet.coinSymbol,
-      isTestnet: widget.wallet.isTestnet,
-    );
-    final amountFiat = !widget.wallet.isTestnet && coinRate != null
-        ? widget.tx.amount * coinRate
-        : null;
+    final coinRate = widget.fiatRate.rateFor(widget.wallet.coinSymbol);
+    final amountFiat = coinRate != null ? widget.tx.amount * coinRate : null;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -535,14 +533,14 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                       smallerDigits: widget.wallet.smallerDigits,
                       maxFontSize: 16,
                     ),
-                    if (!widget.wallet.isTestnet &&
+                    if (widget.fiatRate.isSupported(widget.wallet.coinSymbol) &&
                         amountFiat == null &&
                         !widget.fiatRate.isDisabled)
                       Skeletonizer(
                         enabled: true,
                         child: Text('Potato', style: TextStyle(fontSize: 14)),
                       ),
-                    if (!widget.wallet.isTestnet &&
+                    if (widget.fiatRate.isSupported(widget.wallet.coinSymbol) &&
                         amountFiat is double &&
                         !widget.fiatRate.isDisabled)
                       FiatAmount(prefix: widget.fiatSymbol, amount: amountFiat, maxFontSize: 14),

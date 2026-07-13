@@ -159,6 +159,14 @@
   "scanQrTitle": "Escanear QR Code",
   "confirmSendTitle": "Confirmar Envio",
   "confirmSendDescription": "As transações são irreversíveis, então verifique se estes detalhes correspondem exatamente.",
+  "confirmSendHighFeeWarning": "A taxa de rede é {percent} do valor que você está enviando.",
+  "@confirmSendHighFeeWarning": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "addressBookTitle": "Lista de Contatos",
   "addressBookAddContact": "Adicionar Contato",
   "addressBookEditContact": "Editar Contato",

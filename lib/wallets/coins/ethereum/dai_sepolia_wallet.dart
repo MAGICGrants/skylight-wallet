@@ -16,4 +16,7 @@ class DaiSepoliaWallet extends Erc20ChainWallet {
         displayDecimals: 2,
         displaySmallerDigits: 0,
       );
+
+  @override
+  String get fiatBaseSymbol => 'DAI';
 }

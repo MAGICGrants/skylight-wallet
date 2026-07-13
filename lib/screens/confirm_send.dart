@@ -139,6 +139,34 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     });
   }
 
+  static const _highFeeThreshold = 0.10;
+
+  String _formatPercent(double ratio) => '${(ratio * 100).round()}%';
+
+  /// Fee as a fraction of the amount, or null when it can't be determined
+  /// (token send with no fiat rate). Same-currency fees compare directly;
+  /// foreign (token) fees compare in fiat.
+  double? _feeToAmountRatio(
+    FiatRateModel fiatRate,
+    CryptoWallet? wallet,
+    bool feeIsForeign,
+    String feeSymbol,
+  ) {
+    if (_amount <= 0) return null;
+
+    if (!feeIsForeign) {
+      return _fee / _amount;
+    }
+
+    final amountRate = fiatRate.rateFor(wallet?.coinSymbol ?? _coinSymbol);
+    final feeRate = fiatRate.rateFor(feeSymbol);
+    if (amountRate == null || feeRate == null) return null;
+
+    final amountFiat = _amount * amountRate;
+    if (amountFiat <= 0) return null;
+    return (_fee * feeRate) / amountFiat;
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -150,12 +178,16 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final feeDecimals = wallet?.feeDecimals ?? decimals;
     final feeSymbol = wallet?.feeCoinSymbol ?? coinSymbol;
     final feeIsForeign = wallet?.feeIsForeign ?? false;
-    final coinRate = fiatRate.rateFor(coinSymbol, isTestnet: wallet?.isTestnet);
-    final amountFiat = wallet?.isTestnet != true && coinRate != null ? _amount * coinRate : null;
+    final coinRate = fiatRate.rateFor(coinSymbol);
+    final amountFiat = coinRate != null ? _amount * coinRate : null;
     // The fee is in ETH for tokens; its fiat can't use the token's rate, so omit it.
-    final networkFeeFiat = wallet?.isTestnet != true && coinRate != null && !feeIsForeign
-        ? _fee * coinRate
-        : null;
+    final networkFeeFiat = coinRate != null && !feeIsForeign ? _fee * coinRate : null;
+
+    // Warn when the fee is a large fraction of the amount. Same-currency fees
+    // compare directly; foreign (token) fees need fiat for both sides, and the
+    // check is skipped if a rate is unavailable.
+    final feeRatio = _feeToAmountRatio(fiatRate, wallet, feeIsForeign, feeSymbol);
+    final showHighFeeWarning = feeRatio != null && feeRatio > _highFeeThreshold;
 
     return Scaffold(
       appBar: AppBar(),
@@ -216,6 +248,42 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                     ),
                   ],
                 ),
+                if (showHighFeeWarning)
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 10,
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              // Split the localized string on the placeholder so
+                              // the percentage can be bolded regardless of locale.
+                              final parts = i18n.confirmSendHighFeeWarning(' ').split(' ');
+                              return Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(text: parts.first),
+                                    TextSpan(
+                                      text: _formatPercent(feeRatio),
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    if (parts.length > 1) TextSpan(text: parts.last),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (_destinationOpenAlias is String)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

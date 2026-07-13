@@ -485,6 +485,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Transactions are irreversible, so make sure that these details match exactly.';
 
   @override
+  String confirmSendHighFeeWarning(String percent) {
+    return 'The network fee is $percent of the amount you are sending.';
+  }
+
+  @override
   String get addressBookTitle => 'Address Book';
 
   @override

@@ -514,7 +514,7 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
     final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
-    final coinRate = fiatRate.rateFor(wallet.coinSymbol, isTestnet: wallet.isTestnet);
+    final coinRate = fiatRate.rateFor(wallet.coinSymbol);
 
     showModalBottomSheet(
       context: context,
@@ -1134,7 +1134,7 @@ class _PriorityOption extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (currentFiatRate != null && !wallet.isTestnet && !wallet.feeIsForeign)
+                  if (currentFiatRate != null && !wallet.feeIsForeign)
                     FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
                 ],
               )

@@ -17,10 +17,16 @@ enum FiatApiMode { torOnly, clearnet, disabled }
 // the wallet supports. Each coin is fetched independently so a Kraken
 // outage on one pair doesn't blank out the others.
 class FiatRateModel with ChangeNotifier {
-  // Mapping coinSymbol -> Kraken base code prefix used to build the
-  // pair name. Kraken uses the legacy "X<asset>Z<fiat>" notation for its
-  // original assets (e.g. XMR is `XXMRZ`, BTC is `XXBTZ`).
-  static const Map<String, String> _krakenBase = {'XMR': 'XXMRZ', 'BTC': 'XXBTZ'};
+  // Mapping coinSymbol -> Kraken base code prefix used to build the pair name.
+  // Kraken uses the legacy "X<asset>Z<fiat>" notation for its original assets
+  // (XMR `XXMRZ`, BTC `XXBTZ`, ETH `XETHZ`); newer assets like DAI have no
+  // prefix (pair is just `DAIUSD`).
+  static const Map<String, String> _krakenBase = {
+    'XMR': 'XXMRZ',
+    'BTC': 'XXBTZ',
+    'ETH': 'XETHZ',
+    'DAI': 'DAI',
+  };
 
   static List<String> get supportedCoins => _krakenBase.keys.toList();
 
@@ -57,16 +63,24 @@ class FiatRateModel with ChangeNotifier {
   WalletManager? _walletManager;
   Set<String> _lastFetchedActiveCoins = {};
 
-  /// Latest fiat rate for [coinSymbol], or `null` if it hasn't been
-  /// fetched yet (or the most recent fetch failed). Returns `null` for
-  /// unconfigured coins. Testnet wallets always return `0`.
-  double? rateFor(String coinSymbol, {bool? walletActive, bool? isTestnet}) {
+  /// Latest fiat rate for [coinSymbol], or `null` if it hasn't been fetched
+  /// yet (or the most recent fetch failed). Returns `null` for unconfigured
+  /// coins. Testnet coins resolve to their mainnet [CryptoWallet.fiatBaseSymbol]
+  /// rate (e.g. TBTC → BTC).
+  /// Whether a fiat rate is obtainable for [coinSymbol] (its mainnet base is a
+  /// supported Kraken coin). Testnet coins inherit their base's support.
+  bool isSupported(String coinSymbol) {
+    final wallet = _walletManager?.getWallet(coinSymbol.toUpperCase());
+    final base = (wallet?.fiatBaseSymbol ?? coinSymbol).toUpperCase();
+    return _krakenBase.containsKey(base);
+  }
+
+  double? rateFor(String coinSymbol, {bool? walletActive}) {
     final symbol = coinSymbol.toUpperCase();
     final wallet = _walletManager?.getWallet(symbol);
-    if (isTestnet == true || wallet?.isTestnet == true) return 0;
     if (walletActive == false) return null;
     if (wallet != null && wallet.connectionAddress.isEmpty) return null;
-    return _rates[symbol];
+    return _rates[(wallet?.fiatBaseSymbol ?? symbol).toUpperCase()];
   }
 
   Map<String, double?> get rates => Map.unmodifiable(_rates);
@@ -105,8 +119,8 @@ class FiatRateModel with ChangeNotifier {
     final manager = _walletManager;
     if (manager == null) return [];
     return manager.allWallets
-        .where((w) => w.connectionAddress.isNotEmpty && !w.isTestnet)
-        .map((w) => w.coinSymbol.toUpperCase())
+        .where((w) => w.connectionAddress.isNotEmpty)
+        .map((w) => w.fiatBaseSymbol.toUpperCase())
         .where(_krakenBase.containsKey);
   }
 

@@ -159,6 +159,14 @@
   "scanQrTitle": "Scan QR Code",
   "confirmSendTitle": "Confirm Send",
   "confirmSendDescription": "Transactions are irreversible, so make sure that these details match exactly.",
+  "confirmSendHighFeeWarning": "The network fee is {percent} of the amount you are sending.",
+  "@confirmSendHighFeeWarning": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "addressBookTitle": "Address Book",
   "addressBookAddContact": "Add Contact",
   "addressBookEditContact": "Edit Contact",

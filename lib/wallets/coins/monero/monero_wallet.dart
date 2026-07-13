@@ -15,6 +15,7 @@ import 'package:monero/src/wallet2.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/util/amount_units.dart';
 import 'package:skylight_wallet/util/bip39.dart';
 import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/util/formatting.dart';
@@ -842,10 +843,14 @@ class MoneroWallet extends CryptoWallet {
   Future<PendingTransaction> createTx(
     String destinationAddress,
     double amount,
+    String? amountText,
     bool isSweepAll, {
     int priority = 0,
   }) async {
-    final amountInt = _w2Wallet!.amountFromDouble(amount);
+    final amountInt = amountText != null
+        ? decimalToBaseUnits(amountText, decimals).toInt()
+        : _w2Wallet!.amountFromDouble(amount);
+
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 
     final dstAddr = [destinationAddress];

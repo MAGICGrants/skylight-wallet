@@ -101,6 +101,7 @@ class Erc20ChainWallet extends EthereumChainWallet {
   Future<PendingTransaction> createTx(
     String destinationAddress,
     double amount,
+    String? amountText,
     bool isSweepAll, {
     int priority = 0,
   }) async {
@@ -111,6 +112,8 @@ class Erc20ChainWallet extends EthereumChainWallet {
 
     final rawAmount = isSweepAll
         ? _tokenBalanceRaw
+        : amountText != null
+        ? decimalToBaseUnits(amountText, tokenDecimals)
         : BigInt.from((amount * _tokenUnit.toDouble()).round());
     if (rawAmount <= BigInt.zero || rawAmount > _tokenBalanceRaw) {
       throw Exception('Unlocked funds too low');

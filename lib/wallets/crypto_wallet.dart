@@ -395,9 +395,11 @@ abstract class CryptoWallet with ChangeNotifier {
 
   bool isAddressValid(String address);
 
+  /// [amountText] is the raw amount string as typed; avoids losing precision
   Future<PendingTransaction> createTx(
     String destinationAddress,
     double amount,
+    String? amountText,
     bool isSweepAll, {
     int priority = 0,
   });

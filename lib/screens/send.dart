@@ -304,7 +304,13 @@ class _SendScreenState extends State<SendScreen> {
 
     for (int i = 0; i < maxRetries; i++) {
       try {
-        return await wallet.createTx(destinationAddress, amount, _isSweepAll, priority: priority);
+        return await wallet.createTx(
+          destinationAddress,
+          amount,
+          _amountController.text,
+          _isSweepAll,
+          priority: priority,
+        );
       } catch (error) {
         if (error.toString().contains('Unlocked funds too low')) {
           return null;
@@ -445,6 +451,7 @@ class _SendScreenState extends State<SendScreen> {
         tx = await wallet.createTx(
           destinationAddress,
           amount,
+          _amountController.text,
           _isSweepAll,
           priority: _selectedPriority + 1,
         );

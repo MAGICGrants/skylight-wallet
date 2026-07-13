@@ -1004,7 +1004,9 @@ class BitcoinChainWallet extends CryptoWallet {
           if (!isOutgoing) {
             recipients.add(TxRecipient(addr, valueBtc));
           } else {
-            recipients.add(TxRecipient(addr, valueBtc, isChange: ourChangeAddresses.contains(addr)));
+            recipients.add(
+              TxRecipient(addr, valueBtc, isChange: ourChangeAddresses.contains(addr)),
+            );
           }
         } else {
           outputsToOthersSats += valueSats;
@@ -1346,6 +1348,7 @@ class BitcoinChainWallet extends CryptoWallet {
   Future<PendingTransaction> createTx(
     String destinationAddress,
     double amount,
+    String? amountText,
     bool isSweepAll, {
     int priority = 0,
   }) async {

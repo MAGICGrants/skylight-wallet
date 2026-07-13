@@ -10,6 +10,7 @@ import 'package:web3dart/web3dart.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/util/amount_units.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_file_crypto.dart';
@@ -508,6 +509,7 @@ class EthereumChainWallet extends CryptoWallet {
   Future<PendingTransaction> createTx(
     String destinationAddress,
     double amount,
+    String? amountText,
     bool isSweepAll, {
     int priority = 0,
   }) async {
@@ -550,7 +552,9 @@ class EthereumChainWallet extends CryptoWallet {
         throw Exception('Unlocked funds too low');
       }
     } else {
-      valueWei = BigInt.from((amount * _weiPerEth.toDouble()).round());
+      valueWei = amountText != null
+          ? decimalToBaseUnits(amountText, 18) // wei = 10^18
+          : BigInt.from((amount * _weiPerEth.toDouble()).round());
       if (valueWei + maxFeeTotal > _balanceWei) {
         walletLog(
           LogLevel.info,

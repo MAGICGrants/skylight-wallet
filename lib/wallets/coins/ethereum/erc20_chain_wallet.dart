@@ -147,7 +147,7 @@ class Erc20ChainWallet extends EthereumChainWallet {
       );
       signed = await Web3Client(
         _rpc.url!,
-        http.Client(),
+        OfflineSigningClient(),
       ).signTransaction(credentials, tx, chainId: chainId);
     } catch (e) {
       walletLog(LogLevel.warn, 'erc20 build/sign failed: $e');

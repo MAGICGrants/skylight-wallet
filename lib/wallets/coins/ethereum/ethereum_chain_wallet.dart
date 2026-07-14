@@ -4,7 +4,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:blockchain_utils/bip/address/eth_addr.dart';
-import 'package:http/http.dart' as http;
+import 'package:skylight_wallet/wallets/coins/ethereum/offline_signing_client.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 
@@ -580,7 +580,7 @@ class EthereumChainWallet extends CryptoWallet {
       );
       signed = await Web3Client(
         _rpc.url!,
-        http.Client(),
+        OfflineSigningClient(),
       ).signTransaction(credentials, tx, chainId: _chainId);
       final head = bytesToHex(signed);
       walletLog(

@@ -13,7 +13,6 @@ import 'package:monero/src/monero.dart' as monero_ffi;
 import 'package:monero/src/wallet2.dart';
 
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/amount_units.dart';
 import 'package:skylight_wallet/util/bip39.dart';
@@ -481,7 +480,7 @@ class MoneroWallet extends CryptoWallet {
     } else {
       var httpClient = HttpClient();
       if (proxyPort != null && proxyPort.isNotEmpty) {
-        httpClient.findProxy = (_) => 'PROXY localhost:$proxyPort';
+        httpClient.findProxy = (_) => 'SOCKS localhost:$proxyPort';
       }
       try {
         final request = await httpClient.postUrl(Uri.parse(url));
@@ -530,12 +529,22 @@ class MoneroWallet extends CryptoWallet {
       statusCode = response.statusCode;
       jsonBody = response.jsonBody;
     } else {
-      final response = await http.get(Uri.parse(url)).timeout(Duration(seconds: 10));
-      statusCode = response.statusCode;
+      final httpClient = HttpClient();
+      if (proxyPort != null && proxyPort.isNotEmpty) {
+        httpClient.findProxy = (_) => 'SOCKS localhost:$proxyPort';
+      }
       try {
-        jsonBody = json.decode(response.body);
-      } catch (_) {
-        jsonBody = null;
+        final request = await httpClient.getUrl(Uri.parse(url));
+        final response = await request.close().timeout(Duration(seconds: 10));
+        statusCode = response.statusCode;
+        final body = await response.transform(utf8.decoder).join();
+        try {
+          jsonBody = json.decode(body);
+        } catch (_) {
+          jsonBody = null;
+        }
+      } finally {
+        httpClient.close(force: true);
       }
     }
 
@@ -926,7 +935,10 @@ class MoneroWallet extends CryptoWallet {
     // The broadcast can fail without setting errorString; gate success on the
     // commit result and status too so we don't report a send that didn't happen.
     if (!commitResult || status != 0) {
-      walletLog(LogLevel.error, 'PendingTransaction_commit failed: result=$commitResult status=$status');
+      walletLog(
+        LogLevel.error,
+        'PendingTransaction_commit failed: result=$commitResult status=$status',
+      );
       throw FormatException('Failed to broadcast transaction.');
     }
 
@@ -1060,13 +1072,22 @@ class MoneroWallet extends CryptoWallet {
     walletLog(LogLevel.info, '  subaddrs: $subaddrs');
     walletLog(LogLevel.info, '  getAll: $getAll');
 
+    ({InternetAddress host, int port})? proxyInfo;
+    if (connectionUseTor) {
+      proxyInfo = await TorSettingsService.sharedInstance.getProxy();
+      if (proxyInfo == null) {
+        throw Exception('Connection requires Tor but no Tor proxy is available.');
+      }
+    } else if (connectionProxyPort.isNotEmpty) {
+      final port = int.tryParse(connectionProxyPort);
+      if (port != null) proxyInfo = (host: InternetAddress.loopbackIPv4, port: port);
+    }
+
     var httpStatus = 0;
 
     for (int i = 0; i < 3; i++) {
       try {
-        if (connectionUseTor) {
-          await TorService.sharedInstance.waitUntilConnected();
-          final proxyInfo = TorService.sharedInstance.getProxyInfo();
+        if (proxyInfo != null) {
           final response = await makeSocksHttpRequest(
             'POST',
             url.toString(),

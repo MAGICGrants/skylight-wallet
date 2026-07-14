@@ -312,6 +312,19 @@ class MoneroWallet extends CryptoWallet {
   }
 
   @override
+  void dispose() {
+    // Close the native wallet so its decrypted keys and background threads
+    // aren't left in native memory after this object is gone.
+    if (_w2Wallet != null && _w2WalletManager != null) {
+      _w2WalletManager!.closeWallet(_w2Wallet!, false);
+      _w2Wallet = null;
+      _w2TxHistory = null;
+      _daemonInitialized = false;
+    }
+    super.dispose();
+  }
+
+  @override
   Future<void> deleteFiles() async {
     if (_w2Wallet != null) {
       final wm = await _walletManager();

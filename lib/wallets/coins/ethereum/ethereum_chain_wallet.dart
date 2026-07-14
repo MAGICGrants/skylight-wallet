@@ -295,8 +295,6 @@ class EthereumChainWallet extends CryptoWallet {
 
   // ----- Stats -----
 
-  double get _balanceEth => _balanceWei.toDouble() / _weiPerEth.toDouble();
-
   /// Unit a transaction's *amount* is divided by for display (native: wei per
   /// ETH). ERC-20 tokens override to their token-decimal unit. The *fee* always
   /// stays in ETH (`_weiPerEth`).
@@ -317,14 +315,17 @@ class EthereumChainWallet extends CryptoWallet {
   @override
   Future<void> loadTotalBalance() async {
     if (!_connected) return;
-    setTotalBalance(_balanceEth);
+    setTotalBalanceBaseUnits(_balanceWei);
   }
 
   @override
   Future<void> loadUnlockedBalance() async {
     if (!_connected) return;
-    setUnlockedBalance(_balanceEth);
+    setUnlockedBalanceBaseUnits(_balanceWei);
   }
+
+  @override
+  int get baseUnitDecimals => 18;
 
   @override
   Future<int> getCurrentHeight() async => _bestHeight;

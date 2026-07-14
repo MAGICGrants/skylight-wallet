@@ -149,6 +149,11 @@ abstract class CryptoWallet with ChangeNotifier {
   int get decimals;
   int get smallerDigits;
 
+  /// Number of decimals in this coin's smallest indivisible unit (piconero=12,
+  /// sat=8, wei=18). Defaults to [decimals]; coins whose display precision
+  /// differs from their base unit (ETH, ERC-20) override it.
+  int get baseUnitDecimals => decimals;
+
   /// Symbol/decimals the network fee is denominated in. Defaults to this
   /// coin's own; ERC-20 tokens override to the chain's native coin (ETH),
   /// since gas is paid in ETH, not the token.
@@ -254,8 +259,10 @@ abstract class CryptoWallet with ChangeNotifier {
   bool _torRequirementBroken = false;
   bool _isSynced = false;
   int? _syncedHeight;
-  double? _unlockedBalance;
-  double? _totalBalance;
+  // Balances are the source of truth in integer base units (piconero, sats,
+  // wei); the double getters below are derived for display only.
+  BigInt? _unlockedBalanceBaseUnits;
+  BigInt? _totalBalanceBaseUnits;
   List<TxDetails> _txHistory = [];
   bool _isLoaded = false;
 
@@ -307,8 +314,19 @@ abstract class CryptoWallet with ChangeNotifier {
   bool get isConnected => _isConnected;
   bool get isSynced => _isSynced;
   int? get syncedHeight => _syncedHeight;
-  double? get unlockedBalance => _unlockedBalance;
-  double? get totalBalance => _totalBalance;
+
+  /// Exact balances in integer base units (piconero/sats/wei).
+  BigInt? get unlockedBalanceBaseUnits => _unlockedBalanceBaseUnits;
+  BigInt? get totalBalanceBaseUnits => _totalBalanceBaseUnits;
+
+  /// Display-only balances (base units ÷ 10^[baseUnitDecimals]); lossy above
+  /// 2^53 base units — use the base-unit getters for any money logic.
+  double? get unlockedBalance => _baseUnitsToDisplay(_unlockedBalanceBaseUnits);
+  double? get totalBalance => _baseUnitsToDisplay(_totalBalanceBaseUnits);
+
+  double? _baseUnitsToDisplay(BigInt? units) =>
+      units == null ? null : units.toDouble() / BigInt.from(10).pow(baseUnitDecimals).toDouble();
+
   List<TxDetails> get txHistory => _txHistory;
   bool get isLoaded => _isLoaded;
 
@@ -571,11 +589,11 @@ abstract class CryptoWallet with ChangeNotifier {
   Future<void> loadPersistedSnapshot() async {
     if (_connectionAddress.isEmpty) return;
 
-    final unlocked = cacheGetDouble('cachedUnlockedBalance');
-    final total = cacheGetDouble('cachedTotalBalance');
+    final unlocked = _tryParseBigInt(cacheGetString('cachedUnlockedBalanceUnits'));
+    final total = _tryParseBigInt(cacheGetString('cachedTotalBalanceUnits'));
     if (unlocked != null) {
-      setUnlockedBalance(unlocked);
-      setTotalBalance(total ?? unlocked);
+      setUnlockedBalanceBaseUnits(unlocked);
+      setTotalBalanceBaseUnits(total ?? unlocked);
     }
 
     final txJson = cacheGetString('cachedTxHistory');
@@ -593,12 +611,17 @@ abstract class CryptoWallet with ChangeNotifier {
   /// Updates the current balance and tx list in the cache after a successful
   /// refresh. Flushed to disk by [persistCache] (called by the orchestration).
   Future<void> persistWalletSnapshot() async {
-    if (!isActive || _unlockedBalance == null) return;
+    if (!isActive || _unlockedBalanceBaseUnits == null) return;
 
-    cachePut('cachedUnlockedBalance', _unlockedBalance);
-    cachePut('cachedTotalBalance', _totalBalance ?? _unlockedBalance);
+    cachePut('cachedUnlockedBalanceUnits', _unlockedBalanceBaseUnits.toString());
+    cachePut(
+      'cachedTotalBalanceUnits',
+      (_totalBalanceBaseUnits ?? _unlockedBalanceBaseUnits).toString(),
+    );
     cachePut('cachedTxHistory', jsonEncode(_txHistory.map((t) => t.toJson()).toList()));
   }
+
+  static BigInt? _tryParseBigInt(String? s) => s == null ? null : BigInt.tryParse(s);
 
   // ----- Tx history persistence (concrete) -----
 
@@ -826,8 +849,8 @@ abstract class CryptoWallet with ChangeNotifier {
       _isConnected = false;
       _isSynced = false;
       _syncedHeight = null;
-      _unlockedBalance = null;
-      _totalBalance = null;
+      _unlockedBalanceBaseUnits = null;
+      _totalBalanceBaseUnits = null;
       _txHistory = [];
     }
     notifyListeners();
@@ -849,13 +872,13 @@ abstract class CryptoWallet with ChangeNotifier {
   }
 
   @protected
-  void setUnlockedBalance(double? value) {
-    _unlockedBalance = value;
+  void setUnlockedBalanceBaseUnits(BigInt? value) {
+    _unlockedBalanceBaseUnits = value;
   }
 
   @protected
-  void setTotalBalance(double? value) {
-    _totalBalance = value;
+  void setTotalBalanceBaseUnits(BigInt? value) {
+    _totalBalanceBaseUnits = value;
   }
 
   // ----- Timers -----

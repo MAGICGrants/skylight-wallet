@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/amount_units.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
@@ -72,6 +73,28 @@ class _SendScreenState extends State<SendScreen> {
       throw StateError('No wallet for $_coinSymbol');
     }
     return wallet;
+  }
+
+  /// Typed amount in integer base units at display precision, or null if the
+  /// field isn't a valid number. Avoids handling money as a `double`.
+  BigInt? _amountUnits(CryptoWallet wallet) {
+    final text = _amountController.text.trim();
+    if (text.isEmpty) return BigInt.zero;
+    try {
+      return decimalToBaseUnits(text, wallet.baseUnitDecimals);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Compares the typed amount to the unlocked balance in exact integer base
+  /// units, so we never use fragile `double ==`/`>`. Returns <0, 0, >0; or null
+  /// when either value is unavailable.
+  int? _compareAmountToBalance(CryptoWallet wallet) {
+    final balanceUnits = wallet.unlockedBalanceBaseUnits;
+    final amountUnits = _amountUnits(wallet);
+    if (balanceUnits == null || amountUnits == null) return null;
+    return amountUnits.compareTo(balanceUnits);
   }
 
   Future<String> _resolveAddressIfDomain(String value) async {
@@ -282,7 +305,7 @@ class _SendScreenState extends State<SendScreen> {
 
     if (destinationAddress.isEmpty) return false;
 
-    if (amount > (wallet.unlockedBalance ?? 0)) {
+    if ((_compareAmountToBalance(wallet) ?? 1) > 0) {
       if (setErrors) {
         setState(() {
           _amountError = i18n.sendInsufficientBalanceError;
@@ -480,7 +503,7 @@ class _SendScreenState extends State<SendScreen> {
           _amountError = i18n.sendInsufficientGasError;
         });
       } else if (error.toString().contains('Unlocked funds too low')) {
-        if (wallet.unlockedBalance! > amount) {
+        if ((_compareAmountToBalance(wallet) ?? 0) < 0) {
           setState(() {
             _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
           });
@@ -503,7 +526,10 @@ class _SendScreenState extends State<SendScreen> {
 
   void _setBalanceAsSendAmount() {
     final wallet = _wallet(context);
-    _amountController.text = (wallet.unlockedBalance ?? 0).toString();
+    final units = wallet.unlockedBalanceBaseUnits;
+    _amountController.text = units == null
+        ? ''
+        : baseUnitsToDecimalString(units, wallet.baseUnitDecimals);
 
     setState(() {
       _isSweepAll = true;
@@ -619,15 +645,15 @@ class _SendScreenState extends State<SendScreen> {
 
   void _onAmountChanged() {
     final wallet = _wallet(context);
-    final amount = double.tryParse(_amountController.text) ?? 0;
+    final isFullBalance = _compareAmountToBalance(wallet) == 0;
 
-    if (amount == wallet.unlockedBalance! && !_isSweepAll) {
+    if (isFullBalance && !_isSweepAll) {
       setState(() {
         _isSweepAll = true;
       });
     }
 
-    if (amount != wallet.unlockedBalance! && _isSweepAll) {
+    if (!isFullBalance && _isSweepAll) {
       setState(() {
         _isSweepAll = false;
       });
@@ -644,10 +670,10 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _calculateFeesIfValid() async {
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    final balance = _wallet(context).unlockedBalance ?? 0;
+    final wallet = _wallet(context);
+    final amountUnits = _amountUnits(wallet);
 
-    if (amount == 0 || amount > balance) {
+    if (amountUnits == null || amountUnits <= BigInt.zero || (_compareAmountToBalance(wallet) ?? 1) > 0) {
       _feeCalculationCounter++;
       _lastFeeFetchKey = '';
       if (mounted) {

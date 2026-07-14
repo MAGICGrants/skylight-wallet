@@ -16,3 +16,16 @@ BigInt decimalToBaseUnits(String amount, int decimals) {
 
   return BigInt.parse('$intPart$fracPart');
 }
+
+/// Inverse of [decimalToBaseUnits]: renders integer base units as a decimal
+/// string, trimming trailing fractional zeros. Used to fill the amount field
+/// from an exact balance without going through `double`.
+String baseUnitsToDecimalString(BigInt units, int decimals) {
+  if (decimals <= 0) return units.toString();
+  final negative = units.isNegative;
+  final digits = units.abs().toString().padLeft(decimals + 1, '0');
+  final intPart = digits.substring(0, digits.length - decimals);
+  final fracPart = digits.substring(digits.length - decimals).replaceAll(RegExp(r'0+$'), '');
+  final result = fracPart.isEmpty ? intPart : '$intPart.$fracPart';
+  return negative ? '-$result' : result;
+}

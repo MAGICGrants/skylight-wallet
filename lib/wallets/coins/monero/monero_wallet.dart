@@ -678,7 +678,7 @@ class MoneroWallet extends CryptoWallet {
     );
 
     walletLog(LogLevel.info, 'Wallet_balance result: $amount');
-    setTotalBalance(doubleAmountFromInt(amount));
+    setTotalBalanceBaseUnits(BigInt.from(amount));
   }
 
   @override
@@ -699,7 +699,7 @@ class MoneroWallet extends CryptoWallet {
     );
 
     walletLog(LogLevel.info, 'Wallet_unlockedBalance result: $amount');
-    setUnlockedBalance(doubleAmountFromInt(amount));
+    setUnlockedBalanceBaseUnits(BigInt.from(amount));
   }
 
   @override

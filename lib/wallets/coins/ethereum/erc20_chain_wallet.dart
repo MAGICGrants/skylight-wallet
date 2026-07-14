@@ -30,8 +30,6 @@ class Erc20ChainWallet extends EthereumChainWallet {
   late final BigInt _tokenUnit = BigInt.from(10).pow(tokenDecimals);
   BigInt _tokenBalanceRaw = BigInt.zero;
 
-  double get _tokenBalance => _tokenBalanceRaw.toDouble() / _tokenUnit.toDouble();
-
   // ----- Metadata / connection reuse -----
 
   @override
@@ -76,14 +74,17 @@ class Erc20ChainWallet extends EthereumChainWallet {
   @override
   Future<void> loadTotalBalance() async {
     if (!_connected) return;
-    setTotalBalance(_tokenBalance);
+    setTotalBalanceBaseUnits(_tokenBalanceRaw);
   }
 
   @override
   Future<void> loadUnlockedBalance() async {
     if (!_connected) return;
-    setUnlockedBalance(_tokenBalance);
+    setUnlockedBalanceBaseUnits(_tokenBalanceRaw);
   }
+
+  @override
+  int get baseUnitDecimals => tokenDecimals;
 
   // ----- History -----
 

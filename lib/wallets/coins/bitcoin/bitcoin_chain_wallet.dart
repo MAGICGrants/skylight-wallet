@@ -935,13 +935,13 @@ class BitcoinChainWallet extends CryptoWallet {
   @override
   Future<void> loadTotalBalance() async {
     if (!_client.isConnected) return;
-    setTotalBalance(_sumBalanceSats() / _satsPerBtc);
+    setTotalBalanceBaseUnits(BigInt.from(_sumBalanceSats()));
   }
 
   @override
   Future<void> loadUnlockedBalance() async {
     if (!_client.isConnected) return;
-    setUnlockedBalance(_sumBalanceSats() / _satsPerBtc);
+    setUnlockedBalanceBaseUnits(BigInt.from(_sumBalanceSats()));
   }
 
   @override

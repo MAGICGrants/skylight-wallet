@@ -110,7 +110,20 @@
   "sendInsufficientBalanceToCoverFeeError": "Insufficient balance to cover the network fee.",
   "sendInsufficientGasError": "Insufficient ETH to cover the network fee.",
   "settingsTitle": "Settings",
+  "homeBlocksRemaining": "{count} blocks left",
+  "@homeBlocksRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "settingsNotifyNewTxsLabel": "Notify New Transactions",
+  "settingsBackgroundSyncLabel": "Background Sync",
+  "settingsBackgroundSyncDescription": "Periodically sync Monero in the background so it's up to date when you open the app.",
+  "settingsBackgroundSyncIntervalLabel": "Sync Interval",
+  "settingsForegroundSyncLabel": "Continuous Sync",
+  "settingsForegroundSyncDescription": "Keep Monero syncing continuously while the app runs in the background, with a persistent notification. Uses more battery.",
   "settingsAppLockLabel": "App Lock",
   "settingsAppLockUnlockReason": "Unlock wallet",
   "settingsAppLockUnableToAuthError": "Unable to authenticate. Make sure you have device unlock set up.",

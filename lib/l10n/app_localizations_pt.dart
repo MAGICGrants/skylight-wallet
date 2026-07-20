@@ -330,7 +330,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsTitle => 'Configurações';
 
   @override
+  String homeBlocksRemaining(String count) {
+    return '$count blocos restantes';
+  }
+
+  @override
   String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
+
+  @override
+  String get settingsBackgroundSyncLabel => 'Sincronização em Segundo Plano';
+
+  @override
+  String get settingsBackgroundSyncDescription =>
+      'Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app.';
+
+  @override
+  String get settingsBackgroundSyncIntervalLabel => 'Intervalo de Sincronização';
+
+  @override
+  String get settingsForegroundSyncLabel => 'Sincronização Contínua';
+
+  @override
+  String get settingsForegroundSyncDescription =>
+      'Mantém o Monero sincronizando continuamente enquanto o app roda em segundo plano, com uma notificação persistente. Usa mais bateria.';
 
   @override
   String get settingsAppLockLabel => 'Desbloqueio com PIN/Biometria';

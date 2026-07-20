@@ -6,6 +6,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/services/foreground_sync_service.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
@@ -62,13 +65,51 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
   String? _errorMessage;
+  bool _backgroundSyncEnabled = false;
+  bool _foregroundSyncEnabled = false;
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
+
+  /// Background-sync toggles are Android-only and Monero-specific (node scan).
+  bool get _showSyncOptions =>
+      Platform.isAndroid && widget.coinSymbol == 'XMR' && !_isExplorer;
 
   @override
   void initState() {
     super.initState();
     _loadPersistedConnection();
+    if (_showSyncOptions) _loadSyncPrefs();
+  }
+
+  Future<void> _loadSyncPrefs() async {
+    final bg =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
+        false;
+    final fg =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.foregroundSyncEnabled) ??
+        false;
+    if (mounted) {
+      setState(() {
+        _backgroundSyncEnabled = bg;
+        _foregroundSyncEnabled = fg;
+      });
+    }
+  }
+
+  void _setBackgroundSyncEnabled(bool value) async {
+    setState(() => _backgroundSyncEnabled = value);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, value);
+    await applyBackgroundTaskRegistration();
+  }
+
+  void _setForegroundSyncEnabled(bool value) async {
+    setState(() => _foregroundSyncEnabled = value);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, value);
+    if (value) {
+      await startForegroundSync();
+    } else {
+      await stopForegroundSync();
+    }
   }
 
   @override
@@ -413,6 +454,26 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   /// Right-aligned status chips under the address field (Tor / HTTPS / local).
+  Widget _syncCheckbox({
+    required String label,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return CheckboxListTile(
+      title: Text(label),
+      value: value,
+      onChanged: (v) => onChanged(v ?? false),
+      controlAffinity: ListTileControlAffinity.leading,
+      contentPadding: EdgeInsets.zero,
+      secondary: Tooltip(
+        message: description,
+        triggerMode: TooltipTriggerMode.tap,
+        child: Icon(Icons.help_outline, size: 20),
+      ),
+    );
+  }
+
   Widget _buildConnectionIndicators(AppLocalizations i18n, TorMode torMode) {
     final chips = <Widget>[];
 
@@ -539,12 +600,31 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
         ),
-        CheckboxListTile(
-          title: Text(i18n.lwsSetupUseTorLabel),
-          value: _useTor,
-          onChanged: torMode == TorMode.disabled ? null : _setUseTor,
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CheckboxListTile(
+              title: Text(i18n.lwsSetupUseTorLabel),
+              value: _useTor,
+              onChanged: torMode == TorMode.disabled ? null : _setUseTor,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (_showSyncOptions) ...[
+              _syncCheckbox(
+                label: i18n.settingsBackgroundSyncLabel,
+                description: i18n.settingsBackgroundSyncDescription,
+                value: _backgroundSyncEnabled,
+                onChanged: _setBackgroundSyncEnabled,
+              ),
+              _syncCheckbox(
+                label: i18n.settingsForegroundSyncLabel,
+                description: i18n.settingsForegroundSyncDescription,
+                value: _foregroundSyncEnabled,
+                onChanged: _setForegroundSyncEnabled,
+              ),
+            ],
+          ],
         ),
         _buildConnectionIndicators(i18n, torMode),
         Row(

@@ -330,7 +330,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String homeBlocksRemaining(String count) {
+    return '$count blocks left';
+  }
+
+  @override
   String get settingsNotifyNewTxsLabel => 'Notify New Transactions';
+
+  @override
+  String get settingsBackgroundSyncLabel => 'Background Sync';
+
+  @override
+  String get settingsBackgroundSyncDescription =>
+      'Periodically sync Monero in the background so it\'s up to date when you open the app.';
+
+  @override
+  String get settingsBackgroundSyncIntervalLabel => 'Sync Interval';
+
+  @override
+  String get settingsForegroundSyncLabel => 'Continuous Sync';
+
+  @override
+  String get settingsForegroundSyncDescription =>
+      'Keep Monero syncing continuously while the app runs in the background, with a persistent notification. Uses more battery.';
 
   @override
   String get settingsAppLockLabel => 'App Lock';

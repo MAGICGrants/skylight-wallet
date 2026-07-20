@@ -32,7 +32,7 @@ lazy_static! {
 }
 
 /// Public recursive resolvers queried (over Tor) for the signed records, as
-/// DNS-over-TLS (port 853) — Tor exits reject plain DNS (53). They only
+/// DNS-over-HTTPS (port 443) — Tor exits reject plain DNS (53). They only
 /// transport the signed data — validation happens locally — so a malicious
 /// resolver can withhold an answer but cannot forge one. Each entry is the
 /// resolver IP and the TLS/host name used for its certificate + DoH endpoint.

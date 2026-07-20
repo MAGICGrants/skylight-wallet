@@ -79,6 +79,9 @@ class MoneroWallet extends CryptoWallet {
   // FFI calls (Wallet_connected, etc.) abort if invoked before this.
   bool _daemonInitialized = false;
 
+  int? _daemonTargetHeight;
+  DateTime? _lastDaemonHeightFetch;
+
   bool? _serverSupportsSubaddresses;
   int? _unusedSubaddressIndex;
   bool? _unusedSubaddressIndexIsSupported;
@@ -114,6 +117,23 @@ class MoneroWallet extends CryptoWallet {
 
   /// Manager factory kind the current connection needs ('lws' | 'node').
   String get _desiredManagerType => _isNodeMode ? 'node' : 'lws';
+
+  @override
+  Duration get syncingPollInterval =>
+      _isNodeMode ? const Duration(seconds: 2) : super.syncingPollInterval;
+
+  @override
+  bool get deferStatsUntilSynced => _isNodeMode;
+
+  @override
+  int? get syncBlocksRemaining {
+    if (!_isNodeMode || isSynced) return null;
+    final target = _daemonTargetHeight;
+    final have = syncedHeight;
+    if (target == null || have == null || target <= 0) return null;
+    final remaining = target - have;
+    return remaining > 0 ? remaining : null;
+  }
 
   @override
   String get connectionTypeName => _isNodeMode ? 'Monero node' : 'Monero LWS server';
@@ -204,6 +224,17 @@ class MoneroWallet extends CryptoWallet {
     setIsLoaded(true);
   }
 
+  /// Removes the wallet files for the current mode (cache + `.keys` +
+  /// `.address.txt`) so a subsequent recovery won't fail with "file already
+  /// exists" on a leftover.
+  Future<void> _deleteWalletFilesForCurrentMode() async {
+    final path = await resolveWalletPath();
+    for (final p in [path, '$path.keys', '$path.address.txt']) {
+      final file = File(p);
+      if (await file.exists()) await file.delete();
+    }
+  }
+
   @override
   Future<void> restoreFromMasterSeed({
     required String bip39Mnemonic,
@@ -217,6 +248,8 @@ class MoneroWallet extends CryptoWallet {
     if (!bip39.validateMnemonic(bip39Mnemonic)) {
       throw Exception('Invalid mnemonic.');
     }
+
+    await _deleteWalletFilesForCurrentMode();
 
     // Off the UI thread: mnemonicToSeed (PBKDF2) here is the sync prefix that
     // would otherwise block before the restore spinner can paint.
@@ -624,6 +657,7 @@ class MoneroWallet extends CryptoWallet {
     final wasSynced = isSynced;
     await loadIsSynced();
     await loadSyncedHeight();
+    notifyListeners();
 
     // Just caught up: pull fresh balances + tx now rather than waiting for the
     // next refresh cycle.
@@ -647,19 +681,25 @@ class MoneroWallet extends CryptoWallet {
     walletLog(LogLevel.info, 'Wallet_synchronized result: $synced');
 
     if (_isNodeMode && !synced) {
-      // Surface scan progress (wallet height vs daemon tip) while syncing.
-      final heights = await Isolate.run(() {
+      // Wallet height is local/cheap — read every poll. The daemon tip is a
+      // network RPC, so only refresh it occasionally to avoid stealing the
+      // circuit/lock from the scan.
+      final walletHeight = await Isolate.run(
         // ignore: deprecated_member_use
-        final wallet = monero.Wallet_blockChainHeight(Pointer<Void>.fromAddress(walletFfiAddr));
-        // ignore: deprecated_member_use
-        final daemon = monero.Wallet_daemonBlockChainHeight(
-          Pointer<Void>.fromAddress(walletFfiAddr),
+        () => monero.Wallet_blockChainHeight(Pointer<Void>.fromAddress(walletFfiAddr)),
+      );
+      final now = DateTime.now();
+      if (_lastDaemonHeightFetch == null ||
+          now.difference(_lastDaemonHeightFetch!) >= const Duration(seconds: 30)) {
+        _lastDaemonHeightFetch = now;
+        _daemonTargetHeight = await Isolate.run(
+          // ignore: deprecated_member_use
+          () => monero.Wallet_daemonBlockChainHeight(Pointer<Void>.fromAddress(walletFfiAddr)),
         );
-        return (wallet: wallet, daemon: daemon);
-      });
+      }
       walletLog(
         LogLevel.info,
-        'Node sync progress: wallet ${heights.wallet} / daemon ${heights.daemon}',
+        'Node sync progress: wallet $walletHeight / daemon $_daemonTargetHeight',
       );
     }
 

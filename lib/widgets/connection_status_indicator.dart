@@ -56,6 +56,7 @@ class ConnectionStatusIndicator extends StatelessWidget {
 
     return Tooltip(
       message: tooltipMessage,
+      triggerMode: TooltipTriggerMode.tap,
       child: indicator,
     );
   }

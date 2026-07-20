@@ -711,11 +711,47 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @homeBlocksRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks left'**
+  String homeBlocksRemaining(String count);
+
   /// No description provided for @settingsNotifyNewTxsLabel.
   ///
   /// In en, this message translates to:
   /// **'Notify New Transactions'**
   String get settingsNotifyNewTxsLabel;
+
+  /// No description provided for @settingsBackgroundSyncLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Background Sync'**
+  String get settingsBackgroundSyncLabel;
+
+  /// No description provided for @settingsBackgroundSyncDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodically sync Monero in the background so it\'s up to date when you open the app.'**
+  String get settingsBackgroundSyncDescription;
+
+  /// No description provided for @settingsBackgroundSyncIntervalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Interval'**
+  String get settingsBackgroundSyncIntervalLabel;
+
+  /// No description provided for @settingsForegroundSyncLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Sync'**
+  String get settingsForegroundSyncLabel;
+
+  /// No description provided for @settingsForegroundSyncDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Monero syncing continuously while the app runs in the background, with a persistent notification. Uses more battery.'**
+  String get settingsForegroundSyncDescription;
 
   /// No description provided for @settingsAppLockLabel.
   ///

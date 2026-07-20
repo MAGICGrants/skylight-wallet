@@ -14,6 +14,7 @@ import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/wallets/wallet_manager.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
@@ -87,22 +88,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _setTxNotificationsEnabled(bool value) async {
-    setState(() {
-      _newTxNotificationsEnabled = value;
-    });
-
     if (value) {
       final isAllowed = await NotificationService().promptPermission();
-
-      if (isAllowed) {
-        await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
-        await registerTxNotifierTaskIfAllowed();
+      if (!isAllowed) {
+        setState(() => _newTxNotificationsEnabled = false);
+        return;
       }
+      await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
     } else {
       await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
-      await unregisterPeriodicTasks();
     }
+    setState(() => _newTxNotificationsEnabled = value);
+    await applyBackgroundTaskRegistration();
   }
+
 
   void _setAppLockEnabled(bool value) async {
     final i18n = AppLocalizations.of(context)!;
@@ -260,6 +259,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _deleteWallet() async {
     final manager = Provider.of<WalletManager>(context, listen: false);
+    // Tear down background sync first so its isolate can't re-create wallet
+    // files right after we delete them, and clear the settings so it doesn't
+    // re-register on next launch.
+    await stopForegroundSync();
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, false);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, false);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
+    await applyBackgroundTaskRegistration();
+
     await manager.deleteAll();
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/welcome', (Route<dynamic> route) => false);

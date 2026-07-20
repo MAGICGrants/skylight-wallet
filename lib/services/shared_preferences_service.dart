@@ -15,6 +15,9 @@ class SharedPreferencesKeys {
   static const String torSocksPort = 'torSocksPort';
   static const String torUseOrbot = 'torUseOrbot';
   static const String testnetCoinsEnabled = 'testnetCoinsEnabled';
+  static const String backgroundSyncEnabled = 'backgroundSyncEnabled';
+  static const String backgroundSyncIntervalMinutes = 'backgroundSyncIntervalMinutes';
+  static const String foregroundSyncEnabled = 'foregroundSyncEnabled';
 }
 
 class SharedPreferencesService {

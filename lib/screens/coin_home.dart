@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -90,6 +91,11 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
     ConnectionIndicatorState state,
   ) {
     if (state == ConnectionIndicatorState.ok) return '';
+
+    final remaining = wallet.syncBlocksRemaining;
+    if (remaining != null) {
+      return i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(remaining));
+    }
 
     if (wallet.connectionAddress.isEmpty) return i18n.homeCoinNotConfigured;
 

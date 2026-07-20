@@ -221,6 +221,10 @@ abstract class CryptoWallet with ChangeNotifier {
   /// True for testnet / regtest coins.
   bool get isTestnet => false;
 
+  /// Blocks left to scan while syncing, or null when unknown / not applicable
+  /// (e.g. LWS, or already synced). Shown next to the sync indicator.
+  int? get syncBlocksRemaining => null;
+
   /// Symbol whose fiat rate represents this coin's value. Defaults to
   /// [coinSymbol]; testnet coins override it to their mainnet equivalent
   /// (e.g. TBTC → BTC) so they can display an approximate fiat value.
@@ -271,6 +275,8 @@ abstract class CryptoWallet with ChangeNotifier {
   bool _disposed = false;
   bool _connectionCheckInFlight = false;
   bool _refreshInFlight = false;
+  DateTime? _lastSyncCheckpoint;
+  DateTime? _lastConnectivityCheck;
 
   // Encrypted per-coin cache (balances, tx history, raw tx blobs). Held in
   // memory, decrypted from / flushed to disk with the wallet password.
@@ -888,12 +894,17 @@ abstract class CryptoWallet with ChangeNotifier {
     _refreshTimer = Timer.periodic(Duration(seconds: 20), (_) => _refreshTask());
   }
 
-  /// Self-rescheduling connection/sync poll. Runs every 1s while the wallet is
-  /// still syncing so the UI flips to "synced" within ~1s of catching up, then
-  /// backs off to 20s once synced.
+  /// Poll interval while still syncing. Fast (1s) by default so the UI flips to
+  /// "synced" promptly. Coins whose status poll contends with an on-device
+  /// scan (Monero full node) override this to back off.
+  @protected
+  Duration get syncingPollInterval => const Duration(seconds: 1);
+
+  /// Self-rescheduling connection/sync poll. Runs at [syncingPollInterval]
+  /// while syncing, then backs off to 20s once synced.
   void _scheduleConnectionCheck() {
     if (_disposed) return;
-    final interval = _isSynced ? const Duration(seconds: 20) : const Duration(seconds: 1);
+    final interval = _isSynced ? const Duration(seconds: 20) : syncingPollInterval;
     _connectionTimer = Timer(interval, () async {
       await _checkConnectionTask();
       _scheduleConnectionCheck();
@@ -911,11 +922,19 @@ abstract class CryptoWallet with ChangeNotifier {
     }
     _connectionCheckInFlight = true;
     try {
-      final connected = await getIsConnected();
-      if (connected != _isConnected) {
-        walletLog(LogLevel.info, 'Connection status changed to: $connected');
-        _isConnected = connected;
-        notifyListeners();
+      // The connectivity check can be networked (Monero node → daemon RPC), so
+      // throttle it; sync-progress polling (pollSyncStatus, local reads) still
+      // runs every tick so the UI stays responsive without extra round-trips.
+      final now = DateTime.now();
+      if (_lastConnectivityCheck == null ||
+          now.difference(_lastConnectivityCheck!) >= connectivityCheckInterval) {
+        _lastConnectivityCheck = now;
+        final connected = await getIsConnected();
+        if (connected != _isConnected) {
+          walletLog(LogLevel.info, 'Connection status changed to: $connected');
+          _isConnected = connected;
+          notifyListeners();
+        }
       }
       await pollSyncStatus();
     } finally {
@@ -923,12 +942,35 @@ abstract class CryptoWallet with ChangeNotifier {
     }
   }
 
+  /// Minimum spacing between (potentially networked) connectivity checks.
+  @protected
+  Duration get connectivityCheckInterval => const Duration(seconds: 15);
+
   /// Runs on the fast (connection-check) cadence. Coins whose sync state can
   /// flip between the slower refresh cycles — e.g. a Monero full node, where a
   /// background thread sets "synchronized" on its own — override this to pick
   /// the change up promptly instead of waiting for the next refresh.
   @protected
   Future<void> pollSyncStatus() async {}
+
+  /// When true, [_refreshTask] skips [loadAllStats] until the wallet is synced,
+  /// so heavy balance/tx reads don't contend with an on-device scan. Only safe
+  /// when sync status is updated independently (see [pollSyncStatus]).
+  @protected
+  bool get deferStatsUntilSynced => false;
+
+  /// Persists scan progress at most once every few minutes during a long sync,
+  /// so checkpointing doesn't stall the native scan the way a per-cycle store
+  /// would.
+  Future<void> _checkpointStoreIfDue() async {
+    final now = DateTime.now();
+    if (_lastSyncCheckpoint != null &&
+        now.difference(_lastSyncCheckpoint!) < const Duration(minutes: 3)) {
+      return;
+    }
+    _lastSyncCheckpoint = now;
+    await store();
+  }
 
   Future<void> _refreshTask() async {
     if (!isActive || _refreshInFlight || _torRequirementBroken) return;
@@ -942,6 +984,15 @@ abstract class CryptoWallet with ChangeNotifier {
         walletLog(LogLevel.warn, 'connect failed: $e');
       }
       if (!_isConnected) return;
+      // While an on-device scan is running, leave the wallet alone: refresh(),
+      // the tx-history read and a full store() each grab the wallet lock and
+      // stall the native scan thread. Just checkpoint to disk occasionally so an
+      // interrupted sync can resume. Sync status is tracked by pollSyncStatus,
+      // which loads stats once the wallet catches up.
+      if (deferStatsUntilSynced && !_isSynced) {
+        await _checkpointStoreIfDue();
+        return;
+      }
       try {
         await refresh();
       } catch (e) {

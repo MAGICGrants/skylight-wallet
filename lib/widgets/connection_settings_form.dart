@@ -70,8 +70,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
 
-  /// Background-sync toggles are Android-only and Monero-specific (node scan).
-  bool get _showSyncOptions => Platform.isAndroid && widget.coinSymbol == 'XMR' && !_isExplorer;
+  /// Background/continuous sync only helps a Monero full-node connection (the
+  /// slow on-device scan); LWS syncs server-side. Android-only.
+  bool get _showSyncOptions =>
+      Platform.isAndroid && widget.coinSymbol == 'XMR' && !_isExplorer && _connectionType == 'node';
 
   @override
   void initState() {
@@ -447,9 +449,30 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       );
       await wallet.persistCurrentConnection();
     }
+
+    // Sync only applies to a Monero node connection. If this XMR connection is
+    // saved as non-node, turn any enabled sync off so it isn't left running
+    // with no visible toggle to disable it.
+    if (widget.coinSymbol == 'XMR' && !_isExplorer && _connectionType != 'node') {
+      await _disableSync();
+    }
+
     await widget.onBeforeSave?.call();
 
     widget.onSaved();
+  }
+
+  Future<void> _disableSync() async {
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, false);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, false);
+    await applyBackgroundTaskRegistration();
+    await stopForegroundSync();
+    if (mounted) {
+      setState(() {
+        _backgroundSyncEnabled = false;
+        _foregroundSyncEnabled = false;
+      });
+    }
   }
 
   /// Right-aligned status chips under the address field (Tor / HTTPS / local).

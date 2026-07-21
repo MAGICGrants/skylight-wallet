@@ -338,6 +338,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotifyNewTxsLabel => 'Notify New Transactions';
 
   @override
+  String get settingsNotifyNewTxsMoneroNodeHint =>
+      'For Monero over a node, enable Background Sync in the connection settings to receive notifications.';
+
+  @override
   String get settingsBackgroundSyncLabel => 'Background Sync';
 
   @override

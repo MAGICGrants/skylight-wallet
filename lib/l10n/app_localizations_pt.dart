@@ -338,6 +338,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
 
   @override
+  String get settingsNotifyNewTxsMoneroNodeHint =>
+      'Para Monero via nó, ative a Sincronização em Segundo Plano nas configurações de conexão para receber notificações.';
+
+  @override
   String get settingsBackgroundSyncLabel => 'Sincronização em Segundo Plano';
 
   @override

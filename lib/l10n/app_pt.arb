@@ -119,6 +119,7 @@
     }
   },
   "settingsNotifyNewTxsLabel": "Notificar Novas Transações",
+  "settingsNotifyNewTxsMoneroNodeHint": "Para Monero via nó, ative a Sincronização em Segundo Plano nas configurações de conexão para receber notificações.",
   "settingsBackgroundSyncLabel": "Sincronização em Segundo Plano",
   "settingsBackgroundSyncDescription": "Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app.",
   "settingsBackgroundSyncIntervalLabel": "Intervalo de Sincronização",

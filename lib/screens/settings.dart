@@ -385,7 +385,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                        Text(
+                          i18n.settingsNotifyNewTxsMoneroNodeHint,
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
                   Switch(value: _newTxNotificationsEnabled, onChanged: _setTxNotificationsEnabled),
                 ],
               ),

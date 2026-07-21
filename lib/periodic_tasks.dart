@@ -17,6 +17,9 @@ class PeriodicTasks {
 /// under Android's ~10-minute WorkManager budget to persist + notify.
 const _backgroundSyncBudget = Duration(minutes: 9);
 
+bool _requiresBackgroundSync(CryptoWallet wallet) =>
+    wallet.coinSymbol == 'XMR' && wallet.connectionType == 'node';
+
 Future<bool> runTxNotifier() async {
   final walletManager = WalletManager();
 
@@ -33,7 +36,17 @@ Future<bool> runTxNotifier() async {
     await w.loadPersistedConnection();
   }
 
-  if (wallets.any((w) => w.usingTor)) {
+  final backgroundSync =
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
+      false;
+
+  // A Monero node sync can be expensive, so it only runs in the background when the
+  // user explicitly enabled Background Sync — notifications alone won't drag it
+  // through a full scan. Light wallets (LWS, BTC, ETH) always participate.
+  final syncWallets = wallets.where((w) => backgroundSync || !_requiresBackgroundSync(w)).toList();
+  if (syncWallets.isEmpty) return true;
+
+  if (syncWallets.any((w) => w.usingTor)) {
     await TorService.sharedInstance.start();
     await TorService.sharedInstance.waitUntilConnected().timeout(
       Duration(minutes: 2),
@@ -43,7 +56,7 @@ Future<bool> runTxNotifier() async {
 
   // Kick each wallet's daemon connection (starts the scan thread).
   await Future.wait(
-    wallets.map((w) async {
+    syncWallets.map((w) async {
       if (w.connectionAddress.isEmpty) return;
       try {
         await w.connectToDaemon();
@@ -58,7 +71,7 @@ Future<bool> runTxNotifier() async {
   // (and bail early once everything's synced).
   final deadline = DateTime.now().add(_backgroundSyncBudget);
   while (DateTime.now().isBefore(deadline)) {
-    final allDone = wallets.every(
+    final allDone = syncWallets.every(
       (w) => w.connectionAddress.isEmpty || (w.isConnected && w.isSynced),
     );
     if (allDone) break;
@@ -68,7 +81,7 @@ Future<bool> runTxNotifier() async {
   final notify =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;
 
-  for (final w in wallets) {
+  for (final w in syncWallets) {
     if (w.connectionAddress.isEmpty) continue;
     try {
       await w.loadTxHistory(persistCount: false);

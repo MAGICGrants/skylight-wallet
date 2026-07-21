@@ -119,6 +119,7 @@
     }
   },
   "settingsNotifyNewTxsLabel": "Notify New Transactions",
+  "settingsNotifyNewTxsMoneroNodeHint": "For Monero over a node, enable Background Sync in the connection settings to receive notifications.",
   "settingsBackgroundSyncLabel": "Background Sync",
   "settingsBackgroundSyncDescription": "Periodically sync Monero in the background so it's up to date when you open the app.",
   "settingsBackgroundSyncIntervalLabel": "Sync Interval",

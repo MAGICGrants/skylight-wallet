@@ -723,6 +723,12 @@ abstract class AppLocalizations {
   /// **'Notify New Transactions'**
   String get settingsNotifyNewTxsLabel;
 
+  /// No description provided for @settingsNotifyNewTxsMoneroNodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For Monero over a node, enable Background Sync in the connection settings to receive notifications.'**
+  String get settingsNotifyNewTxsMoneroNodeHint;
+
   /// No description provided for @settingsBackgroundSyncLabel.
   ///
   /// In en, this message translates to:

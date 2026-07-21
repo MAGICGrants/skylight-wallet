@@ -12,18 +12,18 @@ import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart' as monero_ffi;
 import 'package:monero/src/wallet2.dart';
 
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/amount_units.dart';
-import 'package:skylight_wallet/util/bip39.dart';
-import 'package:skylight_wallet/util/cacert.dart';
-import 'package:skylight_wallet/util/formatting.dart';
-import 'package:skylight_wallet/util/get_height_by_date.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/socks_http.dart';
-import 'package:skylight_wallet/util/wallet.dart';
-import 'package:skylight_wallet/wallets/coins/monero/monero_pending_tx.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/util/amount_units.dart';
+import 'package:spice_wallet/util/bip39.dart';
+import 'package:spice_wallet/util/cacert.dart';
+import 'package:spice_wallet/util/formatting.dart';
+import 'package:spice_wallet/util/get_height_by_date.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/socks_http.dart';
+import 'package:spice_wallet/util/wallet.dart';
+import 'package:spice_wallet/wallets/coins/monero/monero_pending_tx.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 /// Monero implementation of [CryptoWallet].
 ///

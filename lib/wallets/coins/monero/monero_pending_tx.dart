@@ -1,8 +1,8 @@
 // ignore_for_file: implementation_imports
 import 'package:monero/src/monero.dart';
 
-import 'package:skylight_wallet/util/formatting.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/util/formatting.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 /// Adapter that exposes a [MoneroPendingTransaction] through the
 /// coin-agnostic [PendingTransaction] interface so UI code does not need

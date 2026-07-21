@@ -5,7 +5,7 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:bitcoin_base/bitcoin_base.dart';
 import 'package:blockchain_utils/blockchain_utils.dart';
 
-import 'package:skylight_wallet/util/wallet_file_crypto.dart';
+import 'package:spice_wallet/util/wallet_file_crypto.dart';
 
 /// Plain data returned from background wallet open / bootstrap crypto.
 class BitcoinWalletOpenResult {
@@ -122,7 +122,11 @@ openBitcoinWalletFromEncryptedBlob({
     restoreDateIso: restoreDateIso,
   );
   deriveSw.stop();
-  return (open: open, decryptMs: decryptSw.elapsedMilliseconds, deriveMs: deriveSw.elapsedMilliseconds);
+  return (
+    open: open,
+    decryptMs: decryptSw.elapsedMilliseconds,
+    deriveMs: deriveSw.elapsedMilliseconds,
+  );
 }
 
 Bip32Slip10Secp256k1 _deriveAccountHdNode(String mnemonic, String bip84AccountPath) {
@@ -172,8 +176,8 @@ BitcoinWalletOpenResult bootstrapBitcoinWalletFromMnemonic({
 }) {
   final network = networkForCoinSymbol(coinSymbol, isTestnet: isTestnet);
   final seedBytes = Uint8List.fromList(bip39.mnemonicToSeed(mnemonic));
-  final accountHd = Bip32Slip10Secp256k1.fromSeed(seedBytes).derivePath(bip84AccountPath)
-      as Bip32Slip10Secp256k1;
+  final accountHd =
+      Bip32Slip10Secp256k1.fromSeed(seedBytes).derivePath(bip84AccountPath) as Bip32Slip10Secp256k1;
 
   final receiveCount = nextReceiveIndex + gapLimit;
   final changeCount = nextChangeIndex + gapLimit;

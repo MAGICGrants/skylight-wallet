@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
 
 class RestoreWarningScreen extends StatelessWidget {
   const RestoreWarningScreen({super.key});
@@ -9,16 +9,13 @@ class RestoreWarningScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20,
           children: [
-            Text(
-              i18n.restoreWarningTitle,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text(i18n.restoreWarningTitle, style: Theme.of(context).textTheme.headlineMedium),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
@@ -32,14 +29,10 @@ class RestoreWarningScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/restore_wallet'),
+                  onPressed: () => Navigator.pushNamed(context, '/restore_wallet'),
                   child: Text(i18n.restoreWarningContinueButton),
                 ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(i18n.cancel),
-                ),
+                FilledButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
               ],
             ),
           ],

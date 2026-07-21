@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/loading_button.dart';
 import 'package:provider/provider.dart';
 
 class CreateWalletPasswordScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),

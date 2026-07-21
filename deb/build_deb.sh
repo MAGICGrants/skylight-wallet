@@ -1,5 +1,5 @@
 #!/bin/bash
-# Debian Package Build Script for Skylight Wallet
+# Debian Package Build Script for Spice Wallet
 #
 # Usage: ./build_deb.sh --version <version>
 #
@@ -73,10 +73,10 @@ fi
 
 echo "Creating Debian package structure..."
 cd deb
-rm -rf skylight-wallet-* || true
-PACKAGE_DIR="skylight-wallet-${FILE_VERSION}-amd64"
+rm -rf spice-wallet-* || true
+PACKAGE_DIR="spice-wallet-${FILE_VERSION}-amd64"
 mkdir -p "$PACKAGE_DIR/DEBIAN"
-mkdir -p "$PACKAGE_DIR/usr/lib/skylight-wallet"
+mkdir -p "$PACKAGE_DIR/usr/lib/spice-wallet"
 mkdir -p "$PACKAGE_DIR/usr/bin"
 mkdir -p "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps"
 mkdir -p "$PACKAGE_DIR/usr/share/applications"
@@ -85,7 +85,7 @@ mkdir -p "$PACKAGE_DIR/usr/share/applications"
 echo "Creating control file..."
 INSTALLED_SIZE=$(du -sk ../build/linux/x64/release/bundle | cut -f1)
 cat > "$PACKAGE_DIR/DEBIAN/control" << EOF
-Package: skylight-wallet
+Package: spice-wallet
 Version: $PKG_VERSION
 Section: finance
 Priority: optional
@@ -93,36 +93,36 @@ Architecture: amd64
 Installed-Size: $INSTALLED_SIZE
 Maintainer: MAGIC Grants
 Description: A light Monero wallet.
-Homepage: https://github.com/skylight-wallet/skylight-wallet
+Homepage: https://github.com/spice-wallet/spice-wallet
 EOF
 
 # Copy the Flutter bundle to lib directory
 echo "Copying Flutter bundle..."
-cp -r ../build/linux/x64/release/bundle/* "$PACKAGE_DIR/usr/lib/skylight-wallet/"
+cp -r ../build/linux/x64/release/bundle/* "$PACKAGE_DIR/usr/lib/spice-wallet/"
 
 # Create wrapper script in /usr/bin
 echo "Creating launcher script..."
-cat > "$PACKAGE_DIR/usr/bin/skylight-wallet" << 'EOF'
+cat > "$PACKAGE_DIR/usr/bin/spice-wallet" << 'EOF'
 #!/bin/bash
-INSTALL_DIR="/usr/lib/skylight-wallet"
+INSTALL_DIR="/usr/lib/spice-wallet"
 export LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH"
-exec "$INSTALL_DIR/skylight_wallet" "$@"
+exec "$INSTALL_DIR/spice_wallet" "$@"
 EOF
-chmod 755 "$PACKAGE_DIR/usr/bin/skylight-wallet"
+chmod 755 "$PACKAGE_DIR/usr/bin/spice-wallet"
 
 # Copy icon
 echo "Copying icon..."
-cp ../linux/launcher_icon.png "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps/skylight-wallet.png"
+cp ../linux/launcher_icon.png "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps/spice-wallet.png"
 
 # Create desktop file
 echo "Creating desktop entry..."
-cat > "$PACKAGE_DIR/usr/share/applications/skylight-wallet.desktop" << EOF
+cat > "$PACKAGE_DIR/usr/share/applications/spice-wallet.desktop" << EOF
 [Desktop Entry]
 Type=Application
-Name=Skylight Wallet
+Name=Spice Wallet
 Comment=Monero cryptocurrency wallet
-Exec=skylight-wallet
-Icon=skylight-wallet
+Exec=spice-wallet
+Icon=spice-wallet
 Categories=Finance;Network;
 Terminal=false
 EOF
@@ -130,10 +130,10 @@ EOF
 # Set proper permissions
 echo "Setting permissions..."
 find "$PACKAGE_DIR" -type d -exec chmod 755 {} \;
-find "$PACKAGE_DIR/usr/lib/skylight-wallet" -type f -name "*.so*" -exec chmod 644 {} \;
-chmod 755 "$PACKAGE_DIR/usr/lib/skylight-wallet/skylight_wallet"
-chmod 644 "$PACKAGE_DIR/usr/share/applications/skylight-wallet.desktop"
-chmod 644 "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps/skylight-wallet.png"
+find "$PACKAGE_DIR/usr/lib/spice-wallet" -type f -name "*.so*" -exec chmod 644 {} \;
+chmod 755 "$PACKAGE_DIR/usr/lib/spice-wallet/spice_wallet"
+chmod 644 "$PACKAGE_DIR/usr/share/applications/spice-wallet.desktop"
+chmod 644 "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps/spice-wallet.png"
 chmod 644 "$PACKAGE_DIR/DEBIAN/control"
 
 # Build the .deb package
@@ -161,4 +161,4 @@ echo "✓ Debian package created successfully!"
 echo "Output: deb/$DEB_FILE"
 echo ""
 echo "Install with: sudo dpkg -i deb/$DEB_FILE"
-echo "Remove with:  sudo dpkg -r skylight-wallet"
+echo "Remove with:  sudo dpkg -r spice-wallet"

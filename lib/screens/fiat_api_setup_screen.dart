@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/consts.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/consts.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 class FiatApiSetupScreen extends StatefulWidget {
   const FiatApiSetupScreen({super.key});
@@ -42,7 +42,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: 500),

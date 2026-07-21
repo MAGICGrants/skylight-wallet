@@ -1,4 +1,4 @@
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_chain_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_chain_wallet.dart';
 
 /// DAI on Ethereum Sepolia (Aave faucet "DAI - Faucet Open" test token).
 /// Shares the `SETH` coin's address and RPC + explorer connection.

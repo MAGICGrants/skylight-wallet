@@ -7,20 +7,20 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/screens/connection_setup.dart';
-import 'package:skylight_wallet/screens/explorer_setup.dart';
-import 'package:skylight_wallet/screens/receive.dart';
-import 'package:skylight_wallet/screens/send.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/coin_amount.dart';
-import 'package:skylight_wallet/widgets/fiat_amount.dart';
-import 'package:skylight_wallet/widgets/connection_status_indicator.dart';
-import 'package:skylight_wallet/widgets/tx_details.dart';
-import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:spice_wallet/consts.dart' as consts;
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/screens/connection_setup.dart';
+import 'package:spice_wallet/screens/explorer_setup.dart';
+import 'package:spice_wallet/screens/receive.dart';
+import 'package:spice_wallet/screens/send.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/coin_amount.dart';
+import 'package:spice_wallet/widgets/fiat_amount.dart';
+import 'package:spice_wallet/widgets/connection_status_indicator.dart';
+import 'package:spice_wallet/widgets/tx_details.dart';
+import 'package:spice_wallet/widgets/wallet_navigation_bar.dart';
 
 class CoinHomeScreenArgs {
   final String coinSymbol;

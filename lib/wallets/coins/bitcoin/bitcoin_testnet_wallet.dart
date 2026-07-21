@@ -1,6 +1,6 @@
 import 'package:bitcoin_base/bitcoin_base.dart';
 
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_chain_wallet.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_chain_wallet.dart';
 
 /// Bitcoin testnet as a separate coin: BIP84 `m/84'/1'/0'`,
 /// [`BitcoinNetwork.testnet`]. Use a **testnet** Electrum server.

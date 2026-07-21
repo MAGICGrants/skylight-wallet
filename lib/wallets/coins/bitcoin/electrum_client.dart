@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/socks_socket.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/socks_socket.dart';
 
 /// Minimal Electrum JSON-RPC client.
 ///
@@ -407,7 +407,7 @@ class ElectrumClient {
 
   // ----- Public RPC surface -----
 
-  Future<List<String>> serverVersion({String client = 'skylight', String protocol = '1.4'}) async {
+  Future<List<String>> serverVersion({String client = 'spice', String protocol = '1.4'}) async {
     final result = await _call('server.version', [client, protocol]);
     if (result is List) return result.map((e) => e.toString()).toList();
     return [];

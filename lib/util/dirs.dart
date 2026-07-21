@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-import 'package:skylight_wallet/util/logging.dart';
+import 'package:spice_wallet/util/logging.dart';
 
 Future<void> cleanTorDirectoriesOnIOS() async {
   if (!Platform.isIOS) return;
@@ -45,7 +45,7 @@ Future<Directory> getAppDir() async {
     final homeDir = Platform.environment['HOME'];
 
     if (homeDir != null) {
-      appDir = Directory('$homeDir/.skylight_wallet');
+      appDir = Directory('$homeDir/.spice_wallet');
     } else {
       throw Exception('HOME environment variable is not set');
     }
@@ -53,7 +53,7 @@ Future<Directory> getAppDir() async {
     final appData = Platform.environment['APPDATA'];
 
     if (appData != null) {
-      appDir = Directory('$appData/MAGIC Grants/Skylight Wallet');
+      appDir = Directory('$appData/MAGIC Grants/Spice Wallet');
     } else {
       throw Exception('APPDATA environment variable is not set');
     }

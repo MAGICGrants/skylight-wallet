@@ -1,7 +1,7 @@
 // From https://github.com/cake-tech/cake_wallet/blob/main/cw_core/lib/get_height_by_date.dart
 
 import 'package:intl/intl.dart';
-import 'package:skylight_wallet/util/logging.dart';
+import 'package:spice_wallet/util/logging.dart';
 
 final dateFormat = DateFormat('yyyy-MM');
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/tor_service.dart';
 
 enum TorMode { builtIn, external, disabled }
 

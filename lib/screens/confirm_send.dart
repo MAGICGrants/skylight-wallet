@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/screens/coin_home.dart';
-import 'package:skylight_wallet/util/formatting.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/widgets/loading_button.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/screens/coin_home.dart';
+import 'package:spice_wallet/util/formatting.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 class ConfirmSendScreenArgs {
   final String coinSymbol;
@@ -79,10 +79,19 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
         TextSpan(
           style: TextStyle(fontFamily: 'monospace', fontSize: 14),
           children: [
-            TextSpan(text: parts.prefix, style: TextStyle(fontWeight: FontWeight.w700)),
+            TextSpan(
+              text: parts.prefix,
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
             if (parts.middle.isNotEmpty)
-              TextSpan(text: parts.middle, style: TextStyle(fontWeight: FontWeight.w300)),
-            TextSpan(text: parts.suffix, style: TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(
+                text: parts.middle,
+                style: TextStyle(fontWeight: FontWeight.w300),
+              ),
+            TextSpan(
+              text: parts.suffix,
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ],
         ),
         textAlign: TextAlign.end,

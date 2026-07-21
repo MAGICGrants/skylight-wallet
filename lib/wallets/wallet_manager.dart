@@ -4,18 +4,18 @@ import 'dart:io';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:flutter/foundation.dart';
 
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/wallet_password.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_testnet_wallet.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/dai_sepolia_wallet.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/dai_wallet.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_sepolia_wallet.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_wallet.dart';
-import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
-import 'package:skylight_wallet/wallets/master_seed_store.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/wallet_password.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_testnet_wallet.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/dai_sepolia_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/dai_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_sepolia_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_wallet.dart';
+import 'package:spice_wallet/wallets/coins/monero/monero_wallet.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/master_seed_store.dart';
 
 /// Top-level state holder shared by every screen.
 ///
@@ -242,9 +242,7 @@ class WalletManager with ChangeNotifier {
 
       // Fan out so per-wallet opens (each runs in its own isolate or FFI
       // thread) overlap. A failure in one wallet must not cancel the others.
-      await Future.wait([
-        for (final w in _visibleWallets) _openOneWallet(w, masterSeed),
-      ]);
+      await Future.wait([for (final w in _visibleWallets) _openOneWallet(w, masterSeed)]);
     } finally {
       _openWalletFilesInFlight = null;
     }
@@ -295,11 +293,7 @@ class WalletManager with ChangeNotifier {
         final timer = Stopwatch()..start();
         await w.openExisting(password: _password!);
         timer.stop();
-        log(
-          LogLevel.info,
-          'Wallet opened in ${timer.elapsedMilliseconds}ms',
-          coin: w.coinSymbol,
-        );
+        log(LogLevel.info, 'Wallet opened in ${timer.elapsedMilliseconds}ms', coin: w.coinSymbol);
       } else if (masterSeed != null) {
         log(LogLevel.info, 'Bootstrapping from master seed.', coin: w.coinSymbol);
         await w.restoreFromMasterSeed(
@@ -336,11 +330,7 @@ class WalletManager with ChangeNotifier {
       final timer = Stopwatch()..start();
       await w.connectBeforeOpen();
       timer.stop();
-      log(
-        LogLevel.info,
-        'Pre-open connect in ${timer.elapsedMilliseconds}ms',
-        coin: w.coinSymbol,
-      );
+      log(LogLevel.info, 'Pre-open connect in ${timer.elapsedMilliseconds}ms', coin: w.coinSymbol);
     } catch (e) {
       log(LogLevel.warn, 'Pre-open connect failed: $e', coin: w.coinSymbol);
     }

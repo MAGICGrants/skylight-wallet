@@ -35,16 +35,13 @@ class BulletList extends StatelessWidget {
 class PrivacyPolicy extends StatelessWidget {
   const PrivacyPolicy({super.key});
 
-  TextStyle get headingStyle =>
-      TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
+  TextStyle get headingStyle => TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
 
-  TextStyle get subheadingStyle =>
-      TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
+  TextStyle get subheadingStyle => TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
 
   TextStyle get bodyStyle => TextStyle(fontSize: 14, height: 1.4);
 
-  TextStyle get monospaceStyle =>
-      TextStyle(fontSize: 13, fontFamily: 'monospace', height: 1.4);
+  TextStyle get monospaceStyle => TextStyle(fontSize: 13, fontFamily: 'monospace', height: 1.4);
 
   Widget sectionHeading(String text) => Padding(
     padding: EdgeInsets.only(top: 18.0, bottom: 6.0),
@@ -73,23 +70,21 @@ class PrivacyPolicy extends StatelessWidget {
                 'MAGIC Grants (“we”) respect your privacy and are committed to protecting it through our compliance with this policy.',
               ),
               paragraph(
-                'This policy applies to information we collect through your direct use of the Skylight Wallet app. It does not apply to information we collect by any other means. This policy is subject to change, so make sure to periodically review this policy.',
+                'This policy applies to information we collect through your direct use of the Spice Wallet app. It does not apply to information we collect by any other means. This policy is subject to change, so make sure to periodically review this policy.',
               ),
 
               sectionHeading('Information We Do Not Collect'),
               paragraph(
                 'We do not collect any usage data. The app does not send any private keys, including private spend keys, mnemonic seeds, and private view keys to MAGIC Grants. The app does not connect to any servers run by MAGIC Grants.',
               ),
-              paragraph(
-                'You do not need to make an account with MAGIC Grants to use the app.',
-              ),
+              paragraph('You do not need to make an account with MAGIC Grants to use the app.'),
               paragraph(
                 'MAGIC Grants may be able to review information provided by the App Store that you are using, if you download this app from an App Store.',
               ),
 
               sectionHeading('Information You May Share with Third Parties'),
               paragraph(
-                'When using Skylight Wallet, you need to specify a server to connect to. This will share your cryptocurrency address and private view key with this server. You will also share transactions you create with this server. This is necessary for the core functionality of the wallet.',
+                'When using Spice Wallet, you need to specify a server to connect to. This will share your cryptocurrency address and private view key with this server. You will also share transactions you create with this server. This is necessary for the core functionality of the wallet.',
               ),
               paragraph(
                 'MAGIC Grants does not provide a default server. You must research the server that you want to use and any terms of service or privacy policies associated with that server before you connect to that server.',

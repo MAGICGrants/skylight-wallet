@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/util/secure_clipboard.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/util/secure_clipboard.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 class TxDetailsDialog {
   static void show(BuildContext context, CryptoWallet wallet, TxDetails txDetails) {
@@ -221,8 +221,7 @@ class _TxDetailsDialog extends StatelessWidget {
                                   textAlign: TextAlign.end,
                                 ),
                               ),
-                              onTap: () =>
-                                  SecureClipboard.copy(recipient.address),
+                              onTap: () => SecureClipboard.copy(recipient.address),
                             ),
                             Text('$amountStr ${wallet.coinSymbol}', softWrap: true),
                             if (recipient.isChange)

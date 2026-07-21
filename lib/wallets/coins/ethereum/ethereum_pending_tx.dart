@@ -1,4 +1,4 @@
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 class EthereumPendingTx implements PendingTransaction {
   EthereumPendingTx({

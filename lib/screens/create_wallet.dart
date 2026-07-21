@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
 
 class CreateWalletScreenArgs {
   String toastMessage;
@@ -23,13 +23,10 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
   void _showErrorIfNeeded() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as CreateWalletScreenArgs?;
+      final args = ModalRoute.of(context)?.settings.arguments as CreateWalletScreenArgs?;
 
       if (args != null && args.toastMessage != '') {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(args.toastMessage)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(args.toastMessage)));
       }
     });
   }
@@ -39,16 +36,13 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20,
           children: [
-            Text(
-              i18n.createWalletTitle,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text(i18n.createWalletTitle, style: Theme.of(context).textTheme.headlineMedium),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
@@ -62,8 +56,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/restore_warning'),
+                  onPressed: () => Navigator.pushNamed(context, '/restore_warning'),
                   child: Text(i18n.createWalletRestoreExistingButton),
                 ),
                 FilledButton(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:skylight_wallet/services/tor_service.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/services/tor_service.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 enum ConnectionIndicatorState { ok, loading, error }
 
@@ -28,11 +28,7 @@ class ConnectionStatusIndicator extends StatelessWidget {
   /// Matches [Icons.warning_rounded] in total balance fiat error indicator.
   static const double indicatorSize = 18;
 
-  const ConnectionStatusIndicator({
-    super.key,
-    required this.state,
-    required this.tooltipMessage,
-  });
+  const ConnectionStatusIndicator({super.key, required this.state, required this.tooltipMessage});
 
   final ConnectionIndicatorState state;
   final String tooltipMessage;
@@ -54,10 +50,6 @@ class ConnectionStatusIndicator extends StatelessWidget {
           )
         : Icon(Icons.warning_rounded, size: indicatorSize, color: Colors.red);
 
-    return Tooltip(
-      message: tooltipMessage,
-      triggerMode: TooltipTriggerMode.tap,
-      child: indicator,
-    );
+    return Tooltip(message: tooltipMessage, triggerMode: TooltipTriggerMode.tap, child: indicator);
   }
 }

@@ -1,6 +1,6 @@
 {
-    "name": "skylight_wallet",
-    "short_name": "skylight_wallet",
+    "name": "spice_wallet",
+    "short_name": "spice_wallet",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

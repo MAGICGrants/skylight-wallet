@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
 
 class ThemeModel with ChangeNotifier {
   String _theme = 'system';

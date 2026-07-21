@@ -1,5 +1,5 @@
 #!/bin/bash
-# AppImage Build Script for Skylight Wallet
+# AppImage Build Script for Spice Wallet
 #
 # Usage: ./build_appimage.sh --version <version>
 #
@@ -85,13 +85,13 @@ cp -r ../build/linux/x64/release/bundle/* AppDir/usr/bin/
 
 # Copy icon
 echo "Copying icon..."
-cp ../linux/launcher_icon.png AppDir/usr/share/icons/hicolor/512x512/apps/skylight_wallet.png
-cp ../linux/launcher_icon.png AppDir/skylight_wallet.png
+cp ../linux/launcher_icon.png AppDir/usr/share/icons/hicolor/512x512/apps/spice_wallet.png
+cp ../linux/launcher_icon.png AppDir/spice_wallet.png
 
 # Copy desktop file
 echo "Creating desktop entry..."
-cp skylight_wallet.desktop AppDir/usr/share/applications/
-cp skylight_wallet.desktop AppDir/
+cp spice_wallet.desktop AppDir/usr/share/applications/
+cp spice_wallet.desktop AppDir/
 
 # Create AppRun
 echo "Creating AppRun..."
@@ -102,7 +102,7 @@ HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin/:${HERE}/usr/sbin/:${HERE}/usr/games/:${HERE}/bin/:${HERE}/sbin/${PATH:+:$PATH}"
 export LD_LIBRARY_PATH="${HERE}/usr/lib/:${HERE}/usr/lib/i386-linux-gnu/:${HERE}/usr/lib/x86_64-linux-gnu/:${HERE}/usr/lib32/:${HERE}/usr/lib64/${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export XDG_DATA_DIRS="${HERE}/usr/share/${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
-EXEC="${HERE}/usr/bin/skylight_wallet"
+EXEC="${HERE}/usr/bin/spice_wallet"
 exec "${EXEC}" "$@"
 EOF
 
@@ -149,8 +149,8 @@ export VERSION
 export ARCH=x86_64
 ./squashfs-root/AppRun AppDir
 
-GENERATED_APPIMAGE=$(ls -1 Skylight_Wallet-${VERSION}-*.AppImage 2>/dev/null | head -n1)
-DESIRED_NAME="skylight-wallet-${FILE_VERSION}-x86_64.AppImage"
+GENERATED_APPIMAGE=$(ls -1 spice_Wallet-${VERSION}-*.AppImage 2>/dev/null | head -n1)
+DESIRED_NAME="spice-wallet-${FILE_VERSION}-x86_64.AppImage"
 
 if [ -n "$GENERATED_APPIMAGE" ]; then
     echo "Renaming to: $DESIRED_NAME"

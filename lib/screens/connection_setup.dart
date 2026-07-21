@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/screens/coin_home.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/connection_settings_form.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/screens/coin_home.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/connection_settings_form.dart';
 
 class ConnectionSetupScreenArgs {
   final String coinSymbol;
@@ -55,7 +55,7 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(wallet?.coinName ?? 'Skylight Wallet')),
+      appBar: AppBar(title: Text(wallet?.coinName ?? 'Spice Wallet')),
       body: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           child: ConstrainedBox(
@@ -70,25 +70,25 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                     mainAxisSize: MainAxisSize.min,
                     spacing: 20,
                     children: [
-                Column(
-                  spacing: 10,
-                  children: [
-                    Text(
-                      i18n.connectionSetupTitle,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    Text(
-                      i18n.connectionSetupDescription(connectionTypeName),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-                ConnectionSettingsForm(
-                  coinSymbol: coinSymbol,
-                  saveButtonLabel: i18n.save,
-                  onSaved: onSaved,
-                ),
+                      Column(
+                        spacing: 10,
+                        children: [
+                          Text(
+                            i18n.connectionSetupTitle,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          Text(
+                            i18n.connectionSetupDescription(connectionTypeName),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                      ConnectionSettingsForm(
+                        coinSymbol: coinSymbol,
+                        saveButtonLabel: i18n.save,
+                        onSaved: onSaved,
+                      ),
                     ],
                   ),
                 ),

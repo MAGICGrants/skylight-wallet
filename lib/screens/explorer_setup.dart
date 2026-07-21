@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/connection_settings_form.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/connection_settings_form.dart';
 
 class ExplorerSetupScreenArgs {
   final String coinSymbol;
@@ -43,7 +43,7 @@ class ExplorerSetupScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(wallet?.coinName ?? 'Skylight Wallet')),
+      appBar: AppBar(title: Text(wallet?.coinName ?? 'Spice Wallet')),
       body: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           child: ConstrainedBox(
@@ -57,7 +57,10 @@ class ExplorerSetupScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   spacing: 20,
                   children: [
-                    Text(i18n.explorerSetupTitle, style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      i18n.explorerSetupTitle,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     Text(
                       i18n.explorerSetupDescription,
                       textAlign: TextAlign.center,

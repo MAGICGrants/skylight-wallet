@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
 
 class LanguageModel with ChangeNotifier {
   String _language = PlatformDispatcher.instance.locale.languageCode;
@@ -13,10 +13,9 @@ class LanguageModel with ChangeNotifier {
   }
 
   Future<void> _loadLanguage() async {
-    final String? preferencesLanguage =
-        await SharedPreferencesService.get<String>(
-          SharedPreferencesKeys.language,
-        );
+    final String? preferencesLanguage = await SharedPreferencesService.get<String>(
+      SharedPreferencesKeys.language,
+    );
 
     if (preferencesLanguage != null) {
       _language = preferencesLanguage;
@@ -29,10 +28,7 @@ class LanguageModel with ChangeNotifier {
 
     _language = newLanguage;
 
-    await SharedPreferencesService.set<String>(
-      SharedPreferencesKeys.language,
-      newLanguage,
-    );
+    await SharedPreferencesService.set<String>(SharedPreferencesKeys.language, newLanguage);
 
     notifyListeners();
   }

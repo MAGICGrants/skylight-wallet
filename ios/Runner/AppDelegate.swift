@@ -25,7 +25,7 @@ import UIKit
     let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureClipboard")
     if let messenger = registrar?.messenger() {
       let channel = FlutterMethodChannel(
-        name: "org.magicgrants.skylight/secure_clipboard",
+        name: "org.magicgrants.spice/secure_clipboard",
         binaryMessenger: messenger
       )
       channel.setMethodCallHandler { call, reply in

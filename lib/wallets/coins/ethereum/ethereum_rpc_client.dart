@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:skylight_wallet/util/socks_http.dart';
+import 'package:spice_wallet/util/socks_http.dart';
 
 class EthReceipt {
   EthReceipt({
@@ -76,12 +76,10 @@ class EthereumRpcClient {
   Future<dynamic> _post(String url, String body, Duration timeout) async {
     final socksPort = _socksPort;
     if (socksPort != null && socksPort > 0) {
-      final resp = await makeSocksHttpRequest(
-        'POST',
-        url,
-        (host: InternetAddress.loopbackIPv4, port: socksPort),
-        body: body,
-      ).timeout(timeout);
+      final resp = await makeSocksHttpRequest('POST', url, (
+        host: InternetAddress.loopbackIPv4,
+        port: socksPort,
+      ), body: body).timeout(timeout);
       final json = resp.jsonBody;
       if (json == null) {
         throw EthereumRpcException('Non-JSON response (status ${resp.statusCode})');
@@ -170,8 +168,9 @@ class EthereumRpcClient {
     return EthReceipt(
       blockNumber: _hexToInt(r['blockNumber']),
       gasUsed: _hexToBigInt(r['gasUsed']),
-      effectiveGasPrice:
-          r['effectiveGasPrice'] != null ? _hexToBigInt(r['effectiveGasPrice']) : BigInt.zero,
+      effectiveGasPrice: r['effectiveGasPrice'] != null
+          ? _hexToBigInt(r['effectiveGasPrice'])
+          : BigInt.zero,
       status: r['status'] != null ? _hexToInt(r['status']) : -1,
     );
   }

@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:skylight_wallet/consts.dart';
-import 'package:skylight_wallet/util/secure_storage.dart';
+import 'package:spice_wallet/consts.dart';
+import 'package:spice_wallet/util/secure_storage.dart';
 
 String genWalletPassword() {
   final byteLength = 16;

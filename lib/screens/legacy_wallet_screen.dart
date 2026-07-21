@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/secure_clipboard.dart';
-import 'package:skylight_wallet/util/wallet.dart';
-import 'package:skylight_wallet/util/wallet_password.dart';
-import 'package:skylight_wallet/wallets/coins/monero/legacy_monero_wallet.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/secure_clipboard.dart';
+import 'package:spice_wallet/util/wallet.dart';
+import 'package:spice_wallet/util/wallet_password.dart';
+import 'package:spice_wallet/wallets/coins/monero/legacy_monero_wallet.dart';
 
 /// Shown on launch when a v1 (legacy/polyseed) wallet file is found. Explains
 /// that these seeds are no longer supported, lets the user reveal the old seed
@@ -152,7 +152,7 @@ class _LegacyWalletScreenState extends State<LegacyWalletScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

@@ -1,5 +1,5 @@
-import 'package:skylight_wallet/util/wallet.dart';
-import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
+import 'package:spice_wallet/util/wallet.dart';
+import 'package:spice_wallet/wallets/coins/monero/monero_wallet.dart';
 
 /// Opens v1's legacy `mywallet` file (the old polyseed-based Monero wallet) so
 /// its seed can be revealed before the user deletes it. Read-only use; not

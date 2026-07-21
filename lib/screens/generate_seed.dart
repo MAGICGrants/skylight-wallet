@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/screens/create_wallet.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/secure_screen.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/screens/create_wallet.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/secure_screen.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/loading_button.dart';
 
 class GenerateSeedScreen extends StatefulWidget {
   const GenerateSeedScreen({super.key});

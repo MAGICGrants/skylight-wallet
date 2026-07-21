@@ -1,4 +1,4 @@
-; Inno Setup Script for Skylight Wallet
+; Inno Setup Script for Spice Wallet
 ; This script creates a Windows installer with a setup wizard.
 ;
 ; Usage (from project root):
@@ -12,10 +12,10 @@
   #define AppVersion "1.0.0"
 #endif
 
-#define AppName "Skylight Wallet"
+#define AppName "Spice Wallet"
 #define AppPublisher "MAGIC Grants"
-#define AppURL "https://github.com/MagicGrants/skylight-wallet"
-#define AppExeName "skylight_wallet.exe"
+#define AppURL "https://github.com/MagicGrants/spice-wallet"
+#define AppExeName "spice_wallet.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -33,7 +33,7 @@ DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE
 OutputDir=Output
-OutputBaseFilename=skylight-wallet-v{#AppVersion}-x64-setup
+OutputBaseFilename=spice-wallet-v{#AppVersion}-x64-setup
 SetupIconFile=runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 WizardImageFile=installer_banner.bmp

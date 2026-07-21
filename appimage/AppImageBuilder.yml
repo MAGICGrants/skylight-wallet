@@ -8,17 +8,17 @@ script:
   - mkdir -p AppDir/usr/lib
   - mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
   - cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
-  - cp linux/launcher_icon.png AppDir/usr/share/icons/hicolor/512x512/apps/skylight_wallet.png
+  - cp linux/launcher_icon.png AppDir/usr/share/icons/hicolor/512x512/apps/spice_wallet.png
 
 AppDir:
   path: ./AppDir
   
   app_info:
-    id: org.magicgrants.skylight
-    name: skylight_wallet
-    icon: skylight_wallet
+    id: org.magicgrants.spice
+    name: spice_wallet
+    icon: spice_wallet
     version: latest
-    exec: usr/bin/skylight_wallet
+    exec: usr/bin/spice_wallet
     exec_args: $@
   
   apt:

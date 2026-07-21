@@ -5,12 +5,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:openalias_ffi/openalias_ffi.dart';
 
-import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/services/notifications_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallets/wallet_cache_store.dart';
+import 'package:spice_wallet/consts.dart' as consts;
+import 'package:spice_wallet/services/notifications_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/wallets/wallet_cache_store.dart';
 
 class TxRecipient {
   final String address;

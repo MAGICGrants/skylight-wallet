@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/util/dirs.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/util/dirs.dart';
 
 enum LogLevel { info, warn, error }
 
@@ -99,12 +99,7 @@ Future<void> cleanOldLogFiles() async {
   }
 }
 
-Future<void> log(
-  LogLevel level,
-  String message, {
-  Map<String, dynamic>? meta,
-  String? coin,
-}) async {
+Future<void> log(LogLevel level, String message, {Map<String, dynamic>? meta, String? coin}) async {
   final verboseLoggingEnabled =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
       false;

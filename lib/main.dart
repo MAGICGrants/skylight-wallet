@@ -7,47 +7,47 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/models/contact_model.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/screens/coin_home.dart';
-import 'package:skylight_wallet/screens/confirm_send.dart';
-import 'package:skylight_wallet/screens/scan_qr.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
-import 'package:skylight_wallet/models/language_model.dart';
-import 'package:skylight_wallet/models/theme_model.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/screens/settings.dart';
-import 'package:skylight_wallet/screens/connection_setup.dart';
-import 'package:skylight_wallet/screens/explorer_setup.dart';
-import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
-import 'package:skylight_wallet/screens/generate_seed.dart';
-import 'package:skylight_wallet/screens/legacy_wallet_screen.dart';
-import 'package:skylight_wallet/screens/lws_keys.dart';
-import 'package:skylight_wallet/screens/receive.dart';
-import 'package:skylight_wallet/screens/send.dart';
-import 'package:skylight_wallet/screens/create_wallet.dart';
-import 'package:skylight_wallet/screens/create_wallet_password.dart';
-import 'package:skylight_wallet/screens/restore_wallet.dart';
-import 'package:skylight_wallet/screens/restore_warning.dart';
-import 'package:skylight_wallet/screens/wallet_home.dart';
-import 'package:skylight_wallet/screens/welcome.dart';
-import 'package:skylight_wallet/screens/tor_info.dart';
-import 'package:skylight_wallet/screens/tor_settings.dart';
-import 'package:skylight_wallet/screens/address_book.dart';
-import 'package:skylight_wallet/screens/privacy_policy.dart';
-import 'package:skylight_wallet/screens/terms_of_service.dart';
-import 'package:skylight_wallet/screens/unlock.dart';
-import 'package:skylight_wallet/services/notifications_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
-import 'package:skylight_wallet/services/foreground_sync_service.dart';
-import 'package:skylight_wallet/util/dirs.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/cacert.dart';
-import 'package:skylight_wallet/util/wallet.dart';
-import 'package:skylight_wallet/util/wallet_file_crypto.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/models/contact_model.dart';
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/screens/coin_home.dart';
+import 'package:spice_wallet/screens/confirm_send.dart';
+import 'package:spice_wallet/screens/scan_qr.dart';
+import 'package:spice_wallet/services/tor_service.dart';
+import 'package:spice_wallet/models/language_model.dart';
+import 'package:spice_wallet/models/theme_model.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/screens/settings.dart';
+import 'package:spice_wallet/screens/connection_setup.dart';
+import 'package:spice_wallet/screens/explorer_setup.dart';
+import 'package:spice_wallet/screens/fiat_api_setup_screen.dart';
+import 'package:spice_wallet/screens/generate_seed.dart';
+import 'package:spice_wallet/screens/legacy_wallet_screen.dart';
+import 'package:spice_wallet/screens/lws_keys.dart';
+import 'package:spice_wallet/screens/receive.dart';
+import 'package:spice_wallet/screens/send.dart';
+import 'package:spice_wallet/screens/create_wallet.dart';
+import 'package:spice_wallet/screens/create_wallet_password.dart';
+import 'package:spice_wallet/screens/restore_wallet.dart';
+import 'package:spice_wallet/screens/restore_warning.dart';
+import 'package:spice_wallet/screens/wallet_home.dart';
+import 'package:spice_wallet/screens/welcome.dart';
+import 'package:spice_wallet/screens/tor_info.dart';
+import 'package:spice_wallet/screens/tor_settings.dart';
+import 'package:spice_wallet/screens/address_book.dart';
+import 'package:spice_wallet/screens/privacy_policy.dart';
+import 'package:spice_wallet/screens/terms_of_service.dart';
+import 'package:spice_wallet/screens/unlock.dart';
+import 'package:spice_wallet/services/notifications_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/periodic_tasks.dart';
+import 'package:spice_wallet/services/foreground_sync_service.dart';
+import 'package:spice_wallet/util/dirs.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/cacert.dart';
+import 'package:spice_wallet/util/wallet.dart';
+import 'package:spice_wallet/util/wallet_file_crypto.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 final isMobile = Platform.isAndroid || Platform.isIOS;
@@ -272,7 +272,7 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'Skylight Wallet',
+      title: 'Spice Wallet',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: _themeData,

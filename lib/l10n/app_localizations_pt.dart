@@ -49,7 +49,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get welcomeDescription =>
-      'A Skylight é uma das mais simples carteiras de Monero. Nós o ajudaremos a configurar uma carteira e se conectar à um servidor.';
+      'A spice é uma das mais simples carteiras de Monero. Nós o ajudaremos a configurar uma carteira e se conectar à um servidor.';
 
   @override
   String get welcomeGetStarted => 'Começar';
@@ -601,7 +601,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get torInfoDescription =>
-      'A Carteira Skylight usa automaticamente Tor integrado para proteger suas conexões de internet.';
+      'A Carteira spice usa automaticamente Tor integrado para proteger suas conexões de internet.';
 
   @override
   String get torInfoContinueButton => 'Continuar';
@@ -727,7 +727,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get legacyDescription =>
-      'A Skylight Wallet está descontinuando o suporte a frases seed legacy e polyseed em favor do BIP39. Por favor, anote a frase seed abaixo, exclua esta carteira e crie uma nova carteira com seed BIP39. Você pode restaurar esta seed em outra carteira Monero e mover os fundos para sua nova carteira BIP39.';
+      'A Spice Wallet está descontinuando o suporte a frases seed legacy e polyseed em favor do BIP39. Por favor, anote a frase seed abaixo, exclua esta carteira e crie uma nova carteira com seed BIP39. Você pode restaurar esta seed em outra carteira Monero e mover os fundos para sua nova carteira BIP39.';
 
   @override
   String get legacyShowSeedButton => 'Mostrar seed';

@@ -1,4 +1,4 @@
-package org.magicgrants.skylight
+package org.magicgrants.spice
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -9,7 +9,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val secureClipboardChannel = "org.magicgrants.skylight/secure_clipboard"
+    private val secureClipboardChannel = "org.magicgrants.spice/secure_clipboard"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

@@ -2,22 +2,22 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:skylight_wallet/util/logging.dart';
+import 'package:spice_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
-import 'package:skylight_wallet/widgets/tor_settings_form.dart';
-import 'package:skylight_wallet/models/language_model.dart';
-import 'package:skylight_wallet/models/theme_model.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
-import 'package:skylight_wallet/services/foreground_sync_service.dart';
-import 'package:skylight_wallet/services/notifications_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/widgets/fiat_api_settings_form.dart';
+import 'package:spice_wallet/widgets/tor_settings_form.dart';
+import 'package:spice_wallet/models/language_model.dart';
+import 'package:spice_wallet/models/theme_model.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/periodic_tasks.dart';
+import 'package:spice_wallet/services/foreground_sync_service.dart';
+import 'package:spice_wallet/services/notifications_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/widgets/wallet_navigation_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -101,7 +101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _newTxNotificationsEnabled = value);
     await applyBackgroundTaskRegistration();
   }
-
 
   void _setAppLockEnabled(bool value) async {
     final i18n = AppLocalizations.of(context)!;
@@ -481,7 +480,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(height: 8),
             Center(
               child: Text(
-                'Skylight Wallet v$_appVersion (build $_buildNumber)',
+                'Spice Wallet v$_appVersion (build $_buildNumber)',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),

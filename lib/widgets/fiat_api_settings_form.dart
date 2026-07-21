@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:skylight_wallet/consts.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/consts.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
 
 class FiatApiSettingsForm extends StatefulWidget {
   final String saveButtonLabel;

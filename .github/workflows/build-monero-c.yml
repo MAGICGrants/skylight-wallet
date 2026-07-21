@@ -214,7 +214,7 @@ jobs:
               <key>CFBundleExecutable</key>
               <string>MoneroWallet</string>
               <key>CFBundleIdentifier</key>
-              <string>com.skylight.MoneroWallet</string>
+              <string>org.spice.MoneroWallet</string>
               <key>CFBundleName</key>
               <string>MoneroWallet</string>
               <key>CFBundlePackageType</key>

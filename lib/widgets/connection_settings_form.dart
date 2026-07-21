@@ -5,14 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
-import 'package:skylight_wallet/services/foreground_sync_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/periodic_tasks.dart';
+import 'package:spice_wallet/services/foreground_sync_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/tor_service.dart';
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
 
@@ -71,8 +71,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   Timer? _torStatusTimer;
 
   /// Background-sync toggles are Android-only and Monero-specific (node scan).
-  bool get _showSyncOptions =>
-      Platform.isAndroid && widget.coinSymbol == 'XMR' && !_isExplorer;
+  bool get _showSyncOptions => Platform.isAndroid && widget.coinSymbol == 'XMR' && !_isExplorer;
 
   @override
   void initState() {

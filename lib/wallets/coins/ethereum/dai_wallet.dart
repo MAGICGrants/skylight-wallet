@@ -1,4 +1,4 @@
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_chain_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_chain_wallet.dart';
 
 /// DAI on Ethereum mainnet (canonical contract). Shares the `ETH` coin's
 /// address and RPC + explorer connection.

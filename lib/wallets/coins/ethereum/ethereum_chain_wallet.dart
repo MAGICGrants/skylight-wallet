@@ -4,24 +4,24 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:blockchain_utils/bip/address/eth_addr.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/offline_signing_client.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/offline_signing_client.dart';
 import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 
-import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/amount_units.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/wallet.dart';
-import 'package:skylight_wallet/util/wallet_file_crypto.dart';
+import 'package:spice_wallet/consts.dart' as consts;
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/util/amount_units.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/wallet.dart';
+import 'package:spice_wallet/util/wallet_file_crypto.dart';
 import 'package:flutter/foundation.dart' show protected;
 
-import 'package:skylight_wallet/wallets/coins/ethereum/erc20_abi.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_explorer_client.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_pending_tx.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_rpc_client.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/ethereum_wallet_open.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/erc20_abi.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_explorer_client.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_pending_tx.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_rpc_client.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/ethereum_wallet_open.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 part 'erc20_chain_wallet.dart';
 
@@ -378,7 +378,10 @@ class EthereumChainWallet extends CryptoWallet {
       try {
         final socks = await _explorerSocksPort();
         if (explorerUseTor && socks == null) {
-          walletLog(LogLevel.warn, 'explorerUseTor set but no Tor proxy; skipping explorer history');
+          walletLog(
+            LogLevel.warn,
+            'explorerUseTor set but no Tor proxy; skipping explorer history',
+          );
           await super.loadTxHistory(persistCount: persistCount);
           return;
         }
@@ -672,7 +675,6 @@ class EthereumChainWallet extends CryptoWallet {
       walletLog(LogLevel.warn, 'load eth txs: $e');
     }
   }
-
 }
 
 /// Locally-tracked Ethereum transaction (outgoing recorded at broadcast;

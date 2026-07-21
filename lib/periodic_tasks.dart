@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:skylight_wallet/services/notifications_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/services/notifications_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/tor_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:skylight_wallet/consts.dart' as consts;
+import 'package:spice_wallet/consts.dart' as consts;
 
 class PeriodicTasks {
   static const txNotifier = 'txNotifier';
@@ -127,7 +127,8 @@ Future<void> applyBackgroundTaskRegistration() async {
   if (!Platform.isAndroid) return;
 
   final backgroundSync =
-      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ?? false;
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
+      false;
   final notifications =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;
 
@@ -135,13 +136,17 @@ Future<void> applyBackgroundTaskRegistration() async {
   if (!backgroundSync && !notifications) return;
 
   final minutes =
-      await SharedPreferencesService.get<int>(SharedPreferencesKeys.backgroundSyncIntervalMinutes) ??
+      await SharedPreferencesService.get<int>(
+        SharedPreferencesKeys.backgroundSyncIntervalMinutes,
+      ) ??
       _minSyncIntervalMinutes;
 
   await Workmanager().registerPeriodicTask(
     PeriodicTasks.txNotifier,
     "Background sync",
-    frequency: Duration(minutes: minutes < _minSyncIntervalMinutes ? _minSyncIntervalMinutes : minutes),
+    frequency: Duration(
+      minutes: minutes < _minSyncIntervalMinutes ? _minSyncIntervalMinutes : minutes,
+    ),
     constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
   );
 }

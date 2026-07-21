@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:skylight_wallet/util/socks_http.dart';
-import 'package:skylight_wallet/util/socks_socket.dart';
+import 'package:spice_wallet/util/socks_http.dart';
+import 'package:spice_wallet/util/socks_socket.dart';
 
 /// One transaction from a Blockscout v2 `addresses/{hash}/transactions`
 /// response.
@@ -35,11 +35,7 @@ class ExplorerTx {
 /// [SOCKSSocket.sendHttpRequest] since history can be large — otherwise a
 /// direct [HttpClient]. Returns the first (most recent) page.
 class EthereumExplorerClient {
-  Future<List<ExplorerTx>> fetchTxList(
-    String baseUrl,
-    String address, {
-    int? socksPort,
-  }) async {
+  Future<List<ExplorerTx>> fetchTxList(String baseUrl, String address, {int? socksPort}) async {
     final normalizedBase = _normalizeBase(baseUrl);
     final url = '$normalizedBase/api/v2/addresses/$address/transactions';
 
@@ -160,8 +156,9 @@ class EthereumExplorerClient {
       try {
         await socket.connect().timeout(_timeout);
         await socket.connectTo(uri.host, uri.port).timeout(_timeout);
-        final raw =
-            await socket.sendHttpRequest(getRawHttpRequestString('GET', url)).timeout(_timeout);
+        final raw = await socket
+            .sendHttpRequest(getRawHttpRequestString('GET', url))
+            .timeout(_timeout);
         return parseHttpResponse(raw).jsonBody;
       } finally {
         // Fire-and-forget: close() can block on flush/cancel and must not stall

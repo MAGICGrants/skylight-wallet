@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = skylight_wallet
+PRODUCT_NAME = spice_wallet
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.skylight
+PRODUCT_BUNDLE_IDENTIFIER = org.magicgrants.spice
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.

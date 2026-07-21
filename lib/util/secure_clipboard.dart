@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
-import 'package:skylight_wallet/util/logging.dart';
+import 'package:spice_wallet/util/logging.dart';
 
 /// Clipboard helper for secrets (seed, view key).
 ///
@@ -13,7 +13,7 @@ import 'package:skylight_wallet/util/logging.dart';
 /// - iOS: writes with `localOnly` (no Handoff/Universal Clipboard) and an
 ///   `expirationDate`, so the OS clears it even if the app is gone.
 class SecureClipboard {
-  static const _channel = MethodChannel('org.magicgrants.skylight/secure_clipboard');
+  static const _channel = MethodChannel('org.magicgrants.spice/secure_clipboard');
 
   static Future<void> copy(String text, {Duration clearAfter = const Duration(seconds: 60)}) async {
     var nativeHandled = false;

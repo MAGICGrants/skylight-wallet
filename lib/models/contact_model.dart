@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/secure_storage.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/secure_storage.dart';
 
 class Contact {
   final String id;

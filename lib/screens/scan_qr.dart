@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
 
 class ScanQrScreen extends StatefulWidget {
   const ScanQrScreen({super.key});

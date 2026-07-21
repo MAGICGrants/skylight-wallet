@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/util/secure_clipboard.dart';
-import 'package:skylight_wallet/util/secure_screen.dart';
-import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/util/secure_clipboard.dart';
+import 'package:spice_wallet/util/secure_screen.dart';
+import 'package:spice_wallet/wallets/coins/monero/monero_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 /// Shows the Monero wallet's LWS details (primary address, secret view key,
 /// restore height) so the user can whitelist the wallet on a light-wallet

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:skylight_wallet/util/dirs.dart';
-import 'package:skylight_wallet/util/wallet_file_crypto.dart';
+import 'package:spice_wallet/util/dirs.dart';
+import 'package:spice_wallet/util/wallet_file_crypto.dart';
 
 /// On-disk store for the user's BIP39 master seed.
 ///
@@ -53,8 +53,9 @@ class MasterSeedStore {
     String blob,
     String password,
   ) async {
-    final body = jsonDecode(await WalletFileCrypto.decryptFromBase64(blob, password))
-        as Map<String, dynamic>;
+    final body =
+        jsonDecode(await WalletFileCrypto.decryptFromBase64(blob, password))
+            as Map<String, dynamic>;
     final mnemonic = body['mnemonic'] as String;
     final restoreDate =
         DateTime.tryParse(body['restore_date_iso'] as String? ?? '') ?? DateTime.now();

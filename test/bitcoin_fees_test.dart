@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_fees.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_fees.dart';
 
 void main() {
   group('feeRateForBlocks', () {
@@ -44,7 +44,16 @@ void main() {
     });
 
     test('invalid targetBlocks → floor', () {
-      expect(feeRateForBlocks([[100, 2000000]], 0, floorSatVb: 1), 1);
+      expect(
+        feeRateForBlocks(
+          [
+            [100, 2000000],
+          ],
+          0,
+          floorSatVb: 1,
+        ),
+        1,
+      );
     });
   });
 }

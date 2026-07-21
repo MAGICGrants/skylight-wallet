@@ -1,6 +1,6 @@
-# Skylight Wallet
+# Spice Wallet
 
-![Skylight Wallet feature graphic](assets/feature_graphic.png)
+![Spice Wallet feature graphic](assets/feature_graphic.png)
 
 A modern, open-source, and self-custody Monero light-wallet built with Flutter.
 
@@ -9,17 +9,17 @@ A modern, open-source, and self-custody Monero light-wallet built with Flutter.
 
 ## Install
 
-[<img src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store badge" width="25%"/>](https://apps.apple.com/us/app/skylight-wallet-for-monero/id6759176050) [<img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play badge" width="25%"/>](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
+[<img src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store badge" width="25%"/>](https://apps.apple.com/us/app/spice-wallet-for-monero/id6759176050) [<img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play badge" width="25%"/>](https://play.google.com/store/apps/details?id=org.magicgrants.spice)
 
 ### Desktop
 
 #### Linux
 
-Download from [latest release](https://github.com/MAGICGrants/skylight-wallet/releases/latest), ``.AppImage`` to run on any distribution, ``.deb`` for Debian.
+Download from [latest release](https://github.com/MAGICGrants/spice-wallet/releases/latest), ``.AppImage`` to run on any distribution, ``.deb`` for Debian.
 
 #### Windows
 
-Download from [latest release](https://github.com/MAGICGrants/skylight-wallet/releases/latest) the ``.exe`` file.
+Download from [latest release](https://github.com/MAGICGrants/spice-wallet/releases/latest) the ``.exe`` file.
 
 ## Prerequisites
 
@@ -36,8 +36,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/magicgrants/skylight-wallet.git
-cd skylight-wallet
+git clone https://github.com/magicgrants/spice-wallet.git
+cd spice-wallet
 ```
 
 ### 2. Install Dependencies
@@ -184,7 +184,7 @@ $ ./build_single.sh monero x86_64-linux-android -j$(nproc)
 
 Pull requests welcome! Thanks for supporting MAGIC Grants.
 
-To join our Matrix community, [click here](https://matrix.to/#/#skylight-wallet:monero.social).
+To join our Matrix community, [click here](https://matrix.to/#/#spice-wallet:monero.social).
 
 ## License
 

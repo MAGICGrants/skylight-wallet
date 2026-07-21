@@ -6,18 +6,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
-import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/util/amount_units.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
-import 'package:skylight_wallet/models/contact_model.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/screens/confirm_send.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/coin_amount.dart';
-import 'package:skylight_wallet/widgets/fiat_amount.dart';
+import 'package:spice_wallet/consts.dart' as consts;
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/util/amount_units.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/widgets/loading_button.dart';
+import 'package:spice_wallet/models/contact_model.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/screens/confirm_send.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/coin_amount.dart';
+import 'package:spice_wallet/widgets/fiat_amount.dart';
 
 class SendScreenArgs {
   final String coinSymbol;
@@ -673,7 +673,9 @@ class _SendScreenState extends State<SendScreen> {
     final wallet = _wallet(context);
     final amountUnits = _amountUnits(wallet);
 
-    if (amountUnits == null || amountUnits <= BigInt.zero || (_compareAmountToBalance(wallet) ?? 1) > 0) {
+    if (amountUnits == null ||
+        amountUnits <= BigInt.zero ||
+        (_compareAmountToBalance(wallet) ?? 1) > 0) {
       _feeCalculationCounter++;
       _lastFeeFetchKey = '';
       if (mounted) {

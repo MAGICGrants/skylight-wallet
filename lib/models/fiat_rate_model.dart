@@ -4,12 +4,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import 'package:skylight_wallet/consts.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/socks_http.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/consts.dart';
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/socks_http.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 enum FiatApiMode { torOnly, clearnet, disabled }
 

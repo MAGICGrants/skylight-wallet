@@ -8,17 +8,17 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:bitcoin_base/bitcoin_base.dart';
 import 'package:blockchain_utils/blockchain_utils.dart';
 
-import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/wallet.dart';
-import 'package:skylight_wallet/util/wallet_file_crypto.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_coin_selection.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_fees.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_pending_tx.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_wallet_open.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/electrum_client.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/consts.dart' as consts;
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/wallet.dart';
+import 'package:spice_wallet/util/wallet_file_crypto.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_coin_selection.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_fees.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_pending_tx.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_wallet_open.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/electrum_client.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 /// BIP84 (P2WPKH) Bitcoin-family wallet backed by a user-supplied Electrum server.
 ///

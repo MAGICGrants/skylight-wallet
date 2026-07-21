@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:skylight_wallet/wallets/coins/ethereum/erc20_abi.dart';
+import 'package:spice_wallet/wallets/coins/ethereum/erc20_abi.dart';
 
 void main() {
   // A known checksummed address; calldata always lowercases + left-pads to 32 bytes.
@@ -11,7 +11,7 @@ void main() {
       expect(
         erc20TransferData(addr, BigInt.one),
         '0xa9059cbb$paddedAddr'
-            '0000000000000000000000000000000000000000000000000000000000000001',
+        '0000000000000000000000000000000000000000000000000000000000000001',
       );
     });
 
@@ -19,7 +19,7 @@ void main() {
       expect(
         erc20TransferData(addr, BigInt.parse('1000000000000000000')),
         '0xa9059cbb$paddedAddr'
-            '0000000000000000000000000000000000000000000000000de0b6b3a7640000',
+        '0000000000000000000000000000000000000000000000000de0b6b3a7640000',
       );
     });
 

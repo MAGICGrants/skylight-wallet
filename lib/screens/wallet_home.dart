@@ -5,17 +5,17 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/screens/coin_home.dart';
-import 'package:skylight_wallet/screens/connection_setup.dart';
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
-import 'package:skylight_wallet/widgets/coin_amount.dart';
-import 'package:skylight_wallet/widgets/fiat_amount.dart';
-import 'package:skylight_wallet/widgets/connection_status_indicator.dart';
-import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:spice_wallet/consts.dart' as consts;
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/screens/coin_home.dart';
+import 'package:spice_wallet/screens/connection_setup.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/widgets/coin_amount.dart';
+import 'package:spice_wallet/widgets/fiat_amount.dart';
+import 'package:spice_wallet/widgets/connection_status_indicator.dart';
+import 'package:spice_wallet/widgets/wallet_navigation_bar.dart';
 
 class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});
@@ -52,8 +52,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
 
     final ratesBySymbol = <String, double?>{
-      for (final w in walletManager.allWallets)
-        w.coinSymbol: fiatRate.rateFor(w.coinSymbol),
+      for (final w in walletManager.allWallets) w.coinSymbol: fiatRate.rateFor(w.coinSymbol),
     };
     final totalFiat = walletManager.totalUnlockedFiat(ratesBySymbol);
 
@@ -66,7 +65,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       });
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
       body: SafeArea(
         child: Center(

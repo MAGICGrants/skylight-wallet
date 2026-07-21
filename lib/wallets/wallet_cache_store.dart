@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:skylight_wallet/util/dirs.dart';
-import 'package:skylight_wallet/util/wallet_file_crypto.dart';
+import 'package:spice_wallet/util/dirs.dart';
+import 'package:spice_wallet/util/wallet_file_crypto.dart';
 
 /// Per-coin encrypted cache of sensitive display data (balances, tx history,
 /// raw tx blobs, per-scripthash state). Encrypted at rest with the wallet

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
 
 class TorInfoScreen extends StatelessWidget {
   const TorInfoScreen({super.key});
@@ -9,7 +9,7 @@ class TorInfoScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Wallet')),
+      appBar: AppBar(title: Text('Spice Wallet')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

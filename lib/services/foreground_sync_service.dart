@@ -2,16 +2,16 @@ import 'dart:io';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/services/shared_preferences_service.dart';
+import 'package:spice_wallet/services/tor_service.dart';
+import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 /// Android foreground service that keeps Monero (and other) wallets syncing
 /// while the app is backgrounded — a persistent-notification alternative to the
 /// budget-limited WorkManager task. Dies on force-quit (OS limitation).
 
-const _channelId = 'skylight_background_sync';
+const _channelId = 'spice_background_sync';
 const _channelName = 'Background sync';
 
 /// Entry point run inside the foreground-service isolate. Must be top-level.
@@ -63,7 +63,7 @@ class _SyncTaskHandler extends TaskHandler {
       (w) => w.connectionAddress.isNotEmpty && !(w.isConnected && w.isSynced),
     );
     FlutterForegroundTask.updateService(
-      notificationTitle: 'Skylight Wallet',
+      notificationTitle: 'Spice Wallet',
       notificationText: syncing ? 'Syncing…' : 'Wallet up to date',
     );
   }
@@ -100,7 +100,7 @@ Future<void> startForegroundSync() async {
   await FlutterForegroundTask.requestNotificationPermission();
   if (await FlutterForegroundTask.isRunningService) return;
   await FlutterForegroundTask.startService(
-    notificationTitle: 'Skylight Wallet',
+    notificationTitle: 'Spice Wallet',
     notificationText: 'Syncing…',
     callback: foregroundSyncCallback,
   );
@@ -118,6 +118,7 @@ Future<void> stopForegroundSync() async {
 Future<void> startForegroundSyncIfEnabled() async {
   if (!Platform.isAndroid) return;
   final enabled =
-      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.foregroundSyncEnabled) ?? false;
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.foregroundSyncEnabled) ??
+      false;
   if (enabled) await startForegroundSync();
 }

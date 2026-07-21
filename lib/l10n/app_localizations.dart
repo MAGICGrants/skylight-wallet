@@ -174,7 +174,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Skylight is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.'**
+  /// **'Spice is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.'**
   String get welcomeDescription;
 
   /// No description provided for @welcomeGetStarted.
@@ -1218,7 +1218,7 @@ abstract class AppLocalizations {
   /// No description provided for @torInfoDescription.
   ///
   /// In en, this message translates to:
-  /// **'Skylight Wallet automatically uses built-in Tor to protect your internet connections.'**
+  /// **'Spice Wallet automatically uses built-in Tor to protect your internet connections.'**
   String get torInfoDescription;
 
   /// No description provided for @torInfoContinueButton.
@@ -1452,7 +1452,7 @@ abstract class AppLocalizations {
   /// No description provided for @legacyDescription.
   ///
   /// In en, this message translates to:
-  /// **'Skylight Wallet is dropping support for legacy and polyseed seed phrases in favor of BIP39. Please write down the seed phrase below, delete this wallet and create a new wallet. You can restore the seed below on another Monero wallet and move the funds to your new BIP39 seed wallet.'**
+  /// **'Spice Wallet is dropping support for legacy and polyseed seed phrases in favor of BIP39. Please write down the seed phrase below, delete this wallet and create a new wallet. You can restore the seed below on another Monero wallet and move the funds to your new BIP39 seed wallet.'**
   String get legacyDescription;
 
   /// No description provided for @legacyShowSeedButton.

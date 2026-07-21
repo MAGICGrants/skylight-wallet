@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:skylight_wallet/wallets/coins/bitcoin/bitcoin_coin_selection.dart';
+import 'package:spice_wallet/wallets/coins/bitcoin/bitcoin_coin_selection.dart';
 
 int _sum(List<int> values, List<int> idx) => idx.fold(0, (s, i) => s + values[i]);
 
@@ -16,10 +16,7 @@ void main() {
       final v = [5000, 3000, 2000];
       // target 6000, window up to 6500 → {5000,2000}=7000 too big; {5000,3000}=8000;
       // {3000,2000}=5000 < target. Only sets >=6000 and <=6500: none exact, so null.
-      expect(
-        branchAndBoundSelect(effectiveValues: v, target: 6000, costOfChange: 500),
-        isNull,
-      );
+      expect(branchAndBoundSelect(effectiveValues: v, target: 6000, costOfChange: 500), isNull);
     });
 
     test('accepts overshoot inside window', () {

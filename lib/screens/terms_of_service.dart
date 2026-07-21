@@ -3,16 +3,13 @@ import 'package:flutter/material.dart';
 class TermsOfService extends StatelessWidget {
   const TermsOfService({super.key});
 
-  TextStyle get headingStyle =>
-      TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
+  TextStyle get headingStyle => TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
 
-  TextStyle get subheadingStyle =>
-      TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
+  TextStyle get subheadingStyle => TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
 
   TextStyle get bodyStyle => TextStyle(fontSize: 14, height: 1.4);
 
-  TextStyle get monospaceStyle =>
-      TextStyle(fontSize: 13, fontFamily: 'monospace', height: 1.4);
+  TextStyle get monospaceStyle => TextStyle(fontSize: 13, fontFamily: 'monospace', height: 1.4);
 
   Widget sectionHeading(String text) => Padding(
     padding: EdgeInsets.only(top: 18.0, bottom: 6.0),
@@ -39,7 +36,7 @@ class TermsOfService extends StatelessWidget {
 
               sectionHeading('Acceptance'),
               paragraph(
-                'These Terms of Service (ToS) are entered into by and between You and MAGIC Grants, a Colorado nonprofit corporation (“we” or “us”). These terms govern your access to and use of Skylight Wallet (the “App”).',
+                'These Terms of Service (ToS) are entered into by and between You and MAGIC Grants, a Colorado nonprofit corporation (“we” or “us”). These terms govern your access to and use of Spice Wallet (the “App”).',
               ),
               paragraph(
                 'Please read the Terms of Service carefully before you start to use the App. By using the App you accept and agree to be bound and abide by these Terms of Service and our Privacy Policy. If you do not agree to these Terms of Service or the Privacy Policy, then you must not access or use the App.',
@@ -84,7 +81,7 @@ class TermsOfService extends StatelessWidget {
 
               sectionHeading('No Custody by MAGIC Grants'),
               paragraph(
-                'MAGIC Grants, the developer of this App, does not have custody of your funds while you are using the App. Skylight Wallet is a self-custody wallet. MAGIC Grants does not transmit funds for You. MAGIC Grants is not an exchange or money services business.',
+                'MAGIC Grants, the developer of this App, does not have custody of your funds while you are using the App. Spice Wallet is a self-custody wallet. MAGIC Grants does not transmit funds for You. MAGIC Grants is not an exchange or money services business.',
               ),
               paragraph(
                 'The App does not store cryptocurrencies, including Monero, Litecoin or Bitcoin. Cryptocurrencies exist only by virtue of the ownership record maintained in their respective networks. Any transfer of title in cryptocurrency occurs within a decentralized cryptocurrency network, and not in the App.',

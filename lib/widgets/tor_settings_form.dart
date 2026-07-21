@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/socks_http.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/util/socks_http.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 /// Shared form widget used by both TorSettingsScreen and the Tor settings dialog
 class TorSettingsForm extends StatefulWidget {
@@ -57,11 +57,10 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
     final disablingTor = _selectedMode == TorMode.disabled && previousMode != TorMode.disabled;
 
     if (disablingTor) {
-      final affected =
-          Provider.of<WalletManager>(context, listen: false)
-              .allWallets
-              .where((w) => w.usingTor)
-              .toList();
+      final affected = Provider.of<WalletManager>(
+        context,
+        listen: false,
+      ).allWallets.where((w) => w.usingTor).toList();
       if (affected.isNotEmpty) {
         final confirmed = await _confirmDisableTor();
         if (confirmed != true) return;

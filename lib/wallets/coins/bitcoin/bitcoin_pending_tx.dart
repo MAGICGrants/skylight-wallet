@@ -1,4 +1,4 @@
-import 'package:skylight_wallet/wallets/crypto_wallet.dart';
+import 'package:spice_wallet/wallets/crypto_wallet.dart';
 
 /// A signed-but-not-yet-broadcast Bitcoin transaction.
 class BitcoinPendingTx implements PendingTransaction {

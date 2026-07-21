@@ -17,11 +17,17 @@ class NotificationService {
 
     // Windows requires an absolute path to an .ico file
     final initSettingsWindows = WindowsInitializationSettings(
-      appName: 'Skylight Wallet',
-      appUserModelId: 'org.magicgrants.skylight',
+      appName: 'Spice Wallet',
+      appUserModelId: 'org.magicgrants.spice',
       guid: '6dcf17a9-fb5f-4f47-b0b9-6d655e90adbf',
       iconPath: Platform.isWindows
-          ? p.join(p.dirname(Platform.resolvedExecutable), 'data', 'flutter_assets', 'assets', 'app_icon.ico')
+          ? p.join(
+              p.dirname(Platform.resolvedExecutable),
+              'data',
+              'flutter_assets',
+              'assets',
+              'app_icon.ico',
+            )
           : null,
     );
 

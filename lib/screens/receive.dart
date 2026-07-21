@@ -7,9 +7,9 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/wallets/coins/monero/monero_wallet.dart';
-import 'package:skylight_wallet/wallets/wallet_manager.dart';
+import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/wallets/coins/monero/monero_wallet.dart';
+import 'package:spice_wallet/wallets/wallet_manager.dart';
 
 class ReceiveScreenArgs {
   final String coinSymbol;
@@ -102,8 +102,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       address = _showSubaddress ? receiveAddress : primaryAddress;
     }
 
-    final canShowAddress =
-        monero == null || serverSupportsSubaddresses != null || isDemoMode;
+    final canShowAddress = monero == null || serverSupportsSubaddresses != null || isDemoMode;
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.receiveTitle)),
@@ -172,12 +171,16 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
                               icon: Icon(Icons.copy),
                               label: Text(i18n.copy),
                             ),
-                          if (monero != null && serverSupportsSubaddresses == true && !_showSubaddress)
+                          if (monero != null &&
+                              serverSupportsSubaddresses == true &&
+                              !_showSubaddress)
                             TextButton(
                               onPressed: () => _setShowSubaddress(true),
                               child: Text(i18n.receiveShowSubaddressButton),
                             ),
-                          if (monero != null && serverSupportsSubaddresses == true && _showSubaddress)
+                          if (monero != null &&
+                              serverSupportsSubaddresses == true &&
+                              _showSubaddress)
                             TextButton(
                               onPressed: () => _setShowSubaddress(false),
                               child: Text(i18n.receiveShowPrimaryAddressButton),

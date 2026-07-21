@@ -127,7 +127,7 @@ jobs:
           submodules: recursive
 
       - name: Pull builder image
-        run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
+        run: docker pull ghcr.io/magicgrants/spice-wallet-builder:latest
 
       - name: Set up Android signing
         run: |
@@ -145,14 +145,14 @@ jobs:
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            ghcr.io/magicgrants/spice-wallet-builder:latest \
             bash -c "flutter pub get && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release"
 
           mkdir -p dist
-          cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"
-          cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
-          cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/skylight-wallet-${VERSION}-x86_64.apk"
-          cp -v build/app/outputs/bundle/release/app-release.aab "dist/skylight-wallet-${VERSION}.aab"
+          cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/spice-wallet-${VERSION}-arm64-v8a.apk"
+          cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/spice-wallet-${VERSION}-armeabi-v7a.apk"
+          cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/spice-wallet-${VERSION}-x86_64.apk"
+          cp -v build/app/outputs/bundle/release/app-release.aab "dist/spice-wallet-${VERSION}.aab"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -174,7 +174,7 @@ jobs:
           submodules: recursive
 
       - name: Pull builder image
-        run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
+        run: docker pull ghcr.io/magicgrants/spice-wallet-builder:latest
 
       - name: Build Linux packages
         run: |
@@ -182,12 +182,12 @@ jobs:
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            ghcr.io/magicgrants/spice-wallet-builder:latest \
             bash -c "flutter pub get && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
-          cp -v deb/skylight-wallet-*.deb dist/
-          cp -v appimage/skylight-wallet-*.AppImage dist/
+          cp -v deb/spice-wallet-*.deb dist/
+          cp -v appimage/spice-wallet-*.AppImage dist/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -301,7 +301,7 @@ jobs:
             <string>app-store</string>
             <key>provisioningProfiles</key>
             <dict>
-              <key>org.magicgrants.skylightwallet</key>
+              <key>org.magicgrants.spicewallet</key>
               <string>PROFILE_UUID_PLACEHOLDER</string>
             </dict>
             <key>signingCertificate</key>
@@ -322,7 +322,7 @@ jobs:
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           mkdir -p dist
-          cp -v build/ios/ipa/*.ipa "dist/skylight-wallet-${VERSION}.ipa"
+          cp -v build/ios/ipa/*.ipa "dist/spice-wallet-${VERSION}.ipa"
 
       - name: Upload to App Store Connect
         env:
@@ -336,7 +336,7 @@ jobs:
           VERSION='${{ needs.version.outputs.version }}'
           xcrun altool --upload-app \
             --type ios \
-            --file "dist/skylight-wallet-${VERSION}.ipa" \
+            --file "dist/spice-wallet-${VERSION}.ipa" \
             --apiKey "$APP_STORE_CONNECT_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
 

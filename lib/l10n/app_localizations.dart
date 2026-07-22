@@ -738,7 +738,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundSyncDescription.
   ///
   /// In en, this message translates to:
-  /// **'Periodically sync Monero in the background so it\'s up to date when you open the app.'**
+  /// **'Periodically sync Monero in the background so it\'s up to date when you open the app. Only runs while charging and on WiFi.'**
   String get settingsBackgroundSyncDescription;
 
   /// No description provided for @settingsBackgroundSyncIntervalLabel.

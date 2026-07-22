@@ -40,9 +40,7 @@ Future<bool> runTxNotifier() async {
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
       false;
 
-  // A Monero node sync can be expensive, so it only runs in the background when the
-  // user explicitly enabled Background Sync — notifications alone won't drag it
-  // through a full scan. Light wallets (LWS, BTC, ETH) always participate.
+  // The node sync only runs when Background Sync is on; light wallets always do.
   final syncWallets = wallets.where((w) => backgroundSync || !_requiresBackgroundSync(w)).toList();
   if (syncWallets.isEmpty) return true;
 
@@ -154,13 +152,18 @@ Future<void> applyBackgroundTaskRegistration() async {
       ) ??
       _minSyncIntervalMinutes;
 
+  // A node sync is heavy, so gate it on charging + WiFi; notifications are light.
+  final constraints = backgroundSync
+      ? Constraints(networkType: NetworkType.unmetered, requiresCharging: true)
+      : Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true);
+
   await Workmanager().registerPeriodicTask(
     PeriodicTasks.txNotifier,
     "Background sync",
     frequency: Duration(
       minutes: minutes < _minSyncIntervalMinutes ? _minSyncIntervalMinutes : minutes,
     ),
-    constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
+    constraints: constraints,
   );
 }
 

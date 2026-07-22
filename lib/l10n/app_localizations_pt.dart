@@ -346,7 +346,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsBackgroundSyncDescription =>
-      'Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app.';
+      'Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app. Só é executado enquanto estiver carregando e conectado ao WiFi.';
 
   @override
   String get settingsBackgroundSyncIntervalLabel => 'Intervalo de Sincronização';

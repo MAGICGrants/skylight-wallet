@@ -151,6 +151,20 @@ class WalletManager with ChangeNotifier {
     return true;
   }
 
+  /// Decrypts and returns the stored BIP39 master seed. Pass [password] to
+  /// verify a user-entered password (throws on a wrong password); otherwise the
+  /// session password is used, loading it from mobile secure storage if needed.
+  /// Returns null when no seed is stored or no password is available.
+  Future<({String mnemonic, DateTime restoreDate})?> loadMasterSeed({String? password}) async {
+    var pw = password ?? _password;
+    if (pw == null) {
+      await loadMobileWalletPassword();
+      pw = _password;
+    }
+    if (pw == null) return null;
+    return MasterSeedStore.load(pw);
+  }
+
   // ----- Lifecycle across all wallets -----
 
   /// True if at least one wallet has a persisted file on disk.

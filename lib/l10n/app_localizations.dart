@@ -426,7 +426,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletRestoreDateLabel.
   ///
   /// In en, this message translates to:
-  /// **'Restore from date'**
+  /// **'Restore date'**
   String get restoreWalletRestoreDateLabel;
 
   /// No description provided for @restoreWalletRestoreButton.
@@ -872,6 +872,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View'**
   String get settingsLwsViewKeysButton;
+
+  /// No description provided for @settingsExportSeedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Seed'**
+  String get settingsExportSeedLabel;
+
+  /// No description provided for @settingsExportSeedButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get settingsExportSeedButton;
+
+  /// No description provided for @settingsExportSeedAuthReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to reveal your seed'**
+  String get settingsExportSeedAuthReason;
+
+  /// No description provided for @exportSeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Seed'**
+  String get exportSeedTitle;
+
+  /// No description provided for @exportSeedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with this seed can access your funds. Write it down and keep it somewhere safe. Never share it.'**
+  String get exportSeedWarning;
+
+  /// No description provided for @exportSeedRestoreHeightLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore height'**
+  String get exportSeedRestoreHeightLabel;
+
+  /// No description provided for @exportSeedQrButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as QR'**
+  String get exportSeedQrButton;
+
+  /// No description provided for @exportSeedQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed QR'**
+  String get exportSeedQrTitle;
 
   /// No description provided for @settingsSecretKeysLabel.
   ///

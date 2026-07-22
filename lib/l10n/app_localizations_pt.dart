@@ -420,6 +420,31 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsLwsViewKeysButton => 'Ver';
 
   @override
+  String get settingsExportSeedLabel => 'Exportar Seed';
+
+  @override
+  String get settingsExportSeedButton => 'Mostrar';
+
+  @override
+  String get settingsExportSeedAuthReason => 'Autentique-se para revelar sua seed';
+
+  @override
+  String get exportSeedTitle => 'Sua Seed';
+
+  @override
+  String get exportSeedWarning =>
+      'Qualquer pessoa com esta seed pode acessar seus fundos. Anote-a e guarde-a em local seguro. Nunca a compartilhe.';
+
+  @override
+  String get exportSeedRestoreHeightLabel => 'Altura de restauração';
+
+  @override
+  String get exportSeedQrButton => 'Exportar como QR';
+
+  @override
+  String get exportSeedQrTitle => 'QR da Seed';
+
+  @override
   String get settingsSecretKeysLabel => 'Chaves Privadas de Restauração';
 
   @override

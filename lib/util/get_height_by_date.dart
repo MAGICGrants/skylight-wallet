@@ -183,3 +183,35 @@ int getHeightByDate({required DateTime date}) {
 
   return height;
 }
+
+/// Inverse of [getHeightByDate]: maps a blockchain height back to an approximate
+/// calendar date, interpolating the day within the matching month. Used to seed
+/// the restore date picker from a scanned restore height.
+DateTime getDateByHeight({required int height}) {
+  final entries = dates.entries.toList();
+
+  if (height <= entries.first.value) {
+    final parts = entries.first.key.split('-');
+    return DateTime(int.parse(parts[0]), int.parse(parts[1]));
+  }
+
+  for (int i = 0; i < entries.length - 1; i++) {
+    final startHeight = entries[i].value;
+    final endHeight = entries[i + 1].value;
+    if (height >= startHeight && height < endHeight) {
+      final parts = entries[i].key.split('-');
+      final heightPerDay = (endHeight - startHeight) / 31;
+      final day = heightPerDay > 0 ? ((height - startHeight) / heightPerDay).floor() + 1 : 1;
+      return DateTime(int.parse(parts[0]), int.parse(parts[1]), day.clamp(1, 28));
+    }
+  }
+
+  // Past the last checkpoint: extrapolate from the final month's rate.
+  final last = entries.last;
+  final prev = entries[entries.length - 2];
+  final heightPerDay = (last.value - prev.value) / 31;
+  final parts = last.key.split('-');
+  final base = DateTime(int.parse(parts[0]), int.parse(parts[1]));
+  final days = heightPerDay > 0 ? ((height - last.value) / heightPerDay).round() : 0;
+  return base.add(Duration(days: days));
+}

@@ -182,7 +182,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletRestoreHeightLabel => 'Restore Height (optional)';
 
   @override
-  String get restoreWalletRestoreDateLabel => 'Restore from date';
+  String get restoreWalletRestoreDateLabel => 'Restore date';
 
   @override
   String get restoreWalletRestoreButton => 'Restore';
@@ -418,6 +418,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLwsViewKeysButton => 'View';
+
+  @override
+  String get settingsExportSeedLabel => 'Export Seed';
+
+  @override
+  String get settingsExportSeedButton => 'Show';
+
+  @override
+  String get settingsExportSeedAuthReason => 'Authenticate to reveal your seed';
+
+  @override
+  String get exportSeedTitle => 'Your Seed';
+
+  @override
+  String get exportSeedWarning =>
+      'Anyone with this seed can access your funds. Write it down and keep it somewhere safe. Never share it.';
+
+  @override
+  String get exportSeedRestoreHeightLabel => 'Restore height';
+
+  @override
+  String get exportSeedQrButton => 'Export as QR';
+
+  @override
+  String get exportSeedQrTitle => 'Seed QR';
 
   @override
   String get settingsSecretKeysLabel => 'Secret Restore Keys';

@@ -1,14 +1,19 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:spice_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
 
 import 'package:spice_wallet/l10n/app_localizations.dart';
 import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/screens/generate_seed.dart';
+import 'package:spice_wallet/util/get_height_by_date.dart';
 import 'package:spice_wallet/widgets/fiat_api_settings_form.dart';
+import 'package:spice_wallet/widgets/loading_button.dart';
 import 'package:spice_wallet/widgets/tor_settings_form.dart';
 import 'package:spice_wallet/models/language_model.dart';
 import 'package:spice_wallet/models/theme_model.dart';
@@ -100,6 +105,164 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     setState(() => _newTxNotificationsEnabled = value);
     await applyBackgroundTaskRegistration();
+  }
+
+  Future<void> _exportSeed() async {
+    final i18n = AppLocalizations.of(context)!;
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final isMobile = Platform.isAndroid || Platform.isIOS;
+
+    ({String mnemonic, DateTime restoreDate})? seed;
+
+    if (isMobile) {
+      // The wallet password is device-generated on mobile, so revealing the
+      // seed always requires an OS unlock. If no device credential is set up
+      // there's nothing to authenticate against, so we allow it rather than
+      // locking the user out of their own seed.
+      final auth = LocalAuthentication();
+      try {
+        final didAuthenticate = await auth.authenticate(
+          localizedReason: i18n.settingsExportSeedAuthReason,
+          options: AuthenticationOptions(useErrorDialogs: true, sensitiveTransaction: true),
+        );
+        if (!didAuthenticate) return;
+      } on PlatformException catch (error) {
+        const noCredential = {
+          auth_error.notAvailable,
+          auth_error.notEnrolled,
+          auth_error.passcodeNotSet,
+        };
+        if (!noCredential.contains(error.code)) {
+          log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
+          }
+          return;
+        }
+      } catch (error) {
+        log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
+        }
+        return;
+      }
+      try {
+        seed = await manager.loadMasterSeed();
+      } catch (error) {
+        log(LogLevel.error, 'Failed to load master seed: ${error.toString()}');
+      }
+    } else {
+      seed = await _promptPasswordAndLoadSeed(manager);
+      if (seed == null) return;
+    }
+
+    if (seed == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+      }
+      return;
+    }
+
+    int restoreHeight = 0;
+    final monero = manager.getWallet('XMR');
+    if (monero != null) {
+      try {
+        restoreHeight = await monero.getRestoreHeight();
+      } catch (_) {}
+    }
+    if (restoreHeight <= 0) restoreHeight = getHeightByDate(date: seed.restoreDate);
+
+    if (!mounted) return;
+    Navigator.pushNamed(
+      context,
+      '/generate_seed',
+      arguments: GenerateSeedScreenArgs(
+        exportMnemonic: seed.mnemonic,
+        exportRestoreDate: seed.restoreDate,
+        exportRestoreHeight: restoreHeight,
+      ),
+    );
+  }
+
+  Future<({String mnemonic, DateTime restoreDate})?> _promptPasswordAndLoadSeed(
+    WalletManager manager,
+  ) {
+    final i18n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth.clamp(0.0, 500.0);
+
+    return showDialog<({String mnemonic, DateTime restoreDate})>(
+      context: context,
+      builder: (dialogContext) {
+        var obscure = true;
+        var loading = false;
+        String? error;
+
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            Future<void> submit() async {
+              setDialogState(() {
+                loading = true;
+                error = null;
+              });
+              try {
+                final seed = await manager.loadMasterSeed(password: controller.text);
+                if (seed == null) {
+                  setDialogState(() {
+                    loading = false;
+                    error = i18n.unlockIncorrectPasswordError;
+                  });
+                  return;
+                }
+                if (dialogContext.mounted) Navigator.pop(dialogContext, seed);
+              } catch (_) {
+                setDialogState(() {
+                  loading = false;
+                  error = i18n.unlockIncorrectPasswordError;
+                });
+              }
+            }
+
+            return AlertDialog(
+              constraints: BoxConstraints.tightFor(width: dialogWidth),
+              insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              title: Text(i18n.settingsExportSeedLabel),
+              content: TextField(
+                controller: controller,
+                obscureText: obscure,
+                autofocus: true,
+                onSubmitted: (_) => submit(),
+                decoration: InputDecoration(
+                  labelText: i18n.unlockPasswordLabel,
+                  errorText: error,
+                  border: OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => setDialogState(() => obscure = !obscure),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(i18n.cancel),
+                ),
+                LoadingButton(
+                  isLoading: loading,
+                  onPressed: submit,
+                  label: i18n.settingsExportSeedButton,
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _setAppLockEnabled(bool value) async {
@@ -450,6 +613,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(i18n.settingsExportSeedLabel, style: TextStyle(fontSize: 18)),
+                TextButton.icon(
+                  onPressed: _exportSeed,
+                  icon: Icon(Icons.vpn_key),
+                  label: Text(i18n.settingsExportSeedButton),
+                ),
+              ],
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:spice_wallet/l10n/app_localizations.dart';
 import 'package:spice_wallet/widgets/loading_button.dart';
 import 'package:spice_wallet/models/fiat_rate_model.dart';
+import 'package:spice_wallet/util/get_height_by_date.dart';
 import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/util/restore_qr.dart';
 import 'package:spice_wallet/util/secure_screen.dart';
 import 'package:spice_wallet/wallets/wallet_manager.dart';
 
@@ -38,6 +42,27 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
 
   String _formatDate(DateTime date) {
     return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _scanQrCode() async {
+    final result = await Navigator.pushNamed(context, '/scan_qr');
+    if (result is! String) return;
+
+    final parsed = parseRestoreQr(result);
+    if (parsed == null) return;
+
+    setState(() {
+      _mnemonicController.text = parsed.seed;
+      _mnemonicError = null;
+
+      if (parsed.restoreHeight != null) {
+        final earliest = DateTime(2014, 4);
+        final now = DateTime.now();
+        final date = getDateByHeight(height: parsed.restoreHeight!);
+        _restoreDate = date.isBefore(earliest) ? earliest : (date.isAfter(now) ? now : date);
+        _restoreDateController.text = _formatDate(_restoreDate);
+      }
+    });
   }
 
   Future<void> _pickDate() async {
@@ -150,6 +175,13 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
                     labelText: i18n.restoreWalletSeedLabel,
                     errorText: _mnemonicError,
                     border: OutlineInputBorder(),
+                    suffixIcon: (Platform.isAndroid || Platform.isIOS)
+                        ? IconButton(
+                            icon: Icon(Icons.qr_code),
+                            tooltip: i18n.scanQrTitle,
+                            onPressed: _scanQrCode,
+                          )
+                        : null,
                   ),
                 ),
               ),

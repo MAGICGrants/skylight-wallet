@@ -62,6 +62,11 @@ class _SendScreenState extends State<SendScreen> {
   // doesn't repeat the network lookup. Output '' = failed/none.
   String _resolveCacheInput = '';
   String _resolveCacheOutput = '';
+  // Distinguishes real edits from selection/focus-only controller events.
+  String _lastAddressText = '';
+  // In-flight lookup shared so concurrent callers reuse one network resolve.
+  Future<String>? _resolveInFlight;
+  String _resolveInFlightInput = '';
 
   String _coinSymbol = 'XMR';
   bool _argsLoaded = false;
@@ -102,35 +107,51 @@ class _SendScreenState extends State<SendScreen> {
     if (!domainRegex.hasMatch(value)) return value;
     // All coins use the DNSSEC-over-Tor OpenAlias resolver (Monero included).
     // Empty result → caller shows the resolve error.
-    if (wallet.openAliasAsset.isNotEmpty) {
-      if (value == _resolveCacheInput) return _resolveCacheOutput; // avoid re-lookup
-      final i18n = AppLocalizations.of(context)!;
-      // Counter (not a bool): resolution runs from several call sites that can
-      // overlap (validate, fee calc, send), so the spinner stays up until all
-      // finish.
-      if (mounted) setState(() => _openAliasResolving++);
-      String resolved = '';
-      String error = '';
-      try {
-        resolved = (await wallet.resolveOpenAliasAddress(value)) ?? '';
-        error = resolved.isEmpty ? i18n.sendOpenAliasResolveError : '';
-      } catch (e) {
-        log(LogLevel.warn, 'openalias resolve failed: $e', coin: wallet.coinSymbol);
-        resolved = '';
-        error = i18n.sendOpenAliasResolveError;
-      } finally {
-        if (mounted) {
-          setState(() {
-            _openAliasResolving--;
-            _destinationAddressError = error;
-          });
-        }
-      }
-      _resolveCacheInput = value;
-      _resolveCacheOutput = resolved;
-      return resolved;
+    if (wallet.openAliasAsset.isEmpty) return value;
+
+    if (value == _resolveCacheInput) return _resolveCacheOutput; // avoid re-lookup
+    // Join a running lookup of the same domain instead of duplicating it.
+    if (_resolveInFlight != null && value == _resolveInFlightInput) {
+      return _resolveInFlight!;
     }
-    return value;
+
+    final future = _resolveOpenAlias(value, wallet);
+    _resolveInFlight = future;
+    _resolveInFlightInput = value;
+    try {
+      return await future;
+    } finally {
+      if (identical(_resolveInFlight, future)) {
+        _resolveInFlight = null;
+        _resolveInFlightInput = '';
+      }
+    }
+  }
+
+  Future<String> _resolveOpenAlias(String value, CryptoWallet wallet) async {
+    final i18n = AppLocalizations.of(context)!;
+    // Counter, not a bool: overlapping call sites keep the spinner up until all finish.
+    if (mounted) setState(() => _openAliasResolving++);
+    String resolved = '';
+    String error = '';
+    try {
+      resolved = (await wallet.resolveOpenAliasAddress(value)) ?? '';
+      error = resolved.isEmpty ? i18n.sendOpenAliasResolveError : '';
+    } catch (e) {
+      log(LogLevel.warn, 'openalias resolve failed: $e', coin: wallet.coinSymbol);
+      resolved = '';
+      error = i18n.sendOpenAliasResolveError;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _openAliasResolving--;
+          _destinationAddressError = error;
+        });
+      }
+    }
+    _resolveCacheInput = value;
+    _resolveCacheOutput = resolved;
+    return resolved;
   }
 
   @override
@@ -158,6 +179,11 @@ class _SendScreenState extends State<SendScreen> {
   /// typing), rather than on every keystroke.
   void _onAddressFocusChanged() {
     if (!_addressFocusNode.hasFocus) {
+      // Already resolved this exact alias — don't re-resolve (or recompute fees).
+      if (_destinationAddressController.text == _resolveCacheInput &&
+          _resolveCacheOutput.isNotEmpty) {
+        return;
+      }
       _feeDebounce?.cancel();
       unawaited(() async {
         // Resolve the alias even if the amount isn't filled yet (shows the
@@ -317,6 +343,16 @@ class _SendScreenState extends State<SendScreen> {
     return true;
   }
 
+  /// Matches the insufficient-funds messages thrown across coins.
+  bool _isInsufficientFundsError(Object error) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('unlocked funds too low') ||
+        msg.contains('insufficient funds') ||
+        msg.contains('insufficient gas') ||
+        msg.contains('not enough money') ||
+        msg.contains('not enough unlocked money');
+  }
+
   Future<PendingTransaction?> _createTxForPriority(
     String destinationAddress,
     double amount,
@@ -335,7 +371,9 @@ class _SendScreenState extends State<SendScreen> {
           priority: priority,
         );
       } catch (error) {
-        if (error.toString().contains('Unlocked funds too low')) {
+        // Priority unaffordable (its fee pushes the total over balance): mark it
+        // unavailable rather than failing the whole fee fetch.
+        if (_isInsufficientFundsError(error)) {
           return null;
         }
 
@@ -614,6 +652,11 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _onAddressChanged() {
+    final text = _destinationAddressController.text;
+    // Ignore selection/focus-only events so they don't clear the resolve cache.
+    if (text == _lastAddressText) return;
+    _lastAddressText = text;
+
     // Input changed: invalidate the resolution cache + clear any stale error.
     _resolveCacheInput = '';
     _resolveCacheOutput = '';
@@ -621,7 +664,6 @@ class _SendScreenState extends State<SendScreen> {
       setState(() => _destinationAddressError = '');
     }
 
-    final text = _destinationAddressController.text;
     final isOpenAliasDomain =
         domainRegex.hasMatch(text) && _wallet(context).openAliasAsset.isNotEmpty;
 

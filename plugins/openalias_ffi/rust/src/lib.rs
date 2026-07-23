@@ -10,15 +10,14 @@ use std::future::Future;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::pin::Pin;
+use std::sync::Arc;
 use std::time::Duration;
 
 use hickory_proto::dnssec::Proof;
-use hickory_proto::rr::RecordType;
-use hickory_proto::runtime::iocompat::AsyncIoTokioAsStd;
-use hickory_proto::runtime::{RuntimeProvider, TokioHandle, TokioTime};
-use hickory_proto::xfer::Protocol;
+use hickory_proto::rr::{RData, RecordType};
 use hickory_resolver::config::{NameServerConfig, ResolverConfig, ResolverOpts};
-use hickory_resolver::name_server::GenericConnector;
+use hickory_resolver::net::runtime::iocompat::AsyncIoTokioAsStd;
+use hickory_resolver::net::runtime::{RuntimeProvider, TokioHandle, TokioTime};
 use hickory_resolver::Resolver;
 use lazy_static::lazy_static;
 use tokio::net::{TcpStream as TokioTcpStream, UdpSocket as TokioUdpSocket};
@@ -140,23 +139,23 @@ pub unsafe extern "C" fn openalias_string_free(ptr: *mut c_char) {
 async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, String> {
     let proxy = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), socks_port);
 
-    let mut config = ResolverConfig::new();
-    for (ip, host) in UPSTREAMS {
-        // DNS-over-HTTPS on 443 (POST {host}/dns-query). The TLS cert is verified
-        // against `host`; the answer's DNSSEC chain is validated locally.
-        let mut ns = NameServerConfig::new(SocketAddr::new(IpAddr::V4(*ip), 443), Protocol::Https);
-        ns.tls_dns_name = Some(host.to_string());
-        config.add_name_server(ns);
-    }
+    // DNS-over-HTTPS (default /dns-query on 443). The TLS cert is verified
+    // against `host`; the answer's DNSSEC chain is validated locally.
+    let name_servers = UPSTREAMS
+        .iter()
+        .map(|(ip, host)| NameServerConfig::https(IpAddr::V4(*ip), Arc::from(*host), None))
+        .collect();
+    let config = ResolverConfig::from_parts(None, vec![], name_servers);
 
     let mut opts = ResolverOpts::default();
     opts.validate = true; // local DNSSEC validation against the root trust anchor
     opts.timeout = TCP_TIMEOUT;
 
     let provider = SocksRuntimeProvider { proxy, handle: TokioHandle::default() };
-    let resolver = Resolver::builder_with_config(config, GenericConnector::new(provider))
+    let resolver = Resolver::builder_with_config(config, provider)
         .with_options(opts)
-        .build();
+        .build()
+        .map_err(|e| format!("resolver build failed: {e}"))?;
 
     let fqdn = if domain.ends_with('.') {
         domain.to_string()
@@ -170,7 +169,7 @@ async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, S
         .map_err(|e| format!("lookup failed: {e}"))?;
 
     // Require DNSSEC-secure: reject unsigned (insecure) and bogus answers.
-    let proofs: Vec<Proof> = lookup.records().iter().map(|r| r.proof()).collect();
+    let proofs: Vec<Proof> = lookup.answers().iter().map(|r| r.proof).collect();
     if !proofs.iter().all(|p| *p == Proof::Secure) {
         return Err(format!(
             "answer is not DNSSEC-secure (records={}, proofs={:?})",
@@ -181,10 +180,11 @@ async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, S
 
     let prefix = format!("oa1:{}", asset.to_lowercase());
     let mut txt_seen = 0usize;
-    for record in lookup.record_iter() {
-        if let Some(txt) = record.data().as_txt() {
+    for record in lookup.answers() {
+        if let RData::TXT(txt) = &record.data {
             txt_seen += 1;
             let joined: String = txt
+                .txt_data
                 .iter()
                 .map(|b| String::from_utf8_lossy(b).into_owned())
                 .collect();

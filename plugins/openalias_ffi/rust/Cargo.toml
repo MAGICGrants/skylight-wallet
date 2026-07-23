@@ -12,8 +12,8 @@ tokio-socks = "0.5"
 # DoH (https-ring) + bundled CA roots (webpki-roots): Tor exits reject plain DNS
 # (53) and many restrict 853, but 443 is almost always allowed — so queries go
 # over DNS-over-HTTPS through the SOCKS proxy. DNSSEC is still validated locally.
-hickory-resolver = { version = "0.25", default-features = false, features = ["dnssec-ring", "tokio", "https-ring", "webpki-roots"] }
-hickory-proto = { version = "0.25", default-features = false, features = ["dnssec-ring"] }
+hickory-resolver = { version = "0.26", default-features = false, features = ["dnssec-ring", "tokio", "https-ring", "webpki-roots"] }
+hickory-proto = { version = "0.26", default-features = false, features = ["dnssec-ring"] }
 lazy_static = "1.4"
 log = "0.4"
 

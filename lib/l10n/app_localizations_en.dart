@@ -65,25 +65,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWarningContinueButton => 'Continue';
 
   @override
-  String get lwsSetupTitle => 'LWS Setup';
+  String get lwsSetupTitle => 'Connection Setup';
 
   @override
-  String get lwsSetupDescription => 'Enter the address of your Monero light-wallet server (LWS).';
+  String get lwsSetupDescription =>
+      'Connect to a Monero light-wallet server (LWS) or your own full node.';
 
   @override
   String get lwsSetupAddressHint => 'e.g. 192.168.1.1:18090 or example.com:18090';
 
   @override
-  String get lwsSetupProxyPortLabel => 'HTTP Proxy Port (optional)';
+  String get lwsSetupProxyPortLabel => 'HTTP Proxy Port (Optional)';
 
   @override
   String get lwsSetupProxyPortHint => 'e.g. 4444 for I2P';
 
   @override
   String get lwsSetupUseTorLabel => 'Use Tor';
-
-  @override
-  String get lwsSetupUseSslLabel => 'Use SSL';
 
   @override
   String get lwsSetupTestConnectionButton => 'Test Connection';
@@ -93,6 +91,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lwsSetupContinueButton => 'Continue';
+
+  @override
+  String get connectionTypeLws => 'Light Wallet Server';
+
+  @override
+  String get connectionTypeNode => 'Monero Node';
+
+  @override
+  String get connectionNodeAddressHint => 'e.g. node.example.com:18081';
+
+  @override
+  String get connectionRemoteIpNotAllowed =>
+      'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.';
+
+  @override
+  String get connectionProtocolHttps => 'Removing protocol. Using HTTPS for domains.';
+
+  @override
+  String get connectionProtocolHttp => 'Removing protocol. Using HTTP for local addresses.';
+
+  @override
+  String get connectionIndicatorHttps => 'HTTPS';
+
+  @override
+  String get connectionIndicatorLocal => 'Local';
+
+  @override
+  String get connectionIndicatorTorInternal => 'Internal Tor';
+
+  @override
+  String connectionIndicatorTorExternal(String port) {
+    return 'Using Port $port';
+  }
+
+  @override
+  String get settingsConnectionSettingsLabel => 'Connection Settings';
+
+  @override
+  String get settingsBackgroundSyncLabel => 'Background Sync';
+
+  @override
+  String get settingsBackgroundSyncDescription =>
+      'Periodically sync Monero in the background so it\'s up to date when you open the app. Only runs while charging and on WiFi.';
+
+  @override
+  String get settingsForegroundSyncLabel => 'Continuous Sync';
+
+  @override
+  String get settingsForegroundSyncDescription =>
+      'Keep Monero syncing continuously while the app runs in the background, with a persistent notification. Uses more battery.';
+
+  @override
+  String homeBlocksRemaining(String count) {
+    return '$count blocks left';
+  }
 
   @override
   String get fiatApiSetupTitle => 'Fiat Display Setup';
@@ -107,7 +160,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiatApiSettingsModeTorOnly => 'Tor-Only';
 
   @override
-  String get fiatApiSettingsModeClearnet => 'Clearnet-Only (not private)';
+  String get fiatApiSettingsModeClearnet => 'Clearnet-Only (Not Private)';
 
   @override
   String get fiatApiSettingsModeDisabled => 'Disabled';
@@ -136,7 +189,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is your polyseed. Write it down and keep it in a safe place.';
 
   @override
-  String get generateSeedContinueButton => 'I wrote it down';
+  String get generateSeedContinueButton => 'I Wrote It Down';
 
   @override
   String get lwsDetailsTitle => 'Wallet Details';
@@ -165,7 +218,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletSeedLabel => 'Seed';
 
   @override
-  String get restoreWalletRestoreHeightLabel => 'Restore Height (optional)';
+  String get restoreWalletRestoreHeightLabel => 'Restore Height (Optional)';
 
   @override
   String get restoreWalletRestoreButton => 'Restore';
@@ -183,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlockButton => 'Unlock';
 
   @override
-  String get unlockReason => 'Unlock wallet';
+  String get unlockReason => 'Unlock Wallet';
 
   @override
   String get unlockUnableToAuthError => 'Unable to authenticate.';
@@ -219,7 +272,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSend => 'Send';
 
   @override
-  String get homeBalanceLocked => 'locked';
+  String get homeBalanceLocked => 'Locked';
 
   @override
   String get homeTransactionsTitle => 'Transactions';
@@ -234,7 +287,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTransactionConfirmed => 'Confirmed';
 
   @override
-  String get homeNoTransactions => 'No transactions';
+  String get homeNoTransactions => 'No Transactions';
 
   @override
   String get homeFiatApiError => 'Error connecting to fiat API';
@@ -295,7 +348,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppLockLabel => 'App Lock';
 
   @override
-  String get settingsAppLockUnlockReason => 'Unlock wallet';
+  String get settingsAppLockUnlockReason => 'Unlock Wallet';
 
   @override
   String get settingsAppLockUnableToAuthError =>
@@ -457,13 +510,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressBookSearchHint => 'Search contacts...';
 
   @override
-  String get addressBookNoContacts => 'No contacts yet';
+  String get addressBookNoContacts => 'No Contacts Yet';
 
   @override
   String get addressBookNoContactsDescription => 'Add your first contact by tapping the + button';
 
   @override
-  String get addressBookNoSearchResults => 'No contacts found';
+  String get addressBookNoSearchResults => 'No Contacts Found';
 
   @override
   String get addressBookCopyAddress => 'Copy Address';
@@ -481,10 +534,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressBookSave => 'Save';
 
   @override
-  String get sendSelectedContact => 'Selected contact';
+  String get sendSelectedContact => 'Selected Contact';
 
   @override
-  String get sendClearSelectedContact => 'Clear selected contact';
+  String get sendClearSelectedContact => 'Clear Selected Contact';
 
   @override
   String get sendPriorityLow => 'Low';
@@ -496,7 +549,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendPriorityHigh => 'High';
 
   @override
-  String get sendPriorityLabel => 'priority';
+  String get sendPriorityLabel => 'Priority';
 
   @override
   String get sendTransactionPriority => 'Transaction Priority';
@@ -505,7 +558,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendFeeLabel => 'Fee';
 
   @override
-  String get sendBalanceLabel => 'Balance';
+  String get sendContactsButton => 'Contacts';
 
   @override
   String get sendFailedToGetFeesError => 'Failed to get fees.';
@@ -557,17 +610,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torSettingsTestConnectionButton => 'Test Connection';
 
   @override
-  String get settingsLwsSettingsLabel => 'LWS Settings';
-
-  @override
   String get settingsTorSettingsLabel => 'Tor Settings';
 
   @override
-  String get lwsSetupUsingInternalTor => 'Using internal Tor';
+  String get lwsSetupUsingInternalTor => 'Using Internal Tor';
 
   @override
   String lwsSetupUsingExternalTor(String address) {
-    return 'Using external Tor proxy at $address';
+    return 'Using External Tor Proxy at $address';
   }
 
   @override

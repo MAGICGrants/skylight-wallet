@@ -12,6 +12,7 @@ import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/confirm_send.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/widgets/fiat_amount.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/widgets/monero_amount.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
@@ -47,6 +48,17 @@ class _SendScreenState extends State<SendScreen> {
   String _destinationAddressError = '';
   String _amountError = '';
 
+  bool _formValid = false; // gates the send button
+  int _openAliasResolving = 0; // >0 while OpenAlias resolution is in flight
+  bool _didInit = false; // one-time setup guard for didChangeDependencies
+
+  // Caches the last OpenAlias resolution + dedupes concurrent lookups so
+  // re-validation (amount changes, revalidations) doesn't re-hit Tor.
+  String? _resolveCacheInput;
+  String _resolveCacheOutput = '';
+  Future<String>? _resolveInFlight;
+  String _resolveInFlightInput = '';
+
   @override
   void dispose() {
     _destinationAddressController.removeListener(_onAddressChanged);
@@ -60,9 +72,17 @@ class _SendScreenState extends State<SendScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    // Run once. didChangeDependencies fires on every WalletModel notify (via
+    // context.watch), and re-adding listeners / re-resolving OpenAlias here
+    // would loop the (slow, over-Tor) resolver forever.
+    if (_didInit) return;
+    _didInit = true;
+
     _loadFormFromArgs();
     _destinationAddressController.addListener(_onAddressChanged);
     _amountController.addListener(_onAmountChanged);
+    // Validate any prefilled values (contact/QR args) so the button reflects them.
+    _revalidate();
   }
 
   void _loadFormFromArgs() {
@@ -150,17 +170,42 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<String> _resolveDestinationAddress() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
     final unresolvedDestinationAddress = _destinationAddressController.text;
-    String destinationAddress = '';
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      destinationAddress = await wallet.resolveOpenAlias(unresolvedDestinationAddress);
-    } else {
-      destinationAddress = unresolvedDestinationAddress;
+      return _resolveDomain(unresolvedDestinationAddress);
+    }
+    return unresolvedDestinationAddress;
+  }
+
+  /// Resolves an OpenAlias [domain] once, caching the result and joining any
+  /// in-flight lookup of the same domain so amount changes / revalidations
+  /// don't re-hit the (slow, over-Tor) resolver. Drives `_openAliasResolving`.
+  Future<String> _resolveDomain(String domain) async {
+    if (domain == _resolveCacheInput) return _resolveCacheOutput;
+    if (_resolveInFlight != null && domain == _resolveInFlightInput) {
+      return _resolveInFlight!;
     }
 
-    return destinationAddress;
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    if (mounted) setState(() => _openAliasResolving++);
+
+    final future = wallet.resolveOpenAlias(domain);
+    _resolveInFlight = future;
+    _resolveInFlightInput = domain;
+
+    try {
+      final resolved = await future;
+      _resolveCacheInput = domain;
+      _resolveCacheOutput = resolved;
+      return resolved;
+    } finally {
+      if (identical(_resolveInFlight, future)) {
+        _resolveInFlight = null;
+        _resolveInFlightInput = '';
+      }
+      if (mounted) setState(() => _openAliasResolving--);
+    }
   }
 
   Future<bool> _validateForm({bool setErrors = true}) async {
@@ -176,8 +221,9 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      // check for openalias
-      destinationAddress = await wallet.resolveOpenAlias(unresolvedDestinationAddress);
+      // OpenAlias: cached + deduped; the counter gates the send button while
+      // a lookup is in flight.
+      destinationAddress = await _resolveDomain(unresolvedDestinationAddress);
 
       if (destinationAddress == '') {
         if (setErrors) {
@@ -214,8 +260,9 @@ class _SendScreenState extends State<SendScreen> {
   Future<MoneroPendingTransaction?> _createTxForPriority(
     String destinationAddress,
     double amount,
-    int priority,
-  ) async {
+    int priority, {
+    String? amountText,
+  }) async {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     const maxRetries = 10;
 
@@ -226,6 +273,7 @@ class _SendScreenState extends State<SendScreen> {
           amount,
           _isSweepAll,
           priority: priority,
+          amountText: amountText,
         );
         return tx;
       } catch (error) {
@@ -263,13 +311,14 @@ class _SendScreenState extends State<SendScreen> {
     });
 
     final destinationAddress = await _resolveDestinationAddress();
-    final amount = double.parse(_amountController.text);
+    final amountText = _amountController.text;
+    final amount = double.parse(amountText);
 
     try {
       final txs = await Future.wait([
-        _createTxForPriority(destinationAddress, amount, 1),
-        _createTxForPriority(destinationAddress, amount, 2),
-        _createTxForPriority(destinationAddress, amount, 3),
+        _createTxForPriority(destinationAddress, amount, 1, amountText: amountText),
+        _createTxForPriority(destinationAddress, amount, 2, amountText: amountText),
+        _createTxForPriority(destinationAddress, amount, 3, amountText: amountText),
       ]);
 
       // Only update state if this is still the latest request
@@ -354,6 +403,7 @@ class _SendScreenState extends State<SendScreen> {
           amount,
           _isSweepAll,
           priority: _selectedPriority + 1,
+          amountText: _amountController.text,
         );
       }
 
@@ -472,10 +522,16 @@ class _SendScreenState extends State<SendScreen> {
     );
   }
 
+  /// Re-runs validation (without surfacing errors) and updates the send-button
+  /// gate. Kicks off fee calculation when the form is valid.
+  Future<void> _revalidate() async {
+    final valid = await _validateForm(setErrors: false);
+    if (mounted) setState(() => _formValid = valid);
+    if (valid) _calculateFees();
+  }
+
   Future<void> _onAddressChanged() async {
-    if (await _validateForm(setErrors: false)) {
-      _calculateFees();
-    }
+    await _revalidate();
   }
 
   Future<void> _onAmountChanged() async {
@@ -494,16 +550,13 @@ class _SendScreenState extends State<SendScreen> {
       });
     }
 
-    if (await _validateForm(setErrors: false)) {
-      _calculateFees();
-    }
+    await _revalidate();
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = context.watch<WalletModel>();
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.sendTitle)),
@@ -514,204 +567,216 @@ class _SendScreenState extends State<SendScreen> {
             constraints: BoxConstraints(maxWidth: 440),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 20,
+              spacing: 28,
               children: [
-                if (_selectedContact == null)
-                  TextField(
-                    controller: _destinationAddressController,
-                    maxLines: null,
-                    decoration: InputDecoration(
-                      labelText: i18n.address,
-                      border: OutlineInputBorder(),
-                      errorText: _destinationAddressError != '' ? _destinationAddressError : null,
-                      suffixIcon: Container(
-                        margin: EdgeInsets.only(right: 14),
-                        child: Row(
-                          spacing: 16,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            GestureDetector(
-                              onTap: _pasteAddressFromClipboard,
-                              child: Icon(Icons.paste),
-                            ),
-                            if (Platform.isAndroid || Platform.isIOS)
-                              GestureDetector(onTap: _scanQrCode, child: Icon(Icons.qr_code)),
-                            GestureDetector(
-                              onTap: _showContactPicker,
-                              child: Icon(Icons.contacts_outlined),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                if (_selectedContact != null)
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              child: Text(
-                                _selectedContact!.name.isNotEmpty
-                                    ? _selectedContact!.name[0].toUpperCase()
-                                    : '?',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                Column(
+                  spacing: 16,
+                  children: [
+                    if (_selectedContact == null)
+                      TextField(
+                        controller: _destinationAddressController,
+                        maxLines: null,
+                        decoration: InputDecoration(
+                          labelText: i18n.address,
+                          border: OutlineInputBorder(),
+                          errorText: _destinationAddressError != ''
+                              ? _destinationAddressError
+                              : null,
+                          suffixIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                          suffixIcon: Container(
+                            margin: EdgeInsets.only(right: 14),
+                            child: Row(
+                              spacing: 16,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_openAliasResolving > 0)
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(strokeWidth: 1.8),
+                                  ),
+                                GestureDetector(
+                                  onTap: _pasteAddressFromClipboard,
+                                  child: Icon(Icons.paste),
                                 ),
-                              ),
+                                if (Platform.isAndroid || Platform.isIOS)
+                                  GestureDetector(onTap: _scanQrCode, child: Icon(Icons.qr_code)),
+                              ],
                             ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _selectedContact!.name,
-                                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
-                                  ),
-                                  Text(
-                                    i18n.sendSelectedContact,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _clearSelectedContact,
-                              icon: Icon(Icons.close, size: 20),
-                              tooltip: i18n.sendClearSelectedContact,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?'))],
-                  decoration: InputDecoration(
-                    labelText: i18n.amount,
-                    border: OutlineInputBorder(),
-                    errorText: _amountError != '' ? _amountError : null,
-                    suffixIcon: TextButton(onPressed: _setBalanceAsSendAmount, child: Text('Max')),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: _showPrioritySelector,
-                  child: Container(
-                    height: 40,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.speed, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          _selectedPriority == 0
-                              ? i18n.sendPriorityLow
-                              : _selectedPriority == 1
-                              ? i18n.sendPriorityNormal
-                              : i18n.sendPriorityHigh,
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          ' ${i18n.sendPriorityLabel}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        Spacer(),
-                        if (_isLoadingFees)
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        else if (_fees != null && _fees!.length > _selectedPriority)
-                          () {
-                            final selectedTx = _fees![_selectedPriority];
-                            if (selectedTx != null) {
-                              return Row(
-                                spacing: 8,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    spacing: 4,
+                      ),
+                    if (_selectedContact != null)
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  child: Text(
+                                    _selectedContact!.name.isNotEmpty
+                                        ? _selectedContact!.name[0].toUpperCase()
+                                        : '?',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      SvgPicture.asset(
-                                        'assets/icons/monero.svg',
-                                        width: 14,
-                                        height: 14,
+                                      Text(
+                                        _selectedContact!.name,
+                                        style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
                                       ),
-                                      MoneroAmount(
-                                        amount: doubleAmountFromInt(selectedTx.fee()),
-                                        maxFontSize: 14,
+                                      Text(
+                                        i18n.sendSelectedContact,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  Icon(Icons.arrow_drop_down),
-                                ],
-                              );
-                            } else {
-                              return Row(
-                                spacing: 8,
-                                children: [
-                                  Text(
-                                    i18n.sendInsufficientBalanceError,
-                                    style: TextStyle(color: Colors.red, fontSize: 14),
-                                  ),
-                                  Icon(Icons.arrow_drop_down),
-                                ],
-                              );
-                            }
-                          }()
-                        else
-                          Icon(Icons.arrow_drop_down),
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Spacer(),
-                    GestureDetector(
-                      onTap: _setBalanceAsSendAmount,
-                      child: Row(
-                        spacing: 6,
-                        children: [
-                          Text(
-                            '${i18n.sendBalanceLabel}:',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                                IconButton(
+                                  onPressed: _clearSelectedContact,
+                                  icon: Icon(Icons.close, size: 20),
+                                  tooltip: i18n.sendClearSelectedContact,
+                                ),
+                              ],
                             ),
-                          ),
-                          SvgPicture.asset('assets/icons/monero.svg', width: 18, height: 18),
-                          MoneroAmount(amount: wallet.unlockedBalance ?? 0, maxFontSize: 18),
-                        ],
+                          ],
+                        ),
                       ),
+                    TextField(
+                      controller: _amountController,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?'))],
+                      decoration: InputDecoration(
+                        labelText: i18n.amount,
+                        border: OutlineInputBorder(),
+                        errorText: _amountError != '' ? _amountError : null,
+                        suffixIcon: TextButton(
+                          onPressed: _setBalanceAsSendAmount,
+                          child: Text('Max'),
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _showPrioritySelector,
+                      child: Container(
+                        height: 40,
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.speed, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              _selectedPriority == 0
+                                  ? i18n.sendPriorityLow
+                                  : _selectedPriority == 1
+                                  ? i18n.sendPriorityNormal
+                                  : i18n.sendPriorityHigh,
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              ' ${i18n.sendPriorityLabel}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Spacer(),
+                            if (_isLoadingFees)
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            else if (_fees != null && _fees!.length > _selectedPriority)
+                              () {
+                                final selectedTx = _fees![_selectedPriority];
+                                if (selectedTx != null) {
+                                  return Row(
+                                    spacing: 8,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        spacing: 4,
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/icons/monero.svg',
+                                            width: 14,
+                                            height: 14,
+                                          ),
+                                          MoneroAmount(
+                                            amount: doubleAmountFromInt(selectedTx.fee()),
+                                            maxFontSize: 14,
+                                          ),
+                                        ],
+                                      ),
+                                      Icon(Icons.arrow_drop_down),
+                                    ],
+                                  );
+                                } else {
+                                  return Row(
+                                    spacing: 8,
+                                    children: [
+                                      Text(
+                                        i18n.sendInsufficientBalanceError,
+                                        style: TextStyle(color: Colors.red, fontSize: 14),
+                                      ),
+                                      Icon(Icons.arrow_drop_down),
+                                    ],
+                                  );
+                                }
+                              }()
+                            else
+                              Icon(Icons.arrow_drop_down),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        if (_selectedContact == null)
+                          TextButton.icon(
+                            onPressed: _showContactPicker,
+                            icon: Icon(Icons.contacts_outlined, size: 18),
+                            label: Text(i18n.sendContactsButton),
+                          ),
+                        Spacer(),
+                        GestureDetector(
+                          onTap: _setBalanceAsSendAmount,
+                          child: Row(
+                            spacing: 6,
+                            children: [
+                              SvgPicture.asset('assets/icons/monero.svg', width: 18, height: 18),
+                              MoneroAmount(amount: wallet.unlockedBalance ?? 0, maxFontSize: 18),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -720,21 +785,11 @@ class _SendScreenState extends State<SendScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
-                    FilledButton.icon(
-                      onPressed: _send,
-                      icon: !_isLoading
-                          ? Icon(Icons.arrow_outward_rounded)
-                          : SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: isDarkTheme
-                                    ? Theme.of(context).colorScheme.onPrimary
-                                    : Colors.white,
-                              ),
-                            ),
-                      label: Text(i18n.sendSendButton),
+                    LoadingButton(
+                      isLoading: _isLoading,
+                      onPressed: (_formValid && _openAliasResolving == 0) ? _send : null,
+                      icon: Icons.arrow_outward_rounded,
+                      label: i18n.sendSendButton,
                     ),
                   ],
                 ),

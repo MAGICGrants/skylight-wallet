@@ -7,12 +7,16 @@ class SharedPreferencesKeys {
   static const String fiatRate = 'fiatRate';
   static const String theme = 'theme';
   static const String notificationsEnabled = 'notificationsEnabled';
+  static const String backgroundSyncEnabled = 'backgroundSyncEnabled';
+  static const String foregroundSyncEnabled = 'foregroundSyncEnabled';
+  static const String backgroundSyncIntervalMinutes = 'backgroundSyncIntervalMinutes';
   static const String appLockEnabled = 'appLockEnabled';
   static const String verboseLoggingEnabled = 'verboseLoggingEnabled';
   static const String connectionAddress = 'connectionAddress';
   static const String connectionProxyPort = 'connectionProxyPort';
   static const String connectionUseTor = 'connectionUseTor';
   static const String connectionUseSsl = 'connectionUseSsl';
+  static const String connectionType = 'connectionType';
   static const String serverSupportsSubaddresses = 'serverSupportsSubaddresses';
   static const String walletRestoreHeight = 'walletRestoreHeight';
   static const String txHistoryCount = 'txHistoryCount';

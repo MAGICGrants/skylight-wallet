@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
@@ -193,19 +194,32 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     ).showSnackBar(SnackBar(content: Text(i18n.sendTransactionSuccessfullySent)));
   }
 
-  Widget _buildStatusIcons(WalletModel wallet, StatusIconStatus lwsConnectionIconStatus) {
-    var message = lwsConnectionIconStatus == StatusIconStatus.complete
-        ? 'Connected to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}'
-        : lwsConnectionIconStatus == StatusIconStatus.loading
-        ? 'Connecting to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}...'
-        : 'Failed to connect to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}';
+  Widget _buildStatusIcons(
+    BuildContext context,
+    WalletModel wallet,
+    StatusIconStatus lwsConnectionIconStatus,
+  ) {
+    final i18n = AppLocalizations.of(context)!;
+    String message;
 
-    if (wallet.connectionUseTor) {
-      message += ' via Tor';
-    }
+    // While syncing a full node, show the sync progress instead of the address.
+    final blocksRemaining = wallet.syncBlocksRemaining;
+    if (lwsConnectionIconStatus != StatusIconStatus.complete && blocksRemaining != null) {
+      message = i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(blocksRemaining));
+    } else {
+      message = lwsConnectionIconStatus == StatusIconStatus.complete
+          ? 'Connected to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}'
+          : lwsConnectionIconStatus == StatusIconStatus.loading
+          ? 'Connecting to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}...'
+          : 'Failed to connect to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}';
 
-    if (wallet.connectionProxyPort != '') {
-      message += ' via proxy port ${wallet.connectionProxyPort}';
+      if (wallet.connectionUseTor) {
+        message += ' via Tor';
+      }
+
+      if (wallet.connectionProxyPort != '') {
+        message += ' via proxy port ${wallet.connectionProxyPort}';
+      }
     }
 
     return Tooltip(
@@ -465,7 +479,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                     Positioned(
                       top: 0,
                       right: 0,
-                      child: _buildStatusIcons(wallet, lwsConnectionIconStatus),
+                      child: _buildStatusIcons(context, wallet, lwsConnectionIconStatus),
                     ),
                     Center(
                       child: _buildBalanceDisplay(
@@ -525,7 +539,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                 Positioned(
                   top: 0,
                   left: 0,
-                  child: _buildStatusIcons(wallet, lwsConnectionIconStatus),
+                  child: _buildStatusIcons(context, wallet, lwsConnectionIconStatus),
                 ),
                 Column(
                   children: [

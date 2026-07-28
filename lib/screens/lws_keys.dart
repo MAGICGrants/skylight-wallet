@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
 
 class LwsKeysScreen extends StatefulWidget {
   const LwsKeysScreen({super.key});
@@ -12,7 +13,7 @@ class LwsKeysScreen extends StatefulWidget {
   State<LwsKeysScreen> createState() => _LwsKeysScreenState();
 }
 
-class _LwsKeysScreenState extends State<LwsKeysScreen> {
+class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
   var _restoreHeight = 0;
 
   @override
@@ -61,9 +62,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> {
                               borderRadius: BorderRadius.circular(8.0),
                             ),
                             suffixIcon: IconButton(
-                              onPressed: () => Clipboard.setData(
-                                ClipboardData(text: primaryAddress),
-                              ),
+                              onPressed: () => SecureClipboard.copy(primaryAddress),
                               icon: Icon(Icons.copy),
                             ),
                           ),
@@ -90,9 +89,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> {
                               borderRadius: BorderRadius.circular(8.0),
                             ),
                             suffixIcon: IconButton(
-                              onPressed: () => Clipboard.setData(
-                                ClipboardData(text: secretViewKey),
-                              ),
+                              onPressed: () => SecureClipboard.copy(secretViewKey),
                               icon: Icon(Icons.copy),
                             ),
                           ),
@@ -119,9 +116,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> {
                               borderRadius: BorderRadius.circular(8.0),
                             ),
                             suffixIcon: IconButton(
-                              onPressed: () => Clipboard.setData(
-                                ClipboardData(text: _restoreHeight.toString()),
-                              ),
+                              onPressed: () => SecureClipboard.copy(_restoreHeight.toString()),
                               icon: Icon(Icons.copy),
                             ),
                           ),

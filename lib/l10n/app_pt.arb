@@ -18,16 +18,45 @@
   "restoreWarningTitle": "Aviso de Restauração",
   "restoreWarningDescription": "Você tem certeza? O servidor ao qual você se conectar poderá ver seu histórico de transações Monero passadas e futuras.",
   "restoreWarningContinueButton": "Continuar",
-  "lwsSetupTitle": "Configuração do LWS",
-  "lwsSetupDescription": "Informe o endereço do seu servidor light-wallet Monero (LWS).",
+  "lwsSetupTitle": "Configuração da conexão",
+  "lwsSetupDescription": "Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo.",
   "lwsSetupAddressHint": "ex: 192.168.1.1:18090 ou exemplo.com:18090",
   "lwsSetupProxyPortLabel": "Porta do Proxy HTTP (opcional)",
   "lwsSetupProxyPortHint": "ex: 4444 para I2P",
   "lwsSetupUseTorLabel": "Usar Tor",
-  "lwsSetupUseSslLabel": "Usar SSL",
   "lwsSetupTestConnectionButton": "Testar Conexão",
   "lwsSetupStartingTor": "Iniciando Tor...",
   "lwsSetupContinueButton": "Continuar",
+  "connectionTypeLws": "Servidor Light Wallet",
+  "connectionTypeNode": "Nó Monero",
+  "connectionNodeAddressHint": "ex.: node.example.com:18081",
+  "connectionRemoteIpNotAllowed": "Conexões com endereços IP remotos não são permitidas. Use um nome de domínio ou um endereço IP local.",
+  "connectionProtocolHttps": "Removendo protocolo. Usando HTTPS para domínios.",
+  "connectionProtocolHttp": "Removendo protocolo. Usando HTTP para endereços locais.",
+  "connectionIndicatorHttps": "HTTPS",
+  "connectionIndicatorLocal": "Local",
+  "connectionIndicatorTorInternal": "Tor Interno",
+  "connectionIndicatorTorExternal": "Usando Porta {port}",
+  "@connectionIndicatorTorExternal": {
+    "placeholders": {
+      "port": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsConnectionSettingsLabel": "Configurações de conexão",
+  "settingsBackgroundSyncLabel": "Sincronização em segundo plano",
+  "settingsBackgroundSyncDescription": "Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app. Só roda enquanto carrega e no WiFi.",
+  "settingsForegroundSyncLabel": "Sincronização contínua",
+  "settingsForegroundSyncDescription": "Mantém o Monero sincronizando continuamente enquanto o app roda em segundo plano, com uma notificação persistente. Usa mais bateria.",
+  "homeBlocksRemaining": "{count} blocos restantes",
+  "@homeBlocksRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "fiatApiSetupTitle": "Exibição de Saldo em Fiat",
   "fiatApiSetupDescription": "Preço de referência opcional para seu saldo em XMR.",
   "fiatApiSettingsModeLabel": "Modo",
@@ -166,7 +195,7 @@
   "sendPriorityLabel": "prioridade",
   "sendTransactionPriority": "Prioridade da Transação",
   "sendFeeLabel": "Taxa",
-  "sendBalanceLabel": "Saldo",
+  "sendContactsButton": "Contatos",
   "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
   "torInfoTitle": "Tor Integrado",
   "torInfoDescription": "A Carteira Skylight usa automaticamente Tor integrado para proteger suas conexões de internet.",
@@ -183,7 +212,6 @@
   "torSettingsUseOrbotLabelIos": "Usar Orbot",
   "torSettingsSaveButton": "Salvar",
   "torSettingsTestConnectionButton": "Testar Conexão",
-  "settingsLwsSettingsLabel": "Configurações do LWS",
   "settingsTorSettingsLabel": "Configurações do Tor",
   "lwsSetupUsingInternalTor": "Usando Tor interno",
   "lwsSetupUsingExternalTor": "Usando proxy Tor externo em {address}",

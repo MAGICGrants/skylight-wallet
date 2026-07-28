@@ -59,6 +59,8 @@ dependencies:
       url: https://github.com/vtnerd/monero_c
       ref: 8de1614734007782bb2701ab16c49adf0df8e850
       path: impls/monero.dart
+  openalias_ffi:
+    path: plugins/openalias_ffi
   cupertino_icons: 1.0.8
   path: 1.9.1
   provider: 6.1.5+1
@@ -70,6 +72,7 @@ dependencies:
   shared_preferences: 2.5.3
   http: 1.6.0
   workmanager: 0.9.0+3
+  flutter_foreground_task: 8.17.0
   flutter_local_notifications: 19.5.0
   timeago: 3.7.1
   flutter_riverpod: 2.6.1
@@ -86,6 +89,7 @@ dependencies:
   bip39: 1.0.6
   bip32: 2.0.0
   package_info_plus: 8.3.0
+  screen_protector: 1.5.2
 
 dependency_overrides:
   hashlib: 1.19.2

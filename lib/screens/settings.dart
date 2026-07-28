@@ -77,11 +77,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (isAllowed) {
         await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
-        await registerTxNotifierTaskIfAllowed();
+        await applyBackgroundTaskRegistration();
       }
     } else {
       await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
-      await unregisterPeriodicTasks();
+      await applyBackgroundTaskRegistration();
     }
   }
 
@@ -391,7 +391,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     void onSaved() {
       final wallet = Provider.of<WalletModel>(context, listen: false);
-      wallet.load();
+      // Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
+      wallet.applyConnectionChange();
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
       fiatRate.startService();
@@ -404,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         constraints: BoxConstraints.tightFor(width: dialogWidth),
         insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        title: Text(i18n.settingsLwsSettingsLabel),
+        title: Text(i18n.settingsConnectionSettingsLabel),
         content: ConnectionSettingsForm(
           saveButtonLabel: i18n.torSettingsSaveButton,
           onSaved: onSaved,
@@ -513,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(i18n.settingsLwsSettingsLabel, style: TextStyle(fontSize: 18)),
+                Text(i18n.settingsConnectionSettingsLabel, style: TextStyle(fontSize: 18)),
                 TextButton.icon(
                   onPressed: _showConnectionSettingsDialog,
                   icon: Icon(Icons.dns),

@@ -16,34 +16,42 @@ class ConnectionSetupScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Monero Wallet')),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 500),
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 20,
-              children: [
-                Column(
-                  spacing: 10,
-                  children: [
-                    Text(
-                      i18n.lwsSetupTitle,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    Text(
-                      i18n.lwsSetupDescription,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
+      body: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(maxWidth: 500),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 20,
+                    children: [
+                      Column(
+                        spacing: 10,
+                        children: [
+                          Text(
+                            i18n.lwsSetupTitle,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          Text(
+                            i18n.lwsSetupDescription,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                      ConnectionSettingsForm(
+                        saveButtonLabel: i18n.lwsSetupContinueButton,
+                        onSaved: onSaved,
+                      ),
+                    ],
+                  ),
                 ),
-                ConnectionSettingsForm(
-                  saveButtonLabel: i18n.lwsSetupContinueButton,
-                  onSaved: onSaved,
-                ),
-              ],
+              ),
             ),
           ),
         ),

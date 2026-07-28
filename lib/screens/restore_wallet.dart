@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +8,9 @@ import 'package:polyseed/polyseed.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
+import 'package:skylight_wallet/util/restore_qr.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 
@@ -16,7 +21,7 @@ class RestoreWalletScreen extends StatefulWidget {
   State<RestoreWalletScreen> createState() => _RestoreWalletScreenState();
 }
 
-class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
+class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureScreenMixin {
   final _mnemonicController = TextEditingController();
   final _restoreHeightController = TextEditingController();
   bool _isPolyseed = false;
@@ -29,6 +34,28 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     _mnemonicController.dispose();
     _restoreHeightController.dispose();
     super.dispose();
+  }
+
+  Future<void> _scanQrCode() async {
+    final result = await Navigator.pushNamed(context, '/scan_qr');
+    if (result is! String) return;
+
+    final parsed = parseRestoreQr(result);
+    if (parsed == null) return;
+
+    setState(() {
+      _mnemonicController.text = parsed.seed;
+      _mnemonicError = null;
+
+      if (parsed.restoreHeight != null) {
+        _restoreHeightController.text = parsed.restoreHeight.toString();
+      }
+    });
+
+    // No explicit height in the QR — derive it from a polyseed if possible.
+    if (parsed.restoreHeight == null) {
+      _calculatePolyseedHeight();
+    }
   }
 
   Future<void> _restore() async {
@@ -159,7 +186,6 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Monero Wallet')),
@@ -191,6 +217,12 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                     labelText: i18n.restoreWalletSeedLabel,
                     errorText: _mnemonicError,
                     border: OutlineInputBorder(),
+                    suffixIcon: (Platform.isAndroid || Platform.isIOS)
+                        ? IconButton(
+                            icon: Icon(Icons.qr_code),
+                            onPressed: _scanQrCode,
+                          )
+                        : null,
                   ),
                 ),
               ),
@@ -213,21 +245,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
-                  FilledButton.icon(
+                  LoadingButton(
+                    isLoading: _isLoading,
                     onPressed: _restore,
-                    label: Text(i18n.restoreWalletRestoreButton),
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isDarkTheme
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Colors.white,
-                            ),
-                          )
-                        : null,
+                    label: i18n.restoreWalletRestoreButton,
                   ),
                 ],
               ),

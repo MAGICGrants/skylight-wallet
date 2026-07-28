@@ -41,6 +41,7 @@ import 'package:skylight_wallet/screens/unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
@@ -76,6 +77,7 @@ void main() async {
       if (Platform.isAndroid) {
         copyCacertToAppDocumentsDir();
         registerPeriodicTasks();
+        startForegroundSyncIfEnabled();
         NotificationService().init();
       }
 
@@ -100,8 +102,10 @@ void main() async {
 Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
   if (await wallet.hasExistingWallet()) {
     if (isMobile) {
-      await wallet.openExisting();
+      // Load the persisted connection first so the wallet opens the file for
+      // the correct mode (LWS vs node).
       await wallet.loadPersistedConnection();
+      await wallet.openExisting();
       wallet.load();
     }
 

@@ -23,8 +23,8 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
     if (await wallet.hasExistingWallet()) {
-      await wallet.openExisting();
       await wallet.loadPersistedConnection();
+      await wallet.openExisting();
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);

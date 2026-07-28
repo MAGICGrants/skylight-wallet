@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
 
 class TxDetailsDialog {
   static void show(BuildContext context, TxDetails txDetails) {
@@ -11,6 +11,24 @@ class TxDetailsDialog {
       builder: (context) => _TxDetailsDialog(txDetails: txDetails),
     );
   }
+}
+
+/// Splits [s] into [lines] newline-separated segments of near-equal length
+/// (sizes differ by at most one char).
+String _chunkIntoLines(String s, int lines) {
+  if (lines <= 1 || s.length <= lines) return s;
+  final baseSize = s.length ~/ lines;
+  final remainder = s.length % lines;
+  final buffer = StringBuffer();
+  var start = 0;
+  for (var i = 0; i < lines; i++) {
+    final size = baseSize + (i < remainder ? 1 : 0);
+    final end = start + size;
+    if (i > 0) buffer.write('\n');
+    buffer.write(s.substring(start, end));
+    start = end;
+  }
+  return buffer.toString();
 }
 
 class _TxDetailsDialog extends StatelessWidget {
@@ -54,12 +72,12 @@ class _TxDetailsDialog extends StatelessWidget {
                     constraints: BoxConstraints(maxWidth: 280),
                     child: GestureDetector(
                       child: Text(
-                        txDetails.hash,
+                        _chunkIntoLines(txDetails.hash, 3),
                         textAlign: TextAlign.end,
                         style: TextStyle(fontFamily: 'monospace'),
                         softWrap: true,
                       ),
-                      onTap: () => Clipboard.setData(ClipboardData(text: txDetails.hash)),
+                      onTap: () => SecureClipboard.copy(txDetails.hash),
                     ),
                   ),
                 ),
@@ -151,7 +169,7 @@ class _TxDetailsDialog extends StatelessWidget {
                           style: TextStyle(fontFamily: 'monospace'),
                           softWrap: true,
                         ),
-                        onTap: () => Clipboard.setData(ClipboardData(text: txDetails.key)),
+                        onTap: () => SecureClipboard.copy(txDetails.key),
                       ),
                     ),
                   ),
@@ -183,14 +201,13 @@ class _TxDetailsDialog extends StatelessWidget {
                               child: Container(
                                 constraints: BoxConstraints(maxWidth: 280),
                                 child: Text(
-                                  recipient.address,
+                                  _chunkIntoLines(recipient.address, 3),
                                   style: TextStyle(fontFamily: 'monospace'),
                                   softWrap: true,
                                   textAlign: TextAlign.end,
                                 ),
                               ),
-                              onTap: () =>
-                                  Clipboard.setData(ClipboardData(text: recipient.address)),
+                              onTap: () => SecureClipboard.copy(recipient.address),
                             ),
                             Text('$amountStr XMR', softWrap: true),
                           ],

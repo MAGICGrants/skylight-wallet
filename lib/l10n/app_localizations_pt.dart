@@ -65,10 +65,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWarningContinueButton => 'Continuar';
 
   @override
-  String get lwsSetupTitle => 'Configuração do LWS';
+  String get lwsSetupTitle => 'Configuração da conexão';
 
   @override
-  String get lwsSetupDescription => 'Informe o endereço do seu servidor light-wallet Monero (LWS).';
+  String get lwsSetupDescription =>
+      'Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo.';
 
   @override
   String get lwsSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
@@ -83,9 +84,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lwsSetupUseTorLabel => 'Usar Tor';
 
   @override
-  String get lwsSetupUseSslLabel => 'Usar SSL';
-
-  @override
   String get lwsSetupTestConnectionButton => 'Testar Conexão';
 
   @override
@@ -93,6 +91,61 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsSetupContinueButton => 'Continuar';
+
+  @override
+  String get connectionTypeLws => 'Servidor Light Wallet';
+
+  @override
+  String get connectionTypeNode => 'Nó Monero';
+
+  @override
+  String get connectionNodeAddressHint => 'ex.: node.example.com:18081';
+
+  @override
+  String get connectionRemoteIpNotAllowed =>
+      'Conexões com endereços IP remotos não são permitidas. Use um nome de domínio ou um endereço IP local.';
+
+  @override
+  String get connectionProtocolHttps => 'Removendo protocolo. Usando HTTPS para domínios.';
+
+  @override
+  String get connectionProtocolHttp => 'Removendo protocolo. Usando HTTP para endereços locais.';
+
+  @override
+  String get connectionIndicatorHttps => 'HTTPS';
+
+  @override
+  String get connectionIndicatorLocal => 'Local';
+
+  @override
+  String get connectionIndicatorTorInternal => 'Tor Interno';
+
+  @override
+  String connectionIndicatorTorExternal(String port) {
+    return 'Usando Porta $port';
+  }
+
+  @override
+  String get settingsConnectionSettingsLabel => 'Configurações de conexão';
+
+  @override
+  String get settingsBackgroundSyncLabel => 'Sincronização em segundo plano';
+
+  @override
+  String get settingsBackgroundSyncDescription =>
+      'Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app. Só roda enquanto carrega e no WiFi.';
+
+  @override
+  String get settingsForegroundSyncLabel => 'Sincronização contínua';
+
+  @override
+  String get settingsForegroundSyncDescription =>
+      'Mantém o Monero sincronizando continuamente enquanto o app roda em segundo plano, com uma notificação persistente. Usa mais bateria.';
+
+  @override
+  String homeBlocksRemaining(String count) {
+    return '$count blocos restantes';
+  }
 
   @override
   String get fiatApiSetupTitle => 'Exibição de Saldo em Fiat';
@@ -505,7 +558,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendFeeLabel => 'Taxa';
 
   @override
-  String get sendBalanceLabel => 'Saldo';
+  String get sendContactsButton => 'Contatos';
 
   @override
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
@@ -555,9 +608,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get torSettingsTestConnectionButton => 'Testar Conexão';
-
-  @override
-  String get settingsLwsSettingsLabel => 'Configurações do LWS';
 
   @override
   String get settingsTorSettingsLabel => 'Configurações do Tor';

@@ -31,7 +31,19 @@ class SendScreen extends StatefulWidget {
   State<SendScreen> createState() => _SendScreenState();
 }
 
-final domainRegex = RegExp(r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$');
+/// Matches an OpenAlias: an FQDN, optionally written email-style
+/// (`donate@example.org`, which resolves as `donate.example.org`). Monero
+/// addresses are base58 and contain neither a dot nor an '@', so they are never
+/// mistaken for one. Internationalized names must be entered as A-labels
+/// (`xn--mnchen-3ya.example`).
+final domainRegex = RegExp(
+  r'^(?:[A-Za-z0-9._%+-]+@)?(?!-)[A-Za-z0-9-]{1,63}(?<!-)'
+  r'(\.(?!-)[A-Za-z0-9-]{1,63}(?<!-))*'
+  r'\.(?:[A-Za-z]{2,}|xn--[A-Za-z0-9-]{2,})$',
+);
+
+/// How long the address field must sit still before an alias is resolved.
+const _openAliasTypingDelay = Duration(milliseconds: 600);
 
 class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
@@ -55,8 +67,8 @@ class _SendScreenState extends State<SendScreen> {
   // Caches the last OpenAlias resolution + dedupes concurrent lookups so
   // re-validation (amount changes, revalidations) doesn't re-hit Tor.
   String? _resolveCacheInput;
-  String _resolveCacheOutput = '';
-  Future<String>? _resolveInFlight;
+  ResolvedOpenAlias? _resolveCacheOutput;
+  Future<ResolvedOpenAlias?>? _resolveInFlight;
   String _resolveInFlightInput = '';
 
   @override
@@ -173,7 +185,7 @@ class _SendScreenState extends State<SendScreen> {
     final unresolvedDestinationAddress = _destinationAddressController.text;
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
-      return _resolveDomain(unresolvedDestinationAddress);
+      return (await _resolveDomain(unresolvedDestinationAddress))?.address ?? '';
     }
     return unresolvedDestinationAddress;
   }
@@ -181,7 +193,7 @@ class _SendScreenState extends State<SendScreen> {
   /// Resolves an OpenAlias [domain] once, caching the result and joining any
   /// in-flight lookup of the same domain so amount changes / revalidations
   /// don't re-hit the (slow, over-Tor) resolver. Drives `_openAliasResolving`.
-  Future<String> _resolveDomain(String domain) async {
+  Future<ResolvedOpenAlias?> _resolveDomain(String domain) async {
     if (domain == _resolveCacheInput) return _resolveCacheOutput;
     if (_resolveInFlight != null && domain == _resolveInFlightInput) {
       return _resolveInFlight!;
@@ -190,20 +202,39 @@ class _SendScreenState extends State<SendScreen> {
     final wallet = Provider.of<WalletModel>(context, listen: false);
     if (mounted) setState(() => _openAliasResolving++);
 
-    final future = wallet.resolveOpenAlias(domain);
-    _resolveInFlight = future;
-    _resolveInFlightInput = domain;
-
     try {
-      final resolved = await future;
-      _resolveCacheInput = domain;
-      _resolveCacheOutput = resolved;
-      return resolved;
-    } finally {
-      if (identical(_resolveInFlight, future)) {
-        _resolveInFlight = null;
-        _resolveInFlightInput = '';
+      // Wait for the field to settle first. It revalidates on every keystroke
+      // and a half-typed domain ("privacyguides.magicgra") matches the alias
+      // pattern too, so without this one alias would cost a round of Tor
+      // lookups per character. If the user typed on, the newer text has its own
+      // call and this one is abandoned.
+      await Future.delayed(_openAliasTypingDelay);
+      if (!mounted || _destinationAddressController.text != domain) return null;
+
+      // Someone may have resolved this exact alias while we were settling.
+      if (domain == _resolveCacheInput) return _resolveCacheOutput;
+      if (_resolveInFlight != null && domain == _resolveInFlightInput) {
+        return _resolveInFlight!;
       }
+
+      // Only a real lookup is published as in-flight, so joining one always
+      // yields a real answer rather than an abandoned attempt.
+      final future = wallet.resolveOpenAlias(domain);
+      _resolveInFlight = future;
+      _resolveInFlightInput = domain;
+
+      try {
+        final resolved = await future;
+        _resolveCacheInput = domain;
+        _resolveCacheOutput = resolved;
+        return resolved;
+      } finally {
+        if (identical(_resolveInFlight, future)) {
+          _resolveInFlight = null;
+          _resolveInFlightInput = '';
+        }
+      }
+    } finally {
       if (mounted) setState(() => _openAliasResolving--);
     }
   }
@@ -211,7 +242,6 @@ class _SendScreenState extends State<SendScreen> {
   Future<bool> _validateForm({bool setErrors = true}) async {
     final amount = double.tryParse(_amountController.text) ?? 0;
     final unresolvedDestinationAddress = _destinationAddressController.text;
-    String destinationAddress = '';
 
     if (amount == 0) {
       return false;
@@ -223,9 +253,7 @@ class _SendScreenState extends State<SendScreen> {
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
       // OpenAlias: cached + deduped; the counter gates the send button while
       // a lookup is in flight.
-      destinationAddress = await _resolveDomain(unresolvedDestinationAddress);
-
-      if (destinationAddress == '') {
+      if (await _resolveDomain(unresolvedDestinationAddress) == null) {
         if (setErrors) {
           setState(() {
             _destinationAddressError = i18n.sendOpenAliasResolveError;
@@ -233,10 +261,7 @@ class _SendScreenState extends State<SendScreen> {
         }
         return false;
       }
-    } else if (wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
-      // check for address
-      destinationAddress = unresolvedDestinationAddress;
-    } else {
+    } else if (!wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
       if (setErrors) {
         setState(() {
           _destinationAddressError = i18n.sendInvalidAddressError;
@@ -376,11 +401,24 @@ class _SendScreenState extends State<SendScreen> {
     final amount = double.parse(_amountController.text);
     String destinationAddress = '';
     String? destinationOpenAlias;
+    String? destinationOpenAliasName;
 
-    // Resolve openalias if it is a domain
+    // Resolve openalias if it is a domain. Validation above already resolved
+    // it, so this comes back from the cache rather than hitting Tor again.
     if (domainRegex.hasMatch(destinationAddressUnresolved)) {
-      destinationAddress = await wallet.resolveOpenAlias(destinationAddressUnresolved);
+      final resolved = await _resolveDomain(destinationAddressUnresolved);
+
+      if (resolved == null) {
+        setState(() {
+          _isLoading = false;
+          _destinationAddressError = i18n.sendOpenAliasResolveError;
+        });
+        return;
+      }
+
+      destinationAddress = resolved.address;
       destinationOpenAlias = destinationAddressUnresolved;
+      destinationOpenAliasName = resolved.recipientName;
     } else {
       destinationAddress = destinationAddressUnresolved;
     }
@@ -419,6 +457,7 @@ class _SendScreenState extends State<SendScreen> {
             tx: tx,
             destinationAddress: destinationAddress,
             destinationOpenAlias: destinationOpenAlias,
+            destinationOpenAliasName: destinationOpenAliasName,
             destinationContactName: _selectedContact?.name,
           ),
         );

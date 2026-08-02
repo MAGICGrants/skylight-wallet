@@ -13,12 +13,16 @@ class ConfirmSendScreenArgs {
   MoneroPendingTransaction tx;
   String destinationAddress;
   String? destinationOpenAlias;
+
+  /// The recipient name published alongside the OpenAlias record, if any.
+  String? destinationOpenAliasName;
   String? destinationContactName;
 
   ConfirmSendScreenArgs({
     required this.tx,
     required this.destinationAddress,
     this.destinationOpenAlias,
+    this.destinationOpenAliasName,
     this.destinationContactName,
   });
 }
@@ -36,6 +40,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   double _amount = 0.0;
   double _fee = 0.0;
   String? _destinationOpenAlias;
+  String? _destinationOpenAliasName;
   String _destinationAddress = '';
   List<String> _destinationAddressSliced = [];
   String? _destinationContactName;
@@ -64,6 +69,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
       _amount = doubleAmountFromInt(args.tx.amount());
       _fee = doubleAmountFromInt(args.tx.fee());
       _destinationOpenAlias = args.destinationOpenAlias;
+      _destinationOpenAliasName = args.destinationOpenAliasName;
       _destinationAddress = args.destinationAddress;
       _destinationAddressSliced = _sliceAddress(args.destinationAddress);
       _destinationContactName = args.destinationContactName;
@@ -194,9 +200,30 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                 if (_destinationOpenAlias is String)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('OpenAlias', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(_destinationOpenAlias!),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(_destinationOpenAlias!, textAlign: TextAlign.end),
+                            // The name the recipient publishes with the record,
+                            // so the user can sanity-check who they resolved to.
+                            // Recipient-supplied text: sanitized and capped by
+                            // the model, and bounded here so it cannot push the
+                            // address off the screen.
+                            if (_destinationOpenAliasName is String)
+                              Text(
+                                _destinationOpenAliasName!,
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 Row(

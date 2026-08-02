@@ -41,6 +41,21 @@ String generateHexString(int length) {
   return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
 }
 
+/// A validated OpenAlias resolution: the Monero address to pay, plus what the
+/// recipient published about themselves, for the confirm screen.
+class ResolvedOpenAlias {
+  ResolvedOpenAlias({required this.address, required this.version, this.recipientName});
+
+  final String address;
+
+  /// 1 if this came from an `oa1:xmr` record, 2 from `_openalias-payment`.
+  final int version;
+
+  /// The recipient's display name, if they published one. Display only — it has
+  /// no bearing on [address].
+  final String? recipientName;
+}
+
 class TxDetails {
   final int? index;
   final int direction;
@@ -1467,41 +1482,85 @@ class WalletModel with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Resolves an OpenAlias domain to a Monero address with end-to-end DNSSEC
-  /// validation, over Tor (via the openalias_ffi Rust/hickory resolver). Returns
-  /// the validated address, or '' on any failure (incl. Tor unavailable) so the
-  /// send flow surfaces a resolve error. OpenAlias never leaves Tor.
-  Future<String> resolveOpenAlias(String address) async {
-    log(LogLevel.info, 'Resolving OpenAlias over Tor: $address');
-
-    final proxy = await TorSettingsService.sharedInstance.getProxy();
-    if (proxy == null) {
-      log(LogLevel.warn, 'OpenAlias: Tor proxy unavailable; cannot resolve.');
-      return '';
-    }
+  /// Resolves an OpenAlias (an FQDN or an email-style `name@domain`) to a
+  /// Monero address with end-to-end DNSSEC validation, over Tor (via the
+  /// openalias_ffi Rust/hickory resolver).
+  ///
+  /// OpenAlias v2 records are preferred and v1 is the fallback, per the spec's
+  /// compatibility rule. Returns null on any failure (incl. Tor unavailable) so
+  /// the send flow surfaces a resolve error. OpenAlias never leaves Tor.
+  Future<ResolvedOpenAlias?> resolveOpenAlias(String alias) async {
+    log(LogLevel.info, 'Resolving OpenAlias over Tor: $alias');
 
     try {
-      final resolved = await OpenAliasFfi.resolve(
-        domain: address,
+      // No proxy, no lookup. With Tor disabled, still bootstrapping, or
+      // misconfigured, resolution fails here — there is no clearnet fallback.
+      final proxy = await TorSettingsService.sharedInstance.getProxy();
+      if (proxy == null) {
+        log(LogLevel.warn, 'OpenAlias: Tor proxy unavailable; cannot resolve.');
+        return null;
+      }
+
+      final result = await OpenAliasFfi.resolve(
+        alias: alias,
+        // Monero mainnet is `network=xmr`, whose native asset is `xmr` per the
+        // OA2 network list — so a v2 record that omits `asset` is XMR too.
+        network: 'xmr',
         asset: 'xmr',
+        nativeAsset: 'xmr',
         socksPort: proxy.port,
       );
 
-      if (resolved == null || resolved.isEmpty) return '';
+      final resolved = result.payment.address;
 
-      // Only use it if it's a valid Monero address.
-      if (_w2Wallet != null && !_w2Wallet!.addressValid(resolved, 0)) {
+      // A record can publish any string at all, so nothing downstream — the tx
+      // builder, the confirm screen — ever sees one that isn't a valid Monero
+      // address for this network. No wallet to check against means no answer.
+      final wallet = _w2Wallet;
+      if (wallet == null || !wallet.addressValid(resolved, 0)) {
         log(LogLevel.warn, 'OpenAlias: resolved address failed validation.');
-        return '';
+        return null;
       }
 
-      log(LogLevel.info, 'OpenAlias resolved successfully.');
-      return resolved;
+      log(LogLevel.info, 'OpenAlias resolved successfully (v${result.version}).');
+      return ResolvedOpenAlias(
+        address: resolved,
+        version: result.version,
+        recipientName: _openAliasDisplayName(result.recipientName),
+      );
     } catch (e) {
       log(LogLevel.warn, 'OpenAlias resolution failed: $e');
-      return '';
+      return null;
     }
   }
+
+  /// A recipient-published name is only ever shown, never trusted. Strip
+  /// control characters and the Unicode formatting characters that can reorder
+  /// or hide what is drawn (bidi overrides/isolates, zero-width marks),
+  /// collapse whitespace runs, and cap the length, so a crafted name can't
+  /// misrepresent or disrupt the confirm screen.
+  static String? _openAliasDisplayName(String? name) {
+    if (name == null) return null;
+
+    final cleaned = name
+        .replaceAll(_unsafeDisplayChars, ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (cleaned.isEmpty) return null;
+    if (cleaned.length <= 64) return cleaned;
+
+    var clipped = cleaned.substring(0, 63);
+    final last = clipped.codeUnitAt(clipped.length - 1);
+    // Don't leave half a surrogate pair behind when cutting.
+    if (last >= 0xd800 && last <= 0xdbff) {
+      clipped = clipped.substring(0, clipped.length - 1);
+    }
+    return '$clipped…';
+  }
+
+  static final RegExp _unsafeDisplayChars = RegExp(
+    r'[\x00-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]',
+  );
 
   List<TxDetails> _getTxHistory() {
     final txCount = _w2TxHistory!.count();

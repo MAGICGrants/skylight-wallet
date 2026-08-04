@@ -80,6 +80,7 @@
   "restoreWalletDescription": "Input your Monero seed below. We will check common formats.",
   "restoreWalletSeedLabel": "Seed",
   "restoreWalletRestoreHeightLabel": "Restore Height (Optional)",
+  "restoreWalletRestoreDateLabel": "Restore Date",
   "restoreWalletRestoreButton": "Restore",
   "restoreWalletInvalidMnemonic": "Invalid seed.",
   "navigationBarWallet": "Wallet",

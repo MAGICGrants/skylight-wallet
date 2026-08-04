@@ -489,6 +489,12 @@ abstract class AppLocalizations {
   /// **'Restore Height (Optional)'**
   String get restoreWalletRestoreHeightLabel;
 
+  /// No description provided for @restoreWalletRestoreDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Date'**
+  String get restoreWalletRestoreDateLabel;
+
   /// No description provided for @restoreWalletRestoreButton.
   ///
   /// In en, this message translates to:

@@ -221,6 +221,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletRestoreHeightLabel => 'Restore Height (Optional)';
 
   @override
+  String get restoreWalletRestoreDateLabel => 'Restore Date';
+
+  @override
   String get restoreWalletRestoreButton => 'Restore';
 
   @override

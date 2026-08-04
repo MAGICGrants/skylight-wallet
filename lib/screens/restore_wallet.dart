@@ -24,6 +24,8 @@ class RestoreWalletScreen extends StatefulWidget {
 class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureScreenMixin {
   final _mnemonicController = TextEditingController();
   final _restoreHeightController = TextEditingController();
+  final _restoreDateController = TextEditingController();
+  DateTime _restoreDate = DateTime.now();
   bool _isPolyseed = false;
   bool _isLoading = false;
   String? _mnemonicError;
@@ -33,6 +35,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
   void dispose() {
     _mnemonicController.dispose();
     _restoreHeightController.dispose();
+    _restoreDateController.dispose();
     super.dispose();
   }
 
@@ -143,6 +146,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
         setState(() {
           _isPolyseed = false;
           _restoreHeightController.text = '';
+          _restoreDateController.text = '';
         });
       }
       return;
@@ -155,13 +159,35 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     );
 
     final birthday = polyseed.birthday;
-    final restoreHeight = getHeightByDate(
-      date: DateTime.fromMillisecondsSinceEpoch(birthday * 1000),
-    );
+    final birthdayDate = DateTime.fromMillisecondsSinceEpoch(birthday * 1000);
+    final restoreHeight = getHeightByDate(date: birthdayDate);
 
     setState(() {
       _isPolyseed = true;
+      _restoreDate = birthdayDate;
+      _restoreDateController.text = _formatDate(birthdayDate);
       _restoreHeightController.text = restoreHeight.toString();
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _restoreDate,
+      firstDate: DateTime(2014, 4),
+      lastDate: DateTime.now(),
+    );
+    if (picked == null) return;
+
+    setState(() {
+      _restoreDate = picked;
+      _restoreDateController.text = _formatDate(picked);
+      _restoreHeightController.text = getHeightByDate(date: picked).toString();
+      _restoreHeightError = null;
     });
   }
 
@@ -223,6 +249,19 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
                             onPressed: _scanQrCode,
                           )
                         : null,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _restoreDateController,
+                  readOnly: true,
+                  onTap: _pickDate,
+                  decoration: InputDecoration(
+                    labelText: i18n.restoreWalletRestoreDateLabel,
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
                   ),
                 ),
               ),

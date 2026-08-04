@@ -209,6 +209,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         message:
             'Not connecting: this connection requires Tor, but no Tor proxy is available. '
             'Re-enable Tor, or edit the connection.',
+        triggerMode: TooltipTriggerMode.tap,
         child: StatusIcon(status: StatusIconStatus.fail, torIsEnabled: wallet.usingTor),
       );
     }
@@ -235,6 +236,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
     return Tooltip(
       message: message,
+      triggerMode: TooltipTriggerMode.tap,
       child: StatusIcon(status: lwsConnectionIconStatus, torIsEnabled: wallet.usingTor),
     );
   }

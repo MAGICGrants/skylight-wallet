@@ -221,6 +221,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletRestoreHeightLabel => 'Bloco de Restauração (opcional)';
 
   @override
+  String get restoreWalletRestoreDateLabel => 'Data de Restauração';
+
+  @override
   String get restoreWalletRestoreButton => 'Restaurar';
 
   @override

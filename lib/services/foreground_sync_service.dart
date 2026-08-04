@@ -69,7 +69,19 @@ class _SyncTaskHandler extends TaskHandler {
 
   @override
   Future<void> onDestroy(DateTime timestamp) async {
+    final wallet = _wallet;
     _wallet = null;
+
+    // Stop the scan and checkpoint it: the service is going away but nothing
+    // closes the wallet, and the scanning done since the last checkpoint would
+    // otherwise be lost.
+    if (wallet != null) {
+      try {
+        await wallet.pauseSyncAndStore();
+      } catch (e) {
+        log(LogLevel.warn, '[FG sync] Failed to store on shutdown: $e');
+      }
+    }
   }
 }
 

@@ -16,6 +16,15 @@ class PeriodicTasks {
 /// under Android's ~10-minute WorkManager budget to persist + notify.
 const _backgroundSyncBudget = Duration(minutes: 9);
 
+/// How often a background run checks on the scan it is waiting for.
+const _backgroundSyncPollInterval = Duration(seconds: 5);
+
+/// Consecutive polls without the synced height moving before a run gives up on
+/// the rest of its budget. The window has to outlast a refresh cycle: in LWS
+/// mode the height only moves when the 20s cycle reloads stats, so a shorter
+/// one would read a healthy run as stuck.
+const _backgroundSyncStuckPolls = 12;
+
 /// WorkManager's minimum periodic interval.
 const _minSyncIntervalMinutes = 15;
 
@@ -28,17 +37,23 @@ Future<bool> runTxNotifier() async {
 
   // Load the connection first so the correct-mode wallet file is opened.
   await wallet.loadPersistedConnection();
-  await wallet.openExisting();
 
   final backgroundSync =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
       false;
 
   // A full-node scan is heavy and only runs when Background Sync is on; an LWS
-  // wallet always syncs (server-side, cheap).
+  // wallet always syncs (server-side, cheap). Decided before the wallet is
+  // opened: this task stays scheduled for notifications alone, so a node wallet
+  // with Background Sync off lands here every cycle, and opening the wallet
+  // (with its cached-stats read) is the expensive part of a run that is about
+  // to do nothing. Leaving one open would also give the model's own timers
+  // something to connect.
   if (wallet.connectionType == 'node' && !backgroundSync) {
     return true;
   }
+
+  await wallet.openExisting();
 
   if (wallet.usingTor) {
     await TorService.sharedInstance.start();
@@ -61,12 +76,37 @@ Future<bool> runTxNotifier() async {
 
   // Keep the isolate alive so the on-device scan keeps advancing, up to the OS
   // budget. The wallet's own timers drive the refresh + checkpoint; we just
-  // wait (and bail early once it's synced).
+  // wait, and stop early once it's synced or once it stops getting anywhere.
   final deadline = DateTime.now().add(_backgroundSyncBudget);
+  var lastSyncedHeight = wallet.syncedHeight;
+  var stuckPolls = 0;
+
   while (DateTime.now().isBefore(deadline)) {
     if (wallet.isConnected && wallet.isSynced) break;
-    await Future.delayed(const Duration(seconds: 5));
+
+    final syncedHeight = wallet.syncedHeight;
+
+    if (syncedHeight != lastSyncedHeight) {
+      lastSyncedHeight = syncedHeight;
+      stuckPolls = 0;
+    } else if (++stuckPolls >= _backgroundSyncStuckPolls) {
+      // Unreachable server, dead Tor circuit, stalled scan: holding the wake-up
+      // open for the rest of the budget just spends battery to learn nothing.
+      log(
+        LogLevel.warn,
+        '[Background sync] No progress in '
+        '${_backgroundSyncStuckPolls * _backgroundSyncPollInterval.inSeconds}s; ending run early.',
+      );
+      break;
+    }
+
+    await Future.delayed(_backgroundSyncPollInterval);
   }
+
+  // Stop the scan and checkpoint it before the isolate goes: nothing closes
+  // this wallet, so a refresh left running keeps pulling blocks after the task
+  // returns, and the last partial cycle of scanning would be thrown away.
+  await wallet.pauseSyncAndStore();
 
   final notify =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;

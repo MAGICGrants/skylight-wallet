@@ -1332,6 +1332,23 @@ class WalletModel with ChangeNotifier {
     }
   }
 
+  /// Stops the native scan thread and checkpoints what it managed to scan.
+  ///
+  /// Background isolates call this before they finish. Nothing closes the
+  /// wallet when a background task returns, so a refresh left running keeps
+  /// pulling blocks past the end of the task, and everything scanned since the
+  /// last periodic checkpoint would go with the isolate.
+  Future<void> pauseSyncAndStore() async {
+    if (_w2Wallet == null || !_daemonInitialized) return;
+
+    log(LogLevel.info, 'Pausing refresh and storing the wallet');
+
+    // Sets the refresh-enabled flag; the scan thread stops at its next check.
+    _w2Wallet!.pauseRefresh();
+
+    await store();
+  }
+
   Future<bool> store() async {
     final walletFfiAddr = _w2Wallet!.ffiAddress();
 

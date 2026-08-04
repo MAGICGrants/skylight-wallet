@@ -148,9 +148,21 @@ class WalletModel with ChangeNotifier {
   late bool _connectionUseTor;
   late bool _connectionUseSsl;
   String _connectionType = 'lws';
+  // False until a connection is in memory (loaded from prefs or set by the
+  // settings form). Which wallet file exists/opens depends on it, so anything
+  // that resolves a wallet path has to wait for it.
+  bool _connectionLoaded = false;
 
   int? _daemonTargetHeight;
   DateTime? _lastDaemonHeightFetch;
+
+  // Reconnect policy. Seconds to wait before the next attempt, indexed by how
+  // many attempts have failed in a row: the first retry is nearly immediate,
+  // then it backs off to the refresh cycle's cadence.
+  static const _reconnectBackoffSeconds = [1, 2, 5, 10, 20];
+  Future<void>? _connectInFlight;
+  DateTime? _lastConnectAttempt;
+  int _connectFailures = 0;
 
   final _sessionStartedAt = DateTime.now().secondsSinceEpoch;
   var _hasAttemptedConnection = false;
@@ -231,8 +243,13 @@ class WalletModel with ChangeNotifier {
   /// `mywallet` path; the node gets a `_node` suffix so toggling modes doesn't
   /// force a rescan.
   Future<String> resolveWalletPath() async {
+    return walletPathForType(_connectionType);
+  }
+
+  /// Path of the wallet file a given mode ('lws' | 'node') would use.
+  Future<String> walletPathForType(String connectionType) async {
     final basePath = await getWalletPath();
-    return isNodeMode ? '${basePath}_node' : basePath;
+    return connectionType == 'node' ? '${basePath}_node' : basePath;
   }
 
   void _startTimers() {
@@ -258,9 +275,48 @@ class WalletModel with ChangeNotifier {
       notifyListeners();
     }
 
+    // Not awaited: a connect can take seconds over Tor and must not hold up the
+    // sync poll below. Re-entry from the next tick is guarded by the in-flight
+    // attempt inside connectToDaemon.
+    unawaited(_retryConnectIfDue());
+
     // Node sync state flips off the native background thread; poll it here so
     // "blocks remaining" advances between the slower refresh cycles.
     await pollSyncStatus();
+  }
+
+  /// Retries a connection that isn't up, on a short backoff.
+  ///
+  /// Without this the only reconnect is the 20s refresh cycle, so a connect
+  /// that fails on launch — Tor not ready yet, node unreachable for a moment —
+  /// leaves the wallet doing nothing for up to 20 seconds behind a sync
+  /// spinner. `load()` also abandons its refresh + stats when its connect
+  /// throws, so those are picked up here once a retry gets through.
+  Future<void> _retryConnectIfDue() async {
+    if (_w2Wallet == null || _isConnected || _connectInFlight != null) return;
+    // Nothing to connect to yet.
+    if (!_connectionLoaded || _connectionAddress.isEmpty) return;
+
+    final lastAttempt = _lastConnectAttempt;
+
+    if (lastAttempt != null) {
+      final backoffIndex = min(_connectFailures, _reconnectBackoffSeconds.length - 1);
+      final wait = Duration(seconds: _reconnectBackoffSeconds[backoffIndex]);
+      if (DateTime.now().difference(lastAttempt) < wait) return;
+    }
+
+    try {
+      await connectToDaemon();
+      if (!_isConnected) return;
+
+      await refresh();
+      // Same deferral as the refresh cycle: in node mode the stat reads wait
+      // until the background scan has caught up.
+      if (isNodeMode && !_isSynced) return;
+      await loadAllStats();
+    } catch (e) {
+      log(LogLevel.warn, 'Reconnect attempt failed: $e');
+    }
   }
 
   /// Node-only: reads sync flag + heights off the background scan thread. When
@@ -426,6 +482,12 @@ class WalletModel with ChangeNotifier {
     );
   }
 
+  /// Loads the persisted connection unless one is already in memory.
+  Future<void> _ensureConnectionLoaded() async {
+    if (_connectionLoaded) return;
+    await loadPersistedConnection();
+  }
+
   Future<void> persistTxHistoryCount() async {
     if (_txHistory.isEmpty) {
       return;
@@ -471,6 +533,7 @@ class WalletModel with ChangeNotifier {
     _connectionUseTor = useTor;
     _connectionUseSsl = useSsl;
     _connectionType = connectionType;
+    _connectionLoaded = true;
     notifyListeners();
   }
 
@@ -478,8 +541,31 @@ class WalletModel with ChangeNotifier {
     _desktopWalletPassword = password;
   }
 
+  /// Connects the open wallet to the configured server. Callers that arrive
+  /// while an attempt is in flight join it instead of starting a second one:
+  /// two overlapping `Wallet_init` calls race on the same native wallet, and
+  /// over Tor they burn a second circuit for nothing.
   Future<void> connectToDaemon() async {
+    final inFlight = _connectInFlight;
+    if (inFlight != null) return inFlight;
+
+    final attempt = _runConnectAttempt();
+    _connectInFlight = attempt;
+
+    try {
+      await attempt;
+    } finally {
+      if (identical(_connectInFlight, attempt)) _connectInFlight = null;
+      // A connect can fail without throwing — Wallet_connectToDaemon reports
+      // failure by logging — so the backoff counts outcomes, not exceptions.
+      _connectFailures = _isConnected ? 0 : _connectFailures + 1;
+    }
+  }
+
+  Future<void> _runConnectAttempt() async {
     if (_w2Wallet == null) throw Exception("w2wallet is null");
+
+    _lastConnectAttempt = DateTime.now();
 
     // The open wallet is bound to the factory of the mode it was opened in
     // (LWS vs node). Connecting before a rebuild would call Wallet_init with a
@@ -516,6 +602,9 @@ class WalletModel with ChangeNotifier {
     );
 
     _hasAttemptedConnection = true;
+    // Read the outcome now rather than leaving it to the 1s poll — that's up to
+    // a second of sync spinner after a connection is already up.
+    _isConnected = await getIsConnected();
 
     notifyListeners();
   }
@@ -913,7 +1002,7 @@ class WalletModel with ChangeNotifier {
     final restoreHeight = getHeightByDate(date: DateTime.now());
     log(LogLevel.info, 'Using blockchain height: $restoreHeight');
 
-    await restoreFromMnemonic(polyseed, restoreHeight);
+    await restoreFromMnemonic(polyseed, restoreHeight, isNewWallet: true);
     await SharedPreferencesService.set<int>(
       SharedPreferencesKeys.walletRestoreHeight,
       restoreHeight,
@@ -993,6 +1082,7 @@ class WalletModel with ChangeNotifier {
     required int restoreHeight,
     required String password,
     bool isDummy = false,
+    bool newWallet = true,
   }) async {
     if (!isDummy && password == '') {
       throw Exception('Password should not be empty.');
@@ -1001,6 +1091,10 @@ class WalletModel with ChangeNotifier {
     final wmFfiAddr = (await _walletManager()).ffiAddress();
     final walletPath = await resolveWalletPath();
 
+    // `newWallet` is what tells the backend this seed has history to scan. With
+    // it set, both backends ignore the restore height: wallet2 starts the scan
+    // at the current chain tip and LWSF never asks the server to rescan, so a
+    // restored wallet comes up empty.
     final walletFfiAddr = await Isolate.run(() {
       // ignore: deprecated_member_use
       return monero.WalletManager_createWalletFromPolyseed(
@@ -1010,7 +1104,7 @@ class WalletModel with ChangeNotifier {
         restoreHeight: restoreHeight,
         path: isDummy ? '' : walletPath,
         password: password,
-        newWallet: true,
+        newWallet: newWallet,
         kdfRounds: 1,
       ).address;
     });
@@ -1020,33 +1114,82 @@ class WalletModel with ChangeNotifier {
     return MoneroWallet(Pointer<Void>.fromAddress(walletFfiAddr));
   }
 
+  /// Removes the wallet files for the current mode (cache + `.keys` +
+  /// `.address.txt`). The other mode's files are left alone.
+  Future<void> _deleteWalletFilesForCurrentMode() async {
+    final path = await resolveWalletPath();
+
+    for (final p in [path, '$path.keys', '$path.address.txt']) {
+      final file = File(p);
+      if (await file.exists()) {
+        log(LogLevel.warn, 'Removing existing wallet file before restore: $p');
+        await file.delete();
+      }
+    }
+  }
+
+  /// Builds the wallet for [mnemonic] with the factory its seed format needs.
+  /// A BIP39 mnemonic is converted to the equivalent legacy word list first.
+  Future<MoneroWallet> _buildWalletFromMnemonic({
+    required String mnemonic,
+    required int restoreHeight,
+    required String password,
+    required bool isPolyseed,
+    required bool isNewWallet,
+  }) async {
+    if (isPolyseed) {
+      return _getWalletFromPolyseed(
+        mnemonic: mnemonic,
+        restoreHeight: restoreHeight,
+        password: password,
+        newWallet: isNewWallet,
+      );
+    }
+
+    return _getWalletFromLegacySeed(
+      mnemonic: bip39.validateMnemonic(mnemonic) ? getLegacySeedFromBip39(mnemonic) : mnemonic,
+      restoreHeight: restoreHeight,
+      password: password,
+    );
+  }
+
+  /// Restores (or, with [isNewWallet], creates) a wallet from [mnemonic].
+  /// [isNewWallet] must only be set for a seed generated right now: it tells
+  /// the backend there is no history behind the seed, which skips the rescan
+  /// from [restoreHeight].
   Future<void> restoreFromMnemonic(
     String mnemonic,
-    int restoreHeight, [
+    int restoreHeight, {
     String passphrase = '',
-  ]) async {
+    bool isNewWallet = false,
+  }) async {
     final walletPassword = _desktopWalletPassword ?? genWalletPassword();
-    MoneroWallet? wallet;
+    final isPolyseed = Polyseed.isValidSeed(mnemonic);
 
-    if (Polyseed.isValidSeed(mnemonic)) {
-      wallet = await _getWalletFromPolyseed(
+    var wallet = await _buildWalletFromMnemonic(
+      mnemonic: mnemonic,
+      restoreHeight: restoreHeight,
+      password: walletPassword,
+      isPolyseed: isPolyseed,
+      isNewWallet: isNewWallet,
+    );
+
+    // wallet2 refuses to recover onto an existing wallet file, which surfaces
+    // as an unexplained restore failure the user can't get out of. Reaching
+    // this means the seed itself was accepted (it's decoded before the file is
+    // touched), so the mode's derived files can be cleared and the restore
+    // retried. Not done when creating a wallet: there'd be no seed in hand to
+    // recover a clobbered file from.
+    if (!isNewWallet && wallet.errorString().contains('file already exists')) {
+      log(LogLevel.warn, 'Restore hit an existing wallet file: ${wallet.errorString()}');
+      await _deleteWalletFilesForCurrentMode();
+
+      wallet = await _buildWalletFromMnemonic(
         mnemonic: mnemonic,
         restoreHeight: restoreHeight,
         password: walletPassword,
-      );
-    } else if (bip39.validateMnemonic(mnemonic)) {
-      final legacyMnemonic = getLegacySeedFromBip39(mnemonic);
-
-      wallet = await _getWalletFromLegacySeed(
-        mnemonic: legacyMnemonic,
-        restoreHeight: restoreHeight,
-        password: walletPassword,
-      );
-    } else {
-      wallet = await _getWalletFromLegacySeed(
-        mnemonic: mnemonic,
-        restoreHeight: restoreHeight,
-        password: walletPassword,
+        isPolyseed: isPolyseed,
+        isNewWallet: isNewWallet,
       );
     }
 
@@ -1065,6 +1208,24 @@ class WalletModel with ChangeNotifier {
     _w2TxHistory = _w2Wallet!.history();
     _loadedType = _desiredManagerType;
 
+    if (!isNewWallet && restoreHeight > 0) {
+      // wallet2's polyseed factory derives the scan start from the seed's
+      // birthday and drops the height handed to it, so apply it here. The other
+      // factories already took it: LWSF's polyseed path honours it once
+      // newWallet is false, and both recoveryWallet implementations set it.
+      if (isPolyseed && isNodeMode) {
+        log(LogLevel.info, 'Setting refresh from block height: $restoreHeight');
+        wallet.setRefreshFromBlockHeight(refresh_from_block_height: restoreHeight);
+      }
+
+      // Fallback for getRestoreHeight(), which needs a height to rebuild the
+      // other mode's wallet file from the seed on an LWS↔node switch.
+      await SharedPreferencesService.set<int>(
+        SharedPreferencesKeys.walletRestoreHeight,
+        restoreHeight,
+      );
+    }
+
     if (Platform.isAndroid || Platform.isIOS) {
       await storeMobileWalletPassword(walletPassword);
     }
@@ -1074,6 +1235,13 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<void> openExisting({String? desktopWalletPassword}) async {
+    // Opening the same file twice leaves two wallets (and two sync loops)
+    // running against it; the first is never closed and both write the cache.
+    if (_w2Wallet != null && _loadedType == _desiredManagerType) {
+      log(LogLevel.warn, 'Wallet is already open for "$_loadedType"; skipping re-open.');
+      return;
+    }
+
     final wm = await _walletManager();
     final path = await resolveWalletPath();
 
@@ -1213,11 +1381,20 @@ class WalletModel with ChangeNotifier {
   }
 
   Future<bool> hasExistingWallet() async {
+    // Each mode keeps its own file in a format only its own manager recognizes
+    // (LWSF's `mywallet` vs wallet2's `mywallet_node`), so the persisted
+    // connection has to be known before looking one up — checking the default
+    // LWS path makes a node wallet look like a fresh install and drops the user
+    // back into onboarding.
+    await _ensureConnectionLoaded();
+
+    final path = await resolveWalletPath();
+
     log(LogLevel.info, 'Calling WalletManager_walletExists with parameters:');
-    log(LogLevel.info, '  path: ${await getWalletPath()}');
+    log(LogLevel.info, '  path: $path');
 
     final wm = await _walletManager();
-    final exists = wm.walletExists(await getWalletPath());
+    final exists = wm.walletExists(path);
 
     log(LogLevel.info, 'WalletManager_walletExists result: $exists');
 
@@ -1227,7 +1404,43 @@ class WalletModel with ChangeNotifier {
       log(LogLevel.error, 'WalletManager_walletExists error: $errorString');
     }
 
-    return exists;
+    if (exists) {
+      return true;
+    }
+
+    return _adoptModeWithExistingWallet();
+  }
+
+  /// Recovers from a connection/wallet-file mismatch: when the persisted mode
+  /// has no wallet file but the other mode does (e.g. an LWS↔node switch that
+  /// was interrupted before the new file was written), switch to the mode we
+  /// actually have a wallet for instead of reporting "no wallet" and sending
+  /// the user through onboarding on top of an existing wallet.
+  Future<bool> _adoptModeWithExistingWallet() async {
+    final otherType = isNodeMode ? 'lws' : 'node';
+    final otherPath = await walletPathForType(otherType);
+
+    // wallet2 (node) writes `<path>` plus `<path>.keys`; LWSF writes a single
+    // `<path>` file.
+    final otherExists = await File(otherPath).exists() || await File('$otherPath.keys').exists();
+
+    if (!otherExists) {
+      return false;
+    }
+
+    log(
+      LogLevel.warn,
+      'No "$_connectionType" wallet file found but a "$otherType" one exists; '
+      'switching the connection type to match.',
+    );
+
+    _connectionType = otherType;
+    // Persisted, not just in-memory: callers reload the connection from prefs
+    // right after this check.
+    await SharedPreferencesService.set<String>(SharedPreferencesKeys.connectionType, otherType);
+    notifyListeners();
+
+    return true;
   }
 
   Future<bool> getIsConnected() async {

@@ -171,6 +171,12 @@ class WalletModel with ChangeNotifier {
   // fallback that leaks the view key and the user's IP to the server.
   bool _torRequirementBroken = false;
 
+  // Serialize periodic tasks + teardown: the raw pointer must not be freed
+  // while an isolate read is in flight. Skip-if-busy, not a queue.
+  bool _walletBusy = false;
+  bool _disposing = false;
+  Completer<void>? _walletIdle;
+
   final _sessionStartedAt = DateTime.now().secondsSinceEpoch;
   var _hasAttemptedConnection = false;
   var _isConnected = false;
@@ -235,11 +241,8 @@ class WalletModel with ChangeNotifier {
     if (_w2WalletManager != null && _managerType == type) return _w2WalletManager!;
 
     if (_w2WalletManager != null && _w2Wallet != null) {
-      _w2WalletManager!.closeWallet(_w2Wallet!, false);
-      _w2Wallet = null;
-      _w2TxHistory = null;
-      _daemonInitialized = false;
-      _loadedType = null;
+      // Switching factories frees the old wallet; quiesce the timer tasks first.
+      await _closeOpenWallet();
     }
 
     final managerFactory = Monero().walletManagerFactory();
@@ -248,6 +251,29 @@ class WalletModel with ChangeNotifier {
         : managerFactory.getLWSFWalletManager();
     _managerType = type;
     return _w2WalletManager!;
+  }
+
+  /// Frees the open native wallet safely: blocks new periodic tasks, waits for
+  /// any in-flight one (they hold the raw pointer), then closes. Only called
+  /// from user flows, never a guarded task, so it can't self-deadlock.
+  Future<void> _closeOpenWallet() async {
+    _disposing = true;
+    try {
+      if (_walletBusy) {
+        _walletIdle = Completer<void>();
+        await _walletIdle!.future;
+      }
+      if (_w2Wallet != null) {
+        _w2Wallet!.pauseRefresh();
+        _w2WalletManager?.closeWallet(_w2Wallet!, false);
+        _w2Wallet = null;
+        _w2TxHistory = null;
+        _daemonInitialized = false;
+        _loadedType = null;
+      }
+    } finally {
+      _disposing = false;
+    }
   }
 
   /// Path of the wallet file for the current mode. LWS keeps the original
@@ -263,13 +289,29 @@ class WalletModel with ChangeNotifier {
     return connectionType == 'node' ? '${basePath}_node' : basePath;
   }
 
+  /// Runs a periodic task, at most one at a time; teardown waits on the
+  /// in-flight one before freeing the wallet.
+  Future<void> _runGuarded(Future<void> Function() task) async {
+    if (_walletBusy || _disposing || _w2Wallet == null) return;
+    _walletBusy = true;
+    try {
+      await task();
+    } catch (e) {
+      log(LogLevel.warn, 'Periodic wallet task failed: $e');
+    } finally {
+      _walletBusy = false;
+      _walletIdle?.complete();
+      _walletIdle = null;
+    }
+  }
+
   void _startTimers() {
     Timer.periodic(Duration(seconds: 1), (timer) {
-      _runCheckConnectionTimerTask();
+      _runGuarded(_runCheckConnectionTimerTask);
     });
 
     Timer.periodic(Duration(seconds: 20), (timer) {
-      _runRefreshTimerTask();
+      _runGuarded(_runRefreshTimerTask);
     });
   }
 
@@ -286,10 +328,8 @@ class WalletModel with ChangeNotifier {
       notifyListeners();
     }
 
-    // Not awaited: a connect can take seconds over Tor and must not hold up the
-    // sync poll below. Re-entry from the next tick is guarded by the in-flight
-    // attempt inside connectToDaemon.
-    unawaited(_retryConnectIfDue());
+    // Awaited so the connect stays inside the guard, not detached past teardown.
+    await _retryConnectIfDue();
 
     // Node sync state flips off the native background thread; poll it here so
     // "blocks remaining" advances between the slower refresh cycles.
@@ -1447,10 +1487,8 @@ class WalletModel with ChangeNotifier {
   }
 
   Future delete() async {
-    (await _walletManager()).closeWallet(_w2Wallet!, false);
-    _w2Wallet = null;
-    _daemonInitialized = false;
-    _loadedType = null;
+    await _closeOpenWallet();
+
     _hasAttemptedConnection = false;
     _isConnected = false;
     _isSynced = false;

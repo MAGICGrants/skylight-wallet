@@ -197,10 +197,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
+      sha256: "6d7fd89431262d8f3125e81b50d3847a091d846eafcd4fdb88dd06f36d705a45"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.4"
+    version: "2.2.0"
   file:
     dependency: transitive
     description:
@@ -665,9 +665,9 @@ packages:
     dependency: "direct main"
     description:
       path: "impls/monero.dart"
-      ref: "8de1614734007782bb2701ab16c49adf0df8e850"
-      resolved-ref: "8de1614734007782bb2701ab16c49adf0df8e850"
-      url: "https://github.com/vtnerd/monero_c"
+      ref: "8c9af02665e0c0c8e2e8dc7022679b2743842ed4"
+      resolved-ref: "8c9af02665e0c0c8e2e8dc7022679b2743842ed4"
+      url: "https://github.com/magicgrants/monero_c"
     source: git
     version: "0.0.0"
   nested:

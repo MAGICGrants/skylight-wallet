@@ -56,8 +56,8 @@ dependencies:
 
   monero:
     git:
-      url: https://github.com/vtnerd/monero_c
-      ref: 8de1614734007782bb2701ab16c49adf0df8e850
+      url: https://github.com/magicgrants/monero_c
+      ref: c74f8dfcc07f56720c0239d5829995c8e20033c2
       path: impls/monero.dart
   openalias_ffi:
     path: plugins/openalias_ffi

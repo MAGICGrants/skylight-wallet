@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-// ignore: implementation_imports
-import 'package:monero/src/monero.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -40,7 +38,7 @@ class _SendScreenState extends State<SendScreen> {
   final _amountController = TextEditingController(text: '');
   bool _isSweepAll = false;
   Contact? _selectedContact;
-  List<MoneroPendingTransaction?>? _fees;
+  List<int?>? _fees; // estimated fee (piconero) per priority; null = estimate failed
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0; // Track the latest fee calculation request
   String _lastFeeFetchKey = '';
@@ -257,39 +255,6 @@ class _SendScreenState extends State<SendScreen> {
     return true;
   }
 
-  Future<MoneroPendingTransaction?> _createTxForPriority(
-    String destinationAddress,
-    double amount,
-    int priority, {
-    String? amountText,
-  }) async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    const maxRetries = 10;
-
-    for (int i = 0; i < maxRetries; i++) {
-      try {
-        final tx = await wallet.createTx(
-          destinationAddress,
-          amount,
-          _isSweepAll,
-          priority: priority,
-          amountText: amountText,
-        );
-        return tx;
-      } catch (error) {
-        if (error.toString().contains('Unlocked funds too low')) {
-          return null;
-        }
-
-        if (i == maxRetries - 1) {
-          rethrow;
-        }
-      }
-    }
-
-    throw Exception('Failed to create fee priority transaction after $maxRetries retries');
-  }
-
   Future<void> _calculateFees() async {
     final feeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
 
@@ -300,6 +265,7 @@ class _SendScreenState extends State<SendScreen> {
     _lastFeeFetchKey = feeFetchKey;
 
     final i18n = AppLocalizations.of(context)!;
+    final wallet = Provider.of<WalletModel>(context, listen: false);
 
     // Increment counter to mark this as the latest request
     _feeCalculationCounter++;
@@ -315,16 +281,17 @@ class _SendScreenState extends State<SendScreen> {
     final amount = double.parse(amountText);
 
     try {
-      final txs = await Future.wait([
-        _createTxForPriority(destinationAddress, amount, 1, amountText: amountText),
-        _createTxForPriority(destinationAddress, amount, 2, amountText: amountText),
-        _createTxForPriority(destinationAddress, amount, 3, amountText: amountText),
+      // Estimate the fee per priority natively (no full tx build).
+      final fees = await Future.wait([
+        wallet.estimateFee(destinationAddress, amount, priority: 1, amountText: amountText),
+        wallet.estimateFee(destinationAddress, amount, priority: 2, amountText: amountText),
+        wallet.estimateFee(destinationAddress, amount, priority: 3, amountText: amountText),
       ]);
 
       // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
-          _fees = txs;
+          _fees = fees;
           _isLoadingFees = false;
 
           // If there is not enough balance for the selected priority,
@@ -386,26 +353,15 @@ class _SendScreenState extends State<SendScreen> {
     }
 
     try {
-      MoneroPendingTransaction tx;
-
-      // Check if we can reuse a cached transaction
-      final currentFeeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
-      final cachedTx = _fees != null && _fees!.length > _selectedPriority
-          ? _fees![_selectedPriority]
-          : null;
-
-      if (currentFeeFetchKey == _lastFeeFetchKey && cachedTx != null) {
-        tx = cachedTx;
-      } else {
-        // Create a new transaction if cached one is not available
-        tx = await wallet.createTx(
-          destinationAddress,
-          amount,
-          _isSweepAll,
-          priority: _selectedPriority + 1,
-          amountText: _amountController.text,
-        );
-      }
+      // Build the real transaction for the selected priority (fees shown on the
+      // screen are estimates, not tx objects, so always construct here).
+      final tx = await wallet.createTx(
+        destinationAddress,
+        amount,
+        _isSweepAll,
+        priority: _selectedPriority + 1,
+        amountText: _amountController.text,
+      );
 
       setState(() {
         _isLoading = false;
@@ -715,8 +671,8 @@ class _SendScreenState extends State<SendScreen> {
                               )
                             else if (_fees != null && _fees!.length > _selectedPriority)
                               () {
-                                final selectedTx = _fees![_selectedPriority];
-                                if (selectedTx != null) {
+                                final fee = _fees![_selectedPriority];
+                                if (fee != null) {
                                   return Row(
                                     spacing: 8,
                                     children: [
@@ -730,8 +686,9 @@ class _SendScreenState extends State<SendScreen> {
                                             height: 14,
                                           ),
                                           MoneroAmount(
-                                            amount: doubleAmountFromInt(selectedTx.fee()),
+                                            amount: doubleAmountFromInt(fee),
                                             maxFontSize: 14,
+                                            prefix: '~',
                                           ),
                                         ],
                                       ),
@@ -910,7 +867,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
 class _PriorityOption extends StatelessWidget {
   final String label;
   final int priority;
-  final List<MoneroPendingTransaction?>? fees;
+  final List<int?>? fees;
   final String fiatSymbol;
   final double? fiatRate;
   final bool isSelected;
@@ -929,8 +886,8 @@ class _PriorityOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final feeTx = fees?[priority];
-    final fee = feeTx != null ? doubleAmountFromInt(feeTx.fee()) : null;
+    final feePiconero = fees?[priority];
+    final fee = feePiconero != null ? doubleAmountFromInt(feePiconero) : null;
     final currentFiatRate = fiatRate;
 
     return InkWell(
@@ -983,7 +940,7 @@ class _PriorityOption extends StatelessWidget {
                         ),
                       ),
                       SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
-                      MoneroAmount(amount: fee, maxFontSize: 14),
+                      MoneroAmount(amount: fee, maxFontSize: 14, prefix: '~'),
                     ],
                   ),
                   if (currentFiatRate != null)

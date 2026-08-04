@@ -1366,6 +1366,39 @@ class WalletModel with ChangeNotifier {
     return subaddress;
   }
 
+  /// Estimates the network fee (in piconero) for a send at [priority] via the
+  /// native estimator. Returns null on failure or when fee info isn't cached yet
+  Future<int?> estimateFee(
+    String destinationAddress,
+    double amount, {
+    int priority = 0,
+    String? amountText,
+  }) async {
+    if (_w2Wallet == null) return null;
+
+    final amountInt = amountText != null
+        ? decimalToBaseUnits(amountText, consts.moneroDecimals).toInt()
+        : _w2Wallet!.amountFromDouble(amount);
+    final walletFfiAddr = _w2Wallet!.ffiAddress();
+
+    try {
+      final fee = await Isolate.run(() {
+        // ignore: deprecated_member_use
+        return monero.Wallet_estimateTransactionFee(
+          Pointer.fromAddress(walletFfiAddr),
+          dstAddr: [destinationAddress],
+          amounts: [amountInt],
+          pendingTransactionPriority: priority,
+        );
+      });
+      // 0 = backend couldn't estimate (never a real fee).
+      return fee > 0 ? fee : null;
+    } catch (e) {
+      log(LogLevel.warn, 'estimateFee failed: $e');
+      return null;
+    }
+  }
+
   Future<MoneroPendingTransaction> createTx(
     String destinationAddress,
     double amount,

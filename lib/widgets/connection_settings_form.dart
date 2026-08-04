@@ -443,6 +443,11 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       await _disableSync();
     }
 
+    // What background work is possible depends on the connection that was just
+    // saved — on iOS, whether it is LWS at all and whether it uses Tor — so the
+    // schedule is rebuilt for every save, not only when a sync toggle moved.
+    await applyBackgroundTaskRegistration();
+
     await widget.onBeforeSave?.call();
 
     widget.onSaved();

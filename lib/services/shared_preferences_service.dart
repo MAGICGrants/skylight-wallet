@@ -19,8 +19,6 @@ class SharedPreferencesKeys {
   static const String connectionType = 'connectionType';
   static const String serverSupportsSubaddresses = 'serverSupportsSubaddresses';
   static const String walletRestoreHeight = 'walletRestoreHeight';
-  static const String txHistoryCount = 'txHistoryCount';
-  static const String pendingOutgoingTxs = 'pendingOutgoingTxs';
   static const String contacts = 'contacts';
   static const String unusedSubaddressIndex = 'unusedSubaddressIndex';
   static const String unusedSubaddressIndexIsSupported = 'unusedSubaddressIndexIsSupported';

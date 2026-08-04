@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -35,10 +36,12 @@ class _SyncTaskHandler extends TaskHandler {
 
       if (wallet.usingTor) {
         await TorService.sharedInstance.start();
-        await TorService.sharedInstance.waitUntilConnected().timeout(
-          const Duration(minutes: 2),
-          onTimeout: () => log(LogLevel.warn, '[FG sync] Tor connection timed out'),
-        );
+        if (!await TorService.sharedInstance.waitUntilConnected(
+          timeout: const Duration(minutes: 2),
+        )) {
+          log(LogLevel.warn, '[FG sync] Tor did not come up; not connecting.');
+          return;
+        }
       }
 
       if (wallet.connectionAddress.isEmpty) return;
@@ -65,11 +68,34 @@ class _SyncTaskHandler extends TaskHandler {
       notificationTitle: 'Skylight Wallet',
       notificationText: syncing ? 'Syncing…' : 'Wallet up to date',
     );
+
+    // While this service is running it is the thing watching the chain, so it
+    // is the thing that has to announce what it finds. The background task runs
+    // on its own schedule and would otherwise never see these.
+    if (wallet != null) {
+      unawaited(
+        wallet.notifyNewIncomingTxs().catchError((Object e) {
+          log(LogLevel.warn, '[FG sync] notifying new transactions failed: $e');
+        }),
+      );
+    }
   }
 
   @override
   Future<void> onDestroy(DateTime timestamp) async {
+    final wallet = _wallet;
     _wallet = null;
+
+    // Stop the scan and checkpoint it: the service is going away but nothing
+    // closes the wallet, and the scanning done since the last checkpoint would
+    // otherwise be lost.
+    if (wallet != null) {
+      try {
+        await wallet.pauseSyncAndStore();
+      } catch (e) {
+        log(LogLevel.warn, '[FG sync] Failed to store on shutdown: $e');
+      }
+    }
   }
 }
 

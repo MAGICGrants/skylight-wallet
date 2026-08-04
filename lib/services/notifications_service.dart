@@ -3,9 +3,16 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path/path.dart' as p;
 
 class NotificationService {
+  // Per-isolate: the background task and the foreground service each get their
+  // own engine, and the plugin has to be initialized in whichever one is about
+  // to show something.
+  static bool _initialized = false;
+
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
+    if (_initialized) return;
+
     const initSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettingsIOS = DarwinInitializationSettings(
       // We'll request permissions manually
@@ -33,6 +40,7 @@ class NotificationService {
     );
 
     await notificationsPlugin.initialize(initSettings);
+    _initialized = true;
   }
 
   Future<bool> promptPermission() async {
@@ -57,6 +65,10 @@ class NotificationService {
   }
 
   Future<void> showIncomingTxNotification(double amountReceived) async {
+    // Cheap when already done, and the only way this works from a background
+    // isolate, which never ran the init in main().
+    await init();
+
     const notificationChannelId = 'incoming_transactions';
 
     await notificationsPlugin.show(

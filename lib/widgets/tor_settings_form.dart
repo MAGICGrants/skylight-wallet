@@ -2,7 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 
@@ -51,7 +54,16 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
   }
 
   void _onSavePressed() async {
+    // Read before the await: a Tor-only connection has to be told immediately
+    // that its requirement can no longer be met, or it goes on presenting
+    // itself as connected over Tor until something tries to reconnect.
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final disablingTor = _selectedMode == TorMode.disabled;
+
     await _saveSettings();
+
+    if (disablingTor) wallet.onGlobalTorDisabled();
+
     widget.onSaved();
   }
 

@@ -120,6 +120,7 @@
   "sendInsufficientBalanceToCoverFeeError": "Saldo insuficiente para cobrir a taxa da rede.",
   "settingsTitle": "Configurações",
   "settingsNotifyNewTxsLabel": "Notificar Novas Transações",
+  "settingsNotifyNewTxsDescriptionIos": "As notificações serão atrasadas para conexões LWS via Tor.",
   "settingsAppLockLabel": "Desbloqueio com PIN/Biometria",
   "settingsAppLockUnlockReason": "Desbloquear carteira",
   "settingsAppLockUnableToAuthError": "Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.",

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/util/contacts_store.dart';
 import 'package:skylight_wallet/util/logging.dart';
 
 class Contact {
@@ -27,33 +26,54 @@ class Contact {
 class ContactModel with ChangeNotifier {
   List<Contact> _contacts = [];
 
+  /// Set when the address book could not be read. Saving is refused while it
+  /// holds: an empty in-memory list written over a store we simply failed to
+  /// open would destroy the address book.
+  bool _unreadable = false;
+
   List<Contact> get contacts => List.unmodifiable(_contacts);
 
+  /// True when the stored address book couldn't be read, so what's in memory
+  /// isn't the whole picture and edits aren't being saved.
+  bool get isUnreadable => _unreadable;
+
   ContactModel() {
-    _loadContacts();
+    load();
   }
 
-  Future<void> _loadContacts() async {
+  @visibleForTesting
+  Future<void> load() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final contactsJson = prefs.getStringList(SharedPreferencesKeys.contacts) ?? [];
+      final storedContacts = await readEncodedContacts();
 
-      _contacts = contactsJson
+      if (storedContacts == null) {
+        _unreadable = true;
+        log(LogLevel.error, 'Address book could not be read; not saving over it.');
+        return;
+      }
+
+      _unreadable = false;
+      _contacts = storedContacts
           .map((jsonString) => Contact.fromJson(json.decode(jsonString) as Map<String, dynamic>))
           .toList();
 
       notifyListeners();
     } catch (e) {
+      _unreadable = true;
       log(LogLevel.error, 'Error loading contacts: $e');
     }
   }
 
   Future<void> _saveContacts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final contactsJson = _contacts.map((contact) => json.encode(contact.toJson())).toList();
+    if (_unreadable) {
+      log(LogLevel.error, 'Refusing to save contacts over an address book that failed to load.');
+      return;
+    }
 
-      await prefs.setStringList(SharedPreferencesKeys.contacts, contactsJson);
+    try {
+      await writeEncodedContacts(
+        _contacts.map((contact) => json.encode(contact.toJson())).toList(),
+      );
     } catch (e) {
       log(LogLevel.error, 'Error saving contacts: $e');
     }

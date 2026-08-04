@@ -202,6 +202,17 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final i18n = AppLocalizations.of(context)!;
     String message;
 
+    // Deliberately not connected: say so, rather than reporting a Tor
+    // connection that isn't happening.
+    if (wallet.torRequirementBroken) {
+      return Tooltip(
+        message:
+            'Not connecting: this connection requires Tor, but no Tor proxy is available. '
+            'Re-enable Tor, or edit the connection.',
+        child: StatusIcon(status: StatusIconStatus.fail, torIsEnabled: wallet.usingTor),
+      );
+    }
+
     // While syncing a full node, show the sync progress instead of the address.
     final blocksRemaining = wallet.syncBlocksRemaining;
     if (lwsConnectionIconStatus != StatusIconStatus.complete && blocksRemaining != null) {

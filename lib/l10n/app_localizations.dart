@@ -729,6 +729,12 @@ abstract class AppLocalizations {
   /// **'Notify New Transactions'**
   String get settingsNotifyNewTxsLabel;
 
+  /// No description provided for @settingsNotifyNewTxsDescriptionIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications will be delayed for Tor LWS connections.'**
+  String get settingsNotifyNewTxsDescriptionIos;
+
   /// No description provided for @settingsAppLockLabel.
   ///
   /// In en, this message translates to:

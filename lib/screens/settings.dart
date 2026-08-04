@@ -68,6 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _setTxNotificationsEnabled(bool value) async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+
     setState(() {
       _newTxNotificationsEnabled = value;
     });
@@ -76,6 +78,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final isAllowed = await NotificationService().promptPermission();
 
       if (isAllowed) {
+        // Start from now, so switching this on doesn't announce the backlog of
+        // everything already received.
+        await wallet.markExistingTxsAsNotified();
         await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
         await applyBackgroundTaskRegistration();
       }
@@ -471,11 +476,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
                 ],
               ),
-            if (Platform.isAndroid)
+            // On iOS this is offered for LWS only: a remote node can't be
+            // scanned inside either background window iOS grants.
+            if (Platform.isAndroid || (Platform.isIOS && !context.watch<WalletModel>().isNodeMode))
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                        if (Platform.isIOS)
+                          Text(
+                            i18n.settingsNotifyNewTxsDescriptionIos,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                      ],
+                    ),
+                  ),
                   Switch(value: _newTxNotificationsEnabled, onChanged: _setTxNotificationsEnabled),
                 ],
               ),

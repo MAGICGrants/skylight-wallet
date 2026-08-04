@@ -345,6 +345,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
 
   @override
+  String get settingsNotifyNewTxsDescriptionIos =>
+      'As notificações serão atrasadas para conexões LWS via Tor.';
+
+  @override
   String get settingsAppLockLabel => 'Desbloqueio com PIN/Biometria';
 
   @override

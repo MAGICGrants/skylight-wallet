@@ -120,6 +120,7 @@
   "sendInsufficientBalanceToCoverFeeError": "Insufficient balance to cover the network fee.",
   "settingsTitle": "Settings",
   "settingsNotifyNewTxsLabel": "Notify New Transactions",
+  "settingsNotifyNewTxsDescriptionIos": "Notifications will be delayed for Tor LWS connections.",
   "settingsAppLockLabel": "App Lock",
   "settingsAppLockUnlockReason": "Unlock Wallet",
   "settingsAppLockUnableToAuthError": "Unable to authenticate. Make sure you have device unlock set up.",

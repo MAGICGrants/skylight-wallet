@@ -5,6 +5,11 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<!-- Short opportunistic wake-up: LWS over clearnet only. -->
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).refresh</string>
+		<!-- Longer run while charging and idle; the only window in which Tor
+		     has time to bootstrap before the sync. -->
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).processing</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

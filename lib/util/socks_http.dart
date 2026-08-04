@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_socket.dart';
 
 class ParsedHttpResponse {
@@ -128,12 +129,23 @@ Future<ParsedHttpResponse> makeSocksHttpRequest(
     sslEnabled: uri.scheme == 'https',
   );
 
-  await socket.connect();
-  await socket.connectTo(uri.host, uri.port);
+  try {
+    await socket.connect();
+    await socket.connectTo(uri.host, uri.port);
 
-  final rawRequest = getRawHttpRequestString(method, url, jsonBody: body);
-  final rawResponse = await socket.send(rawRequest);
-  final parsedResponse = parseHttpResponse(rawResponse);
+    final rawRequest = getRawHttpRequestString(method, url, jsonBody: body);
+    final rawResponse = await socket.send(rawRequest);
 
-  return parsedResponse;
+    return parseHttpResponse(rawResponse);
+  } finally {
+    // Each request opens its own SOCKS connection, and with it a Tor circuit.
+    // Left open they accumulate for the life of the process — the fiat poller
+    // alone starts one every ten minutes. Closing must not mask a request
+    // error, so its own failure is only logged.
+    try {
+      await socket.close();
+    } catch (e) {
+      log(LogLevel.warn, 'Failed to close SOCKS socket: $e');
+    }
+  }
 }

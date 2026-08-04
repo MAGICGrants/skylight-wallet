@@ -345,6 +345,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotifyNewTxsLabel => 'Notify New Transactions';
 
   @override
+  String get settingsNotifyNewTxsDescriptionIos =>
+      'Notifications will be delayed for Tor LWS connections.';
+
+  @override
   String get settingsAppLockLabel => 'App Lock';
 
   @override

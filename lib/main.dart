@@ -83,6 +83,10 @@ void main() async {
 
       if (Platform.isIOS) {
         await cleanTorDirectoriesOnIOS();
+        // Background sync here is LWS-only and decided by the connection; see
+        // periodic_tasks._applyIosBackgroundTasks.
+        registerPeriodicTasks();
+        NotificationService().init();
       }
 
       cleanOldLogFiles();

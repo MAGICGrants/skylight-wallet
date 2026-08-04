@@ -22,10 +22,13 @@ import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/amount_units.dart';
 import 'package:skylight_wallet/util/bip39.dart';
 import 'package:skylight_wallet/util/cacert.dart';
+import 'package:skylight_wallet/util/contacts_store.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
+import 'package:skylight_wallet/util/tx_notification_state.dart';
+import 'package:skylight_wallet/util/tx_notifications.dart';
 import 'package:skylight_wallet/util/wallet.dart';
 import 'package:skylight_wallet/util/wallet_password.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
@@ -163,6 +166,10 @@ class WalletModel with ChangeNotifier {
   Future<void>? _connectInFlight;
   DateTime? _lastConnectAttempt;
   int _connectFailures = 0;
+  // Set when this connection is marked Tor-only but no Tor proxy can be had.
+  // Nothing connects while it holds — the alternative is a silent clearnet
+  // fallback that leaks the view key and the user's IP to the server.
+  bool _torRequirementBroken = false;
 
   final _sessionStartedAt = DateTime.now().secondsSinceEpoch;
   var _hasAttemptedConnection = false;
@@ -190,6 +197,10 @@ class WalletModel with ChangeNotifier {
   double? get totalBalance => _totalBalance;
   List<TxDetails> get txHistory => _txHistory;
   bool get usingTor => _connectionUseTor;
+
+  /// True when this connection requires Tor but none is available, so the app
+  /// is deliberately not connecting at all.
+  bool get torRequirementBroken => _torRequirementBroken;
   bool? get serverSupportsSubaddresses => _serverSupportsSubaddresses;
   int? get unusedSubaddressIndex => _unusedSubaddressIndex;
   bool? get unusedSubaddressIndexIsSupported => _unusedSubaddressIndexIsSupported;
@@ -400,7 +411,14 @@ class WalletModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadTxHistory({bool persistCount = true}) async {
+  /// Re-reads the transaction list from the wallet's cache.
+  ///
+  /// Note what this deliberately does *not* do: touch notification state. Every
+  /// isolate (UI, foreground service, background task) refreshes history on its
+  /// own timer, so anything recorded here would be consumed by whichever one
+  /// refreshed first, whether or not it announced anything. That belongs to
+  /// [notifyNewIncomingTxs].
+  Future<void> loadTxHistory() async {
     final txCount = _w2TxHistory!.count();
     var hasPendingTx = false;
 
@@ -432,10 +450,6 @@ class WalletModel with ChangeNotifier {
             break;
           }
         }
-      }
-
-      if (persistCount) {
-        await persistTxHistoryCount();
       }
     }
 
@@ -488,19 +502,51 @@ class WalletModel with ChangeNotifier {
     await loadPersistedConnection();
   }
 
-  Future<void> persistTxHistoryCount() async {
-    if (_txHistory.isEmpty) {
-      return;
-    }
-
-    await SharedPreferencesService.set<int>(
-      SharedPreferencesKeys.txHistoryCount,
-      _txHistory.length,
+  /// Treats everything currently on chain as already seen. Called when a wallet
+  /// is created or restored and when notifications are switched on, so the user
+  /// is told about what arrives from here on rather than their whole history.
+  Future<void> markExistingTxsAsNotified() async {
+    await writeTxNotificationState(
+      TxNotificationState(cutoff: DateTime.now().secondsSinceEpoch, announcedHashes: const []),
     );
   }
 
-  Future<int> getPersistedTxHistoryCount() async {
-    return await SharedPreferencesService.get<int>(SharedPreferencesKeys.txHistoryCount) ?? 0;
+  /// Announces incoming transactions the user hasn't been told about yet.
+  ///
+  /// Safe to call from any isolate and as often as you like: what has been
+  /// announced is persisted, so the background task, the foreground service and
+  /// a future caller can't double-announce or cancel each other out.
+  Future<void> notifyNewIncomingTxs() async {
+    final state = await readTxNotificationState();
+
+    // Never seeded (fresh install, or an upgrade from the old counter): take
+    // the current chain as the starting point instead of announcing a backlog.
+    if (state.cutoff == null) {
+      await markExistingTxsAsNotified();
+      return;
+    }
+
+    final decision = decideTxNotifications(
+      txHistory: _txHistory,
+      cutoff: state.cutoff!,
+      announcedHashes: state.announcedHashes,
+    );
+
+    final notificationsEnabled =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ??
+        false;
+
+    if (notificationsEnabled) {
+      for (final tx in decision.toAnnounce) {
+        await NotificationService().showIncomingTxNotification(tx.amount);
+      }
+    }
+
+    // Recorded either way: with notifications off these are still "seen", so
+    // switching the setting on later doesn't replay them.
+    await writeTxNotificationState(
+      TxNotificationState(cutoff: decision.cutoff, announcedHashes: decision.announcedHashes),
+    );
   }
 
   /// Loads balances + tx history from the just-opened monero_c wallet cache,
@@ -534,6 +580,21 @@ class WalletModel with ChangeNotifier {
     _connectionUseSsl = useSsl;
     _connectionType = connectionType;
     _connectionLoaded = true;
+    // A reconfigured connection gets a clean slate; the next attempt decides
+    // again whether Tor is available for it.
+    _torRequirementBroken = false;
+    notifyListeners();
+  }
+
+  /// Called when Tor is switched off globally. A connection that requires Tor
+  /// is marked broken and reported disconnected straight away, rather than
+  /// looking healthy until the next refresh cycle notices.
+  void onGlobalTorDisabled() {
+    if (!_connectionUseTor || _torRequirementBroken) return;
+
+    log(LogLevel.warn, 'Tor disabled globally; a Tor-only connection can no longer be used.');
+    _torRequirementBroken = true;
+    _isConnected = false;
     notifyListeners();
   }
 
@@ -582,10 +643,24 @@ class WalletModel with ChangeNotifier {
 
     if (_connectionUseTor) {
       final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
-      if (proxyInfo != null) {
-        torProxyPort = proxyInfo.port.toString();
+
+      if (proxyInfo == null) {
+        // Fail closed. Carrying on would leave proxyAddress empty and Wallet_init
+        // would reach the server directly — handing it the primary address, the
+        // private view key and the real IP, every refresh cycle, on a connection
+        // the user marked Tor-only. Never fall back to clearnet.
+        log(LogLevel.warn, 'Connection requires Tor but no proxy is available; not connecting.');
+        _torRequirementBroken = true;
+        _hasAttemptedConnection = true;
+        _isConnected = false;
+        notifyListeners();
+        return;
       }
+
+      torProxyPort = proxyInfo.port.toString();
     }
+
+    _torRequirementBroken = false;
 
     final proxyPort = torProxyPort ?? _connectionProxyPort;
 
@@ -921,7 +996,11 @@ class WalletModel with ChangeNotifier {
     for (int i = 0; i < 3; i++) {
       try {
         if (_connectionUseTor) {
-          await TorService.sharedInstance.waitUntilConnected();
+          // This POSTs the view key. Without Tor it does not go out at all.
+          if (!await TorService.sharedInstance.waitUntilConnected()) {
+            throw Exception('Tor is required for this connection but is unavailable.');
+          }
+
           final proxyInfo = TorService.sharedInstance.getProxyInfo();
           final response = await makeSocksHttpRequest(
             'POST',
@@ -1226,6 +1305,10 @@ class WalletModel with ChangeNotifier {
       );
     }
 
+    // Whatever this seed already has on chain is history, not news — a restore
+    // would otherwise announce every incoming transaction it scans.
+    await markExistingTxsAsNotified();
+
     if (Platform.isAndroid || Platform.isIOS) {
       await storeMobileWalletPassword(walletPassword);
     }
@@ -1387,12 +1470,11 @@ class WalletModel with ChangeNotifier {
     }
 
     await SharedPreferencesService.remove(SharedPreferencesKeys.connectionType);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.txHistoryCount);
+    await clearTxNotificationState();
     await SharedPreferencesService.remove(SharedPreferencesKeys.walletRestoreHeight);
     await SharedPreferencesService.remove(SharedPreferencesKeys.appLockEnabled);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.pendingOutgoingTxs);
     await SharedPreferencesService.remove(SharedPreferencesKeys.serverSupportsSubaddresses);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.contacts);
+    await clearContacts();
     await SharedPreferencesService.remove(SharedPreferencesKeys.unusedSubaddressIndex);
     await SharedPreferencesService.remove(SharedPreferencesKeys.unusedSubaddressIndexIsSupported);
   }

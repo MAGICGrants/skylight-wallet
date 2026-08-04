@@ -1,20 +1,39 @@
 import 'dart:io';
 
 import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:skylight_wallet/consts.dart' as consts;
 
 class PeriodicTasks {
   static const txNotifier = 'txNotifier';
+
+  /// iOS BGAppRefreshTask. Opportunistic and short — iOS decides when, and
+  /// grants roughly 30 seconds. Only ever scheduled for an LWS connection on
+  /// clearnet: a node scan can't finish in that window, and a Tor bootstrap
+  /// alone can outlast it.
+  static const iosRefresh = 'refresh';
+
+  /// iOS BGProcessingTask. Runs while the device is charging and idle, for
+  /// minutes rather than seconds, so Tor has time to come up first. LWS only —
+  /// a remote node is never background-synced on iOS.
+  static const iosProcessing = 'processing';
 }
+
+/// Identifiers must match `BGTaskSchedulerPermittedIdentifiers` in Info.plist
+/// and the registrations in AppDelegate.
+const _iosBundleId = 'org.magicgrants.skylightwallet';
+const _iosRefreshTaskId = '$_iosBundleId.${PeriodicTasks.iosRefresh}';
+const _iosProcessingTaskId = '$_iosBundleId.${PeriodicTasks.iosProcessing}';
 
 /// Max wall-clock we let a background run scan before returning, leaving margin
 /// under Android's ~10-minute WorkManager budget to persist + notify.
 const _backgroundSyncBudget = Duration(minutes: 9);
+
+/// What a BGAppRefreshTask gets on iOS is short and not negotiable; overrunning
+/// it means iOS kills the task and schedules the next one less willingly.
+const _iosRefreshBudget = Duration(seconds: 25);
 
 /// How often a background run checks on the scan it is waiting for.
 const _backgroundSyncPollInterval = Duration(seconds: 5);
@@ -28,7 +47,18 @@ const _backgroundSyncStuckPolls = 12;
 /// WorkManager's minimum periodic interval.
 const _minSyncIntervalMinutes = 15;
 
-Future<bool> runTxNotifier() async {
+/// One background sync pass.
+///
+/// [budget] is the wall-clock this run may use. [allowTor] and [allowNode] say
+/// what the scheduling window can actually accommodate — a 30-second iOS
+/// refresh can carry neither a Tor bootstrap nor a node scan. They're checked
+/// again here rather than trusted from the scheduler, because iOS can deliver a
+/// task that was scheduled under a connection the user has since changed.
+Future<bool> runTxNotifier({
+  Duration budget = _backgroundSyncBudget,
+  bool allowTor = true,
+  bool allowNode = true,
+}) async {
   final wallet = WalletModel();
 
   if (!await wallet.hasExistingWallet()) {
@@ -37,6 +67,16 @@ Future<bool> runTxNotifier() async {
 
   // Load the connection first so the correct-mode wallet file is opened.
   await wallet.loadPersistedConnection();
+
+  if (!allowNode && wallet.connectionType == 'node') {
+    log(LogLevel.info, '[Background sync] Node connection; not syncing in this window.');
+    return true;
+  }
+
+  if (!allowTor && wallet.usingTor) {
+    log(LogLevel.info, '[Background sync] Tor connection; needs the longer window.');
+    return true;
+  }
 
   final backgroundSync =
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
@@ -57,10 +97,14 @@ Future<bool> runTxNotifier() async {
 
   if (wallet.usingTor) {
     await TorService.sharedInstance.start();
-    await TorService.sharedInstance.waitUntilConnected().timeout(
-      Duration(minutes: 2),
-      onTimeout: () => log(LogLevel.warn, '[Background sync] Tor connection timed out'),
+    final torIsUp = await TorService.sharedInstance.waitUntilConnected(
+      timeout: const Duration(minutes: 2),
     );
+
+    if (!torIsUp) {
+      log(LogLevel.warn, '[Background sync] Tor did not come up; ending run.');
+      return true;
+    }
   }
 
   if (wallet.connectionAddress.isEmpty) {
@@ -77,7 +121,7 @@ Future<bool> runTxNotifier() async {
   // Keep the isolate alive so the on-device scan keeps advancing, up to the OS
   // budget. The wallet's own timers drive the refresh + checkpoint; we just
   // wait, and stop early once it's synced or once it stops getting anywhere.
-  final deadline = DateTime.now().add(_backgroundSyncBudget);
+  final deadline = DateTime.now().add(budget);
   var lastSyncedHeight = wallet.syncedHeight;
   var stuckPolls = 0;
 
@@ -108,58 +152,47 @@ Future<bool> runTxNotifier() async {
   // returns, and the last partial cycle of scanning would be thrown away.
   await wallet.pauseSyncAndStore();
 
-  final notify =
-      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;
-
   try {
-    await wallet.loadTxHistory(persistCount: false);
+    await wallet.loadTxHistory();
   } catch (e) {
     log(LogLevel.warn, '[Background sync] loadTxHistory failed: $e');
   }
 
-  await _notifyNewTxs(wallet, notify: notify);
+  try {
+    await wallet.notifyNewIncomingTxs();
+  } catch (e) {
+    log(LogLevel.warn, '[Background sync] notifying new transactions failed: $e');
+  }
 
   return true;
-}
-
-Future<void> _notifyNewTxs(WalletModel wallet, {required bool notify}) async {
-  final persistedCount = await wallet.getPersistedTxHistoryCount();
-  final currentCount = wallet.txHistory.length;
-  final countOfNewTxs = currentCount - persistedCount;
-
-  if (countOfNewTxs > 0 && currentCount != 0) {
-    // Only surface a notification when notifications are on; either way advance
-    // the baseline count so we don't re-notify (or flood) next run.
-    if (notify) {
-      for (int i = 0; i < countOfNewTxs; i++) {
-        final tx = wallet.txHistory[i];
-        if (tx.direction == consts.txDirectionIncoming) {
-          NotificationService().showIncomingTxNotification(tx.amount);
-        }
-      }
-    }
-
-    await wallet.persistTxHistoryCount();
-  }
 }
 
 @pragma('vm:entry-point')
 void _callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    switch (PeriodicTasks.txNotifier) {
+    switch (task) {
+      // Roughly 30 seconds, whenever iOS feels like it. Enough for an LWS
+      // server to report what it has already scanned, and nothing more.
+      case PeriodicTasks.iosRefresh:
+        return runTxNotifier(budget: _iosRefreshBudget, allowTor: false, allowNode: false);
+
+      // Charging and idle, so there is room for Tor to bootstrap first.
+      case PeriodicTasks.iosProcessing:
+        return runTxNotifier(allowNode: false);
+
       case PeriodicTasks.txNotifier:
+      default:
         return runTxNotifier();
     }
-
-    return true;
   });
 }
 
-/// (Re)registers the background task if background sync or notifications is on,
-/// otherwise cancels it. Notifications need the task to run to detect new txs,
-/// so either flag keeps it scheduled; the interval comes from the background-
-/// sync setting. Android only.
+/// (Re)registers background work to match the current settings, or cancels it.
+///
+/// Call after anything that changes the answer: the notifications toggle, the
+/// background-sync toggle, or the connection itself.
 Future<void> applyBackgroundTaskRegistration() async {
+  if (Platform.isIOS) return _applyIosBackgroundTasks();
   if (!Platform.isAndroid) return;
 
   final backgroundSync =
@@ -192,8 +225,46 @@ Future<void> applyBackgroundTaskRegistration() async {
   );
 }
 
+/// iOS scheduling, which turns on what the connection can actually support.
+///
+/// A remote node is never background-synced here: neither window is long
+/// enough for an on-device scan to be worth the wake-up. For LWS the server has
+/// already done the scanning, so a short visit is enough to collect the result.
+///
+///  - clearnet LWS gets both: the opportunistic refresh for timeliness, and
+///    processing as a backstop for when refresh doesn't fire.
+///  - Tor LWS gets processing only. Bootstrapping Tor can eat a whole refresh
+///    window on its own, so notifications wait for a charging, idle moment.
+Future<void> _applyIosBackgroundTasks() async {
+  final notifications =
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ?? false;
+  final connectionType =
+      await SharedPreferencesService.get<String>(SharedPreferencesKeys.connectionType) ?? 'lws';
+  final useTor =
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.connectionUseTor) ?? false;
+
+  await Workmanager().cancelByUniqueName(_iosRefreshTaskId);
+  await Workmanager().cancelByUniqueName(_iosProcessingTaskId);
+
+  if (!notifications || connectionType == 'node') return;
+
+  if (!useTor) {
+    await Workmanager().registerPeriodicTask(
+      _iosRefreshTaskId,
+      PeriodicTasks.iosRefresh,
+      frequency: Duration(minutes: _minSyncIntervalMinutes),
+    );
+  }
+
+  await Workmanager().registerProcessingTask(
+    _iosProcessingTaskId,
+    PeriodicTasks.iosProcessing,
+    constraints: Constraints(networkType: NetworkType.connected, requiresCharging: true),
+  );
+}
+
 Future<void> registerPeriodicTasks() async {
-  if (!Platform.isAndroid) {
+  if (!Platform.isAndroid && !Platform.isIOS) {
     return;
   }
 

@@ -58,7 +58,7 @@ export CARGO_HOME=/tmp/skylight-cargo
 # cargokit requires an NDK package.xml (absent in unzipped NDKs)
 [ -f "$ANDROID_HOME/ndk/$NDK/package.xml" ] || touch "$ANDROID_HOME/ndk/$NDK/package.xml"
 "$FLUTTER/bin/flutter" pub get
-bash scripts/pin-tor-rust-toolchain.sh
+bash scripts/pin-rust-toolchain.sh
 "$FLUTTER/bin/flutter" build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$PLATFORM"
 
 # 3) Hand the APK to the builddir where fdroid's output: expects it.

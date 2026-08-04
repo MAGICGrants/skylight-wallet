@@ -21,5 +21,5 @@ REPO="$PWD"
 # committed .so matches F-Droid's rebuild. Clones from the remote (this CI checkout has no
 # populated submodule); then symlink output where build-monero-c.yml's cp step expects it.
 rm -rf "$REPO/monero_c"
-bash scripts/build-moneroc.sh "$TARGET_ARCH" https://github.com/vtnerd/monero_c.git
+bash scripts/build-moneroc.sh "$TARGET_ARCH" https://github.com/magicgrants/monero_c
 ln -s /tmp/monero_c "$REPO/monero_c"

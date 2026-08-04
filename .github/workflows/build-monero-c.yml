@@ -164,7 +164,7 @@ jobs:
           git config --global --add safe.directory '*'
           git config --global user.email "info@magicgrants.org"
           git config --global user.name "MAGIC Grants"
-          git clone https://github.com/vtnerd/monero_c.git /tmp/monero_c
+          git clone https://github.com/magicgrants/monero_c /tmp/monero_c
           cd /tmp/monero_c
           git checkout "$MONEROC_COMMIT"
           git submodule update --init --recursive
@@ -351,7 +351,7 @@ jobs:
             - `windows/libssp-0.dll` (x86_64-w64-mingw32)
             - `ios/Frameworks/MoneroWallet.xcframework` (aarch64-apple-ios + aarch64-apple-iossimulator)
 
-            Built from [monero_c](https://github.com/vtnerd/monero_c) at the commit pinned in `pubspec.lock`.
+            Built from [monero_c](https://github.com/magicgrants/monero_c) at the commit pinned in `pubspec.lock`.
             To bump monero_c: edit the `monero` ref in `pubspec.yaml`, run `flutter pub get`, then re-run this workflow.
           branch: update-moneroc-libs
           delete-branch: true

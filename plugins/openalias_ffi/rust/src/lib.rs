@@ -2,6 +2,13 @@
 //! SOCKS proxy. DNS is fetched via TCP through the proxy (Tor has no UDP) and
 //! validated locally by hickory (RRSIG → DS → root trust anchor), so no
 //! resolver is trusted and no DNS leaks outside Tor.
+//!
+//! The FFI surface is deliberately thin: it returns the DNSSEC-validated TXT
+//! records at a name, and Dart parses the OpenAlias v1 and v2 grammars on top
+//! (see `lib/src/openalias_records.dart`). That split keeps the record parsing
+//! and selection unit-testable without a native build, while the part that has
+//! to be trustworthy — "these bytes really are what the signed zone published"
+//! — stays here.
 
 mod error;
 
@@ -81,34 +88,44 @@ impl RuntimeProvider for SocksRuntimeProvider {
 
     fn bind_udp(
         &self,
-        local_addr: SocketAddr,
+        _local_addr: SocketAddr,
         _server_addr: SocketAddr,
     ) -> Pin<Box<dyn Send + Future<Output = io::Result<Self::Udp>>>> {
-        // Unused: the resolver is TCP-only (Tor has no UDP). Provided to satisfy
-        // the trait.
-        Box::pin(async move { TokioUdpSocket::bind(local_addr).await })
+        // Refused, never bound. Tor carries no UDP, so a UDP query could only
+        // leave over clearnet. The resolver is configured with DoH name servers
+        // exclusively and never asks for UDP; failing here means that if that
+        // ever changed, the lookup would fail closed instead of leaking which
+        // alias the user is resolving.
+        Box::pin(async move {
+            Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "UDP is unavailable: OpenAlias DNS must go through the Tor SOCKS proxy",
+            ))
+        })
     }
 }
 
-/// Resolve an OpenAlias `domain` for `asset` (e.g. "btc") over Tor with DNSSEC
-/// validation. Returns a newly-allocated address string, or NULL on failure
-/// (see `openalias_last_error_message`). Caller frees with `openalias_string_free`.
+/// Fetches the TXT records at `name` over Tor, requiring a DNSSEC-secure answer.
+///
+/// Returns a JSON array of strings — one entry per TXT record, each already
+/// concatenated from its DNS character-strings (RFC 7208 §3.3) — or NULL on any
+/// failure, which includes "no such name" and "name has no TXT records" (see
+/// `openalias_last_error_message`). Callers treat NULL as "nothing usable
+/// here": the OpenAlias v2 → v1 fallback is driven by which names returned
+/// records, and an answer that could not be validated never returns records.
+///
+/// Caller frees the returned string with `openalias_string_free`.
 ///
 /// # Safety
-/// `domain` and `asset` must be valid NUL-terminated C strings.
+/// `name` must be a valid NUL-terminated C string.
 #[no_mangle]
-pub unsafe extern "C" fn openalias_resolve(
-    domain: *const c_char,
-    asset: *const c_char,
+pub unsafe extern "C" fn openalias_secure_txt(
+    name: *const c_char,
     socks_port: u16,
 ) -> *mut c_char {
-    let domain = match cstr(domain) {
+    let name = match cstr(name) {
         Some(s) => s,
-        None => return ret_err("invalid domain"),
-    };
-    let asset = match cstr(asset) {
-        Some(s) => s,
-        None => return ret_err("invalid asset"),
+        None => return ret_err("invalid name"),
     };
 
     let runtime = match RUNTIME.as_ref() {
@@ -116,10 +133,10 @@ pub unsafe extern "C" fn openalias_resolve(
         Err(e) => return ret_err(format!("tokio runtime: {e}")),
     };
 
-    match runtime.block_on(resolve(&domain, &asset, socks_port)) {
-        Ok(addr) => match CString::new(addr) {
+    match runtime.block_on(secure_txt(&name, socks_port)) {
+        Ok(records) => match CString::new(json_string_array(&records)) {
             Ok(c) => c.into_raw(),
-            Err(_) => ret_err("address contained NUL"),
+            Err(_) => ret_err("record contained NUL"),
         },
         Err(msg) => ret_err(msg),
     }
@@ -136,7 +153,7 @@ pub unsafe extern "C" fn openalias_string_free(ptr: *mut c_char) {
     }
 }
 
-async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, String> {
+async fn secure_txt(name: &str, socks_port: u16) -> Result<Vec<String>, String> {
     let proxy = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), socks_port);
 
     // DNS-over-HTTPS (default /dns-query on 443). The TLS cert is verified
@@ -157,11 +174,9 @@ async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, S
         .build()
         .map_err(|e| format!("resolver build failed: {e}"))?;
 
-    let fqdn = if domain.ends_with('.') {
-        domain.to_string()
-    } else {
-        format!("{domain}.")
-    };
+    // Non-ASCII labels are converted to their A-label (Punycode) form by
+    // hickory when it parses the name, as OpenAlias requires (RFC 5890).
+    let fqdn = if name.ends_with('.') { name.to_string() } else { format!("{name}.") };
 
     let lookup = resolver
         .lookup(fqdn, RecordType::TXT)
@@ -169,8 +184,11 @@ async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, S
         .map_err(|e| format!("lookup failed: {e}"))?;
 
     // Require DNSSEC-secure: reject unsigned (insecure) and bogus answers.
+    // hickory's `validate` only rejects *bogus* answers on its own — an unsigned
+    // zone still yields records proven Insecure — so this check is what makes
+    // the lookup fail closed.
     let proofs: Vec<Proof> = lookup.answers().iter().map(|r| r.proof).collect();
-    if !proofs.iter().all(|p| *p == Proof::Secure) {
+    if proofs.is_empty() || !proofs.iter().all(|p| *p == Proof::Secure) {
         return Err(format!(
             "answer is not DNSSEC-secure (records={}, proofs={:?})",
             proofs.len(),
@@ -178,40 +196,55 @@ async fn resolve(domain: &str, asset: &str, socks_port: u16) -> Result<String, S
         ));
     }
 
-    let prefix = format!("oa1:{}", asset.to_lowercase());
-    let mut txt_seen = 0usize;
+    let mut records = Vec::new();
     for record in lookup.answers() {
         if let RData::TXT(txt) = &record.data {
-            txt_seen += 1;
-            let joined: String = txt
-                .txt_data
-                .iter()
-                .map(|b| String::from_utf8_lossy(b).into_owned())
-                .collect();
-            if let Some(addr) = parse_oa1(&joined, &prefix) {
-                return Ok(addr);
-            }
+            // A TXT record is one or more character-strings; concatenate them in
+            // order, with no separator, before the record is parsed.
+            records.push(
+                txt.txt_data
+                    .iter()
+                    .map(|b| String::from_utf8_lossy(b).into_owned())
+                    .collect::<String>(),
+            );
         }
     }
-    Err(format!("no {prefix} record found ({txt_seen} TXT record(s) present)"))
+
+    if records.is_empty() {
+        return Err(format!("no TXT records at {name}"));
+    }
+    Ok(records)
 }
 
-/// Parses a concatenated TXT string for an OpenAlias entry matching `prefix`,
-/// returning its `recipient_address`.
-fn parse_oa1(txt: &str, prefix: &str) -> Option<String> {
-    // OpenAlias: `oa1:<asset> recipient_address=ADDR; recipient_name=NAME; ...`
-    // The prefix and first key share the first (space-separated) segment, so
-    // strip the prefix before splitting the key=value fields on ';'.
-    let rest = txt.trim_start().strip_prefix(prefix)?;
-    for field in rest.split(';') {
-        if let Some(value) = field.trim().strip_prefix("recipient_address=") {
-            let value = value.trim();
-            if !value.is_empty() {
-                return Some(value.to_string());
-            }
+/// Encodes `items` as a JSON array of strings. TXT records are attacker-chosen
+/// bytes, so they are escaped rather than framed with a separator that a record
+/// could contain.
+fn json_string_array(items: &[String]) -> String {
+    let mut out = String::from("[");
+    for (i, item) in items.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        json_escape_into(item, &mut out);
+    }
+    out.push(']');
+    out
+}
+
+fn json_escape_into(s: &str, out: &mut String) {
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
         }
     }
-    None
+    out.push('"');
 }
 
 unsafe fn cstr(ptr: *const c_char) -> Option<String> {
@@ -228,25 +261,29 @@ fn ret_err(msg: impl Into<String>) -> *mut c_char {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_oa1;
+    use super::json_string_array;
 
     #[test]
-    fn parses_btc_recipient() {
-        let txt = "oa1:btc recipient_address=1BoatSLRHtKNngkdXEeobR76b53LETtpyT; recipient_name=Donate;";
+    fn encodes_records() {
+        let records = vec![
+            "oa_version=2; network=xmr; address=888tNk;".to_string(),
+            "oa1:xmr recipient_address=888tNk;".to_string(),
+        ];
         assert_eq!(
-            parse_oa1(txt, "oa1:btc").as_deref(),
-            Some("1BoatSLRHtKNngkdXEeobR76b53LETtpyT")
+            json_string_array(&records),
+            r#"["oa_version=2; network=xmr; address=888tNk;","oa1:xmr recipient_address=888tNk;"]"#
         );
     }
 
     #[test]
-    fn ignores_other_assets() {
-        let txt = "oa1:xmr recipient_address=4xxx; recipient_name=x;";
-        assert_eq!(parse_oa1(txt, "oa1:btc"), None);
+    fn escapes_quotes_backslashes_and_controls() {
+        let records = vec!["a\"b\\c\nd\te\u{1}f".to_string()];
+        assert_eq!(json_string_array(&records), r#"["a\"b\\c\nd\te\u0001f"]"#);
     }
 
     #[test]
-    fn ignores_non_openalias() {
-        assert_eq!(parse_oa1("v=spf1 include:_spf.example.com ~all", "oa1:btc"), None);
+    fn encodes_empty_and_unicode() {
+        assert_eq!(json_string_array(&[]), "[]");
+        assert_eq!(json_string_array(&["münchen".to_string()]), "[\"münchen\"]");
     }
 }

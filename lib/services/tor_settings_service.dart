@@ -62,7 +62,9 @@ class TorSettingsService {
 
   Future<({InternetAddress host, int port})?> getProxy() async {
     if (_torMode == TorMode.builtIn) {
-      await TorService.sharedInstance.waitUntilConnected();
+      // No proxy rather than a hang: callers treat null as "Tor unavailable"
+      // and refuse to connect, instead of waiting forever.
+      if (!await TorService.sharedInstance.waitUntilConnected()) return null;
       return TorService.sharedInstance.getProxyInfo();
     } else if (_torMode == TorMode.external) {
       return (host: InternetAddress.loopbackIPv4, port: int.parse(_socksPort));

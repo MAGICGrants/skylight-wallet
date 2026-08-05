@@ -13,6 +13,7 @@ enum TorConnectionStatus { disconnected, connecting, connected }
 class TorService {
   Tor? _tor;
   String? _torDataDirPath;
+  Future<void>? _startInFlight;
 
   /// Current status. Same as that fired on the event bus.
   TorConnectionStatus get status => _status;
@@ -46,6 +47,24 @@ class TorService {
   ///
   /// Returns a Future that completes when the Tor service has started.
   Future<void> start() async {
+    if (_status == TorConnectionStatus.connected) return;
+
+    // Concurrent callers join the attempt already running rather than starting
+    // a second Tor.
+    final inFlight = _startInFlight;
+    if (inFlight != null) return inFlight;
+
+    final attempt = _start();
+    _startInFlight = attempt;
+
+    try {
+      await attempt;
+    } finally {
+      if (identical(_startInFlight, attempt)) _startInFlight = null;
+    }
+  }
+
+  Future<void> _start() async {
     _tor ??= Tor.instance;
     _torDataDirPath ??= (await getAppDir()).path;
 
@@ -78,14 +97,40 @@ class TorService {
     return;
   }
 
-  Future<void> waitUntilConnected() async {
-    final completer = Completer<void>();
+  /// Waits for Tor to come up, returning whether it did.
+  ///
+  /// Bounded, and it always cancels its poll timer. The previous version did
+  /// neither: a Tor that never connected left a 50ms timer polling for the life
+  /// of the isolate — one per call — and the future never completed at all, so
+  /// a caller without its own timeout waited forever.
+  ///
+  /// A start attempt that failed earlier is retried here, since nothing else
+  /// retries it and the app would otherwise stay wedged until a restart.
+  Future<bool> waitUntilConnected({Duration timeout = const Duration(seconds: 60)}) async {
+    if (status == TorConnectionStatus.connected) return true;
 
-    Timer.periodic(Duration(milliseconds: 50), (timer) {
-      if (status == TorConnectionStatus.connected) {
-        timer.cancel();
-        completer.complete();
-      }
+    if (_status == TorConnectionStatus.disconnected && _startInFlight == null) {
+      log(LogLevel.info, 'Tor is not running; retrying start.');
+      unawaited(start().catchError((Object e) => log(LogLevel.warn, 'Tor start retry failed: $e')));
+    }
+
+    final completer = Completer<bool>();
+    Timer? poll;
+    Timer? deadline;
+
+    void finish(bool connected) {
+      poll?.cancel();
+      deadline?.cancel();
+      if (!completer.isCompleted) completer.complete(connected);
+    }
+
+    poll = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (status == TorConnectionStatus.connected) finish(true);
+    });
+
+    deadline = Timer(timeout, () {
+      log(LogLevel.warn, 'Gave up waiting for Tor after ${timeout.inSeconds}s.');
+      finish(false);
     });
 
     return completer.future;

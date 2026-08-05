@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class MoneroAmount extends StatelessWidget {
   final double amount;
   final double maxFontSize;
+  final String? prefix;
 
   const MoneroAmount({
     super.key,
     required this.amount,
     required this.maxFontSize,
+    this.prefix,
   });
 
   @override
@@ -20,6 +22,11 @@ class MoneroAmount extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (prefix != null)
+          Text(
+            prefix!,
+            style: TextStyle(fontSize: maxFontSize, fontWeight: FontWeight.w700),
+          ),
         Text(
           biggerSlice,
           style: TextStyle(fontSize: maxFontSize, fontWeight: FontWeight.w700),

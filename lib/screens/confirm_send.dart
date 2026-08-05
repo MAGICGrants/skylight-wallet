@@ -4,6 +4,7 @@ import 'package:monero/src/monero.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
@@ -12,12 +13,16 @@ class ConfirmSendScreenArgs {
   MoneroPendingTransaction tx;
   String destinationAddress;
   String? destinationOpenAlias;
+
+  /// The recipient name published alongside the OpenAlias record, if any.
+  String? destinationOpenAliasName;
   String? destinationContactName;
 
   ConfirmSendScreenArgs({
     required this.tx,
     required this.destinationAddress,
     this.destinationOpenAlias,
+    this.destinationOpenAliasName,
     this.destinationContactName,
   });
 }
@@ -35,6 +40,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   double _amount = 0.0;
   double _fee = 0.0;
   String? _destinationOpenAlias;
+  String? _destinationOpenAliasName;
   String _destinationAddress = '';
   List<String> _destinationAddressSliced = [];
   String? _destinationContactName;
@@ -63,6 +69,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
       _amount = doubleAmountFromInt(args.tx.amount());
       _fee = doubleAmountFromInt(args.tx.fee());
       _destinationOpenAlias = args.destinationOpenAlias;
+      _destinationOpenAliasName = args.destinationOpenAliasName;
       _destinationAddress = args.destinationAddress;
       _destinationAddressSliced = _sliceAddress(args.destinationAddress);
       _destinationContactName = args.destinationContactName;
@@ -126,7 +133,6 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final fiatRate = context.watch<FiatRateModel>();
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
     final amountFiat = fiatRate.rate is double ? _amount * fiatRate.rate! : null;
@@ -194,9 +200,30 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                 if (_destinationOpenAlias is String)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('OpenAlias', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(_destinationOpenAlias!),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(_destinationOpenAlias!, textAlign: TextAlign.end),
+                            // The name the recipient publishes with the record,
+                            // so the user can sanity-check who they resolved to.
+                            // Recipient-supplied text: sanitized and capped by
+                            // the model, and bounded here so it cannot push the
+                            // address off the screen.
+                            if (_destinationOpenAliasName is String)
+                              Text(
+                                _destinationOpenAliasName!,
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 Row(
@@ -240,21 +267,11 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
                     ),
                   ],
                 ),
-                FilledButton.icon(
+                LoadingButton(
+                  isLoading: _isLoading,
                   onPressed: _confirmSend,
-                  icon: !_isLoading
-                      ? Icon(Icons.arrow_outward_rounded)
-                      : SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: isDarkTheme
-                                ? Theme.of(context).colorScheme.onPrimary
-                                : Colors.white,
-                          ),
-                        ),
-                  label: Text(i18n.sendSendButton),
+                  icon: Icons.arrow_outward_rounded,
+                  label: i18n.sendSendButton,
                 ),
               ],
             ),

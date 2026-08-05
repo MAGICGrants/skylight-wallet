@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +8,9 @@ import 'package:polyseed/polyseed.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
+import 'package:skylight_wallet/util/restore_qr.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
 
@@ -16,9 +21,11 @@ class RestoreWalletScreen extends StatefulWidget {
   State<RestoreWalletScreen> createState() => _RestoreWalletScreenState();
 }
 
-class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
+class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureScreenMixin {
   final _mnemonicController = TextEditingController();
   final _restoreHeightController = TextEditingController();
+  final _restoreDateController = TextEditingController();
+  DateTime _restoreDate = DateTime.now();
   bool _isPolyseed = false;
   bool _isLoading = false;
   String? _mnemonicError;
@@ -28,7 +35,30 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   void dispose() {
     _mnemonicController.dispose();
     _restoreHeightController.dispose();
+    _restoreDateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _scanQrCode() async {
+    final result = await Navigator.pushNamed(context, '/scan_qr');
+    if (result is! String) return;
+
+    final parsed = parseRestoreQr(result);
+    if (parsed == null) return;
+
+    setState(() {
+      _mnemonicController.text = parsed.seed;
+      _mnemonicError = null;
+
+      if (parsed.restoreHeight != null) {
+        _restoreHeightController.text = parsed.restoreHeight.toString();
+      }
+    });
+
+    // No explicit height in the QR — derive it from a polyseed if possible.
+    if (parsed.restoreHeight == null) {
+      _calculatePolyseedHeight();
+    }
   }
 
   Future<void> _restore() async {
@@ -116,6 +146,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
         setState(() {
           _isPolyseed = false;
           _restoreHeightController.text = '';
+          _restoreDateController.text = '';
         });
       }
       return;
@@ -128,13 +159,35 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
     );
 
     final birthday = polyseed.birthday;
-    final restoreHeight = getHeightByDate(
-      date: DateTime.fromMillisecondsSinceEpoch(birthday * 1000),
-    );
+    final birthdayDate = DateTime.fromMillisecondsSinceEpoch(birthday * 1000);
+    final restoreHeight = getHeightByDate(date: birthdayDate);
 
     setState(() {
       _isPolyseed = true;
+      _restoreDate = birthdayDate;
+      _restoreDateController.text = _formatDate(birthdayDate);
       _restoreHeightController.text = restoreHeight.toString();
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _restoreDate,
+      firstDate: DateTime(2014, 4),
+      lastDate: DateTime.now(),
+    );
+    if (picked == null) return;
+
+    setState(() {
+      _restoreDate = picked;
+      _restoreDateController.text = _formatDate(picked);
+      _restoreHeightController.text = getHeightByDate(date: picked).toString();
+      _restoreHeightError = null;
     });
   }
 
@@ -159,7 +212,6 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text('Skylight Monero Wallet')),
@@ -191,6 +243,25 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                     labelText: i18n.restoreWalletSeedLabel,
                     errorText: _mnemonicError,
                     border: OutlineInputBorder(),
+                    suffixIcon: (Platform.isAndroid || Platform.isIOS)
+                        ? IconButton(
+                            icon: Icon(Icons.qr_code),
+                            onPressed: _scanQrCode,
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _restoreDateController,
+                  readOnly: true,
+                  onTap: _pickDate,
+                  decoration: InputDecoration(
+                    labelText: i18n.restoreWalletRestoreDateLabel,
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
                   ),
                 ),
               ),
@@ -213,21 +284,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
-                  FilledButton.icon(
+                  LoadingButton(
+                    isLoading: _isLoading,
                     onPressed: _restore,
-                    label: Text(i18n.restoreWalletRestoreButton),
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isDarkTheme
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Colors.white,
-                            ),
-                          )
-                        : null,
+                    label: i18n.restoreWalletRestoreButton,
                   ),
                 ],
               ),

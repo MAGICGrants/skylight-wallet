@@ -41,6 +41,7 @@ import 'package:skylight_wallet/screens/unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
@@ -76,11 +77,16 @@ void main() async {
       if (Platform.isAndroid) {
         copyCacertToAppDocumentsDir();
         registerPeriodicTasks();
+        startForegroundSyncIfEnabled();
         NotificationService().init();
       }
 
       if (Platform.isIOS) {
         await cleanTorDirectoriesOnIOS();
+        // Background sync here is LWS-only and decided by the connection; see
+        // periodic_tasks._applyIosBackgroundTasks.
+        registerPeriodicTasks();
+        NotificationService().init();
       }
 
       cleanOldLogFiles();
@@ -100,8 +106,10 @@ void main() async {
 Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
   if (await wallet.hasExistingWallet()) {
     if (isMobile) {
-      await wallet.openExisting();
+      // Load the persisted connection first so the wallet opens the file for
+      // the correct mode (LWS vs node).
       await wallet.loadPersistedConnection();
+      await wallet.openExisting();
       wallet.load();
     }
 
@@ -124,94 +132,75 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => FiatRateModel()),
         ChangeNotifierProvider(create: (context) => ContactModel()),
       ],
-      child: Consumer2<LanguageModel, ThemeModel>(
-        builder: (context, languageProvider, themeProvider, child) {
-          final wallet = Provider.of<WalletModel>(context, listen: false);
-          final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+      child: const _AppRoot(),
+    );
+  }
+}
 
-          return FutureBuilder(
-            // We need to check for wallet existence to determine the correct initial route,
-            // but we'll do this quickly without loading the wallet to avoid startup delay.
-            future: Future.wait([
-              SharedPreferences.getInstance(),
-              loadExistingWalletIfExists(wallet),
-            ]),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+class _AppRoot extends StatefulWidget {
+  const _AppRoot();
+
+  @override
+  State<_AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<_AppRoot> {
+  // Started once, on the first build. Building it inside the builder would
+  // re-run it on every theme/language change, opening the wallet again — a
+  // second wallet on the same file, with its own sync loop, while the first is
+  // left running.
+  Future<List<Object>>? _startup;
+  // Services that must fire once the startup work is done, not on every build.
+  var _startedServices = false;
+
+  Future<List<Object>> _runStartup() {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+
+    // We need to check for wallet existence to determine the correct initial route,
+    // but we'll do this quickly without loading the wallet to avoid startup delay.
+    return Future.wait([SharedPreferences.getInstance(), loadExistingWalletIfExists(wallet)]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _startup ??= _runStartup();
+
+    return Consumer2<LanguageModel, ThemeModel>(
+      builder: (context, languageProvider, themeProvider, child) {
+        final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+
+        return FutureBuilder(
+          future: _startup,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+              final sharedPreferences = snapshot.data![0] as SharedPreferences;
+              final walletExists = snapshot.data![1] as bool;
+
+              final theme = sharedPreferences.getString(SharedPreferencesKeys.theme) ?? 'system';
+
+              final appLockEnabled =
+                  sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
+
+              final initialRoute = walletExists
+                  ? appLockEnabled || isDesktop
+                        ? '/unlock'
+                        : '/wallet_home'
+                  : '/welcome';
+
+              if (!_startedServices) {
+                _startedServices = true;
                 TorSettingsService.sharedInstance.loadSettings();
                 TorService.sharedInstance.start();
-
-                final sharedPreferences = snapshot.data![0] as SharedPreferences;
-                final walletExists = snapshot.data![1] as bool;
-
-                final theme = sharedPreferences.getString(SharedPreferencesKeys.theme) ?? 'system';
-
-                final appLockEnabled =
-                    sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
-
-                final initialRoute = walletExists
-                    ? appLockEnabled || isDesktop
-                          ? '/unlock'
-                          : '/wallet_home'
-                    : '/welcome';
 
                 if (walletExists) {
                   fiatRate.startService();
                 }
-
-                return MaterialApp(
-                  title: 'Skylight Monero Wallet',
-                  localizationsDelegates: AppLocalizations.localizationsDelegates,
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-                  darkTheme: ThemeData(
-                    colorScheme: ColorScheme.fromSeed(
-                      seedColor: Colors.blue,
-                      brightness: Brightness.dark,
-                    ),
-                  ),
-                  themeMode: theme == 'dark'
-                      ? ThemeMode.dark
-                      : theme == 'light'
-                      ? ThemeMode.light
-                      : ThemeMode.system,
-                  initialRoute: initialRoute,
-                  locale: Locale.fromSubtags(languageCode: languageProvider.language),
-                  routes: {
-                    '/welcome': (context) => WelcomeScreen(),
-                    '/tor_info': (context) => TorInfoScreen(),
-                    '/tor_settings': (context) => TorSettingsScreen(),
-                    '/connection_setup': (context) => ConnectionSetupScreen(),
-                    '/fiat_api_setup': (context) => FiatApiSetupScreen(),
-                    '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
-                    '/create_wallet': (context) => CreateWalletScreen(),
-                    '/generate_seed': (context) => GenerateSeedScreen(),
-                    '/lws_details': (context) => LwsDetailsScreen(),
-                    '/restore_warning': (context) => RestoreWarningScreen(),
-                    '/restore_wallet': (context) => RestoreWalletScreen(),
-                    '/unlock': (context) => UnlockScreen(),
-                    '/wallet_home': (context) => WalletHomeScreen(),
-                    '/settings': (context) => SettingsScreen(),
-                    '/lws_keys': (context) => LwsKeysScreen(),
-                    '/secret_keys': (context) => SecretKeysScreen(),
-                    '/send': (context) => SendScreen(),
-                    '/confirm_send': (context) => ConfirmSendScreen(),
-                    '/scan_qr': (context) => ScanQrScreen(),
-                    '/receive': (context) => ReceiveScreen(),
-                    '/address_book': (context) => AddressBookScreen(),
-                    '/terms_of_service': (context) => TermsOfService(),
-                    '/privacy_policy': (context) => PrivacyPolicy(),
-                  },
-                );
-              }
-
-              if (snapshot.data == null) {
-                log(LogLevel.error, 'Future builder snapshot data is null.');
-                log(LogLevel.error, snapshot.error.toString());
               }
 
               return MaterialApp(
                 title: 'Skylight Monero Wallet',
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
                 theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
                 darkTheme: ThemeData(
                   colorScheme: ColorScheme.fromSeed(
@@ -219,13 +208,60 @@ class MyApp extends StatelessWidget {
                     brightness: Brightness.dark,
                   ),
                 ),
-                themeMode: ThemeMode.system,
-                builder: (context, child) => Scaffold(),
+                themeMode: theme == 'dark'
+                    ? ThemeMode.dark
+                    : theme == 'light'
+                    ? ThemeMode.light
+                    : ThemeMode.system,
+                initialRoute: initialRoute,
+                locale: Locale.fromSubtags(languageCode: languageProvider.language),
+                routes: {
+                  '/welcome': (context) => WelcomeScreen(),
+                  '/tor_info': (context) => TorInfoScreen(),
+                  '/tor_settings': (context) => TorSettingsScreen(),
+                  '/connection_setup': (context) => ConnectionSetupScreen(),
+                  '/fiat_api_setup': (context) => FiatApiSetupScreen(),
+                  '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
+                  '/create_wallet': (context) => CreateWalletScreen(),
+                  '/generate_seed': (context) => GenerateSeedScreen(),
+                  '/lws_details': (context) => LwsDetailsScreen(),
+                  '/restore_warning': (context) => RestoreWarningScreen(),
+                  '/restore_wallet': (context) => RestoreWalletScreen(),
+                  '/unlock': (context) => UnlockScreen(),
+                  '/wallet_home': (context) => WalletHomeScreen(),
+                  '/settings': (context) => SettingsScreen(),
+                  '/lws_keys': (context) => LwsKeysScreen(),
+                  '/secret_keys': (context) => SecretKeysScreen(),
+                  '/send': (context) => SendScreen(),
+                  '/confirm_send': (context) => ConfirmSendScreen(),
+                  '/scan_qr': (context) => ScanQrScreen(),
+                  '/receive': (context) => ReceiveScreen(),
+                  '/address_book': (context) => AddressBookScreen(),
+                  '/terms_of_service': (context) => TermsOfService(),
+                  '/privacy_policy': (context) => PrivacyPolicy(),
+                },
               );
-            },
-          );
-        },
-      ),
+            }
+
+            if (snapshot.hasError) {
+              log(LogLevel.error, 'Startup failed: ${snapshot.error}');
+            }
+
+            return MaterialApp(
+              title: 'Skylight Monero Wallet',
+              theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
+              darkTheme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.blue,
+                  brightness: Brightness.dark,
+                ),
+              ),
+              themeMode: ThemeMode.system,
+              builder: (context, child) => Scaffold(),
+            );
+          },
+        );
+      },
     );
   }
 }

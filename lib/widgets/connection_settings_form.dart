@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:skylight_wallet/services/foreground_sync_service.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -12,6 +15,8 @@ import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
+
+const connectionTypeOptions = ['lws', 'node'];
 
 final ipAddressRegex = RegExp(
   r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
@@ -46,12 +51,85 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
   bool _useTor = false;
   bool _useSsl = false;
+  String _connectionType = 'lws';
   bool _hasTested = false;
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
   String? _errorMessage;
+  bool _backgroundSyncEnabled = false;
+  bool _foregroundSyncEnabled = false;
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
+
+  bool get _isNode => _connectionType == 'node';
+
+  /// Background/continuous sync only helps a full-node connection (the slow
+  /// on-device scan); LWS syncs server-side. Android-only.
+  bool get _showSyncOptions => Platform.isAndroid && _isNode;
+
+  Future<void> _loadSyncPrefs() async {
+    final bg =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
+        false;
+    final fg =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.foregroundSyncEnabled) ??
+        false;
+    if (mounted) {
+      setState(() {
+        _backgroundSyncEnabled = bg;
+        _foregroundSyncEnabled = fg;
+      });
+    }
+  }
+
+  void _setBackgroundSyncEnabled(bool value) async {
+    setState(() => _backgroundSyncEnabled = value);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, value);
+    await applyBackgroundTaskRegistration();
+  }
+
+  void _setForegroundSyncEnabled(bool value) async {
+    setState(() => _foregroundSyncEnabled = value);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, value);
+    if (value) {
+      await startForegroundSync();
+    } else {
+      await stopForegroundSync();
+    }
+  }
+
+  Future<void> _disableSync() async {
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, false);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, false);
+    await applyBackgroundTaskRegistration();
+    await stopForegroundSync();
+    if (mounted) {
+      setState(() {
+        _backgroundSyncEnabled = false;
+        _foregroundSyncEnabled = false;
+      });
+    }
+  }
+
+  Widget _syncCheckbox({
+    required String label,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return CheckboxListTile(
+      title: Text(label),
+      value: value,
+      onChanged: (v) => onChanged(v ?? false),
+      controlAffinity: ListTileControlAffinity.leading,
+      contentPadding: EdgeInsets.zero,
+      secondary: Tooltip(
+        message: description,
+        triggerMode: TooltipTriggerMode.tap,
+        child: Icon(Icons.help_outline, size: 20),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -74,13 +152,18 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     setState(() {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
-      _useTor = conn.useTor;
+      _useTor = conn.useTor && TorSettingsService.sharedInstance.torMode != TorMode.disabled;
       _useSsl = conn.useSsl;
+      _connectionType = connectionTypeOptions.contains(conn.connectionType)
+          ? conn.connectionType
+          : 'lws';
     });
 
     if (conn.useTor && TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
       _pollTorStatus();
     }
+
+    if (_showSyncOptions) _loadSyncPrefs();
   }
 
   String _cleanAddress(String value) {
@@ -92,7 +175,41 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       [ipAddressRegex.pattern, onionAddressRegex.pattern, domainAddressRegex.pattern].join('|'),
     );
 
-    return connectionUrlRegex.hasMatch(value);
+    if (!connectionUrlRegex.hasMatch(value)) return false;
+    return !_isNonLocalIp(value);
+  }
+
+  /// Private/loopback IPv4 ranges we consider "local network".
+  bool _isLocalIp(String host) {
+    if (host.startsWith('192.168.') || host.startsWith('10.') || host.startsWith('127.')) {
+      return true;
+    }
+    final match = RegExp(r'^172\.(\d{1,3})\.').firstMatch(host);
+    if (match != null) {
+      final second = int.tryParse(match.group(1)!) ?? 0;
+      return second >= 16 && second <= 31;
+    }
+    return false;
+  }
+
+  /// Public IP literals aren't allowed: use a domain (SSL) or a local IP.
+  bool _isNonLocalIp(String value) {
+    final host = value.split(':').first;
+    return ipAddressRegex.hasMatch(value) && !_isLocalIp(host);
+  }
+
+  bool _sslForAddress(String value) {
+    final host = value.split(':').first;
+    if (onionAddressRegex.hasMatch(value)) return false;
+    if (ipAddressRegex.hasMatch(value)) return false;
+    if (host.endsWith('.local')) return false;
+    return domainAddressRegex.hasMatch(value);
+  }
+
+  bool _isLocalAddress(String value) {
+    final host = value.split(':').first;
+    if (ipAddressRegex.hasMatch(value)) return _isLocalIp(host);
+    return host.endsWith('.local');
   }
 
   Future<void> _scanQrCode() async {
@@ -121,36 +238,46 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
   }
 
-  void _onAddressChange(String value) {
-    value = _cleanAddress(value);
+  void _onAddressChange(String rawValue) {
+    final hadProtocol = RegExp(r'https?:\/\/').hasMatch(rawValue);
+    final value = _cleanAddress(rawValue);
+    final i18n = AppLocalizations.of(context)!;
 
-    var useTor = false;
-    var useSsl = false;
-
-    if (ipAddressRegex.hasMatch(value)) {
-      useTor = false;
-      useSsl = false;
-    } else if (onionAddressRegex.hasMatch(value)) {
-      useSsl = false;
-      useTor = true;
-    } else if (domainAddressRegex.hasMatch(value)) {
-      useTor = false;
-      useSsl = true;
+    // Strip any typed http(s):// from the field itself so it's ignored.
+    if (_addressController.text != value) {
+      _addressController.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
     }
 
-    if (value.startsWith('https://')) {
+    final useTor = onionAddressRegex.hasMatch(value);
+    var useSsl = _sslForAddress(value);
+
+    if (rawValue.startsWith('https://')) {
       useSsl = true;
-    } else if (value.startsWith('http://')) {
+    } else if (rawValue.startsWith('http://')) {
       useSsl = false;
     }
 
     _setUseSsl(useSsl);
-    _setUseTor(useTor);
+    // Never auto-disable Tor if the user already turned it on.
+    _setUseTor(useTor || _useTor);
 
     setState(() {
       _hasTested = false;
-      _errorMessage = null;
+      _errorMessage = _isNonLocalIp(value) ? i18n.connectionRemoteIpNotAllowed : null;
     });
+
+    if (hadProtocol) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(useSsl ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp),
+          ),
+        );
+    }
   }
 
   void _onProxyPortChange(String value) {
@@ -167,7 +294,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     setState(() {
       _useTor = value ?? false;
-      _useSsl = value == true ? false : _useSsl;
       _hasTested = false;
     });
 
@@ -201,88 +327,103 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     });
   }
 
+  void _setConnectionType(String value) {
+    setState(() {
+      _connectionType = value;
+      _hasTested = false;
+      _errorMessage = null;
+    });
+    if (value == 'node' && Platform.isAndroid) _loadSyncPrefs();
+  }
+
+  String _connectionTypeLabel(AppLocalizations i18n, String type) {
+    return type == 'node' ? i18n.connectionTypeNode : i18n.connectionTypeLws;
+  }
+
+  /// Resolves the SOCKS proxy port to pass to `wallet.testConnection`. When Tor
+  /// is enabled this comes from the running TorService; otherwise it's the
+  /// optional custom HTTP/SOCKS proxy field.
+  Future<String?> _resolveProxyPort() async {
+    if (_useTor) {
+      final proxyInfo = await TorSettingsService.sharedInstance.getProxy();
+      return proxyInfo?.port.toString();
+    }
+    final custom = _customProxyPortController.text.trim();
+    return custom.isEmpty ? null : custom;
+  }
+
   Future _testConnection() async {
     final i18n = AppLocalizations.of(context)!;
-    final proto = _useSsl ? 'https' : 'http';
+    final wallet = Provider.of<WalletModel>(context, listen: false);
     final daemonAddress = _cleanAddress(_addressController.text);
-    final customProxyPort = _customProxyPortController.text;
 
-    // Handle demo mode
-    if (isDemoMode) {
-      if (daemonAddress == 'demo') {
-        setState(() {
-          _hasTested = true;
-          _connectionSuccess = true;
-        });
-        return;
-      }
+    if (isDemoMode && daemonAddress == 'demo') {
+      setState(() {
+        _hasTested = true;
+        _connectionSuccess = true;
+      });
+      return;
+    }
+
+    if (_isNonLocalIp(daemonAddress)) {
+      setState(() {
+        _hasTested = false;
+        _errorMessage = i18n.connectionRemoteIpNotAllowed;
+      });
+      return;
+    }
+
+    if (_useTor && TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(i18n.lwsSetupTorDisabledError)));
+      return;
     }
 
     setState(() {
       _hasTested = true;
       _connectionTestIsLoading = true;
+      _connectionSuccess = false;
+      _errorMessage = null;
     });
 
-    final url = '$proto://$daemonAddress/get_address_info';
-
     try {
-      if (_useTor) {
-        if (!mounted) {
-          return;
-        }
-
-        final torSettings = TorSettingsService.sharedInstance;
-
-        if (torSettings.torMode == TorMode.disabled) {
-          // show error toast
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.lwsSetupTorDisabledError)));
-          return;
-        }
-
-        final proxyInfo = await torSettings.getProxy();
-
-        final response = await makeSocksHttpRequest(
-          'POST',
-          url,
-          proxyInfo!,
-        ).timeout(Duration(seconds: 20));
-
-        setState(() {
-          _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
-        });
-      } else {
-        var httpClient = HttpClient();
-
-        if (customProxyPort != '') {
-          httpClient = httpClient
-            ..findProxy = (uri) {
-              return "PROXY localhost:$customProxyPort";
-            };
-        }
-
-        final request = await httpClient.postUrl(Uri.parse(url));
-        final response = await request.close().timeout(Duration(seconds: 10));
-
-        setState(() {
-          _connectionSuccess = response.statusCode == HttpStatus.internalServerError;
-        });
-      }
+      final proxyPort = await _resolveProxyPort();
+      await wallet.testConnection(
+        address: daemonAddress,
+        proxyPort: proxyPort,
+        useSsl: _useSsl,
+        useTor: _useTor,
+        connectionType: _connectionType,
+      );
+      if (!mounted) return;
+      setState(() {
+        _connectionSuccess = true;
+      });
     } catch (error) {
+      log(LogLevel.warn, 'testConnection failed: $error');
+      if (!mounted) return;
       setState(() {
         _connectionSuccess = false;
       });
     } finally {
-      setState(() {
-        _connectionTestIsLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _connectionTestIsLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _saveConnection() async {
+    final i18n = AppLocalizations.of(context)!;
     final daemonAddress = _cleanAddress(_addressController.text);
     final proxyAddress = _customProxyPortController.text;
+
+    if (_isNonLocalIp(daemonAddress)) {
+      setState(() => _errorMessage = i18n.connectionRemoteIpNotAllowed);
+      return;
+    }
 
     final wallet = Provider.of<WalletModel>(context, listen: false);
 
@@ -291,30 +432,113 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       proxyPort: proxyAddress,
       useTor: _useTor,
       useSsl: _useSsl,
+      connectionType: _connectionType,
     );
 
     await wallet.persistCurrentConnection();
+
+    // Sync only applies to a node connection. If this is saved as LWS, turn any
+    // enabled sync off so it isn't left running with no visible toggle.
+    if (_connectionType != 'node') {
+      await _disableSync();
+    }
+
+    // What background work is possible depends on the connection that was just
+    // saved — on iOS, whether it is LWS at all and whether it uses Tor — so the
+    // schedule is rebuilt for every save, not only when a sync toggle moved.
+    await applyBackgroundTaskRegistration();
+
     await widget.onBeforeSave?.call();
 
     widget.onSaved();
+  }
+
+  Widget _statusChip({required Widget icon, required String label, required Color color}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        icon,
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConnectionIndicators(AppLocalizations i18n, TorMode torMode) {
+    final chips = <Widget>[];
+
+    if (_useTor) {
+      chips.add(
+        _statusChip(
+          icon: SvgPicture.asset('assets/icons/tor.svg', width: 13, height: 13),
+          label: torMode == TorMode.builtIn
+              ? i18n.connectionIndicatorTorInternal
+              : i18n.connectionIndicatorTorExternal(TorSettingsService.sharedInstance.socksPort),
+          color: Colors.purple,
+        ),
+      );
+    }
+
+    if (_useSsl) {
+      chips.add(
+        _statusChip(
+          icon: Icon(Icons.lock, size: 13, color: Colors.green),
+          label: i18n.connectionIndicatorHttps,
+          color: Colors.green,
+        ),
+      );
+    } else if (_isLocalAddress(_cleanAddress(_addressController.text))) {
+      chips.add(
+        _statusChip(
+          icon: Icon(Icons.lock_open, size: 13, color: Colors.grey),
+          label: i18n.connectionIndicatorLocal,
+          color: Colors.grey,
+        ),
+      );
+    }
+
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Center(
+      child: Wrap(spacing: 16, alignment: WrapAlignment.center, children: chips),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
+    final addressHint = _isNode ? i18n.connectionNodeAddressHint : i18n.lwsSetupAddressHint;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 10,
       children: [
+        Center(
+          child: SegmentedButton<String>(
+            segments: connectionTypeOptions
+                .map(
+                  (type) => ButtonSegment<String>(
+                    value: type,
+                    label: Text(_connectionTypeLabel(i18n, type)),
+                  ),
+                )
+                .toList(),
+            selected: {_connectionType},
+            showSelectedIcon: false,
+            onSelectionChanged: (selection) => _setConnectionType(selection.first),
+          ),
+        ),
         TextFormField(
           controller: _addressController,
           onChanged: _onAddressChange,
           decoration: InputDecoration(
             labelText: i18n.address,
-            hintText: i18n.lwsSetupAddressHint,
+            hintText: addressHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
             suffixIcon: Row(
               mainAxisSize: MainAxisSize.min,
@@ -348,31 +572,33 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
           keyboardType: TextInputType.number,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
         ),
-        CheckboxListTile(
-          title: Text(i18n.lwsSetupUseTorLabel),
-          value: _useTor,
-          onChanged: _useSsl || torMode == TorMode.disabled ? null : _setUseTor,
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-        ),
-        CheckboxListTile(
-          title: Text(i18n.lwsSetupUseSslLabel),
-          value: _useSsl,
-          onChanged: !_useTor ? _setUseSsl : null,
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-        ),
-        if (_useTor)
-          Center(
-            child: Text(
-              torMode == TorMode.builtIn
-                  ? i18n.lwsSetupUsingInternalTor
-                  : i18n.lwsSetupUsingExternalTor(
-                      '127.0.0.1:${TorSettingsService.sharedInstance.socksPort}',
-                    ),
-              style: TextStyle(color: Colors.purple, fontStyle: FontStyle.italic),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CheckboxListTile(
+              title: Text(i18n.lwsSetupUseTorLabel),
+              value: _useTor,
+              onChanged: torMode == TorMode.disabled ? null : _setUseTor,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
             ),
-          ),
+            if (_showSyncOptions) ...[
+              _syncCheckbox(
+                label: i18n.settingsBackgroundSyncLabel,
+                description: i18n.settingsBackgroundSyncDescription,
+                value: _backgroundSyncEnabled,
+                onChanged: _setBackgroundSyncEnabled,
+              ),
+              _syncCheckbox(
+                label: i18n.settingsForegroundSyncLabel,
+                description: i18n.settingsForegroundSyncDescription,
+                value: _foregroundSyncEnabled,
+                onChanged: _setForegroundSyncEnabled,
+              ),
+            ],
+          ],
+        ),
+        _buildConnectionIndicators(i18n, torMode),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 10,

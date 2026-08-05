@@ -6,6 +6,7 @@ import 'package:skylight_wallet/util/logging.dart';
 final dateFormat = DateFormat('yyyy-MM');
 
 final dates = {
+  "2014-4": 0,
   "2014-5": 18844,
   "2014-6": 65406,
   "2014-7": 108882,

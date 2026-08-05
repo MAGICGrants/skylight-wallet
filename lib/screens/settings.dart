@@ -68,6 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _setTxNotificationsEnabled(bool value) async {
+    final wallet = Provider.of<WalletModel>(context, listen: false);
+
     setState(() {
       _newTxNotificationsEnabled = value;
     });
@@ -76,12 +78,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final isAllowed = await NotificationService().promptPermission();
 
       if (isAllowed) {
+        // Start from now, so switching this on doesn't announce the backlog of
+        // everything already received.
+        await wallet.markExistingTxsAsNotified();
         await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
-        await registerTxNotifierTaskIfAllowed();
+        await applyBackgroundTaskRegistration();
       }
     } else {
       await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
-      await unregisterPeriodicTasks();
+      await applyBackgroundTaskRegistration();
     }
   }
 
@@ -391,7 +396,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     void onSaved() {
       final wallet = Provider.of<WalletModel>(context, listen: false);
-      wallet.load();
+      // Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
+      wallet.applyConnectionChange();
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
       fiatRate.startService();
@@ -404,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         constraints: BoxConstraints.tightFor(width: dialogWidth),
         insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        title: Text(i18n.settingsLwsSettingsLabel),
+        title: Text(i18n.settingsConnectionSettingsLabel),
         content: ConnectionSettingsForm(
           saveButtonLabel: i18n.torSettingsSaveButton,
           onSaved: onSaved,
@@ -470,11 +476,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Switch(value: _appLockEnabled, onChanged: _setAppLockEnabled),
                 ],
               ),
-            if (Platform.isAndroid)
+            // On iOS this is offered for LWS only: a remote node can't be
+            // scanned inside either background window iOS grants.
+            if (Platform.isAndroid || (Platform.isIOS && !context.watch<WalletModel>().isNodeMode))
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(i18n.settingsNotifyNewTxsLabel, style: TextStyle(fontSize: 18)),
+                        if (Platform.isIOS)
+                          Text(
+                            i18n.settingsNotifyNewTxsDescriptionIos,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                      ],
+                    ),
+                  ),
                   Switch(value: _newTxNotificationsEnabled, onChanged: _setTxNotificationsEnabled),
                 ],
               ),
@@ -513,7 +533,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(i18n.settingsLwsSettingsLabel, style: TextStyle(fontSize: 18)),
+                Text(i18n.settingsConnectionSettingsLabel, style: TextStyle(fontSize: 18)),
                 TextButton.icon(
                   onPressed: _showConnectionSettingsDialog,
                   icon: Icon(Icons.dns),

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/widgets/loading_button.dart';
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});
@@ -75,8 +76,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
       final enteredPassword = _passwordController.text;
       final wallet = Provider.of<WalletModel>(context, listen: false);
 
-      await wallet.openExisting(desktopWalletPassword: enteredPassword);
       await wallet.loadPersistedConnection();
+      await wallet.openExisting(desktopWalletPassword: enteredPassword);
       wallet.load();
 
       if (mounted) {
@@ -104,7 +105,6 @@ class _UnlockScreenState extends State<UnlockScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 
     return Scaffold(
@@ -163,20 +163,10 @@ class _UnlockScreenState extends State<UnlockScreen> {
                               ),
                               onFieldSubmitted: (_) => _unlockWithPassword(),
                             ),
-                            FilledButton(
-                              onPressed: _isLoading ? null : _unlockWithPassword,
-                              child: _isLoading
-                                  ? SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: isDarkTheme
-                                            ? Theme.of(context).colorScheme.onPrimary
-                                            : Colors.white,
-                                      ),
-                                    )
-                                  : Text(i18n.unlockButton),
+                            LoadingButton(
+                              isLoading: _isLoading,
+                              onPressed: _unlockWithPassword,
+                              label: i18n.unlockButton,
                             ),
                           ],
                         ),

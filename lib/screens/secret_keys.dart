@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
 
-class SecretKeysScreen extends StatelessWidget {
+class SecretKeysScreen extends StatefulWidget {
   const SecretKeysScreen({super.key});
 
+  @override
+  State<SecretKeysScreen> createState() => _SecretKeysScreenState();
+}
+
+class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMixin {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -36,8 +42,7 @@ class SecretKeysScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   suffixIcon: IconButton(
-                    onPressed: () =>
-                        Clipboard.setData(ClipboardData(text: legacySeed)),
+                    onPressed: () => SecureClipboard.copy(legacySeed),
                     icon: Icon(Icons.copy),
                   ),
                 ),
@@ -51,8 +56,7 @@ class SecretKeysScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   suffixIcon: IconButton(
-                    onPressed: () =>
-                        Clipboard.setData(ClipboardData(text: polyseed)),
+                    onPressed: () => SecureClipboard.copy(polyseed),
                     icon: Icon(Icons.copy),
                   ),
                 ),
@@ -66,8 +70,7 @@ class SecretKeysScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   suffixIcon: IconButton(
-                    onPressed: () =>
-                        Clipboard.setData(ClipboardData(text: publicSpendKey)),
+                    onPressed: () => SecureClipboard.copy(publicSpendKey),
                     icon: Icon(Icons.copy),
                   ),
                 ),
@@ -81,8 +84,7 @@ class SecretKeysScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   suffixIcon: IconButton(
-                    onPressed: () =>
-                        Clipboard.setData(ClipboardData(text: secretSpendKey)),
+                    onPressed: () => SecureClipboard.copy(secretSpendKey),
                     icon: Icon(Icons.copy),
                   ),
                 ),
@@ -96,8 +98,7 @@ class SecretKeysScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   suffixIcon: IconButton(
-                    onPressed: () =>
-                        Clipboard.setData(ClipboardData(text: publicViewKey)),
+                    onPressed: () => SecureClipboard.copy(publicViewKey),
                     icon: Icon(Icons.copy),
                   ),
                 ),

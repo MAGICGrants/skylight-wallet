@@ -204,13 +204,13 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'LWS Setup'**
+  /// **'Connection Setup'**
   String get lwsSetupTitle;
 
   /// No description provided for @lwsSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Enter the address of your Monero light-wallet server (LWS).'**
+  /// **'Connect to a Monero light-wallet server (LWS) or your own full node.'**
   String get lwsSetupDescription;
 
   /// No description provided for @lwsSetupAddressHint.
@@ -222,7 +222,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupProxyPortLabel.
   ///
   /// In en, this message translates to:
-  /// **'HTTP Proxy Port (optional)'**
+  /// **'HTTP Proxy Port (Optional)'**
   String get lwsSetupProxyPortLabel;
 
   /// No description provided for @lwsSetupProxyPortHint.
@@ -236,12 +236,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use Tor'**
   String get lwsSetupUseTorLabel;
-
-  /// No description provided for @lwsSetupUseSslLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Use SSL'**
-  String get lwsSetupUseSslLabel;
 
   /// No description provided for @lwsSetupTestConnectionButton.
   ///
@@ -260,6 +254,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get lwsSetupContinueButton;
+
+  /// No description provided for @connectionTypeLws.
+  ///
+  /// In en, this message translates to:
+  /// **'Light Wallet Server'**
+  String get connectionTypeLws;
+
+  /// No description provided for @connectionTypeNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Monero Node'**
+  String get connectionTypeNode;
+
+  /// No description provided for @connectionNodeAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. node.example.com:18081'**
+  String get connectionNodeAddressHint;
+
+  /// No description provided for @connectionRemoteIpNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.'**
+  String get connectionRemoteIpNotAllowed;
+
+  /// No description provided for @connectionProtocolHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing protocol. Using HTTPS for domains.'**
+  String get connectionProtocolHttps;
+
+  /// No description provided for @connectionProtocolHttp.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing protocol. Using HTTP for local addresses.'**
+  String get connectionProtocolHttp;
+
+  /// No description provided for @connectionIndicatorHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTPS'**
+  String get connectionIndicatorHttps;
+
+  /// No description provided for @connectionIndicatorLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get connectionIndicatorLocal;
+
+  /// No description provided for @connectionIndicatorTorInternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal Tor'**
+  String get connectionIndicatorTorInternal;
+
+  /// No description provided for @connectionIndicatorTorExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Using Port {port}'**
+  String connectionIndicatorTorExternal(String port);
+
+  /// No description provided for @settingsConnectionSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Settings'**
+  String get settingsConnectionSettingsLabel;
+
+  /// No description provided for @settingsBackgroundSyncLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Background Sync'**
+  String get settingsBackgroundSyncLabel;
+
+  /// No description provided for @settingsBackgroundSyncDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodically sync Monero in the background so it\'s up to date when you open the app. Only runs while charging and on WiFi.'**
+  String get settingsBackgroundSyncDescription;
+
+  /// No description provided for @settingsForegroundSyncLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Sync'**
+  String get settingsForegroundSyncLabel;
+
+  /// No description provided for @settingsForegroundSyncDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Monero syncing continuously while the app runs in the background, with a persistent notification. Uses more battery.'**
+  String get settingsForegroundSyncDescription;
+
+  /// No description provided for @homeBlocksRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks left'**
+  String homeBlocksRemaining(String count);
 
   /// No description provided for @fiatApiSetupTitle.
   ///
@@ -288,7 +378,7 @@ abstract class AppLocalizations {
   /// No description provided for @fiatApiSettingsModeClearnet.
   ///
   /// In en, this message translates to:
-  /// **'Clearnet-Only (not private)'**
+  /// **'Clearnet-Only (Not Private)'**
   String get fiatApiSettingsModeClearnet;
 
   /// No description provided for @fiatApiSettingsModeDisabled.
@@ -342,7 +432,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedContinueButton.
   ///
   /// In en, this message translates to:
-  /// **'I wrote it down'**
+  /// **'I Wrote It Down'**
   String get generateSeedContinueButton;
 
   /// No description provided for @lwsDetailsTitle.
@@ -396,8 +486,14 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletRestoreHeightLabel.
   ///
   /// In en, this message translates to:
-  /// **'Restore Height (optional)'**
+  /// **'Restore Height (Optional)'**
   String get restoreWalletRestoreHeightLabel;
+
+  /// No description provided for @restoreWalletRestoreDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Date'**
+  String get restoreWalletRestoreDateLabel;
 
   /// No description provided for @restoreWalletRestoreButton.
   ///
@@ -432,7 +528,7 @@ abstract class AppLocalizations {
   /// No description provided for @unlockReason.
   ///
   /// In en, this message translates to:
-  /// **'Unlock wallet'**
+  /// **'Unlock Wallet'**
   String get unlockReason;
 
   /// No description provided for @unlockUnableToAuthError.
@@ -504,7 +600,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeBalanceLocked.
   ///
   /// In en, this message translates to:
-  /// **'locked'**
+  /// **'Locked'**
   String get homeBalanceLocked;
 
   /// No description provided for @homeTransactionsTitle.
@@ -534,7 +630,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeNoTransactions.
   ///
   /// In en, this message translates to:
-  /// **'No transactions'**
+  /// **'No Transactions'**
   String get homeNoTransactions;
 
   /// No description provided for @homeFiatApiError.
@@ -639,6 +735,12 @@ abstract class AppLocalizations {
   /// **'Notify New Transactions'**
   String get settingsNotifyNewTxsLabel;
 
+  /// No description provided for @settingsNotifyNewTxsDescriptionIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications will be delayed for Tor LWS connections.'**
+  String get settingsNotifyNewTxsDescriptionIos;
+
   /// No description provided for @settingsAppLockLabel.
   ///
   /// In en, this message translates to:
@@ -648,7 +750,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppLockUnlockReason.
   ///
   /// In en, this message translates to:
-  /// **'Unlock wallet'**
+  /// **'Unlock Wallet'**
   String get settingsAppLockUnlockReason;
 
   /// No description provided for @settingsAppLockUnableToAuthError.
@@ -954,7 +1056,7 @@ abstract class AppLocalizations {
   /// No description provided for @addressBookNoContacts.
   ///
   /// In en, this message translates to:
-  /// **'No contacts yet'**
+  /// **'No Contacts Yet'**
   String get addressBookNoContacts;
 
   /// No description provided for @addressBookNoContactsDescription.
@@ -966,7 +1068,7 @@ abstract class AppLocalizations {
   /// No description provided for @addressBookNoSearchResults.
   ///
   /// In en, this message translates to:
-  /// **'No contacts found'**
+  /// **'No Contacts Found'**
   String get addressBookNoSearchResults;
 
   /// No description provided for @addressBookCopyAddress.
@@ -1002,13 +1104,13 @@ abstract class AppLocalizations {
   /// No description provided for @sendSelectedContact.
   ///
   /// In en, this message translates to:
-  /// **'Selected contact'**
+  /// **'Selected Contact'**
   String get sendSelectedContact;
 
   /// No description provided for @sendClearSelectedContact.
   ///
   /// In en, this message translates to:
-  /// **'Clear selected contact'**
+  /// **'Clear Selected Contact'**
   String get sendClearSelectedContact;
 
   /// No description provided for @sendPriorityLow.
@@ -1032,7 +1134,7 @@ abstract class AppLocalizations {
   /// No description provided for @sendPriorityLabel.
   ///
   /// In en, this message translates to:
-  /// **'priority'**
+  /// **'Priority'**
   String get sendPriorityLabel;
 
   /// No description provided for @sendTransactionPriority.
@@ -1047,11 +1149,11 @@ abstract class AppLocalizations {
   /// **'Fee'**
   String get sendFeeLabel;
 
-  /// No description provided for @sendBalanceLabel.
+  /// No description provided for @sendContactsButton.
   ///
   /// In en, this message translates to:
-  /// **'Balance'**
-  String get sendBalanceLabel;
+  /// **'Contacts'**
+  String get sendContactsButton;
 
   /// No description provided for @sendFailedToGetFeesError.
   ///
@@ -1149,12 +1251,6 @@ abstract class AppLocalizations {
   /// **'Test Connection'**
   String get torSettingsTestConnectionButton;
 
-  /// No description provided for @settingsLwsSettingsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'LWS Settings'**
-  String get settingsLwsSettingsLabel;
-
   /// No description provided for @settingsTorSettingsLabel.
   ///
   /// In en, this message translates to:
@@ -1164,13 +1260,13 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupUsingInternalTor.
   ///
   /// In en, this message translates to:
-  /// **'Using internal Tor'**
+  /// **'Using Internal Tor'**
   String get lwsSetupUsingInternalTor;
 
   /// No description provided for @lwsSetupUsingExternalTor.
   ///
   /// In en, this message translates to:
-  /// **'Using external Tor proxy at {address}'**
+  /// **'Using External Tor Proxy at {address}'**
   String lwsSetupUsingExternalTor(String address);
 
   /// No description provided for @lwsSetupTorDisabledError.

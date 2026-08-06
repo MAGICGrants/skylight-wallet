@@ -107,7 +107,11 @@ class FiatRateModel with ChangeNotifier {
     }
 
     try {
-      final response = await makeSocksHttpRequest('GET', url, proxyInfo);
+      final response = await makeSocksHttpRequest(
+        'GET',
+        url,
+        proxyInfo,
+      ).timeout(const Duration(seconds: 20));
       if (response.statusCode == 200) {
         final rate = response.jsonBody?['result']?[pair]?['o'];
         if (rate is! String) {

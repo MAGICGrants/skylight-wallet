@@ -1203,7 +1203,6 @@ class WalletModel with ChangeNotifier {
         restoreHeight: restoreHeight,
         password: password,
         path: isDummy ? '' : walletPath,
-        kdfRounds: 1,
       ).address;
     });
 

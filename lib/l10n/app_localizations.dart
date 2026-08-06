@@ -492,7 +492,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletRestoreDateLabel.
   ///
   /// In en, this message translates to:
-  /// **'Restore Date'**
+  /// **'Restore Date (optional)'**
   String get restoreWalletRestoreDateLabel;
 
   /// No description provided for @restoreWalletRestoreButton.

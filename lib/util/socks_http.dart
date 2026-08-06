@@ -138,12 +138,9 @@ Future<ParsedHttpResponse> makeSocksHttpRequest(
 
     return parseHttpResponse(rawResponse);
   } finally {
-    // Each request opens its own SOCKS connection, and with it a Tor circuit.
-    // Left open they accumulate for the life of the process — the fiat poller
-    // alone starts one every ten minutes. Closing must not mask a request
-    // error, so its own failure is only logged.
+    // Free the Tor circuit; bounded so a stalled close can't hang the request.
     try {
-      await socket.close();
+      await socket.close().timeout(const Duration(seconds: 5));
     } catch (e) {
       log(LogLevel.warn, 'Failed to close SOCKS socket: $e');
     }

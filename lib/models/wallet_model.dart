@@ -1327,15 +1327,20 @@ class WalletModel with ChangeNotifier {
       );
     }
 
-    if ((wallet.errorString() != '' || wallet.status() != 0) &&
-        !wallet.errorString().contains('No response from HTTP server')) {
-      if (wallet.errorString().contains('word list failed verification') ||
-          wallet.errorString().contains('Failed polyseed decode')) {
-        throw Exception('Invalid mnemonic.');
-      }
+    final errorString = wallet.errorString();
 
-      log(LogLevel.error, 'Error restoring from mnemonic: ${wallet.errorString()}');
-      throw Exception('Error restoring from mnemonic: ${wallet.errorString()}');
+    if (errorString.contains('word list failed verification') ||
+        errorString.contains('Failed polyseed decode')) {
+      throw Exception('Invalid mnemonic.');
+    }
+
+    // Restore fires an LWS rescan before connect; ignore its pre-connect error.
+    const connectionErrors = ['No response from HTTP server', 'Invalid argument'];
+    final isConnectionError = connectionErrors.any(errorString.contains);
+
+    if ((errorString != '' || wallet.status() != 0) && !isConnectionError) {
+      log(LogLevel.error, 'Error restoring from mnemonic: $errorString');
+      throw Exception('Error restoring from mnemonic: $errorString');
     }
 
     _w2Wallet = wallet;

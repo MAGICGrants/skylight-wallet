@@ -218,10 +218,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletSeedLabel => 'Seed';
 
   @override
-  String get restoreWalletRestoreHeightLabel => 'Restore Height (Optional)';
+  String get restoreWalletRestoreHeightLabel => 'Restore Height (optional)';
 
   @override
-  String get restoreWalletRestoreDateLabel => 'Restore Date';
+  String get restoreWalletRestoreDateLabel => 'Restore Date (optional)';
 
   @override
   String get restoreWalletRestoreButton => 'Restore';

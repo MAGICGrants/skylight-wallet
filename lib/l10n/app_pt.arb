@@ -80,7 +80,7 @@
   "restoreWalletDescription": "Insira sua semente Monero abaixo. Verificaremos os formatos comuns.",
   "restoreWalletSeedLabel": "Semente",
   "restoreWalletRestoreHeightLabel": "Bloco de Restauração (opcional)",
-  "restoreWalletRestoreDateLabel": "Data de Restauração",
+  "restoreWalletRestoreDateLabel": "Data de Restauração (opcional)",
   "restoreWalletRestoreButton": "Restaurar",
   "restoreWalletInvalidMnemonic": "Semente inválida.",
   "navigationBarWallet": "Carteira",

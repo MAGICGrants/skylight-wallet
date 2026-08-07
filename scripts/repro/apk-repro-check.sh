@@ -89,7 +89,7 @@ docker run --rm \
       rustup target add "$RUST" >/dev/null 2>&1 || true
       export PUB_CACHE="$app/.pub-cache"
       echo "==> [$app] flutter pub get..."
-      flutter pub get
+      flutter pub get --enforce-lockfile
       echo "==> [$app] pinning cargokit toolchain (tor + openalias)..."
       bash scripts/pin-rust-toolchain.sh
       echo "==> [$app] flutter build apk (Rust + Dart AOT; slow, limited output)..."

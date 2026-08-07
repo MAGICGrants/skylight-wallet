@@ -7,6 +7,7 @@ import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart' show useSharedWalletCore;
 
 /// Android foreground service that keeps the Monero wallet syncing while the
 /// app is backgrounded — a persistent-notification alternative to the
@@ -119,6 +120,9 @@ void initForegroundSync() {
 }
 
 Future<void> startForegroundSync() async {
+  // Runs the legacy WalletModel in its own isolate; under wallet-core that opens
+  // the wallet a second time. Skip until it's migrated (Phase 6).
+  if (useSharedWalletCore) return;
   if (!Platform.isAndroid) return;
   initForegroundSync();
   await FlutterForegroundTask.requestNotificationPermission();

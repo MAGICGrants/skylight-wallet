@@ -10,13 +10,14 @@ list(APPEND FLUTTER_PLUGIN_LIST
   screen_brightness_windows
   share_plus
   url_launcher_windows
+  webcrypto
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
   flutter_local_notifications_windows
   flutter_zxing
-  openalias_ffi
   tor_ffi_plugin
+  wallet_openalias
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

@@ -13,6 +13,7 @@ import 'package:skylight_wallet/widgets/fiat_amount.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/widgets/monero_amount.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 
 class SendScreenArgs {
@@ -82,7 +83,7 @@ class _SendScreenState extends State<SendScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Run once. didChangeDependencies fires on every WalletModel notify (via
+    // Run once. didChangeDependencies fires on every AppWallet notify (via
     // context.watch), and re-adding listeners / re-resolving OpenAlias here
     // would loop the (slow, over-Tor) resolver forever.
     if (_didInit) return;
@@ -113,7 +114,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _scanQrCode() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     final i18n = AppLocalizations.of(context)!;
 
     final result = await Navigator.pushNamed(context, '/scan_qr');
@@ -125,7 +126,7 @@ class _SendScreenState extends State<SendScreen> {
     final uri = Uri.tryParse(result);
 
     if (uri != null && uri.scheme == 'monero') {
-      if (!wallet.w2Wallet!.addressValid(uri.path, 0)) {
+      if (!wallet.isAddressValid(uri.path)) {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -139,7 +140,7 @@ class _SendScreenState extends State<SendScreen> {
       if (uri.queryParameters.containsKey('tx_amount')) {
         amount = double.tryParse(uri.queryParameters['tx_amount']!);
       }
-    } else if (wallet.w2Wallet!.addressValid(result, 0)) {
+    } else if (wallet.isAddressValid(result)) {
       address = result;
     } else {
       if (mounted) {
@@ -197,7 +198,7 @@ class _SendScreenState extends State<SendScreen> {
       return _resolveInFlight!;
     }
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     if (mounted) setState(() => _openAliasResolving++);
 
     try {
@@ -245,7 +246,7 @@ class _SendScreenState extends State<SendScreen> {
       return false;
     }
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     final i18n = AppLocalizations.of(context)!;
 
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
@@ -259,7 +260,7 @@ class _SendScreenState extends State<SendScreen> {
         }
         return false;
       }
-    } else if (!wallet.w2Wallet!.addressValid(unresolvedDestinationAddress, 0)) {
+    } else if (!wallet.isAddressValid(unresolvedDestinationAddress)) {
       if (setErrors) {
         setState(() {
           _destinationAddressError = i18n.sendInvalidAddressError;
@@ -290,7 +291,7 @@ class _SendScreenState extends State<SendScreen> {
     _lastFeeFetchKey = feeFetchKey;
 
     final i18n = AppLocalizations.of(context)!;
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
 
     // Increment counter to mark this as the latest request
     _feeCalculationCounter++;
@@ -346,7 +347,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _send() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     final i18n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -442,7 +443,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _setBalanceAsSendAmount() {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     _amountController.text = (wallet.unlockedBalance ?? 0).toString();
 
     setState(() {
@@ -530,7 +531,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _onAmountChanged() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     final amount = double.tryParse(_amountController.text) ?? 0;
 
     if (amount == wallet.unlockedBalance! && !_isSweepAll) {
@@ -551,7 +552,7 @@ class _SendScreenState extends State<SendScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = context.watch<WalletModel>();
+    final wallet = appWalletOf(context, listen: true);
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.sendTitle)),

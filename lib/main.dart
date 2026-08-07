@@ -45,6 +45,7 @@ import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 final isMobile = Platform.isAndroid || Platform.isIOS;
@@ -54,6 +55,10 @@ void main() async {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      if (useSharedWalletCore) {
+        installWalletCore();
+      }
 
       // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
@@ -126,6 +131,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        if (useSharedWalletCore) walletManagerProvider(),
         ChangeNotifierProvider(create: (context) => WalletModel()),
         ChangeNotifierProvider(create: (context) => LanguageModel()),
         ChangeNotifierProvider(create: (context) => ThemeModel()),
@@ -154,11 +160,11 @@ class _AppRootState extends State<_AppRoot> {
   var _startedServices = false;
 
   Future<List<Object>> _runStartup() {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
-    // We need to check for wallet existence to determine the correct initial route,
-    // but we'll do this quickly without loading the wallet to avoid startup delay.
-    return Future.wait([SharedPreferences.getInstance(), loadExistingWalletIfExists(wallet)]);
+    // Wallet existence drives the initial route; done quickly without a full load.
+    final walletExists = useSharedWalletCore
+        ? startupWalletManager(context)
+        : loadExistingWalletIfExists(Provider.of<WalletModel>(context, listen: false));
+    return Future.wait([SharedPreferences.getInstance(), walletExists]);
   }
 
   @override

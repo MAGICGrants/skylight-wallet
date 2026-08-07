@@ -4,6 +4,7 @@ import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart' show useSharedWalletCore;
 import 'package:workmanager/workmanager.dart';
 
 class PeriodicTasks {
@@ -192,6 +193,9 @@ void _callbackDispatcher() {
 /// Call after anything that changes the answer: the notifications toggle, the
 /// background-sync toggle, or the connection itself.
 Future<void> applyBackgroundTaskRegistration() async {
+  // These tasks still drive the legacy WalletModel; under wallet-core they would
+  // open the wallet a second time. Skip until they're migrated (Phase 6).
+  if (useSharedWalletCore) return;
   if (Platform.isIOS) return _applyIosBackgroundTasks();
   if (!Platform.isAndroid) return;
 
@@ -265,6 +269,16 @@ Future<void> _applyIosBackgroundTasks() async {
 
 Future<void> registerPeriodicTasks() async {
   if (!Platform.isAndroid && !Platform.isIOS) {
+    return;
+  }
+
+  if (useSharedWalletCore) {
+    // Not migrated to wallet-core yet. Cancel anything a prior legacy-mode
+    // install left scheduled, so WorkManager can't wake a second WalletModel in
+    // the background isolate (and stops tracking its constraints).
+    await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
+    await Workmanager().cancelByUniqueName(_iosRefreshTaskId);
+    await Workmanager().cancelByUniqueName(_iosProcessingTaskId);
     return;
   }
 

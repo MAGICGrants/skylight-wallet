@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:provider/provider.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -20,15 +19,8 @@ class _WalletHomeScreenState extends State<WelcomeScreen> {
   }
 
   Future _pushHomeIfWalletExists() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
-    if (await wallet.hasExistingWallet()) {
-      await wallet.loadPersistedConnection();
-      await wallet.openExisting();
-
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
-      }
+    if (await openExistingWallet(context) && mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
     }
   }
 

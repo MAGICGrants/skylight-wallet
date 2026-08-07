@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:provider/provider.dart';
@@ -27,11 +27,8 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
   }
 
   Future<void> _createWallet() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
     try {
-      final (seed, restoreHeight) = await wallet.create();
-      wallet.load();
+      final (seed, restoreHeight) = await createWallet(context);
 
       setState(() {
         _seed = seed.split(' ');

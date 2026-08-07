@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-// ignore: implementation_imports
-import 'package:monero/src/monero.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
-import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:provider/provider.dart';
 
 class ConfirmSendScreenArgs {
-  MoneroPendingTransaction tx;
+  AppPendingTx tx;
   String destinationAddress;
   String? destinationOpenAlias;
 
@@ -36,7 +34,7 @@ class ConfirmSendScreen extends StatefulWidget {
 
 class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
   bool _isLoading = false;
-  MoneroPendingTransaction? _tx;
+  AppPendingTx? _tx;
   double _amount = 0.0;
   double _fee = 0.0;
   String? _destinationOpenAlias;
@@ -66,8 +64,8 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
 
     setState(() {
       _tx = args.tx;
-      _amount = doubleAmountFromInt(args.tx.amount());
-      _fee = doubleAmountFromInt(args.tx.fee());
+      _amount = args.tx.amount;
+      _fee = args.tx.fee;
       _destinationOpenAlias = args.destinationOpenAlias;
       _destinationOpenAliasName = args.destinationOpenAliasName;
       _destinationAddress = args.destinationAddress;
@@ -90,7 +88,7 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
 
   Future<void> _confirmSend() async {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
 
     if (_tx == null) return;
 

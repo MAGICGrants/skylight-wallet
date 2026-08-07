@@ -59,8 +59,30 @@ dependencies:
       url: https://github.com/magicgrants/monero_c
       ref: 757bf8ef3874953a076b07a2407b17bf9eeef5c0
       path: impls/monero.dart
-  openalias_ffi:
-    path: plugins/openalias_ffi
+
+  # wallet-core packages; SHA-pinned for release, redirected to the local sibling
+  # clone by the gitignored pubspec_overrides.yaml for dev.
+  wallet_infra:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      path: packages/wallet_infra
+  wallet_domain:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      path: packages/wallet_domain
+  wallet_monero:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      path: packages/wallet_monero
+  wallet_openalias:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      path: packages/wallet_openalias
+
   cupertino_icons: 1.0.8
   path: 1.9.1
   provider: 6.1.5+1

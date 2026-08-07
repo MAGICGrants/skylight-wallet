@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 class LwsKeysScreen extends StatefulWidget {
   const LwsKeysScreen({super.key});
@@ -15,28 +14,32 @@ class LwsKeysScreen extends StatefulWidget {
 
 class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
   var _restoreHeight = 0;
+  var _primaryAddress = '';
+  var _secretViewKey = '';
 
   @override
   void initState() {
     super.initState();
-    _loadRestoreHeight();
+    _load();
   }
 
-  Future<void> _loadRestoreHeight() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+  Future<void> _load() async {
+    final wallet = appWalletOf(context);
     final restoreHeight = await wallet.getRestoreHeight();
-
+    final secretViewKey = await wallet.readSecretViewKey();
+    if (!mounted) return;
     setState(() {
       _restoreHeight = restoreHeight;
+      _primaryAddress = wallet.getPrimaryAddress();
+      _secretViewKey = secretViewKey;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = context.watch<WalletModel>();
-    final primaryAddress = wallet.getPrimaryAddress();
-    final secretViewKey = wallet.w2Wallet!.secretViewKey();
+    final primaryAddress = _primaryAddress;
+    final secretViewKey = _secretViewKey;
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n.lwsKeysTitle)),

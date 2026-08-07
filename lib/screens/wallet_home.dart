@@ -11,7 +11,9 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/wallet_model.dart' show TxDetails;
+import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart';
@@ -196,7 +198,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
 
   Widget _buildStatusIcons(
     BuildContext context,
-    WalletModel wallet,
+    AppWallet wallet,
     StatusIconStatus lwsConnectionIconStatus,
   ) {
     final i18n = AppLocalizations.of(context)!;
@@ -244,7 +246,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Widget _buildBalanceDisplay(
     BuildContext context,
     AppLocalizations i18n,
-    WalletModel wallet,
+    AppWallet wallet,
     double? unlockedBalanceFiat,
     double lockedBalance,
     String fiatSymbol,
@@ -331,7 +333,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     BuildContext context,
     AppLocalizations i18n,
     Locale currentLocale,
-    WalletModel wallet,
+    AppWallet wallet,
     FiatRateModel fiatRate,
     String fiatSymbol,
   ) {
@@ -356,7 +358,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final currentLocale = Localizations.localeOf(context);
-    final wallet = context.watch<WalletModel>();
+    final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
     final deviceType = _getDeviceType(context);
     final unlockedBalanceFiat = fiatRate.rate is double && wallet.unlockedBalance is double
@@ -412,7 +414,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     DeviceType deviceType,
     AppLocalizations i18n,
     Locale currentLocale,
-    WalletModel wallet,
+    AppWallet wallet,
     FiatRateModel fiatRate,
     StatusIconStatus lwsConnectionIconStatus,
     StatusIconStatus fiatApiIconStatus,
@@ -467,7 +469,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     BuildContext context,
     AppLocalizations i18n,
     Locale currentLocale,
-    WalletModel wallet,
+    AppWallet wallet,
     FiatRateModel fiatRate,
     StatusIconStatus lwsConnectionIconStatus,
     StatusIconStatus fiatApiIconStatus,
@@ -532,7 +534,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     BuildContext context,
     AppLocalizations i18n,
     Locale currentLocale,
-    WalletModel wallet,
+    AppWallet wallet,
     FiatRateModel fiatRate,
     StatusIconStatus lwsConnectionIconStatus,
     StatusIconStatus fiatApiIconStatus,
@@ -600,7 +602,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     BuildContext context,
     AppLocalizations i18n,
     Locale currentLocale,
-    WalletModel wallet,
+    AppWallet wallet,
     FiatRateModel fiatRate,
     StatusIconStatus lwsConnectionIconStatus,
     StatusIconStatus fiatApiIconStatus,

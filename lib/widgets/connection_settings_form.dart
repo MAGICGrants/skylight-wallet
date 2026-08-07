@@ -8,10 +8,9 @@ import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
@@ -146,7 +145,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   Future<void> _loadPersistedConnection() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     final conn = await wallet.getPersistedConnection();
 
     setState(() {
@@ -354,7 +353,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
   Future _testConnection() async {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
     final daemonAddress = _cleanAddress(_addressController.text);
 
     if (isDemoMode && daemonAddress == 'demo') {
@@ -425,7 +424,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       return;
     }
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
 
     wallet.setConnection(
       address: daemonAddress,

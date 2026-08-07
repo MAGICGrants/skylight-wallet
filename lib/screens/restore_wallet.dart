@@ -12,7 +12,7 @@ import 'package:skylight_wallet/util/restore_qr.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});
@@ -78,8 +78,6 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
       return;
     }
 
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
     final mnemonic = _mnemonicController.text.trim();
     final restoreHeight = int.tryParse(_restoreHeightController.text) ?? 0;
 
@@ -88,7 +86,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     });
 
     try {
-      await wallet.restoreFromMnemonic(mnemonic, restoreHeight);
+      await restoreWallet(context, mnemonic: mnemonic, restoreHeight: restoreHeight);
     } on Exception catch (error) {
       final errorMsg = error.toString().replaceFirst('Exception: ', '');
 
@@ -129,8 +127,6 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     setState(() {
       _isLoading = false;
     });
-
-    wallet.load();
 
     if (mounted) {
       Provider.of<FiatRateModel>(context, listen: false).startService();

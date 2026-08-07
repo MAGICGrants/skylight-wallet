@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});
@@ -74,11 +73,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
     try {
       final enteredPassword = _passwordController.text;
-      final wallet = Provider.of<WalletModel>(context, listen: false);
-
-      await wallet.loadPersistedConnection();
-      await wallet.openExisting(desktopWalletPassword: enteredPassword);
-      wallet.load();
+      await unlockWithPassword(context, enteredPassword);
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);

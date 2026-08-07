@@ -1,4 +1,4 @@
-// ignore_for_file: implementation_imports
+// ignore_for_file: implementation_imports, annotate_overrides
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
@@ -10,13 +10,14 @@ import 'package:flutter/foundation.dart';
 import 'package:monero/monero.dart' as monero;
 import 'package:monero/src/monero.dart';
 import 'package:monero/src/wallet2.dart';
-import 'package:openalias_ffi/openalias_ffi.dart';
+import 'package:wallet_openalias/wallet_openalias.dart';
 import 'package:http/http.dart' as http;
 import 'package:polyseed/polyseed.dart';
 import 'package:bip39/bip39.dart' as bip39;
 
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/amount_units.dart';
@@ -57,6 +58,16 @@ class ResolvedOpenAlias {
   /// The recipient's display name, if they published one. Display only — it has
   /// no bearing on [address].
   final String? recipientName;
+}
+
+/// Wraps a native pending tx as the neutral [AppPendingTx].
+class _MoneroPendingTx implements AppPendingTx {
+  _MoneroPendingTx(this.raw);
+  final MoneroPendingTransaction raw;
+  @override
+  double get amount => doubleAmountFromInt(raw.amount());
+  @override
+  double get fee => doubleAmountFromInt(raw.fee());
 }
 
 class TxDetails {
@@ -149,7 +160,7 @@ class LWSConnectionDetails {
   });
 }
 
-class WalletModel with ChangeNotifier {
+class WalletModel with ChangeNotifier implements AppWallet {
   // Which factory built the cached manager: 'lws' (LWSF) or 'node' (wallet2).
   Wallet2WalletManager? _w2WalletManager;
   String? _managerType;
@@ -1736,8 +1747,28 @@ class WalletModel with ChangeNotifier {
     return subaddress;
   }
 
+  @override
+  String? getReceiveAddress() => getUnusedSubaddress() ?? getPrimaryAddress();
+
+  @override
+  Future<String> readSecretViewKey() async => _w2Wallet?.secretViewKey() ?? '';
+  @override
+  Future<String> readSecretSpendKey() async => _w2Wallet?.secretSpendKey() ?? '';
+  @override
+  Future<String> readPublicViewKey() async => _w2Wallet?.publicViewKey() ?? '';
+  @override
+  Future<String> readPublicSpendKey() async => _w2Wallet?.publicSpendKey() ?? '';
+  @override
+  Future<String> readLegacySeed() async => _w2Wallet?.seed(seedOffset: '') ?? '';
+  @override
+  Future<String> readPolyseed() async => _w2Wallet?.getPolyseed(passphrase: '') ?? '';
+  @override
+  Future<StoredSeed?> readStoredSeed() async => null;
+
   /// Estimates the network fee (in piconero) for a send at [priority] via the
   /// native estimator. Returns null on failure or when fee info isn't cached yet
+  bool isAddressValid(String address) => _w2Wallet?.addressValid(address, 0) ?? false;
+
   Future<int?> estimateFee(
     String destinationAddress,
     double amount, {
@@ -1769,7 +1800,7 @@ class WalletModel with ChangeNotifier {
     }
   }
 
-  Future<MoneroPendingTransaction> createTx(
+  Future<AppPendingTx> createTx(
     String destinationAddress,
     double amount,
     bool isSweepAll, {
@@ -1821,11 +1852,12 @@ class WalletModel with ChangeNotifier {
       throw Exception(pendingTx.errorString());
     }
 
-    return pendingTx;
+    return _MoneroPendingTx(pendingTx);
   }
 
-  Future<void> commitTx(MoneroPendingTransaction tx, String destinationAddress) async {
-    final txFfiAddr = tx.ffiAddress();
+  Future<void> commitTx(AppPendingTx tx, String destinationAddress) async {
+    final raw = (tx as _MoneroPendingTx).raw;
+    final txFfiAddr = raw.ffiAddress();
 
     final filename = '';
     final overwrite = false;
@@ -1843,10 +1875,10 @@ class WalletModel with ChangeNotifier {
       );
     });
 
-    final status = tx.status();
+    final status = raw.status();
     log(LogLevel.info, 'PendingTransaction_commit result: $commitResult, status: $status');
 
-    final errorMsg = tx.errorString();
+    final errorMsg = raw.errorString();
 
     if (errorMsg != '' && errorMsg != 'Schema expected string') {
       log(LogLevel.error, 'PendingTransaction_commit error: $errorMsg');
@@ -1872,7 +1904,7 @@ class WalletModel with ChangeNotifier {
 
   /// Resolves an OpenAlias (an FQDN or an email-style `name@domain`) to a
   /// Monero address with end-to-end DNSSEC validation, over Tor (via the
-  /// openalias_ffi Rust/hickory resolver).
+  /// wallet_openalias Rust/hickory resolver).
   ///
   /// OpenAlias v2 records are preferred and v1 is the fallback, per the spec's
   /// compatibility rule. Returns null on any failure (incl. Tor unavailable) so

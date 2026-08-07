@@ -1,18 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:provider/provider.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
-class LwsDetailsScreen extends StatelessWidget {
+class LwsDetailsScreen extends StatefulWidget {
   const LwsDetailsScreen({super.key});
+
+  @override
+  State<LwsDetailsScreen> createState() => _LwsDetailsScreenState();
+}
+
+class _LwsDetailsScreenState extends State<LwsDetailsScreen> {
+  String _secretViewKey = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final key = await appWalletOf(context).readSecretViewKey();
+    if (!mounted) return;
+    setState(() => _secretViewKey = key);
+  }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = context.watch<WalletModel>();
-    final primaryAddress = wallet.getPrimaryAddress();
-    final secretViewKey = wallet.w2Wallet!.secretViewKey();
+    final primaryAddress = appWalletOf(context).getPrimaryAddress();
+    final secretViewKey = _secretViewKey;
     final restoreHeight = ModalRoute.of(context)!.settings.arguments as int;
 
     return Scaffold(

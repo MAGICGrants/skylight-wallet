@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:provider/provider.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -65,7 +64,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final i18n = AppLocalizations.of(context)!;
     final brightness = Theme.of(context).brightness;
     final isDarkTheme = brightness == Brightness.dark;
-    final wallet = Provider.of<WalletModel>(context);
+    final wallet = appWalletOf(context, listen: true);
     final primaryAddress = wallet.getPrimaryAddress();
     final subaddress = wallet.getUnusedSubaddress();
     final isDemoMode = wallet.connectionAddress == 'demo';

@@ -36,10 +36,11 @@ packages:
   bip39:
     dependency: "direct main"
     description:
-      name: bip39
-      sha256: de1ee27ebe7d96b84bb3a04a4132a0a3007dcdd5ad27dd14aa87a29d97c45edc
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "0cd6d54e2860bea68fc50c801cb9db2a760192fb"
+      resolved-ref: "0cd6d54e2860bea68fc50c801cb9db2a760192fb"
+      url: "https://github.com/cypherstack/stack-bip39"
+    source: git
     version: "1.0.6"
   boolean_selector:
     dependency: transitive
@@ -197,10 +198,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "6d7fd89431262d8f3125e81b50d3847a091d846eafcd4fdb88dd06f36d705a45"
+      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "2.1.4"
   file:
     dependency: transitive
     description:
@@ -678,13 +679,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
-  openalias_ffi:
-    dependency: "direct main"
-    description:
-      path: "plugins/openalias_ffi"
-      relative: true
-    source: path
-    version: "0.0.1"
   package_info_plus:
     dependency: "direct main"
     description:
@@ -1126,7 +1120,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
+      ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
       resolved-ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
       url: "https://github.com/cypherstack/tor"
     source: git
@@ -1235,6 +1229,34 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.0.2"
+  wallet_domain:
+    dependency: "direct main"
+    description:
+      path: "../wallet-core/packages/wallet_domain"
+      relative: true
+    source: path
+    version: "0.1.0"
+  wallet_infra:
+    dependency: "direct main"
+    description:
+      path: "../wallet-core/packages/wallet_infra"
+      relative: true
+    source: path
+    version: "0.1.0"
+  wallet_monero:
+    dependency: "direct main"
+    description:
+      path: "../wallet-core/packages/wallet_monero"
+      relative: true
+    source: path
+    version: "0.1.0"
+  wallet_openalias:
+    dependency: "direct main"
+    description:
+      path: "../wallet-core/packages/wallet_openalias"
+      relative: true
+    source: path
+    version: "0.1.0"
   web:
     dependency: transitive
     description:
@@ -1243,6 +1265,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  webcrypto:
+    dependency: transitive
+    description:
+      name: webcrypto
+      sha256: "6b43001c4110856ff7fa5e5e65e7b2d44bec1d8b54a4d84d5fa2c7622267c5c1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   win32:
     dependency: transitive
     description:

@@ -1,6 +1,3 @@
 [submodule "monero_c"]
 	path = monero_c
 	url = https://github.com/magicgrants/monero_c
-[submodule "plugins/openalias_ffi/cargokit"]
-	path = plugins/openalias_ffi/cargokit
-	url = https://github.com/irondash/cargokit

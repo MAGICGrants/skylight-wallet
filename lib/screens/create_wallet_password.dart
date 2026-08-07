@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
-import 'package:provider/provider.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 class CreateWalletPasswordScreen extends StatefulWidget {
   const CreateWalletPasswordScreen({super.key});
@@ -39,8 +38,7 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
       final password = _passwordController.text;
 
       if (mounted) {
-        final wallet = Provider.of<WalletModel>(context, listen: false);
-        wallet.setWalletPassword(password);
+        setWalletPassword(context, password);
         Navigator.pushNamed(context, '/create_wallet');
       }
     } catch (e) {

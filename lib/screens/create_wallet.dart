@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 class CreateWalletScreenArgs {
   String toastMessage;
@@ -41,7 +40,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
   /// history from the view key. A full node scans locally and is told nothing,
   /// so restoring against one goes straight to the seed form.
   void _restoreExisting() {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
 
     Navigator.pushNamed(
       context,

@@ -13,7 +13,7 @@ import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
 import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -68,7 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _setTxNotificationsEnabled(bool value) async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
+    final wallet = appWalletOf(context);
 
     setState(() {
       _newTxNotificationsEnabled = value;
@@ -331,8 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _deleteWallet() async {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-    await wallet.delete();
+    await deleteWallet(context);
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/welcome', (Route<dynamic> route) => false);
     }
@@ -344,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final dialogWidth = screenWidth.clamp(0.0, 500.0);
 
     void onSaved() {
-      final wallet = Provider.of<WalletModel>(context, listen: false);
+      final wallet = appWalletOf(context);
       wallet.load();
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
@@ -395,9 +394,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final dialogWidth = screenWidth.clamp(0.0, 500.0);
 
     void onSaved() {
-      final wallet = Provider.of<WalletModel>(context, listen: false);
       // Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
-      wallet.applyConnectionChange();
+      applyConnectionChange(context);
 
       final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
       fiatRate.startService();
@@ -478,7 +476,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             // On iOS this is offered for LWS only: a remote node can't be
             // scanned inside either background window iOS grants.
-            if (Platform.isAndroid || (Platform.isIOS && !context.watch<WalletModel>().isNodeMode))
+            if (Platform.isAndroid ||
+                (Platform.isIOS && !appWalletOf(context, listen: true).isNodeMode))
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

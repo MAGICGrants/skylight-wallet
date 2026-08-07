@@ -57,7 +57,7 @@ export PUB_CACHE=/tmp/skylight/.pub-cache
 export CARGO_HOME=/tmp/skylight-cargo
 # cargokit requires an NDK package.xml (absent in unzipped NDKs)
 [ -f "$ANDROID_HOME/ndk/$NDK/package.xml" ] || touch "$ANDROID_HOME/ndk/$NDK/package.xml"
-"$FLUTTER/bin/flutter" pub get
+"$FLUTTER/bin/flutter" pub get --enforce-lockfile
 bash scripts/pin-rust-toolchain.sh
 "$FLUTTER/bin/flutter" build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$PLATFORM"
 

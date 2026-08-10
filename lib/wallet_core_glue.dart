@@ -181,8 +181,7 @@ Future<void> deleteWallet(BuildContext context) async {
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
 void applyConnectionChange(BuildContext context) {
   if (useSharedWalletCore) {
-    final manager = Provider.of<WalletManager>(context, listen: false);
-    unawaited(manager.reopenWallet('XMR').then((_) => manager.syncInBackground()));
+    unawaited(Provider.of<WalletManager>(context, listen: false).applyConnectionChange('XMR'));
   } else {
     Provider.of<WalletModel>(context, listen: false).applyConnectionChange();
   }

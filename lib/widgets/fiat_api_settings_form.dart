@@ -4,6 +4,7 @@ import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 
 class FiatApiSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
@@ -27,7 +28,11 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
   }
 
   Future<void> _load() async {
-    final mode = await FiatRateModel.loadFiatApiMode();
+    var mode = await FiatRateModel.loadFiatApiMode();
+    // Tor-only fiat is unreachable with global Tor off; fall back to clearnet.
+    if (mode == FiatApiMode.torOnly && _globalTorDisabled) {
+      mode = FiatApiMode.clearnet;
+    }
     final cur =
         await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
     if (mounted) {
@@ -39,8 +44,14 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
     }
   }
 
+  bool get _globalTorDisabled =>
+      TorSettingsService.sharedInstance.torMode == TorMode.disabled;
+
   Future<void> _save() async {
     await FiatRateModel.saveFiatApiMode(_mode);
+    // A manual choice takes over from the Tor auto-disable, so re-enabling Tor
+    // no longer overrides it.
+    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatAutoDisabledByTor);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _currency);
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
     await widget.onSaved();
@@ -68,7 +79,11 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
           ),
           value: _mode,
           items: [
-            DropdownMenuItem(value: FiatApiMode.torOnly, child: Text(i18n.fiatApiSettingsModeTorOnly)),
+            if (!_globalTorDisabled)
+              DropdownMenuItem(
+                value: FiatApiMode.torOnly,
+                child: Text(i18n.fiatApiSettingsModeTorOnly),
+              ),
             DropdownMenuItem(
               value: FiatApiMode.clearnet,
               child: Text(i18n.fiatApiSettingsModeClearnet),

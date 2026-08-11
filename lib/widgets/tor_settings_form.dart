@@ -2,9 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 
@@ -57,13 +60,69 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
     // that its requirement can no longer be met, or it goes on presenting
     // itself as connected over Tor until something tries to reconnect.
     final wallet = appWalletOf(context);
-    final disablingTor = _selectedMode == TorMode.disabled;
+    final previousMode = TorSettingsService.sharedInstance.torMode;
+    final disablingTor = _selectedMode == TorMode.disabled && previousMode != TorMode.disabled;
+    final enablingTor = _selectedMode != TorMode.disabled && previousMode == TorMode.disabled;
+
+    // Warn before cutting Tor out from under a wallet connected over it. Cancel
+    // leaves everything as-is; confirm marks the connection broken so nothing
+    // reconnects until the user reconfigures it.
+    if (disablingTor && wallet.usingTor) {
+      final confirmed = await _confirmDisableTor();
+      if (confirmed != true) return;
+      wallet.onGlobalTorDisabled();
+    }
+
+    var fiatChanged = false;
+
+    // The fiat API can't reach Kraken over a Tor that's now off, so a Tor-only
+    // fiat setting is turned off too (the setup form won't offer Tor again while
+    // global Tor is disabled). Remember it was us, not the user, so re-enabling
+    // Tor can restore it.
+    if (disablingTor && await FiatRateModel.loadFiatApiMode() == FiatApiMode.torOnly) {
+      await FiatRateModel.saveFiatApiMode(FiatApiMode.disabled);
+      await SharedPreferencesService.set<bool>(SharedPreferencesKeys.fiatAutoDisabledByTor, true);
+      fiatChanged = true;
+    }
+
+    // Turning Tor back on restores the fiat API to Tor mode, but only if we were
+    // the ones who disabled it (a user who disabled it themselves keeps it off).
+    if (enablingTor &&
+        (await SharedPreferencesService.get<bool>(SharedPreferencesKeys.fiatAutoDisabledByTor) ??
+            false)) {
+      await FiatRateModel.saveFiatApiMode(FiatApiMode.torOnly);
+      await SharedPreferencesService.remove(SharedPreferencesKeys.fiatAutoDisabledByTor);
+      fiatChanged = true;
+    }
 
     await _saveSettings();
-
-    if (disablingTor) wallet.onGlobalTorDisabled();
-
+    if (!mounted) return;
+    if (fiatChanged) Provider.of<FiatRateModel>(context, listen: false).startService();
     widget.onSaved();
+  }
+
+  Future<bool?> _confirmDisableTor() async {
+    final i18n = AppLocalizations.of(context)!;
+    final dialogWidth = MediaQuery.of(context).size.width.clamp(0.0, 500.0);
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        constraints: BoxConstraints.tightFor(width: dialogWidth),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        title: Text(i18n.torDisabledWalletsWarningTitle),
+        content: Text(i18n.torDisabledWalletsWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(i18n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(i18n.torDisabledWalletsWarningConfirm),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _testConnection() async {

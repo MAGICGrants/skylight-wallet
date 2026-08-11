@@ -617,6 +617,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get torSettingsTestConnectionButton => 'Testar Conexão';
 
   @override
+  String get torDisabledWalletsWarningTitle => 'Desativar o Tor?';
+
+  @override
+  String get torDisabledWalletsWarningBody =>
+      'Algumas carteiras estão configuradas para conectar via Tor. Desativar o Tor irá desconectá-las, e elas permanecerão desconectadas até que você reconfigure a conexão.';
+
+  @override
+  String get torDisabledWalletsWarningConfirm => 'Desativar o Tor';
+
+  @override
   String get settingsTorSettingsLabel => 'Configurações do Tor';
 
   @override

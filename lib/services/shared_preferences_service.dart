@@ -4,6 +4,10 @@ class SharedPreferencesKeys {
   static const String language = 'language';
   static const String fiatCurrency = 'fiatCurrency';
   static const String fiatApiMode = 'fiatApiMode';
+  // Set when the fiat API was auto-disabled because global Tor was turned off,
+  // so re-enabling Tor can restore it — but only when the user didn't disable
+  // it themselves.
+  static const String fiatAutoDisabledByTor = 'fiatAutoDisabledByTor';
   static const String fiatRate = 'fiatRate';
   static const String theme = 'theme';
   static const String notificationsEnabled = 'notificationsEnabled';

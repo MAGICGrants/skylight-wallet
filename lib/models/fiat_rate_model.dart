@@ -84,6 +84,12 @@ class FiatRateModel with ChangeNotifier {
         throw Exception('Status code: ${response.statusCode}');
       }
       final jsonBody = jsonDecode(body) as Map<String, dynamic>;
+      // Kraken reports rate limits etc. as a 200 with a populated error array
+      // and empty result; surface that rather than "could not find rate".
+      final errors = jsonBody['error'];
+      if (errors is List && errors.isNotEmpty) {
+        throw Exception('Kraken error: ${errors.join(', ')}');
+      }
       final rate = jsonBody['result']?[pair]?['o'];
       if (rate is! String) {
         throw Exception('Could not find rate for $pair');
@@ -113,6 +119,10 @@ class FiatRateModel with ChangeNotifier {
         proxyInfo,
       ).timeout(const Duration(seconds: 20));
       if (response.statusCode == 200) {
+        final errors = response.jsonBody?['error'];
+        if (errors is List && errors.isNotEmpty) {
+          throw Exception('Kraken error: ${errors.join(', ')}');
+        }
         final rate = response.jsonBody?['result']?[pair]?['o'];
         if (rate is! String) {
           throw Exception('Could not find rate for $pair');

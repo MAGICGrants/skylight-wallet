@@ -6,6 +6,7 @@ import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 
 class FiatApiSetupScreen extends StatefulWidget {
   const FiatApiSetupScreen({super.key});
@@ -18,8 +19,20 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
   FiatApiMode _fiatMode = FiatApiMode.torOnly;
   String _fiatCurrency = 'USD';
 
+  bool get _globalTorDisabled =>
+      TorSettingsService.sharedInstance.torMode == TorMode.disabled;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tor-only fiat is unreachable with global Tor off; default to clearnet.
+    if (_globalTorDisabled) _fiatMode = FiatApiMode.clearnet;
+  }
+
   Future<void> _onContinue() async {
     await FiatRateModel.saveFiatApiMode(_fiatMode);
+    // A manual choice is definitive; don't let a later Tor re-enable override it.
+    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatAutoDisabledByTor);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _fiatCurrency);
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
 
@@ -75,10 +88,11 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
                       ),
                       value: _fiatMode,
                       items: [
-                        DropdownMenuItem(
-                          value: FiatApiMode.torOnly,
-                          child: Text(i18n.fiatApiSettingsModeTorOnly),
-                        ),
+                        if (!_globalTorDisabled)
+                          DropdownMenuItem(
+                            value: FiatApiMode.torOnly,
+                            child: Text(i18n.fiatApiSettingsModeTorOnly),
+                          ),
                         DropdownMenuItem(
                           value: FiatApiMode.clearnet,
                           child: Text(i18n.fiatApiSettingsModeClearnet),

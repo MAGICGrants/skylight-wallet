@@ -3,11 +3,11 @@ import 'dart:io';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallet_core_glue.dart' show useSharedWalletCore;
+import 'package:skylight_wallet/wallet_core_glue.dart' show openBackgroundWallet;
 
 /// Android foreground service that keeps the Monero wallet syncing while the
 /// app is backgrounded — a persistent-notification alternative to the
@@ -23,17 +23,16 @@ void foregroundSyncCallback() {
 }
 
 class _SyncTaskHandler extends TaskHandler {
-  WalletModel? _wallet;
+  AppWallet? _wallet;
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    final wallet = WalletModel();
-    _wallet = wallet;
     try {
-      if (!await wallet.hasExistingWallet()) return;
-      // Load the connection first so the correct-mode wallet file is opened.
-      await wallet.loadPersistedConnection();
-      await wallet.openExisting();
+      // Opens the correct-mode wallet (or null if there's none). The foreground
+      // service syncs whatever the user connected to, so no node/Tor gating.
+      final wallet = await openBackgroundWallet();
+      _wallet = wallet;
+      if (wallet == null) return;
 
       if (wallet.usingTor) {
         await TorService.sharedInstance.start();
@@ -120,9 +119,6 @@ void initForegroundSync() {
 }
 
 Future<void> startForegroundSync() async {
-  // Runs the legacy WalletModel in its own isolate; under wallet-core that opens
-  // the wallet a second time. Skip until it's migrated (Phase 6).
-  if (useSharedWalletCore) return;
   if (!Platform.isAndroid) return;
   initForegroundSync();
   await FlutterForegroundTask.requestNotificationPermission();

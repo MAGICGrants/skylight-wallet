@@ -582,7 +582,7 @@ class WalletModel with ChangeNotifier implements AppWallet {
   /// Safe to call from any isolate and as often as you like: what has been
   /// announced is persisted, so the background task, the foreground service and
   /// a future caller can't double-announce or cancel each other out.
-  Future<void> notifyNewIncomingTxs() async {
+  Future<void> notifyNewIncomingTxs({bool announce = true}) async {
     final state = await readTxNotificationState();
 
     // Never seeded (fresh install, or an upgrade from the old counter): take
@@ -602,7 +602,7 @@ class WalletModel with ChangeNotifier implements AppWallet {
         await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ??
         false;
 
-    if (notificationsEnabled) {
+    if (announce && notificationsEnabled) {
       for (final tx in decision.toAnnounce) {
         await NotificationService().showIncomingTxNotification(tx.amount);
       }

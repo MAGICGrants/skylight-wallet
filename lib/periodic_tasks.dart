@@ -1,10 +1,9 @@
 import 'dart:io';
 
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/wallet_core_glue.dart' show useSharedWalletCore;
+import 'package:skylight_wallet/wallet_core_glue.dart' show openBackgroundWallet;
 import 'package:workmanager/workmanager.dart';
 
 class PeriodicTasks {
@@ -60,41 +59,15 @@ Future<bool> runTxNotifier({
   bool allowTor = true,
   bool allowNode = true,
 }) async {
-  final wallet = WalletModel();
-
-  if (!await wallet.hasExistingWallet()) {
-    return true;
-  }
-
-  // Load the connection first so the correct-mode wallet file is opened.
-  await wallet.loadPersistedConnection();
-
-  if (!allowNode && wallet.connectionType == 'node') {
-    log(LogLevel.info, '[Background sync] Node connection; not syncing in this window.');
-    return true;
-  }
-
-  if (!allowTor && wallet.usingTor) {
-    log(LogLevel.info, '[Background sync] Tor connection; needs the longer window.');
-    return true;
-  }
-
-  final backgroundSync =
-      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
-      false;
-
-  // A full-node scan is heavy and only runs when Background Sync is on; an LWS
-  // wallet always syncs (server-side, cheap). Decided before the wallet is
-  // opened: this task stays scheduled for notifications alone, so a node wallet
-  // with Background Sync off lands here every cycle, and opening the wallet
-  // (with its cached-stats read) is the expensive part of a run that is about
-  // to do nothing. Leaving one open would also give the model's own timers
-  // something to connect.
-  if (wallet.connectionType == 'node' && !backgroundSync) {
-    return true;
-  }
-
-  await wallet.openExisting();
+  // Loads the connection, applies the node/Tor/background-sync gates, and opens
+  // the correct-mode wallet — null when there's no wallet or this window won't
+  // sync it. A node scan is heavy, so it only runs with Background Sync on.
+  final wallet = await openBackgroundWallet(
+    allowTor: allowTor,
+    allowNode: allowNode,
+    requireBackgroundSyncForNode: true,
+  );
+  if (wallet == null) return true;
 
   if (wallet.usingTor) {
     await TorService.sharedInstance.start();
@@ -193,9 +166,6 @@ void _callbackDispatcher() {
 /// Call after anything that changes the answer: the notifications toggle, the
 /// background-sync toggle, or the connection itself.
 Future<void> applyBackgroundTaskRegistration() async {
-  // These tasks still drive the legacy WalletModel; under wallet-core they would
-  // open the wallet a second time. Skip until they're migrated (Phase 6).
-  if (useSharedWalletCore) return;
   if (Platform.isIOS) return _applyIosBackgroundTasks();
   if (!Platform.isAndroid) return;
 
@@ -269,16 +239,6 @@ Future<void> _applyIosBackgroundTasks() async {
 
 Future<void> registerPeriodicTasks() async {
   if (!Platform.isAndroid && !Platform.isIOS) {
-    return;
-  }
-
-  if (useSharedWalletCore) {
-    // Not migrated to wallet-core yet. Cancel anything a prior legacy-mode
-    // install left scheduled, so WorkManager can't wake a second WalletModel in
-    // the background isolate (and stops tracking its constraints).
-    await Workmanager().cancelByUniqueName(PeriodicTasks.txNotifier);
-    await Workmanager().cancelByUniqueName(_iosRefreshTaskId);
-    await Workmanager().cancelByUniqueName(_iosProcessingTaskId);
     return;
   }
 

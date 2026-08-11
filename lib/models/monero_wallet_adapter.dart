@@ -101,6 +101,8 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   Future<void> load() => _wallet.load();
   @override
+  Future<void> loadTxHistory() => _wallet.loadTxHistory();
+  @override
   Future<int> getRestoreHeight() => _wallet.getRestoreHeight();
   @override
   Future<void> pauseSyncAndStore() => _wallet.pauseSyncAndStore();
@@ -162,7 +164,8 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   Future<void> markExistingTxsAsNotified() => _wallet.markExistingTxsAsNotified();
   @override
-  Future<void> notifyNewIncomingTxs() => _wallet.notifyNewIncomingTxs();
+  Future<void> notifyNewIncomingTxs({bool announce = true}) =>
+      _wallet.notifyNewIncomingTxs(announce: announce);
 
   // Key export
   @override

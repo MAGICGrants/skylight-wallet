@@ -30,19 +30,111 @@ const _moneroDecimals = 12;
 
 bool get _isMobile => Platform.isAndroid || Platform.isIOS;
 
-/// Installs wallet-core's app config + injectable seams. Call once from main().
+bool _walletCoreInstalled = false;
+
+/// Installs wallet-core's app config + injectable seams. Idempotent: the main
+/// isolate calls it from main(), and each background isolate calls it too (a
+/// fresh isolate does not inherit the main one's statics).
 void installWalletCore() {
+  if (_walletCoreInstalled) return;
+  _walletCoreInstalled = true;
+
   WalletAppConfig.install(WalletAppConfig.skylight);
   CryptoWallet.aliasResolver = resolveOpenAlias;
 
   wcore.WalletLog.sink = const _SkylightLogSink();
   wcore.WalletLog.isVerbose = () async =>
-      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ?? false;
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
+      false;
 
   CryptoWallet.incomingTxNotifier = (tx, _) {
-    final amount = double.tryParse(baseUnitsToDecimalString(tx.amountBaseUnits, _moneroDecimals)) ?? 0;
-    NotificationService().showIncomingTxNotification(amount);
+    final amount =
+        double.tryParse(baseUnitsToDecimalString(tx.amountBaseUnits, _moneroDecimals)) ?? 0;
+    if (!_isMobile) {
+      // Desktop has no notifications toggle (it's Android/iOS-only), and always
+      // showed from the legacy WalletModel's loadTxHistory. Keep that.
+      NotificationService().showIncomingTxNotification(amount);
+      return;
+    }
+    // Mobile respects the toggle. notifyNewIncomingTxs still records the tx as
+    // seen whether or not this fires, so turning it on later does not replay a
+    // backlog.
+    SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled).then((on) {
+      if (on ?? false) NotificationService().showIncomingTxNotification(amount);
+    });
   };
+}
+
+/// Opens the XMR wallet inside a background isolate (WorkManager / foreground
+/// service), or returns null when there is no wallet or this window should not
+/// sync it. The connection is loaded first so the correct-mode file opens and
+/// the node/Tor gates can be checked before the expensive open.
+///
+/// [allowTor]/[allowNode] describe what the scheduling window can accommodate;
+/// [requireBackgroundSyncForNode] additionally skips a node wallet unless the
+/// user turned Background Sync on (a node scan is heavy — the periodic task
+/// sets it, the foreground service does not). All flag-branched here so the
+/// isolates drive a single [AppWallet]. Under the flag the manager is kept
+/// alive for the isolate's lifetime by the wallet's listener back to it.
+Future<AppWallet?> openBackgroundWallet({
+  bool allowTor = true,
+  bool allowNode = true,
+  bool requireBackgroundSyncForNode = false,
+}) async {
+  if (useSharedWalletCore) {
+    installWalletCore();
+    final manager = WalletManager(coins: () => [MoneroWallet()]);
+    if (!await manager.hasAnyExistingWallet()) return null;
+
+    // Loads the persisted connection for each coin without opening files.
+    await manager.loadCachedDisplayState();
+    final wallet = manager.getWallet('XMR') as MoneroWallet;
+    if (!await _shouldBackgroundSync(
+      connectionType: wallet.connectionType,
+      usingTor: wallet.usingTor,
+      allowTor: allowTor,
+      allowNode: allowNode,
+      requireBackgroundSyncForNode: requireBackgroundSyncForNode,
+    )) {
+      return null;
+    }
+
+    await manager.openAll();
+    return MoneroWalletAdapter(wallet);
+  }
+
+  final wallet = WalletModel();
+  if (!await wallet.hasExistingWallet()) return null;
+  await wallet.loadPersistedConnection();
+  if (!await _shouldBackgroundSync(
+    connectionType: wallet.connectionType,
+    usingTor: wallet.usingTor,
+    allowTor: allowTor,
+    allowNode: allowNode,
+    requireBackgroundSyncForNode: requireBackgroundSyncForNode,
+  )) {
+    return null;
+  }
+  await wallet.openExisting();
+  return wallet;
+}
+
+Future<bool> _shouldBackgroundSync({
+  required String connectionType,
+  required bool usingTor,
+  required bool allowTor,
+  required bool allowNode,
+  required bool requireBackgroundSyncForNode,
+}) async {
+  if (!allowNode && connectionType == 'node') return false;
+  if (!allowTor && usingTor) return false;
+  if (requireBackgroundSyncForNode && connectionType == 'node') {
+    final on =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
+        false;
+    if (!on) return false;
+  }
+  return true;
 }
 
 /// WalletManager provider, gated. Coexists with WalletModel during migration.

@@ -51,6 +51,7 @@ abstract interface class AppWallet implements Listenable {
   // Lifecycle
   Future<bool> hasExistingWallet();
   Future<void> load();
+  Future<void> loadTxHistory();
   Future<int> getRestoreHeight();
   Future<void> pauseSyncAndStore();
 
@@ -77,7 +78,10 @@ abstract interface class AppWallet implements Listenable {
 
   // Notifications
   Future<void> markExistingTxsAsNotified();
-  Future<void> notifyNewIncomingTxs();
+  /// [announce] false records current history as seen without firing an OS
+  /// notification — the foreground uses it so a tx the user watched arrive is
+  /// not re-notified by a background isolate.
+  Future<void> notifyNewIncomingTxs({bool announce});
 
   // Key export (secret_keys / lws screens)
   Future<String> readSecretViewKey();

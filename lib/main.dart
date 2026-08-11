@@ -21,6 +21,7 @@ import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
@@ -55,6 +56,9 @@ void main() async {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // TEMP: confirm which engine the build is running. Remove when done.
+      log(LogLevel.warn, '▶ ENGINE: ${useSharedWalletCore ? 'wallet-core (flag ON)' : 'WalletModel (flag off)'}');
 
       if (useSharedWalletCore) {
         installWalletCore();
@@ -150,7 +154,7 @@ class _AppRoot extends StatefulWidget {
   State<_AppRoot> createState() => _AppRootState();
 }
 
-class _AppRootState extends State<_AppRoot> {
+class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   // Started once, on the first build. Building it inside the builder would
   // re-run it on every theme/language change, opening the wallet again — a
   // second wallet on the same file, with its own sync loop, while the first is
@@ -158,6 +162,48 @@ class _AppRootState extends State<_AppRoot> {
   Future<List<Object>>? _startup;
   // Services that must fire once the startup work is done, not on every build.
   var _startedServices = false;
+  // Desktop-only foreground announce: listens for tx-history growth (see below).
+  AppWallet? _announceWallet;
+  int _lastAnnouncedTxCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _announceWallet?.removeListener(_announceNewTxsOnGrowth);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Mobile only: leaving the app marks everything on screen as seen so a
+    // background isolate won't re-notify a tx the user just watched arrive.
+    // Desktop has no background isolate — and doing this would pre-empt its
+    // foreground announce. Marks only synced history (hash-based), so an
+    // unsynced receipt is still announced later.
+    if (state == AppLifecycleState.paused && isMobile) {
+      unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
+    }
+  }
+
+  // Desktop has no background isolate to announce incoming txs, so the
+  // foreground announces when the wallet's history grows. notifyNewIncomingTxs
+  // is the decider (hash-based, net-receipt only, respects the notifications
+  // toggle); the count is a cheap gate so unrelated notifications (connectivity,
+  // balance) don't hit the keystore.
+  void _announceNewTxsOnGrowth() {
+    final wallet = _announceWallet;
+    if (wallet == null) return;
+    final count = wallet.txHistory.length;
+    if (count <= _lastAnnouncedTxCount) return;
+    _lastAnnouncedTxCount = count;
+    unawaited(wallet.notifyNewIncomingTxs());
+  }
 
   Future<List<Object>> _runStartup() {
     // Wallet existence drives the initial route; done quickly without a full load.
@@ -200,6 +246,15 @@ class _AppRootState extends State<_AppRoot> {
 
                 if (walletExists) {
                   fiatRate.startService();
+                }
+
+                // Desktop has no background isolate to announce incoming txs, so
+                // the foreground announces on tx-history growth. wallet-core only:
+                // the legacy WalletModel still announces inline from loadTxHistory
+                // on desktop. Mobile announces from its background isolates.
+                if (useSharedWalletCore && isDesktop) {
+                  _announceWallet = appWalletOf(context, listen: false)
+                    ..addListener(_announceNewTxsOnGrowth);
                 }
               }
 

@@ -12,7 +12,7 @@ import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/widgets/fiat_amount.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/widgets/monero_amount.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/wallet_types.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 

@@ -20,7 +20,6 @@ import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
@@ -57,12 +56,7 @@ void main() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      // TEMP: confirm which engine the build is running. Remove when done.
-      log(LogLevel.warn, '▶ ENGINE: ${useSharedWalletCore ? 'wallet-core (flag ON)' : 'WalletModel (flag off)'}');
-
-      if (useSharedWalletCore) {
-        installWalletCore();
-      }
+      installWalletCore();
 
       // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
@@ -112,22 +106,6 @@ void main() async {
   );
 }
 
-Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
-  if (await wallet.hasExistingWallet()) {
-    if (isMobile) {
-      // Load the persisted connection first so the wallet opens the file for
-      // the correct mode (LWS vs node).
-      await wallet.loadPersistedConnection();
-      await wallet.openExisting();
-      wallet.load();
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -135,8 +113,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        if (useSharedWalletCore) walletManagerProvider(),
-        ChangeNotifierProvider(create: (context) => WalletModel()),
+        walletManagerProvider(),
         ChangeNotifierProvider(create: (context) => LanguageModel()),
         ChangeNotifierProvider(create: (context) => ThemeModel()),
         ChangeNotifierProvider(create: (context) => FiatRateModel()),
@@ -207,9 +184,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
   Future<List<Object>> _runStartup() {
     // Wallet existence drives the initial route; done quickly without a full load.
-    final walletExists = useSharedWalletCore
-        ? startupWalletManager(context)
-        : loadExistingWalletIfExists(Provider.of<WalletModel>(context, listen: false));
+    final walletExists = startupWalletManager(context);
     return Future.wait([SharedPreferences.getInstance(), walletExists]);
   }
 
@@ -249,10 +224,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 }
 
                 // Desktop has no background isolate to announce incoming txs, so
-                // the foreground announces on tx-history growth. wallet-core only:
-                // the legacy WalletModel still announces inline from loadTxHistory
-                // on desktop. Mobile announces from its background isolates.
-                if (useSharedWalletCore && isDesktop) {
+                // the foreground announces on tx-history growth. Mobile announces
+                // from its background isolates.
+                if (isDesktop) {
                   _announceWallet = appWalletOf(context, listen: false)
                     ..addListener(_announceNewTxsOnGrowth);
                 }

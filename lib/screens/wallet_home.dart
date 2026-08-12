@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart' show TxDetails;
+import 'package:skylight_wallet/models/wallet_types.dart' show TxDetails;
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/consts.dart' as consts;

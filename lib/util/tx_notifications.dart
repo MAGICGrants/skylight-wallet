@@ -1,4 +1,4 @@
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/wallet_types.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
 
 /// How many announced transaction hashes are remembered. The cutoff covers

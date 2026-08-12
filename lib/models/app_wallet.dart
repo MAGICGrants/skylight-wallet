@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show Listenable;
 
-import 'package:skylight_wallet/models/wallet_model.dart'
+import 'package:skylight_wallet/models/wallet_types.dart'
     show TxDetails, LWSConnectionDetails, ResolvedOpenAlias;
 
 /// A transaction built but not yet broadcast, in display (XMR) units. The
@@ -16,10 +16,9 @@ abstract interface class AppPendingTx {
 typedef StoredSeed = ({String mnemonic, String format});
 typedef StoredSeedReader = Future<StoredSeed?> Function();
 
-/// The wallet surface screens use. Both the legacy [WalletModel] and the
-/// wallet-core adapter implement it, so a screen reads one type regardless of
-/// useSharedWalletCore. Divergent flows (send/restore/create) are handled at
-/// their screens, not here.
+/// The wallet surface screens use. The wallet-core adapter
+/// ([MoneroWalletAdapter]) implements it, so screens read one neutral type.
+/// Divergent flows (send/restore/create) are handled at their screens, not here.
 abstract interface class AppWallet implements Listenable {
   // Connection
   String get connectionAddress;

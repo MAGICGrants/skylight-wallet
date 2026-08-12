@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:monero/monero.dart' as monero;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
 class AddressBookScreen extends StatefulWidget {
@@ -287,8 +287,7 @@ class _ContactDialogState extends State<_ContactDialog> {
       return i18n.fieldEmptyError;
     }
 
-    // ignore: deprecated_member_use
-    if (!monero.Wallet_addressValid(value.trim(), 0)) {
+    if (!appWalletOf(context).isAddressValid(value.trim())) {
       return i18n.sendInvalidAddressError;
     }
     return null;

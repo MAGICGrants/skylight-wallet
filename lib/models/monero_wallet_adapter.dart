@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:skylight_wallet/models/app_wallet.dart';
-import 'package:skylight_wallet/models/wallet_model.dart'
+import 'package:skylight_wallet/models/wallet_types.dart'
     show TxDetails, TxRecipient, LWSConnectionDetails, ResolvedOpenAlias;
 
 import 'package:wallet_domain/wallet_domain.dart' as domain;

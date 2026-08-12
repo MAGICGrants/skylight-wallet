@@ -369,7 +369,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     var lwsConnectionIconStatus = StatusIconStatus.fail;
     var fiatApiIconStatus = StatusIconStatus.loading;
 
-    if (wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) > 0) {
+    if (wallet.isFullySynced) {
       lwsConnectionIconStatus = StatusIconStatus.complete;
     } else if (wallet.usingTor &&
             TorService.sharedInstance.status == TorConnectionStatus.connecting ||

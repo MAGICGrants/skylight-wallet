@@ -118,3 +118,11 @@ abstract interface class AppWallet implements Listenable {
   Future<void> commitTx(AppPendingTx tx, String destinationAddress);
   Future<ResolvedOpenAlias?> resolveOpenAlias(String alias);
 }
+
+extension AppWalletSyncStatus on AppWallet {
+  /// Truly caught up: connected, synced, and a real height has loaded. The
+  /// height guard rules out the brief post-open window where `isSynced` flips
+  /// true before `syncedHeight` arrives (LWS reports 0 at first), which would
+  /// otherwise show "up to date" prematurely.
+  bool get isFullySynced => isConnected && isSynced && (syncedHeight ?? 0) > 0;
+}

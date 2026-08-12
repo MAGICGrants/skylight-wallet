@@ -61,9 +61,7 @@ class _SyncTaskHandler extends TaskHandler {
   void onRepeatEvent(DateTime timestamp) {
     final wallet = _wallet;
     final syncing =
-        wallet != null &&
-        wallet.connectionAddress.isNotEmpty &&
-        !(wallet.isConnected && wallet.isSynced);
+        wallet != null && wallet.connectionAddress.isNotEmpty && !wallet.isFullySynced;
     FlutterForegroundTask.updateService(
       notificationTitle: 'Skylight Wallet',
       notificationText: syncing ? 'Syncing…' : 'Wallet up to date',
@@ -118,14 +116,17 @@ void initForegroundSync() {
   );
 }
 
-Future<void> startForegroundSync() async {
+/// [synced] seeds the initial notification from the caller's live wallet state,
+/// so toggling this on while already caught up shows "up to date" immediately
+/// instead of a stale "Syncing…" until the isolate's first 30s tick.
+Future<void> startForegroundSync({bool synced = false}) async {
   if (!Platform.isAndroid) return;
   initForegroundSync();
   await FlutterForegroundTask.requestNotificationPermission();
   if (await FlutterForegroundTask.isRunningService) return;
   await FlutterForegroundTask.startService(
     notificationTitle: 'Skylight Wallet',
-    notificationText: 'Syncing…',
+    notificationText: synced ? 'Wallet up to date' : 'Syncing…',
     callback: foregroundSyncCallback,
   );
 }

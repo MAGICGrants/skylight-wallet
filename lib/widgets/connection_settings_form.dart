@@ -10,6 +10,7 @@ import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 
@@ -89,9 +90,11 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
   void _setForegroundSyncEnabled(bool value) async {
     setState(() => _foregroundSyncEnabled = value);
+    // Captured before the await so the notification starts from the live status.
+    final synced = value && appWalletOf(context).isFullySynced;
     await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, value);
     if (value) {
-      await startForegroundSync();
+      await startForegroundSync(synced: synced);
     } else {
       await stopForegroundSync();
     }

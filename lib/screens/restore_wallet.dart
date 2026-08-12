@@ -130,7 +130,17 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
 
     if (mounted) {
       Provider.of<FiatRateModel>(context, listen: false).startService();
-      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
+      // Wallet Details is LWS whitelisting info; a full node needs none of it.
+      if (appWalletOf(context).isNodeMode) {
+        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/lws_details',
+          (Route<dynamic> route) => false,
+          arguments: restoreHeight,
+        );
+      }
     }
   }
 

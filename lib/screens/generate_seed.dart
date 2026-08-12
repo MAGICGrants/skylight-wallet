@@ -54,13 +54,18 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
   }
 
   void _continue() {
+    Provider.of<FiatRateModel>(context, listen: false).startService();
+    // Wallet Details is LWS whitelisting info; a full node needs none of it.
+    if (appWalletOf(context).isNodeMode) {
+      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
+      return;
+    }
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/lws_details',
       (Route<dynamic> route) => false,
       arguments: _restoreHeight,
     );
-    Provider.of<FiatRateModel>(context, listen: false).startService();
   }
 
   @override

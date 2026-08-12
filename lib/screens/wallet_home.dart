@@ -273,7 +273,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 4,
           children: [
-            if (fiatRate.hasFailed)
+            if (fiatRate.hasFailed && !fiatRate.isDisabled)
               Tooltip(
                 message: i18n.homeFiatApiError,
                 child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),

@@ -45,7 +45,9 @@ class FiatRateModel with ChangeNotifier {
   void _startRateFetchTimer() {
     if (_fiatApiMode == FiatApiMode.disabled) {
       _isDisabled = true;
+      _hasFailed = false; // a disabled API is not a failed one
       log(LogLevel.info, 'Fiat API is disabled. Not starting rate fetch timer.');
+      notifyListeners();
       return;
     } else {
       _isDisabled = false;
@@ -155,6 +157,7 @@ class FiatRateModel with ChangeNotifier {
       _rateFetchTimer?.cancel();
       _rateFetchTimer = null;
       _isDisabled = true;
+      _hasFailed = false; // a disabled API is not a failed one
       notifyListeners();
       return;
     }

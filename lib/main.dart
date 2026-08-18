@@ -219,6 +219,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 TorSettingsService.sharedInstance.loadSettings();
                 TorService.sharedInstance.start();
 
+                // Attach the manager once so the (multicoin) fiat model knows to
+                // fetch XMR; every startService() afterwards can stay argless.
+                attachFiatWalletManager(context);
                 if (walletExists) {
                   fiatRate.startService();
                 }

@@ -133,8 +133,8 @@ class _ConfirmSendScreenState extends State<ConfirmSendScreen> {
     final i18n = AppLocalizations.of(context)!;
     final fiatRate = context.watch<FiatRateModel>();
     final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
-    final amountFiat = fiatRate.rate is double ? _amount * fiatRate.rate! : null;
-    final networkFeeFiat = fiatRate.rate is double ? _fee * fiatRate.rate! : null;
+    final amountFiat = fiatRate.rateFor('XMR') is double ? _amount * fiatRate.rateFor('XMR')! : null;
+    final networkFeeFiat = fiatRate.rateFor('XMR') is double ? _fee * fiatRate.rateFor('XMR')! : null;
 
     return Scaffold(
       appBar: AppBar(),

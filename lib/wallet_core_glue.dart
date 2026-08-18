@@ -5,12 +5,19 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
+import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
+import 'package:skylight_wallet/services/foreground_sync_service.dart' show foregroundSyncCallback;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 
 import 'package:wallet_infra/wallet_infra.dart' as wcore;
+import 'package:wallet_background/wallet_background.dart' show BackgroundSync;
+import 'package:wallet_fiat/wallet_fiat.dart' show FiatRates;
 import 'package:wallet_domain/wallet_domain.dart'
     show
         WalletAppConfig,
@@ -38,6 +45,21 @@ void installWalletCore() {
   WalletAppConfig.install(WalletAppConfig.skylight);
   CryptoWallet.aliasResolver = resolveOpenAlias;
 
+  wcore.NotificationService.windowsAppName = 'Skylight Wallet';
+  wcore.NotificationService.windowsAppUserModelId = 'org.magicgrants.skylight';
+  wcore.NotificationService.windowsGuid = '6dcf17a9-fb5f-4f47-b0b9-6d655e90adbf';
+
+  BackgroundSync.install(
+    coins: () => [MoneroWallet()],
+    workmanagerCallback: backgroundDispatcher,
+    foregroundCallback: foregroundSyncCallback,
+    ensureTorConnected: _ensureTorConnected,
+    iosBundleId: 'org.magicgrants.skylightwallet',
+    foregroundTitle: 'Skylight Wallet',
+  );
+
+  FiatRates.install(getTorProxy: TorSettingsService.sharedInstance.getProxy);
+
   wcore.WalletLog.sink = const _SkylightLogSink();
   wcore.WalletLog.isVerbose = () async =>
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
@@ -46,78 +68,47 @@ void installWalletCore() {
   CryptoWallet.incomingTxNotifier = (tx, _) {
     final amount =
         double.tryParse(baseUnitsToDecimalString(tx.amountBaseUnits, _moneroDecimals)) ?? 0;
+    void show() => NotificationService().showIncomingTxNotification(
+      title: 'Incoming transaction',
+      body: 'You received $amount XMR',
+    );
     if (!_isMobile) {
       // Desktop has no notifications toggle (it's Android/iOS-only), so it always
       // shows an incoming-tx notification.
-      NotificationService().showIncomingTxNotification(amount);
+      show();
       return;
     }
     // Mobile respects the toggle. notifyNewIncomingTxs still records the tx as
     // seen whether or not this fires, so turning it on later does not replay a
     // backlog.
     SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled).then((on) {
-      if (on ?? false) NotificationService().showIncomingTxNotification(amount);
+      if (on ?? false) show();
     });
   };
 }
 
-/// Opens the XMR wallet inside a background isolate (WorkManager / foreground
-/// service), or returns null when there is no wallet or this window should not
-/// sync it. The connection is loaded first so the correct-mode file opens and
-/// the node/Tor gates can be checked before the expensive open.
-///
-/// [allowTor]/[allowNode] describe what the scheduling window can accommodate;
-/// [requireBackgroundSyncForNode] additionally skips a node wallet unless the
-/// user turned Background Sync on (a node scan is heavy — the periodic task
-/// sets it, the foreground service does not). The manager is kept alive for the
-/// isolate's lifetime by the wallet's listener back to it.
-Future<AppWallet?> openBackgroundWallet({
-  bool allowTor = true,
-  bool allowNode = true,
-  bool requireBackgroundSyncForNode = false,
-}) async {
-  installWalletCore();
-  final manager = WalletManager(coins: () => [MoneroWallet()]);
-  if (!await manager.hasAnyExistingWallet()) return null;
-
-  // Loads the persisted connection for each coin without opening files.
-  await manager.loadCachedDisplayState();
-  final wallet = manager.getWallet('XMR') as MoneroWallet;
-  if (!await _shouldBackgroundSync(
-    connectionType: wallet.connectionType,
-    usingTor: wallet.usingTor,
-    allowTor: allowTor,
-    allowNode: allowNode,
-    requireBackgroundSyncForNode: requireBackgroundSyncForNode,
-  )) {
-    return null;
-  }
-
-  await manager.openAll();
-  return MoneroWalletAdapter(wallet);
-}
-
-Future<bool> _shouldBackgroundSync({
-  required String connectionType,
-  required bool usingTor,
-  required bool allowTor,
-  required bool allowNode,
-  required bool requireBackgroundSyncForNode,
-}) async {
-  if (!allowNode && connectionType == 'node') return false;
-  if (!allowTor && usingTor) return false;
-  if (requireBackgroundSyncForNode && connectionType == 'node') {
-    final on =
-        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
-        false;
-    if (!on) return false;
-  }
-  return true;
+/// Brings skylight's Tor up and reports whether it connected — the seam
+/// `wallet_background` uses so a background isolate starts the *same* Tor the
+/// wallet connects through. (Background open + the node/Tor gate now live inside
+/// `wallet_background`.)
+Future<bool> _ensureTorConnected() async {
+  await TorService.sharedInstance.start();
+  return TorService.sharedInstance.waitUntilConnected(timeout: const Duration(minutes: 2));
 }
 
 /// The wallet-core [WalletManager] provider.
 ChangeNotifierProvider<WalletManager> walletManagerProvider() =>
     ChangeNotifierProvider(create: (_) => WalletManager(coins: () => [MoneroWallet()]));
+
+/// Attaches the [WalletManager] to the fiat model so it fetches rates for the
+/// active coins (XMR). Call once at startup; the model stays attached, so every
+/// `FiatRateModel.startService()` afterwards needs no manager argument.
+void attachFiatWalletManager(BuildContext context) {
+  Provider.of<FiatRateModel>(
+    context,
+    listen: false,
+  ).attachWalletManager(Provider.of<WalletManager>(context, listen: false));
+}
 
 /// Startup for the wallet-core stack: whether a wallet exists (for the initial
 /// route) and, on mobile, opening + starting its sync.

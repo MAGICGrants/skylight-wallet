@@ -65,23 +65,33 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 6bbf5059257f18e65dc7fcdf089e355181a2d578
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
       path: packages/wallet_openalias
+  wallet_background:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      path: packages/wallet_background
+  wallet_fiat:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      path: packages/wallet_fiat
 
   cupertino_icons: 1.0.8
   path: 1.9.1

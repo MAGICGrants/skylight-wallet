@@ -472,7 +472,7 @@ class _SendScreenState extends State<SendScreen> {
                 priority: 0,
                 fees: _fees,
                 fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rate,
+                fiatRate: fiatRate.rateFor('XMR'),
                 isSelected: _selectedPriority == 0,
                 onTap: () {
                   setState(() {
@@ -487,7 +487,7 @@ class _SendScreenState extends State<SendScreen> {
                 priority: 1,
                 fees: _fees,
                 fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rate,
+                fiatRate: fiatRate.rateFor('XMR'),
                 isSelected: _selectedPriority == 1,
                 onTap: () {
                   setState(() {
@@ -502,7 +502,7 @@ class _SendScreenState extends State<SendScreen> {
                 priority: 2,
                 fees: _fees,
                 fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rate,
+                fiatRate: fiatRate.rateFor('XMR'),
                 isSelected: _selectedPriority == 2,
                 onTap: () {
                   setState(() {

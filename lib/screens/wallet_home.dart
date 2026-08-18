@@ -48,8 +48,8 @@ class _TransactionListItemState extends State<_TransactionListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final amountFiat = widget.fiatRate.rate is double
-        ? widget.tx.amount * widget.fiatRate.rate!
+    final amountFiat = widget.fiatRate.rateFor('XMR') is double
+        ? widget.tx.amount * widget.fiatRate.rateFor('XMR')!
         : null;
 
     return MouseRegion(
@@ -361,8 +361,8 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
     final deviceType = _getDeviceType(context);
-    final unlockedBalanceFiat = fiatRate.rate is double && wallet.unlockedBalance is double
-        ? wallet.unlockedBalance! * fiatRate.rate!
+    final unlockedBalanceFiat = fiatRate.rateFor('XMR') is double && wallet.unlockedBalance is double
+        ? wallet.unlockedBalance! * fiatRate.rateFor('XMR')!
         : null;
     final lockedBalance = (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
@@ -379,7 +379,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       lwsConnectionIconStatus = StatusIconStatus.loading;
     }
 
-    if (fiatRate.rate is double &&
+    if (fiatRate.rateFor('XMR') is double &&
         !fiatRate.hasFailed &&
         TorService.sharedInstance.status == TorConnectionStatus.connected) {
       fiatApiIconStatus = StatusIconStatus.complete;

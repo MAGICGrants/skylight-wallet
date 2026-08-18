@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:skylight_wallet/consts.dart' as consts;
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/wallet_types.dart';
 import 'package:skylight_wallet/util/tx_notifications.dart';
 
 /// A transaction as the wallet reports it. [height] of -1 means unconfirmed.

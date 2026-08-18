@@ -1229,10 +1229,24 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.0.2"
+  wallet_background:
+    dependency: "direct main"
+    description:
+      path: "../wallet-core/packages/wallet_background"
+      relative: true
+    source: path
+    version: "0.1.0"
   wallet_domain:
     dependency: "direct main"
     description:
       path: "../wallet-core/packages/wallet_domain"
+      relative: true
+    source: path
+    version: "0.1.0"
+  wallet_fiat:
+    dependency: "direct main"
+    description:
+      path: "../wallet-core/packages/wallet_fiat"
       relative: true
     source: path
     version: "0.1.0"

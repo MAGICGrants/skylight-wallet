@@ -457,6 +457,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Recipients';
 
   @override
+  String get txDetailsChangeRecipientLabel => 'Change';
+
+  @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
   String get lwsKeysTitle => 'LWS Keys';
 
   @override

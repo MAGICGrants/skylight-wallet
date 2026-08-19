@@ -92,6 +92,11 @@ dependencies:
       url: https://github.com/MAGICGrants/wallet-core
       ref: f674cb907ab971126a88dcc78c33b549b630f58f
       path: packages/wallet_fiat
+  wallet_ui:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      path: packages/wallet_ui
 
   cupertino_icons: 1.0.8
   path: 1.9.1

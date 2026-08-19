@@ -155,6 +155,8 @@
   "txDetailsConfirmationsLabel": "Confirmações",
   "txDetailsViewKeyLabel": "Chave de Visualização",
   "txDetailsRecipientsLabel": "Destinatários",
+  "txDetailsChangeRecipientLabel": "Troco",
+  "copiedToClipboard": "Copiado para a área de transferência",
   "lwsKeysTitle": "Chaves do LWS",
   "lwsKeysPrimaryAddress": "Endereço Primário",
   "lwsKeysRestoreHeight": "Bloco de Restauração",

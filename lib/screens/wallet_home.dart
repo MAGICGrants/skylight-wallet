@@ -16,7 +16,6 @@ import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
-import 'package:skylight_wallet/widgets/tx_details.dart';
 
 enum LwsConnectionStatus { disconnected, connecting, connected }
 
@@ -185,7 +184,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
   }
 
   void _showTxDetails(TxDetails txDetails) {
-    TxDetailsDialog.show(context, txDetails);
+    showTxDetailsDialog(context, txDetails);
   }
 
   void _showTxSuccessToast() {

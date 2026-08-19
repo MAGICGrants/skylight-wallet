@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
+import 'package:skylight_wallet/models/wallet_types.dart' show TxDetails;
+import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
 import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
 import 'package:skylight_wallet/services/foreground_sync_service.dart' show foregroundSyncCallback;
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -141,6 +143,17 @@ AppWallet appWalletOf(BuildContext context, {bool listen = false}) {
       return (mnemonic: stored.seed.mnemonic, format: stored.seed.format.name);
     },
   );
+}
+
+/// Shows the shared tx-details dialog (`wallet_ui`, D24) for a neutral [tx] from
+/// the tx list. Bridges to the engine wallet + its wallet_domain TxDetails, which
+/// carry the exact BigInt amounts the neutral display type rounds to double.
+void showTxDetailsDialog(BuildContext context, TxDetails tx) {
+  final wallet =
+      Provider.of<WalletManager>(context, listen: false).getWallet('XMR') as MoneroWallet;
+  final matches = wallet.txHistory.where((t) => t.hash == tx.hash);
+  if (matches.isEmpty) return;
+  TxDetailsDialog.show(context, wallet, matches.first);
 }
 
 /// Sets the wallet-encryption password (desktop-entered). Mobile mints a random

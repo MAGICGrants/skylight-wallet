@@ -939,6 +939,18 @@ abstract class AppLocalizations {
   /// **'Recipients'**
   String get txDetailsRecipientsLabel;
 
+  /// No description provided for @txDetailsChangeRecipientLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get txDetailsChangeRecipientLabel;
+
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
   /// No description provided for @lwsKeysTitle.
   ///
   /// In en, this message translates to:

@@ -457,6 +457,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Destinatários';
 
   @override
+  String get txDetailsChangeRecipientLabel => 'Troco';
+
+  @override
+  String get copiedToClipboard => 'Copiado para a área de transferência';
+
+  @override
   String get lwsKeysTitle => 'Chaves do LWS';
 
   @override

@@ -155,6 +155,8 @@
   "txDetailsConfirmationsLabel": "Confirmations",
   "txDetailsViewKeyLabel": "View Key",
   "txDetailsRecipientsLabel": "Recipients",
+  "txDetailsChangeRecipientLabel": "Change",
+  "copiedToClipboard": "Copied to clipboard",
   "lwsKeysTitle": "LWS Keys",
   "lwsKeysPrimaryAddress": "Primary Address",
   "lwsKeysRestoreHeight": "Restore Height",

@@ -572,6 +572,7 @@ class _SendScreenState extends State<SendScreen> {
                       TextField(
                         controller: _destinationAddressController,
                         maxLines: null,
+                        textInputAction: TextInputAction.done,
                         decoration: InputDecoration(
                           labelText: i18n.address,
                           border: OutlineInputBorder(),
@@ -663,6 +664,7 @@ class _SendScreenState extends State<SendScreen> {
                     TextField(
                       controller: _amountController,
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.done,
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?'))],
                       decoration: InputDecoration(
                         labelText: i18n.amount,
@@ -842,6 +844,7 @@ class _ContactPickerDialogState extends State<_ContactPickerDialog> {
             TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 hintText: i18n.addressBookSearchHint,
                 prefixIcon: Icon(Icons.search),

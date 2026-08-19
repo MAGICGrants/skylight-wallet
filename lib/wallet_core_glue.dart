@@ -15,7 +15,6 @@ import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/util/logging.dart';
 
 import 'package:wallet_infra/wallet_infra.dart' as wcore;
 import 'package:wallet_background/wallet_background.dart' show BackgroundSync;
@@ -62,7 +61,12 @@ void installWalletCore() {
 
   FiatRates.install(getTorProxy: TorSettingsService.sharedInstance.getProxy);
 
-  wcore.WalletLog.sink = const _SkylightLogSink();
+  // The whole logger lives in wallet-core now (D25): console + file sinks fan out
+  // from one installed sink; the file sink is verbose-gated internally.
+  wcore.WalletLog.sink = wcore.CompositeLogSink([
+    const wcore.DebugPrintLogSink(),
+    wcore.FileLogSink(),
+  ]);
   wcore.WalletLog.isVerbose = () async =>
       await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
       false;
@@ -216,16 +220,4 @@ Future<void> deleteWallet(BuildContext context) async {
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
 void applyConnectionChange(BuildContext context) {
   unawaited(Provider.of<WalletManager>(context, listen: false).applyConnectionChange('XMR'));
-}
-
-/// Routes wallet-core log lines into skylight's logger.
-class _SkylightLogSink extends wcore.LogSink {
-  const _SkylightLogSink();
-
-  @override
-  Future<void> write(wcore.LogLevel level, String line) => log(switch (level) {
-    wcore.LogLevel.info => LogLevel.info,
-    wcore.LogLevel.warn => LogLevel.warn,
-    wcore.LogLevel.error => LogLevel.error,
-  }, line);
 }

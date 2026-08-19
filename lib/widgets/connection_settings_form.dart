@@ -559,6 +559,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
             ),
           ),
           keyboardType: TextInputType.url,
+          textInputAction: TextInputAction.done,
         ),
         if (_errorMessage != null)
           Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
@@ -572,6 +573,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
           ),
           keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
           inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
         ),
         Column(

@@ -277,6 +277,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
                   controller: _restoreHeightController,
                   onChanged: _onRestoreHeightChanged,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
                   inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     labelText: i18n.restoreWalletRestoreHeightLabel,

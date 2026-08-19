@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});
@@ -36,28 +35,19 @@ class _UnlockScreenState extends State<UnlockScreen> {
   }
 
   Future<void> _promptUnlock() async {
-    final auth = LocalAuthentication();
+    final i18n = AppLocalizations.of(context)!;
+    final result = await BiometricAuth.authenticate(reason: i18n.unlockReason);
 
-    try {
-      final i18n = AppLocalizations.of(context)!;
-      final didAuthenticate = await auth.authenticate(
-        localizedReason: i18n.unlockReason,
-        options: AuthenticationOptions(useErrorDialogs: true, sensitiveTransaction: true),
-      );
-
-      if (didAuthenticate) {
-        if (mounted) Navigator.pushReplacementNamed(context, '/wallet_home');
-      }
-    } catch (error) {
-      log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
-
+    // Auto-prompted with a password field right there: stay silent on a decline
+    // (the user chose to type instead), report only a real error.
+    if (result == BiometricAuthResult.authenticated) {
+      if (mounted) Navigator.pushReplacementNamed(context, '/wallet_home');
+    } else if (result == BiometricAuthResult.error) {
       if (mounted) {
-        final i18n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(i18n.unlockUnableToAuthError)));
       }
-      return;
     }
   }
 
@@ -136,6 +126,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.done,
                               validator: _validatePasswordField,
                               enabled: !_isLoading,
                               decoration: InputDecoration(

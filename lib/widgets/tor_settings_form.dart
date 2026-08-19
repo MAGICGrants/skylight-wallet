@@ -217,6 +217,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
               suffixIconColor: _connectionSuccess ? Colors.teal : Colors.red,
             ),
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) {
               setState(() {

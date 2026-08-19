@@ -86,6 +86,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,
+                    textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       hintText: i18n.addressBookSearchHint,
                       prefixIcon: Icon(Icons.search),
@@ -358,6 +359,7 @@ class _ContactDialogState extends State<_ContactDialog> {
               ),
               validator: _validateName,
               textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
             ),
             SizedBox(height: 16),
             TextFormField(
@@ -368,6 +370,7 @@ class _ContactDialogState extends State<_ContactDialog> {
               ),
               validator: _validateAddress,
               maxLines: 3,
+              textInputAction: TextInputAction.done,
             ),
           ],
         ),

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:provider/provider.dart';
-import 'package:local_auth/local_auth.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -18,6 +17,9 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
+import 'package:wallet_ui/wallet_ui.dart'
+    show DeleteWalletDialog, DeleteWalletLabels, ExportLogsDialog, ExportLogsLabels;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -94,25 +96,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     if (value) {
-      final auth = LocalAuthentication();
-
-      try {
-        final didAuthenticate = await auth.authenticate(
-          localizedReason: i18n.settingsAppLockUnlockReason,
-          options: AuthenticationOptions(useErrorDialogs: true, sensitiveTransaction: true),
-        );
-
-        if (!didAuthenticate) {
-          if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
-          }
-          return;
-        }
-      } catch (error) {
-        log(LogLevel.error, 'Unable to authenticate: ${error.toString()}');
-
+      final result = await BiometricAuth.authenticate(reason: i18n.settingsAppLockUnlockReason);
+      // Enabling app-lock is an explicit opt-in, so decline and error both report.
+      if (result != BiometricAuthResult.authenticated) {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -153,7 +139,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       if (mounted) {
-        _showExportLogsDialog(logFiles);
+        ExportLogsDialog.show(
+          context,
+          logFiles,
+          ExportLogsLabels(
+            title: i18n.settingsExportLogsLabel,
+            cancel: i18n.cancel,
+            exportError: i18n.settingsExportLogsError,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -164,83 +158,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showExportLogsDialog(List<LogFileInfo> logFiles) {
-    final i18n = AppLocalizations.of(context)!;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final dialogWidth = screenWidth.clamp(0.0, 500.0);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        constraints: BoxConstraints.tightFor(width: dialogWidth),
-        insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        title: Text(i18n.settingsExportLogsLabel),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: logFiles.length,
-            itemBuilder: (context, index) {
-              final file = logFiles[index];
-              final dateStr =
-                  '${file.modified.year}-${file.modified.month.toString().padLeft(2, '0')}-${file.modified.day.toString().padLeft(2, '0')}';
-              final sizeKb = (file.size / 1024).toStringAsFixed(1);
-
-              return ListTile(
-                onTap: () async {
-                  Navigator.pop(context);
-                  await exportLogFiles([file]);
-                },
-                leading: Icon(Icons.description_outlined),
-                title: Text(file.name),
-                subtitle: Text('$dateStr • $sizeKb KB'),
-                trailing: Icon(Icons.ios_share),
-              );
-            },
-          ),
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel))],
-      ),
-    );
-  }
-
   void _showDeleteWalletDialog() {
     final i18n = AppLocalizations.of(context)!;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final dialogWidth = screenWidth.clamp(0.0, 500.0);
-
-        return AlertDialog(
-          constraints: BoxConstraints.tightFor(width: dialogWidth),
-          insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          title: Row(
-            spacing: 6,
-            children: [
-              Icon(Icons.delete_forever, color: Colors.red),
-              Text(i18n.settingsDeleteWalletButton),
-            ],
-          ),
-          content: Text(i18n.settingsDeleteWalletDialogText),
-          actions: [
-            TextButton.icon(
-              onPressed: _deleteWallet,
-              icon: Icon(Icons.delete_forever),
-              label: Text(i18n.settingsDeleteWalletDialogDeleteButton),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: Icon(Icons.cancel),
-              label: Text(i18n.cancel),
-            ),
-          ],
-        );
-      },
+    DeleteWalletDialog.show(
+      context,
+      DeleteWalletLabels(
+        title: i18n.settingsDeleteWalletButton,
+        body: i18n.settingsDeleteWalletDialogText,
+        confirm: i18n.settingsDeleteWalletDialogDeleteButton,
+        cancel: i18n.cancel,
+      ),
+      onConfirm: _deleteWallet,
     );
   }
 
@@ -517,13 +445,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(value: _verboseLoggingEnabled, onChanged: _setVerboseLoggingEnabled),
               ],
             ),
-            if (Platform.isIOS)
+            // Only meaningful with logs to export, so hide the whole row when
+            // verbose logging is off rather than showing a disabled button.
+            if (Platform.isIOS && _verboseLoggingEnabled)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(i18n.settingsExportLogsLabel, style: TextStyle(fontSize: 18)),
                   TextButton.icon(
-                    onPressed: _verboseLoggingEnabled ? _exportLogs : null,
+                    onPressed: _exportLogs,
                     icon: Icon(Icons.ios_share),
                     label: Text(i18n.settingsExportLogsButton),
                   ),

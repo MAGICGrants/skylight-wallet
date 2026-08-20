@@ -362,7 +362,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
 
   @override
-  String get settingsVerboseLoggingLabel => 'Logs Detalhados';
+  String get settingsVerboseLoggingLabel => 'Salvar Logs em Arquivo';
 
   @override
   String get settingsVerboseLoggingDescription =>

@@ -125,7 +125,7 @@
   "settingsAppLockLabel": "App Lock",
   "settingsAppLockUnlockReason": "Unlock Wallet",
   "settingsAppLockUnableToAuthError": "Unable to authenticate. Make sure you have device unlock set up.",
-  "settingsVerboseLoggingLabel": "Verbose Logging",
+  "settingsVerboseLoggingLabel": "Enable Logging to File",
   "settingsVerboseLoggingDescription": "Logs wallet operations to a text file in the app's data folder for debugging purposes.",
   "settingsVerboseLoggingDescriptionIos": "Logs wallet operations and allows the logs to be exported to a text file.",
   "settingsExportLogsLabel": "Export Logs",

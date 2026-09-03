@@ -36,7 +36,7 @@ class ExplorerSetupScreen extends StatelessWidget {
 
     void onRemove() {
       // Disable the explorer: clear its config, fall back to local history.
-      wallet?.setExplorerConnection(address: '', proxyPort: '', useTor: false, useSsl: false);
+      wallet?.setExplorerConnection(address: '', proxyPort: '', useTor: false);
       unawaited(wallet?.persistExplorerConnection());
       unawaited(wallet?.loadTxHistory());
       final messenger = ScaffoldMessenger.of(context);

@@ -434,14 +434,12 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         await wallet.testExplorerConnection(
           address: daemonAddress,
           proxyPort: proxyPort,
-          useSsl: _useSsl,
           useTor: _useTor,
         );
       } else {
         await wallet.testConnection(
           address: daemonAddress,
           proxyPort: proxyPort,
-          useSsl: _useSsl,
           useTor: _useTor,
           connectionType: _connectionType,
         );
@@ -495,7 +493,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         address: daemonAddress,
         proxyPort: proxyAddress,
         useTor: _useTor,
-        useSsl: _useSsl,
       );
       await wallet.persistExplorerConnection();
     } else {
@@ -503,7 +500,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         address: daemonAddress,
         proxyPort: proxyAddress,
         useTor: _useTor,
-        useSsl: _useSsl,
         connectionType: _connectionType,
       );
       await wallet.persistCurrentConnection();

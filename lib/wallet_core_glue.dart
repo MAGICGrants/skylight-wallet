@@ -63,6 +63,8 @@ void installWalletCore() {
   wcore.NotificationService.windowsAppName = 'Spice Wallet';
   wcore.NotificationService.windowsAppUserModelId = 'org.magicgrants.spice';
   wcore.NotificationService.windowsGuid = '6dcf17a9-fb5f-4f47-b0b9-6d655e90adbf';
+  // Same status-bar mark as the continuous-sync foreground-service notification.
+  wcore.NotificationService.androidSmallIcon = 'ic_stat_spice';
 
   BackgroundSync.install(
     coins: buildCoins,

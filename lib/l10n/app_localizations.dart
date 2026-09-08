@@ -174,7 +174,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeDescription.
   ///
   /// In en, this message translates to:
-  /// **'A self-custody wallet for Monero, Bitcoin, Ethereum and DAI. Your keys never leave this device.'**
+  /// **'A simple, open-source, and modern self-custody wallet for Serai and the blockchain networks that Serai supports: Bitcoin, Ethereum, and Monero. You are in total control. Maintained by MAGIC Grants, a public charity.'**
   String get welcomeDescription;
 
   /// No description provided for @welcomeGetStarted.
@@ -210,13 +210,13 @@ abstract class AppLocalizations {
   /// No description provided for @torChoiceTitle.
   ///
   /// In en, this message translates to:
-  /// **'How should Spice Wallet reach the network?'**
+  /// **'Tor Connection Setup'**
   String get torChoiceTitle;
 
   /// No description provided for @torChoiceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing connects until you choose. Tor hides your IP address from the servers Spice Wallet talks to.'**
+  /// **'Tor can hide your IP address from servers you connect to. This does not reduce the information that is stored on public blockchains. You can enable or disable Tor for each connection individually. In general, how do you want Spice Wallet to handle Tor connections?'**
   String get torChoiceSubtitle;
 
   /// No description provided for @torChoiceBuiltInDesc.
@@ -240,7 +240,7 @@ abstract class AppLocalizations {
   /// No description provided for @torChoiceOrbot.
   ///
   /// In en, this message translates to:
-  /// **'Use Orbot — port is fixed at 9050'**
+  /// **'Use Orbot (port 9050)'**
   String get torChoiceOrbot;
 
   /// No description provided for @torChoiceTestFailed.
@@ -264,8 +264,14 @@ abstract class AppLocalizations {
   /// No description provided for @connectionSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Enter the address of your {type}.'**
+  /// **'Enter the address of your {type}. Only select a server you trust. Even if you use Tor, this server can learn information about you.'**
   String connectionSetupDescription(String type);
+
+  /// No description provided for @connectionSetupDescriptionLws.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the address of your {type}. Only select a server you trust. Even if you use Tor, this server can learn information about you. Your private view key and primary address will be shared with this server.'**
+  String connectionSetupDescriptionLws(String type);
 
   /// No description provided for @connectionTypeLws.
   ///
@@ -384,13 +390,13 @@ abstract class AppLocalizations {
   /// No description provided for @fiatApiSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Fiat Display Setup'**
+  /// **'Price Display Setup'**
   String get fiatApiSetupTitle;
 
   /// No description provided for @fiatApiSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'An optional reference price beside your balances. Fetching it means talking to a rate server, so how that happens is up to you.'**
+  /// **'Spice Wallet can automatically fetch the latest asset prices. Your balances are not sent to the server. How do you want to fetch this price data?'**
   String get fiatApiSetupDescription;
 
   /// No description provided for @fiatApiSettingsModeLabel.
@@ -420,19 +426,19 @@ abstract class AppLocalizations {
   /// No description provided for @fiatModeTorOnlyDesc.
   ///
   /// In en, this message translates to:
-  /// **'Rates fetched over Tor · recommended'**
+  /// **'Prices fetched over Tor · recommended'**
   String get fiatModeTorOnlyDesc;
 
   /// No description provided for @fiatModeClearnetDesc.
   ///
   /// In en, this message translates to:
-  /// **'Not private — the rate server sees your IP address'**
+  /// **'Not private, the price server sees your IP address'**
   String get fiatModeClearnetDesc;
 
   /// No description provided for @fiatModeDisabledDesc.
   ///
   /// In en, this message translates to:
-  /// **'No rates fetched, balances shown in crypto only'**
+  /// **'No prices fetched, balances shown in crypto only'**
   String get fiatModeDisabledDesc;
 
   /// No description provided for @fiatApiSettingsDisplayCurrencyLabel.
@@ -444,25 +450,25 @@ abstract class AppLocalizations {
   /// No description provided for @settingsFiatApiSettingsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Fiat Display Settings'**
+  /// **'Price Display Settings'**
   String get settingsFiatApiSettingsLabel;
 
   /// No description provided for @fiatApiSettingsSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'How rates are fetched, and the currency they are shown in.'**
+  /// **'How prices are fetched, and the currency they are shown in.'**
   String get fiatApiSettingsSheetSubtitle;
 
   /// No description provided for @createWalletTitle.
   ///
   /// In en, this message translates to:
-  /// **'Start fresh, or restore?'**
+  /// **'Wallet Setup'**
   String get createWalletTitle;
 
   /// No description provided for @createWalletDescription.
   ///
   /// In en, this message translates to:
-  /// **'One seed phrase covers all four chains. If you already have one, you can restore it now.'**
+  /// **'A single seed phrase secures access to your wallet across all blockchain networks. Would you like to create a new wallet or restore an existing wallet?'**
   String get createWalletDescription;
 
   /// No description provided for @createWalletRestoreExistingButton.
@@ -498,19 +504,19 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedTitleCovered.
   ///
   /// In en, this message translates to:
-  /// **'Your seed phrase'**
+  /// **'Seed Phrase'**
   String get generateSeedTitleCovered;
 
   /// No description provided for @generateSeedSubtitleCovered.
   ///
   /// In en, this message translates to:
-  /// **'These fifteen words, in this order, are the wallet. Write them on paper — not in a photo or a notes app.'**
+  /// **'These fifteen words, in this order, are your wallet. Write them down and keep them in a physical safe. If you lose these words or if you share them with anyone else, you will lose your money permanently. Careful planning now avoids a potential disaster later.'**
   String get generateSeedSubtitleCovered;
 
   /// No description provided for @generateSeedSubtitleRevealed.
   ///
   /// In en, this message translates to:
-  /// **'Anyone with these words has your funds.'**
+  /// **'Securely save these. Do not share them.'**
   String get generateSeedSubtitleRevealed;
 
   /// No description provided for @generateSeedScreenshotNote.
@@ -552,7 +558,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsDetailsDescription.
   ///
   /// In en, this message translates to:
-  /// **'You can use these details to whitelist this wallet on the light wallet server if needed.'**
+  /// **'If your Monero light wallet server (LWS) requires registration, you can use these details to add this wallet to that server. Not all servers require registration.'**
   String get lwsDetailsDescription;
 
   /// No description provided for @restoreWalletTitle.
@@ -588,7 +594,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletScanFromReason.
   ///
   /// In en, this message translates to:
-  /// **'Earlier is slower but never misses funds.'**
+  /// **'Skip irrelevant history to save time'**
   String get restoreWalletScanFromReason;
 
   /// No description provided for @restoreWalletNotSet.
@@ -600,13 +606,13 @@ abstract class AppLocalizations {
   /// No description provided for @restoreScanTitle.
   ///
   /// In en, this message translates to:
-  /// **'When did this seed first hold funds?'**
+  /// **'When did this wallet first receive funds?'**
   String get restoreScanTitle;
 
   /// No description provided for @restoreScanDescription.
   ///
   /// In en, this message translates to:
-  /// **'For some assets, Spice Wallet only scans forward from this point. Guess early — a wrong-but-earlier answer costs sync time, a wrong-but-later one hides transactions.'**
+  /// **'For some assets, Spice Wallet can skip irrelevant history to save you time. Either pick the first month that you used the wallet or select I\'m not sure to check everything. It\'s okay to pick a month that is too early, but it\'s bad to pick a month that is too late.'**
   String get restoreScanDescription;
 
   /// No description provided for @restoreScanPickMonth.
@@ -900,7 +906,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeFiatApiError.
   ///
   /// In en, this message translates to:
-  /// **'Error connecting to fiat API'**
+  /// **'Error connecting to price server'**
   String get homeFiatApiError;
 
   /// No description provided for @homeTotalBalanceLabel.
@@ -918,7 +924,7 @@ abstract class AppLocalizations {
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: Unless you know what you\'re doing, please consider using subaddresses for better privacy.'**
+  /// **'Warning: Unless you know what you\'re doing, please use subaddresses for better privacy.'**
   String get receivePrimaryAddressWarn;
 
   /// No description provided for @receiveServerNoSubaddressesWarn.
@@ -1056,7 +1062,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCoinConnectionSetup.
   ///
   /// In en, this message translates to:
-  /// **'Connection setup'**
+  /// **'Connection Setup'**
   String get settingsCoinConnectionSetup;
 
   /// No description provided for @settingsCoinExplorer.
@@ -1074,19 +1080,19 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifyNewTxsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Notify New Transactions'**
+  /// **'Transaction Notifications'**
   String get settingsNotifyNewTxsLabel;
 
   /// No description provided for @settingsNotifyNewTxsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Shows a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.'**
+  /// **'Show a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.'**
   String get settingsNotifyNewTxsDescription;
 
   /// No description provided for @settingsNotifyNewTxsDescriptionIos.
   ///
   /// In en, this message translates to:
-  /// **'Shows a notification when you receive a transaction.'**
+  /// **'Show a notification when you receive a transaction.'**
   String get settingsNotifyNewTxsDescriptionIos;
 
   /// No description provided for @settingsBackgroundSyncLabel.
@@ -1134,7 +1140,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsVerboseLoggingLabel.
   ///
   /// In en, this message translates to:
-  /// **'Enable Logging to File'**
+  /// **'Diagnostic Logs'**
   String get settingsVerboseLoggingLabel;
 
   /// No description provided for @settingsTestnetCoinsLabel.
@@ -1152,13 +1158,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsVerboseLoggingDescription.
   ///
   /// In en, this message translates to:
-  /// **'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.'**
+  /// **'Log wallet operations to a text file in the app\'s data folder for debugging purposes.'**
   String get settingsVerboseLoggingDescription;
 
   /// No description provided for @settingsVerboseLoggingDescriptionIos.
   ///
   /// In en, this message translates to:
-  /// **'Logs wallet operations and allows the logs to be exported to a text file.'**
+  /// **'Log wallet operations and allow the logs to be exported to a text file.'**
   String get settingsVerboseLoggingDescriptionIos;
 
   /// No description provided for @settingsExportLogsLabel.
@@ -1224,7 +1230,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsThemeSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Changes take effect straight away. Amount colours stay the same in both.'**
+  /// **'Pick a theme to match your style.'**
   String get settingsThemeSheetSubtitle;
 
   /// No description provided for @settingsLanguageLabel.
@@ -1236,13 +1242,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLanguageSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Amounts and dates follow the language you pick.'**
+  /// **'Pick your language and localization.'**
   String get settingsLanguageSheetSubtitle;
 
   /// No description provided for @settingsSeedPhraseLabel.
   ///
   /// In en, this message translates to:
-  /// **'Seed phrase'**
+  /// **'Seed Phrase'**
   String get settingsSeedPhraseLabel;
 
   /// No description provided for @revealSeedSubtitleCovered.
@@ -1254,7 +1260,7 @@ abstract class AppLocalizations {
   /// No description provided for @revealSeedSubtitleRevealed.
   ///
   /// In en, this message translates to:
-  /// **'Anyone holding these words holds the wallet. No support agent will ever ask you for them.'**
+  /// **'Securely save these. Do not share them. If you lose these words or if you share them with anyone else, you will lose your money permanently.'**
   String get revealSeedSubtitleRevealed;
 
   /// No description provided for @revealSeedBackButton.
@@ -1386,7 +1392,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsKeysWarning.
   ///
   /// In en, this message translates to:
-  /// **'Screenshots are blocked on this screen. The view key lets a server see everything you receive — share it only with a server you run or trust.'**
+  /// **'Screenshots are blocked on this screen. Make sure nobody is looking over your shoulder.'**
   String get lwsKeysWarning;
 
   /// No description provided for @scanQrTitle.
@@ -1494,13 +1500,13 @@ abstract class AppLocalizations {
   /// No description provided for @addressBookAddDescription.
   ///
   /// In en, this message translates to:
-  /// **'A name, and at least one address to pay them on.'**
+  /// **'A name and at least one address to pay them.'**
   String get addressBookAddDescription;
 
   /// No description provided for @addressBookEditDescription.
   ///
   /// In en, this message translates to:
-  /// **'Addresses get pasted or scanned, not typed. At least one is required.'**
+  /// **'A name and at least one address to pay them.'**
   String get addressBookEditDescription;
 
   /// No description provided for @addressBookAddressesLabel.
@@ -1650,7 +1656,7 @@ abstract class AppLocalizations {
   /// No description provided for @torSettingsSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'How Spice Wallet reaches the network. Changing this reconnects every chain.'**
+  /// **'Tor can hide your IP address from servers you connect to. This does not reduce the information that is stored on public blockchains. Changing this reconnects every chain.'**
   String get torSettingsSheetSubtitle;
 
   /// No description provided for @torSettingsModeBuiltIn.
@@ -1752,7 +1758,7 @@ abstract class AppLocalizations {
   /// No description provided for @explorerSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Optionally set a Blockscout instance to load full transaction history. Leave empty to disable — future sent transactions still appear without it.'**
+  /// **'Optionally set a Blockscout explorer instance to load full transaction history. Only select a server you trust. Even if you use Tor, this server can learn information about you.'**
   String get explorerSetupDescription;
 
   /// No description provided for @explorerAddressLabel.

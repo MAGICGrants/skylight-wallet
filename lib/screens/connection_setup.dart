@@ -102,7 +102,9 @@ class _ConnectionSetupScreenState extends State<ConnectionSetupScreen> {
                       Text(i18n.connectionSetupTitle, style: BrandText.title),
                       const SizedBox(height: 8),
                       Text(
-                        i18n.connectionSetupDescription(connectionTypeName),
+                        _selectedType == 'lws'
+                            ? i18n.connectionSetupDescriptionLws(connectionTypeName)
+                            : i18n.connectionSetupDescription(connectionTypeName),
                         style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
                       ),
                     ],

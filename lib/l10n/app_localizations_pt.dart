@@ -49,7 +49,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get welcomeDescription =>
-      'Uma carteira de autocustódia para Monero, Bitcoin, Ethereum e DAI. Suas chaves nunca saem deste dispositivo.';
+      'Uma carteira de autocustódia simples, moderna e de código aberto para Serai e as redes blockchain que Serai suporta: Bitcoin, Ethereum e Monero. Você tem controle total. Mantida pela MAGIC Grants, uma instituição de caridade pública.';
 
   @override
   String get welcomeGetStarted => 'Começar';
@@ -67,11 +67,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get welcomePrivacyLink => 'Política de Privacidade';
 
   @override
-  String get torChoiceTitle => 'Como a Spice Wallet deve acessar a rede?';
+  String get torChoiceTitle => 'Configuração da Conexão Tor';
 
   @override
   String get torChoiceSubtitle =>
-      'Nada se conecta até você escolher. O Tor oculta seu endereço IP dos servidores com os quais a Spice Wallet se comunica.';
+      'O Tor pode ocultar seu endereço IP dos servidores aos quais você se conecta. Isso não reduz as informações que ficam armazenadas em blockchains públicas. Você pode ativar ou desativar o Tor para cada conexão individualmente. De modo geral, como você quer que a Spice Wallet lide com as conexões Tor?';
 
   @override
   String get torChoiceBuiltInDesc => 'Incluído na Spice Wallet · recomendado';
@@ -84,7 +84,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Os servidores aos quais você se conecta podem ver seu endereço IP';
 
   @override
-  String get torChoiceOrbot => 'Usar Orbot — a porta é fixa em 9050';
+  String get torChoiceOrbot => 'Usar Orbot (porta 9050)';
 
   @override
   String get torChoiceTestFailed => 'Falha no teste';
@@ -97,7 +97,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String connectionSetupDescription(String type) {
-    return 'Informe o endereço do seu $type.';
+    return 'Informe o endereço do seu $type. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você.';
+  }
+
+  @override
+  String connectionSetupDescriptionLws(String type) {
+    return 'Informe o endereço do seu $type. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você. Sua chave privada de visualização e seu endereço primário serão compartilhados com este servidor.';
   }
 
   @override
@@ -159,11 +164,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lwsSetupContinueButton => 'Continuar';
 
   @override
-  String get fiatApiSetupTitle => 'Exibição de Saldo em Fiat';
+  String get fiatApiSetupTitle => 'Configuração de Exibição de Preços';
 
   @override
   String get fiatApiSetupDescription =>
-      'Um preço de referência opcional ao lado dos seus saldos. Buscá-lo significa falar com um servidor de cotações, então como isso acontece é você quem decide.';
+      'A Spice Wallet pode buscar automaticamente os preços mais recentes dos ativos. Seus saldos não são enviados ao servidor. Como você quer buscar esses dados de preço?';
 
   @override
   String get fiatApiSettingsModeLabel => 'Modo';
@@ -178,30 +183,30 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fiatApiSettingsModeDisabled => 'Desativado';
 
   @override
-  String get fiatModeTorOnlyDesc => 'Cotações buscadas pelo Tor · recomendado';
+  String get fiatModeTorOnlyDesc => 'Preços buscados pelo Tor · recomendado';
 
   @override
-  String get fiatModeClearnetDesc => 'Não privado — o servidor de cotações vê seu endereço IP';
+  String get fiatModeClearnetDesc => 'Não privado, o servidor de preços vê seu endereço IP';
 
   @override
-  String get fiatModeDisabledDesc => 'Sem cotações; saldos exibidos apenas em cripto';
+  String get fiatModeDisabledDesc => 'Sem preços; saldos exibidos apenas em cripto';
 
   @override
   String get fiatApiSettingsDisplayCurrencyLabel => 'Moeda de Exibição';
 
   @override
-  String get settingsFiatApiSettingsLabel => 'Configurações de exibição fiat';
+  String get settingsFiatApiSettingsLabel => 'Configurações de Exibição de Preços';
 
   @override
   String get fiatApiSettingsSheetSubtitle =>
-      'Como as cotações são obtidas e a moeda em que são exibidas.';
+      'Como os preços são obtidos e a moeda em que são exibidos.';
 
   @override
-  String get createWalletTitle => 'Começar do zero ou restaurar?';
+  String get createWalletTitle => 'Configuração da Carteira';
 
   @override
   String get createWalletDescription =>
-      'Uma única seed cobre todas as quatro redes. Se você já tem uma, pode restaurá-la agora.';
+      'Uma única frase seed protege o acesso à sua carteira em todas as redes blockchain. Você quer criar uma nova carteira ou restaurar uma carteira existente?';
 
   @override
   String get createWalletRestoreExistingButton => 'Restaurar de uma seed';
@@ -219,14 +224,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generateSeedTitle => 'Anote estas palavras, em ordem';
 
   @override
-  String get generateSeedTitleCovered => 'Sua frase seed';
+  String get generateSeedTitleCovered => 'Frase Seed';
 
   @override
   String get generateSeedSubtitleCovered =>
-      'Estas quinze palavras, nesta ordem, são a carteira. Anote-as no papel — não em uma foto ou app de notas.';
+      'Estas quinze palavras, nesta ordem, são a sua carteira. Anote-as e guarde-as em um cofre físico. Se você perder estas palavras ou compartilhá-las com outra pessoa, perderá seu dinheiro permanentemente. Um planejamento cuidadoso agora evita um possível desastre depois.';
 
   @override
-  String get generateSeedSubtitleRevealed => 'Qualquer pessoa com estas palavras tem seus fundos.';
+  String get generateSeedSubtitleRevealed => 'Guarde-as em segurança. Não as compartilhe.';
 
   @override
   String get generateSeedScreenshotNote =>
@@ -250,7 +255,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsDetailsDescription =>
-      'Você pode usar esses detalhes para permitir essa carteira no seu servidor de light wallet caso necessário.';
+      'Se o seu servidor Light Wallet Monero (LWS) exigir registro, você pode usar estes dados para adicionar esta carteira a esse servidor. Nem todos os servidores exigem registro.';
 
   @override
   String get restoreWalletTitle => 'Restaurar carteira';
@@ -268,17 +273,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletScanFrom => 'Escanear a partir de';
 
   @override
-  String get restoreWalletScanFromReason => 'Mais cedo é mais lento, mas nunca perde fundos.';
+  String get restoreWalletScanFromReason => 'Ignore o histórico irrelevante para economizar tempo';
 
   @override
   String get restoreWalletNotSet => 'Não definido';
 
   @override
-  String get restoreScanTitle => 'Quando esta seed teve fundos pela primeira vez?';
+  String get restoreScanTitle => 'Quando esta carteira recebeu fundos pela primeira vez?';
 
   @override
   String get restoreScanDescription =>
-      'Para alguns ativos, a Spice Wallet só escaneia a partir deste ponto. Chute cedo — uma resposta mais antiga custa tempo de sincronização, uma mais recente esconde transações.';
+      'Para alguns ativos, a Spice Wallet pode ignorar o histórico irrelevante para economizar seu tempo. Escolha o primeiro mês em que você usou a carteira ou selecione Não tenho certeza para verificar tudo. Não há problema em escolher um mês muito antigo, mas é ruim escolher um mês muito recente.';
 
   @override
   String get restoreScanPickMonth => 'Escolher um mês';
@@ -441,7 +446,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeNoTransactions => 'Sem transações';
 
   @override
-  String get homeFiatApiError => 'Erro ao conectar à API de cotação';
+  String get homeFiatApiError => 'Erro ao conectar ao servidor de preços';
 
   @override
   String get homeTotalBalanceLabel => 'Saldo Total';
@@ -451,7 +456,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.';
+      'Aviso: A menos que saiba o que está fazendo, por favor use subendereços para melhor privacidade.';
 
   @override
   String get receiveServerNoSubaddressesWarn =>
@@ -527,7 +532,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsCoinKeysSection => 'Chaves';
 
   @override
-  String get settingsCoinConnectionSetup => 'Configurar conexão';
+  String get settingsCoinConnectionSetup => 'Configuração da Conexão';
 
   @override
   String get settingsCoinExplorer => 'Explorador';
@@ -536,15 +541,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsCoinNotConfigured => 'Não configurado';
 
   @override
-  String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
+  String get settingsNotifyNewTxsLabel => 'Notificações de Transações';
 
   @override
   String get settingsNotifyNewTxsDescription =>
-      'Mostra uma notificação quando você recebe uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.';
+      'Mostrar uma notificação quando você receber uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.';
 
   @override
   String get settingsNotifyNewTxsDescriptionIos =>
-      'Mostra uma notificação quando você recebe uma transação.';
+      'Mostrar uma notificação quando você receber uma transação.';
 
   @override
   String get settingsBackgroundSyncLabel => 'Sincronização em Segundo Plano';
@@ -571,7 +576,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
 
   @override
-  String get settingsVerboseLoggingLabel => 'Salvar Logs em Arquivo';
+  String get settingsVerboseLoggingLabel => 'Logs de Diagnóstico';
 
   @override
   String get settingsTestnetCoinsLabel => 'Moedas Testnet';
@@ -582,11 +587,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsVerboseLoggingDescription =>
-      'Registra operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
+      'Registrar operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
 
   @override
   String get settingsVerboseLoggingDescriptionIos =>
-      'Registra operações da carteira e permite exportar os logs para um arquivo de texto.';
+      'Registrar operações da carteira e permitir exportar os logs para um arquivo de texto.';
 
   @override
   String get settingsExportLogsLabel => 'Exportar Logs';
@@ -619,17 +624,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsThemeSystemDesc => 'Segue o seu telefone';
 
   @override
-  String get settingsThemeSheetSubtitle =>
-      'As mudanças têm efeito imediato. As cores dos valores permanecem iguais nos dois.';
+  String get settingsThemeSheetSubtitle => 'Escolha um tema que combine com seu estilo.';
 
   @override
   String get settingsLanguageLabel => 'Idioma';
 
   @override
-  String get settingsLanguageSheetSubtitle => 'Valores e datas seguem o idioma escolhido.';
+  String get settingsLanguageSheetSubtitle => 'Escolha seu idioma e formato regional.';
 
   @override
-  String get settingsSeedPhraseLabel => 'Frase seed';
+  String get settingsSeedPhraseLabel => 'Frase Seed';
 
   @override
   String get revealSeedSubtitleCovered =>
@@ -637,7 +641,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get revealSeedSubtitleRevealed =>
-      'Qualquer pessoa com estas palavras tem a carteira. Nenhum atendente jamais vai pedi-las.';
+      'Guarde-as em segurança. Não as compartilhe. Se você perder estas palavras ou compartilhá-las com outra pessoa, perderá seu dinheiro permanentemente.';
 
   @override
   String get revealSeedBackButton => 'Voltar às configurações';
@@ -705,7 +709,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsKeysWarning =>
-      'Capturas de tela estão bloqueadas nesta tela. A chave de visualização permite que um servidor veja tudo o que você recebe — compartilhe-a apenas com um servidor que você opera ou confia.';
+      'As capturas de tela estão bloqueadas nesta tela. Certifique-se de que ninguém está olhando por cima do seu ombro.';
 
   @override
   String get scanQrTitle => 'Escanear QR Code';
@@ -764,11 +768,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get addressBookNameHint => 'Nome';
 
   @override
-  String get addressBookAddDescription => 'Um nome e ao menos um endereço para pagá-lo.';
+  String get addressBookAddDescription => 'Um nome e ao menos um endereço para pagar essa pessoa.';
 
   @override
-  String get addressBookEditDescription =>
-      'Os endereços são colados ou escaneados, não digitados. Ao menos um é obrigatório.';
+  String get addressBookEditDescription => 'Um nome e ao menos um endereço para pagar essa pessoa.';
 
   @override
   String get addressBookAddressesLabel => 'Endereços';
@@ -854,7 +857,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get torSettingsSheetSubtitle =>
-      'Como o Spice Wallet acessa a rede. Alterar isto reconecta todas as redes.';
+      'O Tor pode ocultar seu endereço IP dos servidores aos quais você se conecta. Isso não reduz as informações que ficam armazenadas em blockchains públicas. Alterar isto reconecta todas as redes.';
 
   @override
   String get torSettingsModeBuiltIn => 'Tor Integrado';
@@ -908,7 +911,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get explorerSetupDescription =>
-      'Opcionalmente, defina uma instância Blockscout para carregar o histórico completo de transações. Deixe em branco para desativar — as transações enviadas futuras continuam aparecendo sem ele.';
+      'Opcionalmente, defina uma instância do explorador Blockscout para carregar o histórico completo de transações. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você.';
 
   @override
   String get explorerAddressLabel => 'Endereço do Explorador';

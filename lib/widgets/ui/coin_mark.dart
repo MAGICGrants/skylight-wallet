@@ -11,7 +11,26 @@ class CoinMark extends StatelessWidget {
   final String iconAsset;
   final double size;
 
-  const CoinMark({super.key, required this.coinSymbol, required this.iconAsset, this.size = 40});
+  /// Connection-status dot on the bottom-right corner; null shows no dot.
+  final Color? statusColor;
+
+  /// Ring around the status dot, separating it from the icon — set to the colour
+  /// behind the icon (defaults to the card fill).
+  final Color? statusRingColor;
+
+  /// Status-dot diameter as a fraction of [size]. Larger for small header icons
+  /// where a proportional dot would be too tiny to read.
+  final double statusDotFactor;
+
+  const CoinMark({
+    super.key,
+    required this.coinSymbol,
+    required this.iconAsset,
+    this.size = 40,
+    this.statusColor,
+    this.statusRingColor,
+    this.statusDotFactor = 0.32,
+  });
 
   static ({Color color, String glyph})? _mark(String symbol) {
     switch (symbol.toUpperCase()) {
@@ -39,11 +58,35 @@ class CoinMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mark = _mark(coinSymbol);
-    if (mark == null) return SvgPicture.asset(iconAsset, width: size, height: size);
-    return CoinTile(
-      size: size,
-      color: mark.color,
-      glyph: SvgPicture.asset(mark.glyph, width: size * 0.63, height: size * 0.63),
+    final Widget icon = mark == null
+        ? SvgPicture.asset(iconAsset, width: size, height: size)
+        : CoinTile(
+            size: size,
+            color: mark.color,
+            glyph: SvgPicture.asset(mark.glyph, width: size * 0.63, height: size * 0.63),
+          );
+
+    if (statusColor == null) return icon;
+
+    final dot = size * statusDotFactor;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        icon,
+        Positioned(
+          right: -1,
+          bottom: -1,
+          child: Container(
+            width: dot,
+            height: dot,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: statusRingColor ?? BrandColors.card, width: dot * 0.17),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

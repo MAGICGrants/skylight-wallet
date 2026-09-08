@@ -171,25 +171,10 @@ class _FiatApiSettingsSheetState extends State<_FiatApiSettingsSheet> {
                   children: [
                     BrandButton(label: i18n.save, onPressed: _save),
                     const SizedBox(height: 2),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).pop(),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Center(
-                            child: Text(
-                              i18n.cancel,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: BrandColors.inkMuted,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    BrandButton.ghost(
+                      label: i18n.cancel,
+                      color: BrandColors.inkMuted,
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),

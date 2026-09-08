@@ -24,9 +24,10 @@ class HistoryScreen extends StatefulWidget {
 enum _Filter { blockchain, asset, type }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  final Set<String> _chains = {}; // chain symbols; empty = all
-  final Set<String> _assets = {}; // asset coin symbols; empty = all
-  final Set<int> _types = {}; // consts.txDirection*; empty = all
+  // Unchecked (hidden) values per filter; empty = everything checked (default).
+  final Set<String> _chainsHidden = {}; // chain symbols
+  final Set<String> _assetsHidden = {}; // asset coin symbols
+  final Set<int> _typesHidden = {}; // consts.txDirection*
   _Filter? _open;
 
   void _toggleOpen(_Filter f) => setState(() => _open = _open == f ? null : f);
@@ -45,13 +46,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ]..sort((a, b) => b.tx.timestamp.compareTo(a.tx.timestamp));
 
     final entries = all.where((e) {
-      if (_chains.isNotEmpty && !_chains.contains(chainSymbolOf(e.asset))) return false;
-      if (_assets.isNotEmpty && !_assets.contains(e.asset.coinSymbol)) return false;
-      if (_types.isNotEmpty && !_types.contains(e.tx.direction)) return false;
+      if (_chainsHidden.contains(chainSymbolOf(e.asset))) return false;
+      if (_assetsHidden.contains(e.asset.coinSymbol)) return false;
+      if (_typesHidden.contains(e.tx.direction)) return false;
       return true;
     }).toList();
 
-    // Filter options (value / label / icon / total count), from what has history.
+    // Filter options (value / label / icon / total count).
     Widget coinIcon(String sym) =>
         CoinMark(coinSymbol: sym, iconAsset: manager.getWallet(sym)?.iconAsset ?? '', size: 24);
     String coinName(String sym) => manager.getWallet(sym)?.coinName ?? sym;
@@ -60,35 +61,86 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return w != null ? chainSymbolOf(w) : sym;
     }
 
-    // Assets are scoped to the selected blockchain(s); with none selected, all.
+    // A blockchain counts as configured once its chain wallet has a connection
+    // set up; its tokens (e.g. DAI on Ethereum) share that connection.
+    bool chainConfigured(String chainSym) =>
+        manager.getWallet(chainSym)?.connectionAddress.isNotEmpty ?? false;
+
+    // List every configured chain (even with no transactions yet), plus any that
+    // already has history.
+    final chainSymbols = {
+      for (final w in manager.allWallets)
+        if (chainConfigured(chainSymbolOf(w))) chainSymbolOf(w),
+      for (final e in all) chainSymbolOf(e.asset),
+    };
+
+    // Assets: every asset on a configured chain, plus any with history — scoped
+    // to the checked blockchain(s).
     final assetSymbols = {
+      for (final w in manager.allWallets)
+        if (chainConfigured(chainSymbolOf(w)) && !_chainsHidden.contains(chainSymbolOf(w)))
+          w.coinSymbol,
       for (final e in all)
-        if (_chains.isEmpty || _chains.contains(chainSymbolOf(e.asset))) e.asset.coinSymbol,
+        if (!_chainsHidden.contains(chainSymbolOf(e.asset))) e.asset.coinSymbol,
     };
 
     // Every dropdown lists its options by how many transactions match, desc.
     final chainOptions = [
-      for (final c in {for (final e in all) chainSymbolOf(e.asset)})
+      for (final c in chainSymbols)
         _Option(c, coinName(c), coinIcon(c), all.where((e) => chainSymbolOf(e.asset) == c).length),
     ]..sort((a, b) => b.count.compareTo(a.count));
     final assetOptions = [
       for (final a in assetSymbols)
         _Option(a, coinName(a), coinIcon(a), all.where((e) => e.asset.coinSymbol == a).length),
     ]..sort((a, b) => b.count.compareTo(a.count));
+    int typeCount(int type) => all.where((e) => e.tx.direction == type).length;
     final typeOptions = [
       _Option(
         '${consts.txDirectionIncoming}',
         i18n.coinHomeReceived,
-        _dirIcon(incoming: true),
-        all.where((e) => e.tx.direction == consts.txDirectionIncoming).length,
+        _typeIcon(Icons.south, BrandColors.success, BrandColors.successBg),
+        typeCount(consts.txDirectionIncoming),
       ),
       _Option(
         '${consts.txDirectionOutgoing}',
         i18n.coinHomeSent,
-        _dirIcon(incoming: false),
-        all.where((e) => e.tx.direction == consts.txDirectionOutgoing).length,
+        _typeIcon(Icons.north, BrandColors.cinnamon, BrandColors.surfaceAccent),
+        typeCount(consts.txDirectionOutgoing),
+      ),
+      // Liquidity-pool / swap types (Serai) — no data yet, so these list ahead of
+      // the feature and sort last on their zero count.
+      _Option(
+        '${consts.txTypeBridge}',
+        i18n.historyTypeBridge,
+        _typeIcon(Icons.compare_arrows, BrandColors.blue, BrandColors.blueBg),
+        typeCount(consts.txTypeBridge),
+      ),
+      _Option(
+        '${consts.txTypeSwap}',
+        i18n.historyTypeSwap,
+        _typeIcon(Icons.swap_horiz, BrandColors.purple, BrandColors.purpleBg),
+        typeCount(consts.txTypeSwap),
+      ),
+      _Option(
+        '${consts.txTypeAdd}',
+        i18n.historyTypeAdd,
+        _typeIcon(Icons.add, BrandColors.success, BrandColors.successBg),
+        typeCount(consts.txTypeAdd),
+      ),
+      _Option(
+        '${consts.txTypeRemove}',
+        i18n.historyTypeRemove,
+        _typeIcon(Icons.remove, BrandColors.cinnamon, BrandColors.surfaceAccent),
+        typeCount(consts.txTypeRemove),
       ),
     ]..sort((a, b) => b.count.compareTo(a.count));
+
+    // The pill shows the number of checked options, but only once some are
+    // unchecked — all-checked is the default and reads as "no filter".
+    int? selectedCount(List<_Option> opts, bool Function(String) hidden) {
+      final checked = opts.where((o) => !hidden(o.value)).length;
+      return checked == opts.length ? null : checked;
+    }
 
     final list = entries.isEmpty
         ? Center(child: Text(i18n.homeNoTransactions, style: BrandText.bodyMuted))
@@ -124,21 +176,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     children: [
                       _FilterPill(
                         label: i18n.historyFilterBlockchain,
-                        count: _chains.length,
+                        count: selectedCount(chainOptions, _chainsHidden.contains),
                         open: _open == _Filter.blockchain,
                         onTap: () => _toggleOpen(_Filter.blockchain),
                       ),
                       const SizedBox(width: 7),
                       _FilterPill(
                         label: i18n.historyFilterAsset,
-                        count: _assets.length,
+                        count: selectedCount(assetOptions, _assetsHidden.contains),
                         open: _open == _Filter.asset,
                         onTap: () => _toggleOpen(_Filter.asset),
                       ),
                       const SizedBox(width: 7),
                       _FilterPill(
                         label: i18n.historyFilterType,
-                        count: _types.length,
+                        count: selectedCount(typeOptions, (v) => _typesHidden.contains(int.parse(v))),
                         open: _open == _Filter.type,
                         onTap: () => _toggleOpen(_Filter.type),
                       ),
@@ -149,33 +201,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   _FilterPanel(
                     header: i18n.historyFilterBlockchain,
                     options: chainOptions,
-                    isSelected: _chains.contains,
+                    isSelected: (v) => !_chainsHidden.contains(v),
                     onToggle: (v) => setState(() {
-                      _chains.toggle(v);
-                      // Drop asset selections no longer on a selected chain.
-                      if (_chains.isNotEmpty) {
-                        _assets.removeWhere((a) => !_chains.contains(assetChain(a)));
-                      }
+                      _chainsHidden.toggle(v);
+                      // Re-check assets whose chain just went unchecked, so an
+                      // unchecked chain never leaves a stale asset filter behind.
+                      _assetsHidden.removeWhere((a) => _chainsHidden.contains(assetChain(a)));
                     }),
-                    onReset: () => setState(_chains.clear),
+                    onReset: () => setState(_chainsHidden.clear),
                     onDone: () => setState(() => _open = null),
                   ),
                 if (_open == _Filter.asset)
                   _FilterPanel(
                     header: i18n.historyFilterAsset,
                     options: assetOptions,
-                    isSelected: _assets.contains,
-                    onToggle: (v) => setState(() => _assets.toggle(v)),
-                    onReset: () => setState(_assets.clear),
+                    isSelected: (v) => !_assetsHidden.contains(v),
+                    onToggle: (v) => setState(() => _assetsHidden.toggle(v)),
+                    onReset: () => setState(_assetsHidden.clear),
                     onDone: () => setState(() => _open = null),
                   ),
                 if (_open == _Filter.type)
                   _FilterPanel(
                     header: i18n.historyFilterType,
                     options: typeOptions,
-                    isSelected: (v) => _types.contains(int.parse(v)),
-                    onToggle: (v) => setState(() => _types.toggle(int.parse(v))),
-                    onReset: () => setState(_types.clear),
+                    isSelected: (v) => !_typesHidden.contains(int.parse(v)),
+                    onToggle: (v) => setState(() => _typesHidden.toggle(int.parse(v))),
+                    onReset: () => setState(_typesHidden.clear),
                     onDone: () => setState(() => _open = null),
                   ),
                 Expanded(
@@ -195,20 +246,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _dirIcon({required bool incoming}) {
+  Widget _typeIcon(IconData icon, Color fg, Color bg) {
     return Container(
       width: 24,
       height: 24,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: incoming ? BrandColors.successBg : BrandColors.surfaceAccent,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(
-        incoming ? Icons.south : Icons.north,
-        size: 13,
-        color: incoming ? BrandColors.success : BrandColors.cinnamon,
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+      child: Icon(icon, size: 13, color: fg),
     );
   }
 }
@@ -288,7 +332,7 @@ class _Timeline extends StatelessWidget {
 /// Goes dark (like the design's ink pill) once it's open or has a selection.
 class _FilterPill extends StatelessWidget {
   final String label;
-  final int count;
+  final int? count; // null = every option checked (default): no badge.
   final bool open;
   final VoidCallback onTap;
 
@@ -301,7 +345,7 @@ class _FilterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = open || count > 0;
+    final active = open || count != null;
     final fg = active ? BrandColors.onCinnamon : BrandColors.ink;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -317,7 +361,7 @@ class _FilterPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(label, style: TextStyle(fontSize: 12.5, color: fg)),
-            if (count > 0) ...[
+            if (count != null) ...[
               const SizedBox(width: 7),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),

@@ -334,6 +334,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get historyFilterType => 'Type';
 
   @override
+  String get historyTypeBridge => 'Bridge';
+
+  @override
+  String get historyTypeSwap => 'Swap';
+
+  @override
+  String get historyTypeAdd => 'Add';
+
+  @override
+  String get historyTypeRemove => 'Remove';
+
+  @override
   String get historyFilterReset => 'Reset';
 
   @override
@@ -370,7 +382,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSynced => 'Synced';
 
   @override
+  String homeBlocksRemaining(String count) {
+    return '$count blocks left';
+  }
+
+  @override
   String get homeNoConnection => 'No connection';
+
+  @override
+  String get homeCoinNotConfigured => 'Not configured';
 
   @override
   String homeAssetsCount(int count) {
@@ -402,15 +422,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coinHomeSent => 'Sent';
 
   @override
-  String get coinHomeRouteTor => 'Tor';
-
-  @override
-  String get coinHomeRouteProxy => 'Proxy';
-
-  @override
-  String get coinHomeRouteDirect => 'Direct';
-
-  @override
   String get coinHomeAddExplorerTitle => 'Add an explorer to see history';
 
   @override
@@ -433,9 +444,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeTotalBalanceLabel => 'Total Balance';
-
-  @override
-  String get homeCoinNotConfigured => 'Not configured';
 
   @override
   String get receiveTitle => 'Receive';
@@ -487,9 +495,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendContactsButton => 'Contacts';
 
   @override
-  String get sendInvalidAddressError => 'Invalid address.';
-
-  @override
   String get sendInsufficientBalanceError => 'Insufficient balance.';
 
   @override
@@ -528,11 +533,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCoinNotConfigured => 'Not configured';
-
-  @override
-  String homeBlocksRemaining(String count) {
-    return '$count blocks left';
-  }
 
   @override
   String get settingsNotifyNewTxsLabel => 'Notify New Transactions';
@@ -787,6 +787,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String addressBookNoContactsForCoin(String coinSymbol) {
     return 'No contacts with a $coinSymbol address';
+  }
+
+  @override
+  String invalidAddressForCoin(String coin) {
+    return 'Invalid $coin address';
   }
 
   @override

@@ -10,6 +10,7 @@ import 'package:spice_wallet/l10n/app_localizations.dart';
 import 'package:spice_wallet/models/fiat_rate_model.dart';
 import 'package:spice_wallet/util/logging.dart';
 import 'package:spice_wallet/util/secure_screen.dart';
+import 'package:spice_wallet/widgets/seed_grid.dart' show seedGridColumns;
 import 'package:spice_wallet/widgets/ui/ui.dart';
 import 'package:wallet_domain/wallet_domain.dart';
 
@@ -160,6 +161,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final cols = seedGridColumns(context);
 
     // The slots, the notice, and the Restore button react to typing via their
     // own listeners — a keystroke never rebuilds the whole screen (the lag).
@@ -209,20 +211,16 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
               Expanded(
                 child: ListView(
                   children: [
-                    // Rows of 3 (every length divides by 3) so each slot keeps
-                    // its natural, content-sized height instead of a fixed grid
-                    // aspect ratio.
-                    for (var r = 0; r * 3 < _count; r++) ...[
+                    // Rows sized to their content (not a fixed grid aspect
+                    // ratio); 3 columns, or 2 on narrow screens. A short last row
+                    // is padded with empty slots.
+                    for (var r = 0; r * cols < _count; r++) ...[
                       if (r > 0) const SizedBox(height: 9),
                       Row(
                         children: [
-                          for (var c = 0; c < 3; c++) ...[
+                          for (var c = 0; c < cols && r * cols + c < _count; c++) ...[
                             if (c > 0) const SizedBox(width: 9),
-                            Expanded(
-                              child: r * 3 + c < _count
-                                  ? _buildSlot(r * 3 + c)
-                                  : const SizedBox.shrink(),
-                            ),
+                            Expanded(child: _buildSlot(r * cols + c)),
                           ],
                         ],
                       ),
@@ -266,6 +264,9 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
                   ],
                 ),
               ),
+              // Keep the Restore button off the Scan-from card when the words
+              // make the list scroll (small screens / 2-column layout).
+              const SizedBox(height: BrandSpacing.md),
               ListenableBuilder(
                 listenable: reactive,
                 builder: (context, _) {

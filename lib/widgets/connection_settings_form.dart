@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:spice_wallet/l10n/app_localizations.dart';
@@ -11,19 +10,13 @@ import 'package:spice_wallet/services/foreground_sync_service.dart';
 import 'package:spice_wallet/services/shared_preferences_service.dart';
 import 'package:spice_wallet/services/tor_service.dart';
 import 'package:spice_wallet/services/tor_settings_service.dart';
+import 'package:spice_wallet/util/connection_address.dart';
 import 'package:spice_wallet/util/logging.dart';
+import 'package:spice_wallet/widgets/route_pill.dart';
 import 'package:spice_wallet/widgets/ui/ui.dart';
 import 'package:wallet_domain/wallet_domain.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
-
-final ipAddressRegex = RegExp(
-  r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
-);
-final domainAddressRegex = RegExp(
-  r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
-);
-final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
 
 /// Which connection a [ConnectionSettingsForm] reads/writes/tests: the wallet's
 /// node server, or its optional explorer.
@@ -70,7 +63,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   final TextEditingController _customProxyPortController = TextEditingController();
 
   bool _useTor = false;
-  bool _useSsl = false;
   String _connectionType = '';
   List<String> _connectionTypeOptions = const [];
   bool _hasTested = false;
@@ -180,7 +172,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
       _useTor = conn.useTor && TorSettingsService.sharedInstance.torMode != TorMode.disabled;
-      _useSsl = _sslForAddress(conn.address);
       _connectionTypeOptions = options;
       _connectionType = options.contains(conn.connectionType)
           ? conn.connectionType
@@ -209,35 +200,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   /// Private/loopback IPv4 ranges that we consider "local network".
-  bool _isLocalIp(String host) {
-    if (host.startsWith('192.168.') || host.startsWith('10.') || host.startsWith('127.')) {
-      return true;
-    }
-    final match = RegExp(r'^172\.(\d{1,3})\.').firstMatch(host);
-    if (match != null) {
-      final second = int.tryParse(match.group(1)!) ?? 0;
-      return second >= 16 && second <= 31;
-    }
-    return false;
-  }
-
   bool _isNonLocalIp(String value) {
     final host = value.split(':').first;
-    return ipAddressRegex.hasMatch(value) && !_isLocalIp(host);
-  }
-
-  bool _sslForAddress(String value) {
-    final host = value.split(':').first;
-    if (onionAddressRegex.hasMatch(value)) return false;
-    if (ipAddressRegex.hasMatch(value)) return false;
-    if (host.endsWith('.local')) return false;
-    return domainAddressRegex.hasMatch(value);
-  }
-
-  bool _isLocalAddress(String value) {
-    final host = value.split(':').first;
-    if (ipAddressRegex.hasMatch(value)) return _isLocalIp(host);
-    return host.endsWith('.local');
+    return ipAddressRegex.hasMatch(value) && !isLocalIp(host);
   }
 
   Future<void> _scanQrCode() async {
@@ -279,10 +244,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
 
     final useTor = onionAddressRegex.hasMatch(value);
-    final useSsl = _sslForAddress(value);
     final i18n = AppLocalizations.of(context)!;
 
-    _setUseSsl(useSsl);
     // Never auto-disable Tor if the user already turned it on.
     _setUseTor(useTor || _useTor);
 
@@ -296,7 +259,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(useSsl ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp),
+            content: Text(
+              addressUsesSsl(value) ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp,
+            ),
           ),
         );
     }
@@ -345,13 +310,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         timer.cancel();
         if (mounted) setState(() => _torStatus = status);
       }
-    });
-  }
-
-  void _setUseSsl(bool? value) {
-    setState(() {
-      _useSsl = value ?? false;
-      _hasTested = false;
     });
   }
 
@@ -516,50 +474,13 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     widget.onSaved();
   }
 
-  /// Route/security pills shown on the right of the Use-Tor row.
-  List<Widget> _routePills() {
-    final pills = <Widget>[];
-    final address = _cleanAddress(_addressController.text);
-    if (_useTor) {
-      pills.add(
-        _RoutePill(
-          label: 'TOR',
-          color: BrandColors.routeTor,
-          bg: BrandColors.routeTorBg,
-          icon: _PillIcon.tor,
-        ),
-      );
-    } else if (_customProxyPortController.text.trim().isNotEmpty) {
-      pills.add(
-        _RoutePill(
-          label: 'PROXY',
-          color: BrandColors.routeProxy,
-          bg: BrandColors.routeProxyBg,
-          icon: _PillIcon.proxy,
-        ),
-      );
-    }
-    if (_useSsl) {
-      pills.add(
-        _RoutePill(
-          label: 'HTTPS',
-          color: BrandColors.success,
-          bg: BrandColors.successBg,
-          icon: _PillIcon.https,
-        ),
-      );
-    } else if (_isLocalAddress(address)) {
-      pills.add(
-        _RoutePill(
-          label: 'LOCAL',
-          color: BrandColors.inkFaint,
-          bg: BrandColors.surfaceMuted,
-          icon: _PillIcon.local,
-        ),
-      );
-    }
-    return pills;
-  }
+  /// Route/security pills shown on the right of the Use-Tor row. `_useSsl` is
+  /// address-derived, so the shared helper produces the same result.
+  List<Widget> _routePills() => connectionRoutePills(
+    useTor: _useTor,
+    proxyPort: _customProxyPortController.text,
+    address: _cleanAddress(_addressController.text),
+  );
 
   /// How the successful probe reached the server (the one server fact we can
   /// state from an unauthenticated test). Height / subaddress support aren't
@@ -576,10 +497,15 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       return _StatusRowCard(leading: const _Spinner(), title: i18n.lwsSetupStartingTor);
     }
     if (!_hasTested) {
-      return BrandButton.secondary(
-        label: i18n.lwsSetupTestConnectionButton,
-        icon: Icons.wifi,
-        onPressed: _testConnection,
+      return Align(
+        alignment: Alignment.center,
+        child: BrandButton.secondary(
+          label: i18n.lwsSetupTestConnectionButton,
+          icon: Icons.wifi,
+          onPressed: _testConnection,
+          expand: false,
+          dense: true,
+        ),
       );
     }
     if (_connectionTestIsLoading) {
@@ -669,7 +595,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         checked: _useTor,
         onTap: torMode == TorMode.disabled ? null : () => _setUseTor(!_useTor),
         label: i18n.lwsSetupUseTorLabel,
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: _routePills()),
+        trailing: Row(mainAxisSize: MainAxisSize.min, spacing: 6, children: _routePills()),
       ),
       if (_showSyncOptions) ...[
         _CheckRow(
@@ -746,7 +672,8 @@ class _InsetField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = enabled ? BrandColors.ink : BrandColors.inkMuted;
+    // Disabled state dims the whole field via Opacity below, so the text keeps
+    // its normal colour here.
     final field = TextField(
       controller: controller,
       enabled: enabled,
@@ -759,7 +686,7 @@ class _InsetField extends StatelessWidget {
         fontFamily: mono ? 'Ubuntu Mono' : 'Ubuntu',
         fontSize: 13.5,
         height: 1,
-        color: textColor,
+        color: BrandColors.ink,
       ),
       decoration: InputDecoration(
         isCollapsed: true,
@@ -786,14 +713,18 @@ class _InsetField extends StatelessWidget {
       ),
     );
 
-    if (label == null) return box;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(label: label!, padding: const EdgeInsets.only(left: 2, bottom: 9)),
-        box,
-      ],
-    );
+    final content = label == null
+        ? box
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SectionHeader(label: label!, padding: const EdgeInsets.only(left: 2, bottom: 9)),
+              box,
+            ],
+          );
+
+    // Dim the whole field when disabled (e.g. the proxy port while Use Tor is on).
+    return enabled ? content : Opacity(opacity: 0.45, child: content);
   }
 }
 
@@ -903,70 +834,6 @@ class _CheckRow extends StatelessWidget {
           ],
           const Spacer(),
           if (trailing != null) trailing!,
-        ],
-      ),
-    );
-  }
-}
-
-enum _PillIcon { tor, https, proxy, local }
-
-/// Small route/security pill (TOR · HTTPS · PROXY · LOCAL). Icons are the exact
-/// design line marks, tinted to the pill colour.
-class _RoutePill extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color bg;
-  final _PillIcon icon;
-
-  const _RoutePill({
-    required this.label,
-    required this.color,
-    required this.bg,
-    required this.icon,
-  });
-
-  String _svg() {
-    final hex = '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
-    switch (icon) {
-      case _PillIcon.tor:
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="$hex" stroke-width="2">'
-            '<circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.6" ry="8.5"/>'
-            '<path d="M3.5 12h17"/></svg>';
-      case _PillIcon.https:
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="$hex" stroke-width="2.2" stroke-linecap="round">'
-            '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-      case _PillIcon.proxy:
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="$hex" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
-            '<path d="M4 12h4M16 12h4"/><circle cx="12" cy="12" r="3.2"/></svg>';
-      case _PillIcon.local:
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="$hex" stroke-width="2.2" stroke-linecap="round">'
-            '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 7-2.6"/></svg>';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(left: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SvgPicture.string(_svg(), width: 11, height: 11),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Ubuntu Mono',
-              fontSize: 9.5,
-              height: 1,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.76,
-              color: color,
-            ),
-          ),
         ],
       ),
     );

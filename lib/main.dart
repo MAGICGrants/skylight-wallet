@@ -135,6 +135,7 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
   bool _startedServices = false;
   bool _walletExists = false;
   bool _relockPending = false;
+  final _CurrentRouteObserver _routeObserver = _CurrentRouteObserver();
   // Desktop-only foreground announce: desktop has no background isolate, so the
   // foreground announces incoming txs when the wallets' history grows.
   WalletManager? _announceManager;
@@ -188,7 +189,12 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
       }
     } else if (state == AppLifecycleState.resumed && _relockPending) {
       _relockPending = false;
-      _navigatorKey.currentState?.pushNamedAndRemoveUntil('/unlock', (route) => false);
+      // Push the lock screen ON TOP of the current stack (rather than replacing
+      // it) so unlocking pops straight back to the screen the user left — unless
+      // one is already showing, which would stack duplicates.
+      if (_routeObserver.currentName != '/unlock') {
+        _navigatorKey.currentState?.pushNamed('/unlock');
+      }
     }
   }
 
@@ -261,6 +267,22 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
   ThemeData get _themeData => brandLightTheme();
   ThemeData get _darkThemeData => brandDarkTheme();
 
+  // The bottom-nav destinations. Tapping a nav tab must not animate (on either
+  // platform), so these get a zero-duration route in _onGenerateRoute.
+  static const _noTransitionRoutes = {'/wallet_home', '/history', '/address_book', '/settings'};
+
+  Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    final builder = <String, WidgetBuilder>{
+      '/loading': (context) => Scaffold(body: Center(child: CircularProgressIndicator())),
+      ..._routes,
+    }[settings.name];
+    if (builder == null) return null;
+    if (_noTransitionRoutes.contains(settings.name)) {
+      return _NoTransitionPageRoute(builder: builder, settings: settings);
+    }
+    return MaterialPageRoute(builder: builder, settings: settings);
+  }
+
   Map<String, WidgetBuilder> get _routes => {
     '/welcome': (context) => WelcomeScreen(),
     '/brand_gallery': (context) => const BrandGalleryScreen(),
@@ -300,6 +322,7 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      navigatorObservers: [_routeObserver],
       title: 'Spice Wallet',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -326,10 +349,39 @@ class _RootAppState extends State<_RootApp> with WidgetsBindingObserver {
       },
       initialRoute: '/loading',
       locale: Locale.fromSubtags(languageCode: languageProvider.language),
-      routes: {
-        '/loading': (context) => Scaffold(body: Center(child: CircularProgressIndicator())),
-        ..._routes,
-      },
+      onGenerateRoute: _onGenerateRoute,
     );
   }
+}
+
+/// Tracks the name of the current top route, so the app-lock relock can avoid
+/// stacking a second unlock screen over one that's already showing.
+class _CurrentRouteObserver extends NavigatorObserver {
+  String? currentName;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      currentName = route.settings.name;
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      currentName = previousRoute?.settings.name;
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
+      currentName = newRoute?.settings.name;
+}
+
+/// A [MaterialPageRoute] whose own push/pop is instant — used for the bottom-nav
+/// destinations so tapping a tab doesn't animate. Subclassing (rather than a bare
+/// PageRouteBuilder) keeps Material's transition machinery, so the *secondary*
+/// transition still plays when another screen is pushed over a nav screen.
+class _NoTransitionPageRoute<T> extends MaterialPageRoute<T> {
+  _NoTransitionPageRoute({required super.builder, super.settings});
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
 }

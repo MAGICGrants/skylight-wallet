@@ -138,8 +138,8 @@ class _TorSettingsSheetState extends State<_TorSettingsSheet> {
                       children: [
                         SheetIcon(
                           icon: Icons.public,
-                          bg: BrandColors.routeTorBg,
-                          color: BrandColors.routeTor,
+                          bg: BrandColors.purpleBg,
+                          color: BrandColors.purple,
                         ),
                         const SizedBox(width: 11),
                         Expanded(child: Text(i18n.torSettingsTitle, style: BrandText.sheetTitle)),
@@ -170,25 +170,10 @@ class _TorSettingsSheetState extends State<_TorSettingsSheet> {
                   children: [
                     BrandButton(label: i18n.save, onPressed: _sel.canCommit ? _save : null),
                     const SizedBox(height: 2),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).pop(),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Center(
-                            child: Text(
-                              i18n.cancel,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: BrandColors.inkMuted,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    BrandButton.ghost(
+                      label: i18n.cancel,
+                      color: BrandColors.inkMuted,
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),

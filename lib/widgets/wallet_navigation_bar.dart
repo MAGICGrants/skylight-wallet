@@ -78,7 +78,11 @@ class _NavTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = selected ? BrandColors.cinnamonDeep : BrandColors.inkMuted;
     return InkWell(
-      onTap: onTap,
+      // Navigate on touch-down, not release: a very light (or slightly rolling)
+      // tap can drift past the tap recognizer's slop before the finger lifts and
+      // get dropped. onTap stays as a no-op only to keep the ripple feedback.
+      onTapDown: (_) => onTap(),
+      onTap: () {},
       borderRadius: BorderRadius.circular(BrandRadii.tile),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),

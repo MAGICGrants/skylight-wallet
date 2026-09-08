@@ -55,15 +55,22 @@ class BrandColors {
   static Color get warningBg => _pick(0xFFFBEFDC, 0xFF33291A);
   static Color get error => _pick(0xFFB04A2F, 0xFFE0785A);
   static Color get errorBg => _pick(0xFFF8E4DC, 0xFF3A241E);
-  static Color get routeTor => _pick(0xFF6B4E9E, 0xFF9E86C9);
-  static Color get routeProxy => _pick(0xFF37628F, 0xFF6E9BC9);
+  // General accent hues (Tor route glyph + history swap type = purple; proxy
+  // route glyph + history bridge type = blue; server-kind pill = orange).
+  static Color get purple => _pick(0xFF6B4E9E, 0xFF9E86C9);
+  static Color get blue => _pick(0xFF37628F, 0xFF6E9BC9);
+  static Color get orange => _pick(0xFFBB5F1F, 0xFFDD8A4A);
+  // Electrum's light blue — the always-on server-kind pill for Bitcoin.
+  static Color get electrum => _pick(0xFF1E8FC9, 0xFF5CB6E6);
 
   // Accent-tile backgrounds — pastel in light, dark-toned tints of the same hue
   // in dark. Warm one pairs with cinnamon (sheet icons, MAX pill, nudges); the
-  // route ones tint behind the Tor/proxy glyphs.
+  // purple/blue ones tint behind their glyphs.
   static Color get surfaceAccent => _pick(0xFFF6E9D6, 0xFF3A2A1C);
-  static Color get routeTorBg => _pick(0xFFEFE9F8, 0xFF2A2440);
-  static Color get routeProxyBg => _pick(0xFFE6EEF7, 0xFF1E2A3A);
+  static Color get purpleBg => _pick(0xFFEFE9F8, 0xFF2A2440);
+  static Color get blueBg => _pick(0xFFE6EEF7, 0xFF1E2A3A);
+  static Color get orangeBg => _pick(0xFFF9E8D6, 0xFF3A2A18);
+  static Color get electrumBg => _pick(0xFFDDF0FB, 0xFF152F3E);
 
   // Chain brand — identical in both modes, so they stay const (usable in const
   // widgets like CoinMark).

@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 
 import 'package:spice_wallet/widgets/ui/ui.dart';
 
+/// Seed words show in 3 columns, dropping to 2 on screens narrower than a
+/// Pixel 8a (~411dp) so the mono words aren't cramped. Shared by the generate,
+/// reveal, and restore screens.
+int seedGridColumns(BuildContext context) => MediaQuery.of(context).size.width < 410 ? 2 : 3;
+
 /// Numbered seed words in a 3-column grid, blurred behind a "Tap to reveal"
 /// overlay until the user explicitly reveals them. Shared by the onboarding
 /// generate-seed step and the settings reveal-seed screen.
@@ -25,14 +30,26 @@ class SeedGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grid = GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 2.4,
-      mainAxisSpacing: 9,
-      crossAxisSpacing: 9,
-      children: [for (var i = 0; i < words.length; i++) _WordCell(index: i + 1, word: words[i])],
+    final cols = seedGridColumns(context);
+    // Manual rows (not a GridView) so a lone last word — e.g. word 15 in a
+    // 2-column layout — spans the full width instead of one column.
+    final grid = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var r = 0; r * cols < words.length; r++) ...[
+          if (r > 0) const SizedBox(height: 9),
+          Row(
+            children: [
+              for (var c = 0; c < cols && r * cols + c < words.length; c++) ...[
+                if (c > 0) const SizedBox(width: 9),
+                Expanded(
+                  child: _WordCell(index: r * cols + c + 1, word: words[r * cols + c]),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ],
     );
 
     if (revealed) return grid;
@@ -110,6 +127,8 @@ class _WordCell extends StatelessWidget {
       radius: 11,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
+        // Top-align so the number stays on the first line if a long word wraps.
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             index.toString().padLeft(2, '0'),
@@ -117,9 +136,9 @@ class _WordCell extends StatelessWidget {
           ),
           const SizedBox(width: BrandSpacing.sm),
           Expanded(
+            // No ellipsis — a seed word must be read in full, so wrap instead.
             child: Text(
               word,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: BrandColors.ink),
             ),
           ),

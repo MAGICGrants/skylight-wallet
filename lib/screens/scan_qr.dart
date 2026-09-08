@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart' show FlashMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
@@ -13,6 +14,10 @@ class ScanQrScreen extends StatefulWidget {
 
 class _ScanQrScreenState extends State<ScanQrScreen> {
   bool _hasScanned = false;
+  CameraController? _camera;
+  bool _torchOn = false;
+  bool _torchAvailable = false;
+  bool _torchBusy = false;
 
   void _onScan(Code result) {
     if (_hasScanned) return;
@@ -22,6 +27,39 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
     _hasScanned = true;
     Navigator.pop(context, text);
+  }
+
+  void _onControllerCreated(CameraController? controller, Exception? error) {
+    // A fresh controller starts with the flash off (the widget sets it on init),
+    // and a camera flip creates a new one — track it and reset our state. The
+    // front camera has no torch, so only offer the button on the back one.
+    _camera = controller;
+    if (mounted) {
+      setState(() {
+        _torchOn = false;
+        _torchAvailable = controller?.description.lensDirection == CameraLensDirection.back;
+      });
+    }
+  }
+
+  // The package's own flash button calls setFlashMode without awaiting it and
+  // swallows the exception, so a tap while the camera is busy silently no-ops —
+  // "keep tapping until it works". Drive it ourselves: await, catch, and debounce
+  // concurrent taps so each tap reliably flips the torch.
+  Future<void> _toggleTorch() async {
+    final cam = _camera;
+    if (cam == null || _torchBusy) return;
+    _torchBusy = true;
+    final next = !_torchOn;
+    try {
+      await cam.setFlashMode(next ? FlashMode.torch : FlashMode.off);
+      if (mounted) setState(() => _torchOn = next);
+    } catch (_) {
+      // Transient failure — leave the state unchanged so the icon keeps matching
+      // the actual torch.
+    } finally {
+      _torchBusy = false;
+    }
   }
 
   @override
@@ -37,12 +75,40 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
           Positioned.fill(
             child: ReaderWidget(
               onScan: _onScan,
+              onControllerCreated: _onControllerCreated,
+              // Our own torch (below) replaces the package's flaky flash button,
+              // and sits just left of the flip-camera button, which we nudge
+              // right to make room when the torch is shown.
+              showFlashlight: false,
               showGallery: false,
+              actionButtonsPadding: _torchAvailable
+                  ? const EdgeInsets.only(left: 66, bottom: 10)
+                  : const EdgeInsets.all(10),
               cropPercent: 1.0,
               tryHarder: true,
               scanDelay: const Duration(milliseconds: 200),
             ),
           ),
+          if (_torchAvailable)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: ColoredBox(
+                      color: Colors.black,
+                      child: IconButton(
+                        onPressed: _toggleTorch,
+                        color: Colors.white,
+                        icon: Icon(_torchOn ? Icons.flash_on : Icons.flash_off),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

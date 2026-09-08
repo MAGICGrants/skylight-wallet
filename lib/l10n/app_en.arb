@@ -123,6 +123,10 @@
   "historyFilterBlockchain": "Blockchain",
   "historyFilterAsset": "Asset",
   "historyFilterType": "Type",
+  "historyTypeBridge": "Bridge",
+  "historyTypeSwap": "Swap",
+  "historyTypeAdd": "Add",
+  "historyTypeRemove": "Remove",
   "historyFilterReset": "Reset",
   "unlockButton": "Unlock",
   "unlockReason": "Unlock wallet",
@@ -135,7 +139,16 @@
   "unlockIncorrectPasswordError": "Incorrect password. Please try again.",
   "homeSyncing": "Syncing",
   "homeSynced": "Synced",
+  "homeBlocksRemaining": "{count} blocks left",
+  "@homeBlocksRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "homeNoConnection": "No connection",
+  "homeCoinNotConfigured": "Not configured",
   "homeAssetsCount": "{count, plural, =1{1 asset} other{{count} assets}}",
   "@homeAssetsCount": {
     "placeholders": {
@@ -150,9 +163,6 @@
   "coinHomeSwapComingSoon": "Coming soon!",
   "coinHomeReceived": "Received",
   "coinHomeSent": "Sent",
-  "coinHomeRouteTor": "Tor",
-  "coinHomeRouteProxy": "Proxy",
-  "coinHomeRouteDirect": "Direct",
   "coinHomeAddExplorerTitle": "Add an explorer to see history",
   "coinHomeAddExplorerButton": "Add explorer",
   "homeFiatSource": "Kraken over Tor",
@@ -161,7 +171,6 @@
   "homeNoTransactions": "No transactions",
   "homeFiatApiError": "Error connecting to fiat API",
   "homeTotalBalanceLabel": "Total Balance",
-  "homeCoinNotConfigured": "Not configured",
   "receiveTitle": "Receive",
   "receivePrimaryAddressWarn": "Warning: Unless you know what you're doing, please consider using subaddresses for better privacy.",
   "receiveServerNoSubaddressesWarn": "Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.",
@@ -190,7 +199,6 @@
   "sendTransactionSuccessfullySent": "Transaction successfully sent!",
   "sendOpenAliasResolveError": "Invalid OpenAlias.",
   "sendContactsButton": "Contacts",
-  "sendInvalidAddressError": "Invalid address.",
   "sendInsufficientBalanceError": "Insufficient balance.",
   "sendInsufficientBalanceToCoverFeeError": "Insufficient balance to cover the network fee.",
   "sendInsufficientGasError": "Insufficient ETH to cover the network fee.",
@@ -204,14 +212,6 @@
   "settingsCoinConnectionSetup": "Connection setup",
   "settingsCoinExplorer": "Explorer",
   "settingsCoinNotConfigured": "Not configured",
-  "homeBlocksRemaining": "{count} blocks left",
-  "@homeBlocksRemaining": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
   "settingsNotifyNewTxsLabel": "Notify New Transactions",
   "settingsNotifyNewTxsDescription": "Shows a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.",
   "settingsNotifyNewTxsDescriptionIos": "Shows a notification when you receive a transaction.",
@@ -307,6 +307,14 @@
   "@addressBookNoContactsForCoin": {
     "placeholders": {
       "coinSymbol": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidAddressForCoin": "Invalid {coin} address",
+  "@invalidAddressForCoin": {
+    "placeholders": {
+      "coin": {
         "type": "String"
       }
     }

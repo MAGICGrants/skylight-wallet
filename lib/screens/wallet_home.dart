@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -84,7 +85,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                       _TotalBalanceHeader(
                         totalFiat: totalFiat,
                         fiatSymbol: fiatSymbol,
-                        fiatCode: fiatRate.fiatCode,
                         fiatRate: fiatRate,
                       ),
                       Padding(
@@ -126,7 +126,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 6, bottom: 2),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 2),
       child: Row(
         children: [
           SvgPicture.asset('assets/spice-icon.svg', width: 30, height: 30),
@@ -149,13 +149,11 @@ class _Header extends StatelessWidget {
 class _TotalBalanceHeader extends StatelessWidget {
   final double totalFiat;
   final String fiatSymbol;
-  final String fiatCode;
   final FiatRateModel fiatRate;
 
   const _TotalBalanceHeader({
     required this.totalFiat,
     required this.fiatSymbol,
-    required this.fiatCode,
     required this.fiatRate,
   });
 
@@ -195,18 +193,6 @@ class _TotalBalanceHeader extends StatelessWidget {
               ],
             ],
           ),
-          if (!fiatRate.isDisabled) ...[
-            const SizedBox(height: 11),
-            Text(
-              '$fiatCode · ${i18n.homeFiatSource}',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w400,
-                height: 1,
-                color: BrandColors.inkMuted,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -271,7 +257,12 @@ class _CoinCard extends StatelessWidget {
       case ConnectionIndicatorState.ok:
         return (BrandColors.success, '$assets${i18n.homeSynced}');
       case ConnectionIndicatorState.loading:
-        return (BrandColors.warning, '$assets${i18n.homeSyncing}');
+        // Monero node syncing exposes a block count; show "x blocks left".
+        final blocks = wallet.syncBlocksRemaining;
+        final text = blocks != null
+            ? i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(blocks))
+            : i18n.homeSyncing;
+        return (BrandColors.warning, '$assets$text');
       case ConnectionIndicatorState.error:
         return (BrandColors.error, '$assets${i18n.homeNoConnection}');
     }

@@ -705,6 +705,30 @@ abstract class AppLocalizations {
   /// **'Type'**
   String get historyFilterType;
 
+  /// No description provided for @historyTypeBridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Bridge'**
+  String get historyTypeBridge;
+
+  /// No description provided for @historyTypeSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get historyTypeSwap;
+
+  /// No description provided for @historyTypeAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get historyTypeAdd;
+
+  /// No description provided for @historyTypeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get historyTypeRemove;
+
   /// No description provided for @historyFilterReset.
   ///
   /// In en, this message translates to:
@@ -777,11 +801,23 @@ abstract class AppLocalizations {
   /// **'Synced'**
   String get homeSynced;
 
+  /// No description provided for @homeBlocksRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks left'**
+  String homeBlocksRemaining(String count);
+
   /// No description provided for @homeNoConnection.
   ///
   /// In en, this message translates to:
   /// **'No connection'**
   String get homeNoConnection;
+
+  /// No description provided for @homeCoinNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get homeCoinNotConfigured;
 
   /// No description provided for @homeAssetsCount.
   ///
@@ -824,24 +860,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sent'**
   String get coinHomeSent;
-
-  /// No description provided for @coinHomeRouteTor.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor'**
-  String get coinHomeRouteTor;
-
-  /// No description provided for @coinHomeRouteProxy.
-  ///
-  /// In en, this message translates to:
-  /// **'Proxy'**
-  String get coinHomeRouteProxy;
-
-  /// No description provided for @coinHomeRouteDirect.
-  ///
-  /// In en, this message translates to:
-  /// **'Direct'**
-  String get coinHomeRouteDirect;
 
   /// No description provided for @coinHomeAddExplorerTitle.
   ///
@@ -890,12 +908,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total Balance'**
   String get homeTotalBalanceLabel;
-
-  /// No description provided for @homeCoinNotConfigured.
-  ///
-  /// In en, this message translates to:
-  /// **'Not configured'**
-  String get homeCoinNotConfigured;
 
   /// No description provided for @receiveTitle.
   ///
@@ -981,12 +993,6 @@ abstract class AppLocalizations {
   /// **'Contacts'**
   String get sendContactsButton;
 
-  /// No description provided for @sendInvalidAddressError.
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid address.'**
-  String get sendInvalidAddressError;
-
   /// No description provided for @sendInsufficientBalanceError.
   ///
   /// In en, this message translates to:
@@ -1064,12 +1070,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not configured'**
   String get settingsCoinNotConfigured;
-
-  /// No description provided for @homeBlocksRemaining.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} blocks left'**
-  String homeBlocksRemaining(String count);
 
   /// No description provided for @settingsNotifyNewTxsLabel.
   ///
@@ -1538,6 +1538,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No contacts with a {coinSymbol} address'**
   String addressBookNoContactsForCoin(String coinSymbol);
+
+  /// No description provided for @invalidAddressForCoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid {coin} address'**
+  String invalidAddressForCoin(String coin);
 
   /// No description provided for @sendPriorityLow.
   ///

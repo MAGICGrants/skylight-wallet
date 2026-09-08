@@ -55,6 +55,7 @@ class _SendScreenState extends State<SendScreen> {
   final ValueNotifier<int> _feeRevision = ValueNotifier(0);
 
   String _destinationAddressError = '';
+  String _lastAddressText = ''; // guards against selection-only listener fires
   String _amountError = '';
   int _openAliasResolving = 0; // >0 while OpenAlias resolution is in flight
   bool _formValid = false; // gates the send button
@@ -194,15 +195,34 @@ class _SendScreenState extends State<SendScreen> {
 
   void _pasteAddressFromClipboard() async {
     ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data == null || !mounted) return;
 
-    if (data != null) {
-      _destinationAddressController.text = data.text ?? '';
+    final text = data.text ?? '';
+    // Assigning text fires _onAddressChanged, which clears any stale error; then
+    // surface the invalid-address warning inline so a bad paste is seen at once
+    // rather than only on focus-loss.
+    _destinationAddressController.text = text;
+    _showInvalidAddressIfNeeded(text);
+  }
+
+  /// Sets the inline `Invalid <coin> address` error immediately for a pasted or
+  /// scanned value. OpenAlias domains are skipped — they resolve on unfocus.
+  void _showInvalidAddressIfNeeded(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return;
+    final wallet = _wallet(context);
+    if (domainRegex.hasMatch(trimmed) && wallet.aliasAsset.isNotEmpty) return;
+    if (!wallet.isAddressValid(trimmed)) {
+      setState(
+        () => _destinationAddressError = AppLocalizations.of(
+          context,
+        )!.invalidAddressForCoin(wallet.coinName),
+      );
     }
   }
 
   Future<void> _scanQrCode() async {
     final wallet = _wallet(context);
-    final i18n = AppLocalizations.of(context)!;
 
     final result = await Navigator.pushNamed(context, '/scan_qr');
 
@@ -215,9 +235,8 @@ class _SendScreenState extends State<SendScreen> {
     if (uri != null && uri.scheme.toLowerCase() == wallet.coinSymbol.toLowerCase()) {
       if (!wallet.isAddressValid(uri.path)) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+          _destinationAddressController.text = uri.path;
+          _showInvalidAddressIfNeeded(uri.path);
         }
         return;
       }
@@ -231,9 +250,8 @@ class _SendScreenState extends State<SendScreen> {
       address = result;
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+        _destinationAddressController.text = result;
+        _showInvalidAddressIfNeeded(result);
       }
       return;
     }
@@ -308,7 +326,7 @@ class _SendScreenState extends State<SendScreen> {
     } else {
       if (setErrors) {
         setState(() {
-          _destinationAddressError = i18n.sendInvalidAddressError;
+          _destinationAddressError = i18n.invalidAddressForCoin(wallet.coinName);
         });
       }
       return false;
@@ -558,6 +576,13 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _onAddressChanged() {
+    // The controller also notifies on selection changes — setting text emits a
+    // second, selection-only fire a frame later. Ignore those, or that fire
+    // would wipe the invalid-address error a paste just set.
+    final text = _destinationAddressController.text;
+    if (text == _lastAddressText) return;
+    _lastAddressText = text;
+
     // Input changed: invalidate the resolution cache + clear any stale error.
     _resolveCacheInput = '';
     _resolveCacheOutput = '';
@@ -565,7 +590,6 @@ class _SendScreenState extends State<SendScreen> {
       setState(() => _destinationAddressError = '');
     }
 
-    final text = _destinationAddressController.text;
     final isOpenAliasDomain = domainRegex.hasMatch(text) && _wallet(context).aliasAsset.isNotEmpty;
 
     // While the user is actively typing a domain, defer the (network) OpenAlias
@@ -698,10 +722,9 @@ class _SendScreenState extends State<SendScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Row(
                     children: [
-                      BrandButton.outline(
+                      BrandButton.ghost(
                         label: i18n.cancel,
                         color: BrandColors.inkMuted,
-                        borderColor: BrandColors.borderStrong,
                         expand: false,
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -747,8 +770,9 @@ class _SendScreenState extends State<SendScreen> {
   Widget _card({
     required Widget child,
     EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    Color? borderColor,
   }) {
-    return BrandCard(padding: padding, child: child);
+    return BrandCard(padding: padding, borderColor: borderColor, child: child);
   }
 
   Widget _fromCard(
@@ -1060,6 +1084,7 @@ class _SendScreenState extends State<SendScreen> {
     final isMobile = Platform.isAndroid || Platform.isIOS;
     return _card(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
+      borderColor: _destinationAddressError.isNotEmpty ? BrandColors.error : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1077,7 +1102,11 @@ class _SendScreenState extends State<SendScreen> {
             decoration: InputDecoration(
               isCollapsed: true,
               border: InputBorder.none,
-              hintText: i18n.sendAddressHint(wallet.coinName),
+              // Anchor the label to the settlement chain, not the asset — a DAI
+              // send goes to an "Ethereum address", not a "Dai address".
+              hintText: i18n.sendAddressHint(
+                chainNameOf(Provider.of<WalletManager>(context, listen: false), wallet),
+              ),
               hintStyle: TextStyle(
                 fontFamily: 'Ubuntu Mono',
                 fontSize: 13.5,
@@ -1312,122 +1341,122 @@ class _ContactPickerSheetState extends State<_ContactPickerSheet> {
     final i18n = AppLocalizations.of(context)!;
     final chainSymbol = widget.chain.coinSymbol;
 
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.82),
-        child: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SheetHandle(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CoinMark(
-                          coinSymbol: chainSymbol,
-                          iconAsset: widget.chain.iconAsset,
-                          size: 34,
-                        ),
-                        const SizedBox(width: 11),
-                        Expanded(
-                          child: Text(i18n.sendPickContactTitle, style: BrandText.sheetTitle),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 7),
-                    Text(
-                      i18n.sendPickContactSubtitle(widget.chain.coinName),
-                      style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
-                child: BrandCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
+    final mq = MediaQuery.of(context);
+    // Fixed height so filtering the results — or getting none — never shrinks the
+    // sheet. Capped to the space above the keyboard, and below the status bar
+    // (viewPadding.top, since padding.top reads 0 inside a modal sheet).
+    final available = mq.size.height - mq.viewInsets.bottom - mq.viewPadding.top - 40;
+    final height = math.min(mq.size.height * 0.72, available);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: height,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SheetHandle(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.search, size: 18, color: BrandColors.inkFaint),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (q) => setState(() => _query = q),
-                          textInputAction: TextInputAction.search,
-                          style: TextStyle(fontSize: 13.5, color: BrandColors.ink),
-                          decoration: InputDecoration(
-                            isCollapsed: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                            border: InputBorder.none,
-                            hintText: i18n.addressBookSearchHint,
-                            hintStyle: TextStyle(fontSize: 13.5, color: BrandColors.inkFaint),
+                      Row(
+                        children: [
+                          CoinMark(
+                            coinSymbol: chainSymbol,
+                            iconAsset: widget.chain.iconAsset,
+                            size: 34,
                           ),
-                        ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Text(i18n.sendPickContactTitle, style: BrandText.sheetTitle),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        i18n.sendPickContactSubtitle(widget.chain.coinName),
+                        style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
                       ),
                     ],
                   ),
                 ),
-              ),
-              Flexible(
-                child: Consumer<ContactModel>(
-                  builder: (context, contactModel, child) {
-                    final results = contactModel.searchContacts(_query);
-                    if (results.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
-                        child: Text(
-                          _query.isEmpty
-                              ? i18n.addressBookNoContactsForCoin(chainSymbol)
-                              : i18n.addressBookNoSearchResults,
-                          style: BrandText.bodyMuted.copyWith(fontSize: 13),
-                          textAlign: TextAlign.center,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+                  child: BrandCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, size: 18, color: BrandColors.inkFaint),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (q) => setState(() => _query = q),
+                            textInputAction: TextInputAction.search,
+                            style: TextStyle(fontSize: 13.5, color: BrandColors.ink),
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              border: InputBorder.none,
+                              hintText: i18n.addressBookSearchHint,
+                              hintStyle: TextStyle(fontSize: 13.5, color: BrandColors.inkFaint),
+                            ),
+                          ),
                         ),
-                      );
-                    }
-                    // Selectable contacts (with an address on this chain) first.
-                    bool has(Contact c) => c.addressFor(chainSymbol) != null;
-                    final ordered = [...results.where(has), ...results.where((c) => !has(c))];
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
-                      itemCount: ordered.length,
-                      itemBuilder: (context, index) => _ContactPickRow(
-                        contact: ordered[index],
-                        chain: widget.chain,
-                        onTap: () => widget.onSelected(ordered[index]),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 16, 22, 8),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Navigator.pop(context),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Center(
-                      child: Text(
-                        i18n.cancel,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: BrandColors.inkMuted,
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Consumer<ContactModel>(
+                    builder: (context, contactModel, child) {
+                      final results = contactModel.searchContacts(_query);
+                      if (results.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
+                            child: Text(
+                              _query.isEmpty
+                                  ? i18n.addressBookNoContactsForCoin(chainSymbol)
+                                  : i18n.addressBookNoSearchResults,
+                              style: BrandText.bodyMuted.copyWith(fontSize: 13),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      }
+                      // Selectable contacts (with an address on this chain) first.
+                      bool has(Contact c) => c.addressFor(chainSymbol) != null;
+                      final ordered = [...results.where(has), ...results.where((c) => !has(c))];
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 22),
+                        itemCount: ordered.length,
+                        itemBuilder: (context, index) => _ContactPickRow(
+                          contact: ordered[index],
+                          chain: widget.chain,
+                          onTap: () => widget.onSelected(ordered[index]),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 16, 22, 8),
+                  child: BrandButton.ghost(
+                    label: i18n.cancel,
+                    color: BrandColors.inkMuted,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

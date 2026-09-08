@@ -14,6 +14,7 @@ import 'package:spice_wallet/util/coin_assets.dart';
 import 'package:spice_wallet/util/format.dart';
 import 'package:spice_wallet/widgets/tx_activity_row.dart';
 import 'package:spice_wallet/widgets/connection_status_indicator.dart';
+import 'package:spice_wallet/widgets/route_pill.dart';
 import 'package:spice_wallet/widgets/tx_details.dart';
 import 'package:spice_wallet/widgets/ui/ui.dart';
 import 'package:wallet_domain/wallet_domain.dart';
@@ -136,7 +137,6 @@ class _CoinHomeScreenState extends State<CoinHomeScreen> {
                               totalFiat: totalFiat,
                               fiatSymbol: fiatSymbol,
                               fiatRate: fiatRate,
-                              assetCount: assets.length,
                               hasTokens: hasTokens,
                             ),
                             Padding(
@@ -216,7 +216,13 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: BrandScreenHeader(
         onBack: () => Navigator.pop(context),
-        center: CoinBadge(wallet: wallet),
+        // Status dot on the header icon; the header sits on the paper ground.
+        center: CoinBadge(
+          wallet: wallet,
+          statusColor: connectionDotColor(wallet),
+          statusRingColor: BrandColors.paper,
+          statusDotFactor: 0.46,
+        ),
         action: IconCircleButton(icon: Icons.tune, onPressed: onSettings),
       ),
     );
@@ -228,7 +234,6 @@ class _BalanceHero extends StatelessWidget {
   final double? totalFiat;
   final String fiatSymbol;
   final FiatRateModel fiatRate;
-  final int assetCount;
   final bool hasTokens;
 
   const _BalanceHero({
@@ -236,7 +241,6 @@ class _BalanceHero extends StatelessWidget {
     required this.totalFiat,
     required this.fiatSymbol,
     required this.fiatRate,
-    required this.assetCount,
     required this.hasTokens,
   });
 
@@ -244,6 +248,7 @@ class _BalanceHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final showFiat = !fiatRate.isDisabled && totalFiat != null;
+    final blocks = wallet.syncBlocksRemaining;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 30, 20, 24),
@@ -257,13 +262,9 @@ class _BalanceHero extends StatelessWidget {
           else
             Text('${_amountText(wallet)} ${wallet.coinSymbol}', style: _balanceStyle),
           const SizedBox(height: 10),
-          // Subtitle: asset count for token chains, else the coin amount.
-          if (hasTokens)
-            Text(
-              i18n.homeAssetsCount(assetCount),
-              style: TextStyle(fontSize: 13.5, height: 1, color: BrandColors.inkMuted),
-            )
-          else if (showFiat)
+          // Non-token chains show the coin amount as the subtitle; token chains
+          // replace what used to be the "N assets" line with the pills.
+          if (!hasTokens && showFiat)
             Text(
               '${_amountText(wallet)} ${wallet.coinSymbol}',
               style: TextStyle(
@@ -273,86 +274,37 @@ class _BalanceHero extends StatelessWidget {
                 color: BrandColors.inkMuted,
               ),
             ),
-          if (!hasTokens && wallet.connectionAddress.isNotEmpty) ...[
-            const SizedBox(height: 9),
-            _RouteLine(wallet: wallet),
+          if (wallet.connectionAddress.isNotEmpty) ...[
+            if (!hasTokens && showFiat) const SizedBox(height: 12),
+            // While syncing (Monero node behind), compact the pills to icons and
+            // show "x blocks left" beside them; otherwise the full pills.
+            if (blocks != null)
+              Row(
+                children: [
+                  ConnectionPills(wallet: wallet, compact: true),
+                  const SizedBox(width: 10),
+                  Container(width: 1, height: 14, color: BrandColors.borderStrong),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(blocks)),
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu Mono',
+                        fontSize: 13,
+                        height: 1,
+                        color: BrandColors.inkMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              ConnectionPills(wallet: wallet),
           ],
         ],
       ),
     );
-  }
-}
-
-class _RouteLine extends StatelessWidget {
-  final CryptoWallet wallet;
-  const _RouteLine({required this.wallet});
-
-  @override
-  Widget build(BuildContext context) {
-    final i18n = AppLocalizations.of(context)!;
-    final state = connectionIndicatorStateFor(wallet);
-    final dotColor = switch (state) {
-      ConnectionIndicatorState.ok => BrandColors.success,
-      ConnectionIndicatorState.loading => BrandColors.warning,
-      ConnectionIndicatorState.error => BrandColors.error,
-    };
-
-    final parts = <String>[];
-    if (state == ConnectionIndicatorState.loading) parts.add(i18n.homeSyncing);
-    if (wallet.connectionUseTor) {
-      parts.add(i18n.coinHomeRouteTor);
-    } else if (wallet.connectionProxyPort.isNotEmpty) {
-      parts.add(i18n.coinHomeRouteProxy);
-    } else {
-      parts.add(i18n.coinHomeRouteDirect);
-    }
-    final type = _typeLabel(i18n, wallet.connectionType);
-    if (type != null) parts.add(type);
-
-    final blocks = wallet.syncBlocksRemaining;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              parts.join(' · '),
-              style: TextStyle(fontSize: 11.5, height: 1, color: BrandColors.inkMuted),
-            ),
-          ],
-        ),
-        if (state == ConnectionIndicatorState.loading && blocks != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(blocks)),
-            style: TextStyle(
-              fontFamily: 'Ubuntu Mono',
-              fontSize: 11.5,
-              height: 1,
-              color: BrandColors.inkMuted,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  String? _typeLabel(AppLocalizations i18n, String type) {
-    switch (type) {
-      case 'lws':
-        return i18n.connectionTypeLws;
-      case 'node':
-        return i18n.connectionTypeNode;
-      default:
-        return null;
-    }
   }
 }
 

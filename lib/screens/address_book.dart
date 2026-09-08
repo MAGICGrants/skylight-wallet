@@ -526,6 +526,9 @@ class _ContactSheetState extends State<_ContactSheet> {
   bool _ready = false;
   bool _saving = false;
   String? _error;
+  // Coin whose last paste/scan was invalid — shown inline under that coin's row.
+  // Cleared on the next paste/scan or any successful set.
+  String? _invalidAddressCoin;
 
   bool get _isEditing => widget.contact != null;
 
@@ -566,17 +569,17 @@ class _ContactSheetState extends State<_ContactSheet> {
   }
 
   void _setAddress(CryptoWallet wallet, String? raw) {
-    final i18n = AppLocalizations.of(context)!;
     final address = raw == null ? null : _extractAddress(raw, wallet);
     if (address == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+      // Show the error inline under this coin's row rather than as a snackbar,
+      // which renders behind the sheet and isn't seen until it's closed.
+      setState(() => _invalidAddressCoin = wallet.coinSymbol);
       return;
     }
     setState(() {
       _addresses[wallet.coinSymbol] = address;
       _error = null;
+      _invalidAddressCoin = null;
     });
   }
 
@@ -643,7 +646,9 @@ class _ContactSheetState extends State<_ContactSheet> {
                     Row(
                       children: [
                         SheetIcon(
-                          icon: _isEditing ? Icons.edit_outlined : Icons.add,
+                          // A person glyph, not a "+": the filled tile already
+                          // reads as a button, and a plus reinforces that.
+                          icon: _isEditing ? Icons.edit_outlined : Icons.person_outline,
                           bg: BrandColors.surfaceAccent,
                           color: BrandColors.cinnamonDeep,
                         ),
@@ -801,7 +806,10 @@ class _ContactSheetState extends State<_ContactSheet> {
             ),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _addresses.remove(wallet.coinSymbol)),
+              onTap: () => setState(() {
+                _addresses.remove(wallet.coinSymbol);
+                _invalidAddressCoin = null;
+              }),
               child: Container(
                 width: 26,
                 height: 26,
@@ -815,40 +823,55 @@ class _ContactSheetState extends State<_ContactSheet> {
       );
     }
 
+    final i18n = AppLocalizations.of(context)!;
+    final invalid = _invalidAddressCoin == wallet.coinSymbol;
     return Container(
       decoration: BoxDecoration(
         color: BrandColors.surfaceSunken,
-        border: Border.all(color: BrandColors.border),
+        border: Border.all(color: invalid ? BrandColors.error : BrandColors.border),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          tile,
-          const SizedBox(width: 11),
-          Expanded(
-            child: Text(
-              wallet.coinName,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: BrandColors.inkFaint,
+          Row(
+            children: [
+              tile,
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  wallet.coinName,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: BrandColors.inkFaint,
+                  ),
+                ),
               ),
-            ),
+              MiniActionButton(
+                bordered: true,
+                icon: Icons.content_paste_outlined,
+                label: i18n.sendPasteButton,
+                onTap: () => _paste(wallet),
+              ),
+              if (Platform.isAndroid || Platform.isIOS) ...[
+                const SizedBox(width: 7),
+                MiniActionButton(
+                  bordered: true,
+                  icon: Icons.qr_code_scanner,
+                  label: i18n.sendScanButton,
+                  onTap: () => _scan(wallet),
+                ),
+              ],
+            ],
           ),
-          MiniActionButton(
-            bordered: true,
-            icon: Icons.content_paste_outlined,
-            label: AppLocalizations.of(context)!.sendPasteButton,
-            onTap: () => _paste(wallet),
-          ),
-          if (Platform.isAndroid || Platform.isIOS) ...[
-            const SizedBox(width: 7),
-            MiniActionButton(
-              bordered: true,
-              icon: Icons.qr_code_scanner,
-              label: AppLocalizations.of(context)!.sendScanButton,
-              onTap: () => _scan(wallet),
+          // Invalid paste/scan for this coin — enlarge the row with the reason.
+          if (invalid) ...[
+            const SizedBox(height: 8),
+            Text(
+              i18n.invalidAddressForCoin(wallet.coinName),
+              style: BrandText.caption.copyWith(color: BrandColors.error),
             ),
           ],
         ],

@@ -123,6 +123,10 @@
   "historyFilterBlockchain": "Rede",
   "historyFilterAsset": "Ativo",
   "historyFilterType": "Tipo",
+  "historyTypeBridge": "Ponte",
+  "historyTypeSwap": "Troca",
+  "historyTypeAdd": "Adicionar",
+  "historyTypeRemove": "Remover",
   "historyFilterReset": "Redefinir",
   "unlockButton": "Desbloquear",
   "unlockReason": "Desbloquear carteira",
@@ -135,7 +139,16 @@
   "unlockIncorrectPasswordError": "Senha incorreta. Tente novamente.",
   "homeSyncing": "Sincronizando",
   "homeSynced": "Sincronizado",
+  "homeBlocksRemaining": "{count} blocos restantes",
+  "@homeBlocksRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "homeNoConnection": "Sem conexão",
+  "homeCoinNotConfigured": "Não configurado",
   "homeAssetsCount": "{count, plural, =1{1 ativo} other{{count} ativos}}",
   "@homeAssetsCount": {
     "placeholders": {
@@ -150,9 +163,6 @@
   "coinHomeSwapComingSoon": "Em breve!",
   "coinHomeReceived": "Recebido",
   "coinHomeSent": "Enviado",
-  "coinHomeRouteTor": "Tor",
-  "coinHomeRouteProxy": "Proxy",
-  "coinHomeRouteDirect": "Direto",
   "coinHomeAddExplorerTitle": "Adicione um explorador para ver o histórico",
   "coinHomeAddExplorerButton": "Adicionar explorador",
   "homeFiatSource": "Kraken via Tor",
@@ -161,7 +171,6 @@
   "homeNoTransactions": "Sem transações",
   "homeFiatApiError": "Erro ao conectar à API de cotação",
   "homeTotalBalanceLabel": "Saldo Total",
-  "homeCoinNotConfigured": "Não configurado",
   "receiveTitle": "Receber",
   "receivePrimaryAddressWarn": "Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.",
   "receiveServerNoSubaddressesWarn": "Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.",
@@ -190,7 +199,6 @@
   "sendTransactionSuccessfullySent": "Transação enviada com sucesso!",
   "sendOpenAliasResolveError": "OpenAlias inválido.",
   "sendContactsButton": "Contatos",
-  "sendInvalidAddressError": "Endereço inválido.",
   "sendInsufficientBalanceError": "Saldo insuficiente.",
   "sendInsufficientBalanceToCoverFeeError": "Saldo insuficiente para cobrir a taxa da rede.",
   "sendInsufficientGasError": "Saldo de ETH insuficiente para cobrir a taxa da rede.",
@@ -204,14 +212,6 @@
   "settingsCoinConnectionSetup": "Configurar conexão",
   "settingsCoinExplorer": "Explorador",
   "settingsCoinNotConfigured": "Não configurado",
-  "homeBlocksRemaining": "{count} blocos restantes",
-  "@homeBlocksRemaining": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
   "settingsNotifyNewTxsLabel": "Notificar Novas Transações",
   "settingsNotifyNewTxsDescription": "Mostra uma notificação quando você recebe uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.",
   "settingsNotifyNewTxsDescriptionIos": "Mostra uma notificação quando você recebe uma transação.",
@@ -307,6 +307,14 @@
   "@addressBookNoContactsForCoin": {
     "placeholders": {
       "coinSymbol": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidAddressForCoin": "Endereço {coin} inválido",
+  "@invalidAddressForCoin": {
+    "placeholders": {
+      "coin": {
         "type": "String"
       }
     }

@@ -21,6 +21,12 @@ List<CryptoWallet> chainAssets(WalletManager manager, CryptoWallet chain) => [
 String chainSymbolOf(CryptoWallet wallet) =>
     wallet is Erc20ChainWallet ? wallet.parentCoinSymbol : wallet.coinSymbol;
 
+/// The display name of the chain a wallet settles on — "Ethereum" for DAI, so
+/// address labels anchor to the network, not the token. Falls back to the
+/// wallet's own name if the chain coin isn't registered.
+String chainNameOf(WalletManager manager, CryptoWallet wallet) =>
+    manager.getWallet(chainSymbolOf(wallet))?.coinName ?? wallet.coinName;
+
 /// Every asset selectable on this wallet's chain (chain coin + its tokens),
 /// whether [wallet] is the chain coin or one of its tokens. A single-element
 /// list means the chain has no tokens (no asset picker needed).

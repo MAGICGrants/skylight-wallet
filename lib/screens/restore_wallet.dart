@@ -118,7 +118,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _ScanFromSheet(initial: _restoreDate),
+      builder: (_) => _ScanFromSheet(initial: _restoreDate, chosen: _scanChosen),
     );
     if (result != null) {
       setState(() {
@@ -572,9 +572,14 @@ class _BadWordNotice extends StatelessWidget {
 
 /// Bottom sheet for the restore height — pick a month/year, or "I'm not sure"
 /// (scan from genesis). Returns `(date: DateTime?)` on Done, null if dismissed.
+///
+/// [initial] and [chosen] together carry the current selection back in: a null
+/// [initial] means "I'm not sure" once [chosen], and "nothing picked yet"
+/// before that — so both are needed to reopen on the right option.
 class _ScanFromSheet extends StatefulWidget {
   final DateTime? initial;
-  const _ScanFromSheet({required this.initial});
+  final bool chosen;
+  const _ScanFromSheet({required this.initial, required this.chosen});
 
   @override
   State<_ScanFromSheet> createState() => _ScanFromSheetState();
@@ -588,7 +593,7 @@ class _ScanFromSheetState extends State<_ScanFromSheet> {
   @override
   void initState() {
     super.initState();
-    _pickMonth = true;
+    _pickMonth = !(widget.chosen && widget.initial == null);
     final d = widget.initial ?? DateTime.now();
     _month = d.month;
     _year = d.year;

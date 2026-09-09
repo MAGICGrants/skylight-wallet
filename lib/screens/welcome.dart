@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:spice_wallet/l10n/app_localizations.dart';
+import 'package:spice_wallet/widgets/theme_language_sheets.dart';
 import 'package:spice_wallet/widgets/ui/ui.dart';
 import 'package:wallet_domain/wallet_domain.dart';
 
@@ -42,6 +43,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: BrandSpacing.xl),
           child: Column(
             children: [
+              const SizedBox(height: BrandSpacing.sm),
+              // Language is reachable here because this is the one screen with
+              // no route to Settings — a reader who can't read it must be able
+              // to switch before anything else. Row (not BrandScreenHeader) so
+              // the centred logo below keeps its intrinsic size.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconCircleButton(
+                    icon: Icons.language,
+                    onPressed: () => showLanguageSheet(context),
+                  ),
+                ],
+              ),
               const Spacer(flex: 3),
               SvgPicture.asset('assets/spice-mark.svg', width: 96, height: 96),
               const SizedBox(height: BrandSpacing.xl),

@@ -69,7 +69,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
     // ReaderWidget centres its scan square using the full screen size, so it
     // must be full-bleed; the brand header floats over its dimmed top band.
     return Scaffold(
-      backgroundColor: BrandColors.ink,
+      backgroundColor: BrandColors.paper,
       body: Stack(
         children: [
           Positioned.fill(
@@ -116,9 +116,19 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
                 alignment: Alignment.topCenter,
                 child: BrandScreenHeader(
                   onBack: () => Navigator.pop(context),
-                  center: Text(
-                    i18n.scanQrTitle,
-                    style: BrandText.appBar.copyWith(fontSize: 16, color: BrandColors.paper),
+                  center: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: BrandColors.inverseSurface.withValues(alpha: 0.88),
+                      borderRadius: BrandRadii.rPill,
+                    ),
+                    child: Text(
+                      i18n.scanQrTitle,
+                      style: BrandText.appBar.copyWith(
+                        fontSize: 16,
+                        color: BrandColors.onCinnamon,
+                      ),
+                    ),
                   ),
                 ),
               ),

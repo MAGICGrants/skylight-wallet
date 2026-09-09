@@ -382,7 +382,12 @@ class _ContactTile extends StatelessWidget {
               ),
             ),
             for (final e in _sorted)
-              _AddressRow(coinSymbol: e.key, address: e.value, wallet: manager.wallets[e.key]),
+              _AddressRow(
+                coinSymbol: e.key,
+                address: e.value,
+                wallet: manager.wallets[e.key],
+                contact: contact,
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(15, 6, 15, 15),
               child: Row(
@@ -417,8 +422,14 @@ class _AddressRow extends StatelessWidget {
   final String coinSymbol;
   final String address;
   final CryptoWallet? wallet;
+  final Contact contact;
 
-  const _AddressRow({required this.coinSymbol, required this.address, required this.wallet});
+  const _AddressRow({
+    required this.coinSymbol,
+    required this.address,
+    required this.wallet,
+    required this.contact,
+  });
 
   void _copy(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -474,7 +485,11 @@ class _AddressRow extends StatelessWidget {
             onPressed: () => Navigator.pushNamed(
               context,
               '/send',
-              arguments: SendScreenArgs(coinSymbol: coinSymbol, destinationAddress: address),
+              arguments: SendScreenArgs(
+                coinSymbol: coinSymbol,
+                destinationAddress: address,
+                contact: contact,
+              ),
             ),
           ),
         ],

@@ -137,10 +137,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
                     ),
                     child: Text(
                       i18n.scanQrTitle,
-                      style: BrandText.appBar.copyWith(
-                        fontSize: 16,
-                        color: BrandColors.onCinnamon,
-                      ),
+                      style: BrandText.appBar.copyWith(fontSize: 16, color: BrandColors.onCinnamon),
                     ),
                   ),
                 ),

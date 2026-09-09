@@ -423,7 +423,7 @@ class _AssetRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  wallet.coinName,
+                  wallet.assetName,
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,

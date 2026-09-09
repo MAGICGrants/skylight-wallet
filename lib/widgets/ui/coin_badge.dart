@@ -47,7 +47,10 @@ class CoinBadge extends StatelessWidget {
             statusDotFactor: statusDotFactor,
           ),
         const SizedBox(width: 8),
-        Text(label ?? wallet?.coinName ?? fallback, style: BrandText.appBar.copyWith(fontSize: 16)),
+        Text(
+          label ?? wallet?.blockchainName ?? fallback,
+          style: BrandText.appBar.copyWith(fontSize: 16),
+        ),
       ],
     );
   }

@@ -298,7 +298,7 @@ class _CoinCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      wallet.coinName,
+                      wallet.blockchainName,
                       style: TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w500,

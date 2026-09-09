@@ -181,7 +181,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       final index = monero?.unusedSubaddressIndex;
       return index != null ? '${i18n.receiveSubaddressTab} #$index' : i18n.receiveSubaddressTab;
     }
-    return i18n.receiveAddressHeading(wallet.coinName);
+    return i18n.receiveAddressHeading(wallet.blockchainName);
   }
 
   String? _warning(
@@ -217,8 +217,10 @@ class _CoinCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // The chain, not the asset: one address here receives every
+                // asset on it (an Ethereum address takes both Ether and Dai).
                 Text(
-                  wallet.coinName,
+                  wallet.blockchainName,
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
@@ -228,7 +230,7 @@ class _CoinCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  i18n.receiveBlockchainSubtitle(wallet.coinName),
+                  i18n.receiveBlockchainSubtitle(wallet.blockchainName),
                   style: BrandText.caption.copyWith(fontSize: 11.5, color: BrandColors.inkMuted),
                 ),
               ],

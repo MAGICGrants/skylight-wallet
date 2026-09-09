@@ -227,7 +227,7 @@ class _SendScreenState extends State<SendScreen> {
       setState(
         () => _destinationAddressError = AppLocalizations.of(
           context,
-        )!.invalidAddressForCoin(wallet.coinName),
+        )!.invalidAddressForChain(wallet.blockchainName),
       );
     }
   }
@@ -337,7 +337,7 @@ class _SendScreenState extends State<SendScreen> {
     } else {
       if (setErrors) {
         setState(() {
-          _destinationAddressError = i18n.invalidAddressForCoin(wallet.coinName);
+          _destinationAddressError = i18n.invalidAddressForChain(wallet.blockchainName);
         });
       }
       return false;
@@ -933,7 +933,7 @@ class _SendScreenState extends State<SendScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          asset.coinName,
+                          asset.assetName,
                           style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w500,
@@ -986,7 +986,7 @@ class _SendScreenState extends State<SendScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          wallet.coinName,
+          wallet.assetName,
           style: TextStyle(
             fontSize: 14.5,
             fontWeight: FontWeight.w500,
@@ -1115,9 +1115,7 @@ class _SendScreenState extends State<SendScreen> {
               border: InputBorder.none,
               // Anchor the label to the settlement chain, not the asset — a DAI
               // send goes to an "Ethereum address", not a "Dai address".
-              hintText: i18n.sendAddressHint(
-                chainNameOf(Provider.of<WalletManager>(context, listen: false), wallet),
-              ),
+              hintText: i18n.sendAddressHint(wallet.blockchainName),
               hintStyle: TextStyle(
                 fontFamily: 'Ubuntu Mono',
                 fontSize: 13.5,
@@ -1392,7 +1390,7 @@ class _ContactPickerSheetState extends State<_ContactPickerSheet> {
                       ),
                       const SizedBox(height: 7),
                       Text(
-                        i18n.sendPickContactSubtitle(widget.chain.coinName),
+                        i18n.sendPickContactSubtitle(widget.chain.blockchainName),
                         style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
                       ),
                     ],
@@ -1542,7 +1540,7 @@ class _ContactPickRow extends StatelessWidget {
                       child: Text(
                         enabled
                             ? shortenMiddle(address, head: 8, tail: 10)
-                            : i18n.sendContactNoAddress(chain.coinName),
+                            : i18n.sendContactNoAddress(chain.blockchainName),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

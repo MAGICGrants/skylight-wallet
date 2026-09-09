@@ -82,7 +82,7 @@ class TxActivityRow extends StatelessWidget {
                       Text(
                         // Default (en) symbols: initializeDateFormatting isn't wired, so a
                         // locale arg would throw for pt.
-                        '${DateFormat('HH:mm').format(date)} · ${asset.coinName}',
+                        '${DateFormat('HH:mm').format(date)} · ${asset.assetName}',
                         style: TextStyle(fontSize: 11, height: 1.3, color: BrandColors.inkMuted),
                       ),
                     ],

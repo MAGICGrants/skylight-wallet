@@ -319,10 +319,10 @@
       }
     }
   },
-  "invalidAddressForCoin": "Invalid {coin} address",
-  "@invalidAddressForCoin": {
+  "invalidAddressForChain": "Invalid {chain} address",
+  "@invalidAddressForChain": {
     "placeholders": {
-      "coin": {
+      "chain": {
         "type": "String"
       }
     }

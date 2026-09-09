@@ -794,8 +794,8 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String invalidAddressForCoin(String coin) {
-    return 'Endereço $coin inválido';
+  String invalidAddressForChain(String chain) {
+    return 'Endereço $chain inválido';
   }
 
   @override

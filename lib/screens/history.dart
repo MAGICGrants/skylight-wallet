@@ -55,7 +55,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Filter options (value / label / icon / total count).
     Widget coinIcon(String sym) =>
         CoinMark(coinSymbol: sym, iconAsset: manager.getWallet(sym)?.iconAsset ?? '', size: 24);
-    String coinName(String sym) => manager.getWallet(sym)?.coinName ?? sym;
+    // Blockchain filter names the chain; asset filter names the holding.
+    String blockchainName(String sym) => manager.getWallet(sym)?.blockchainName ?? sym;
+    String assetName(String sym) => manager.getWallet(sym)?.assetName ?? sym;
     String assetChain(String sym) {
       final w = manager.getWallet(sym);
       return w != null ? chainSymbolOf(w) : sym;
@@ -87,11 +89,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Every dropdown lists its options by how many transactions match, desc.
     final chainOptions = [
       for (final c in chainSymbols)
-        _Option(c, coinName(c), coinIcon(c), all.where((e) => chainSymbolOf(e.asset) == c).length),
+        _Option(
+          c,
+          blockchainName(c),
+          coinIcon(c),
+          all.where((e) => chainSymbolOf(e.asset) == c).length,
+        ),
     ]..sort((a, b) => b.count.compareTo(a.count));
     final assetOptions = [
       for (final a in assetSymbols)
-        _Option(a, coinName(a), coinIcon(a), all.where((e) => e.asset.coinSymbol == a).length),
+        _Option(a, assetName(a), coinIcon(a), all.where((e) => e.asset.coinSymbol == a).length),
     ]..sort((a, b) => b.count.compareTo(a.count));
     int typeCount(int type) => all.where((e) => e.tx.direction == type).length;
     final typeOptions = [

@@ -319,10 +319,10 @@
       }
     }
   },
-  "invalidAddressForCoin": "Endereço {coin} inválido",
-  "@invalidAddressForCoin": {
+  "invalidAddressForChain": "Endereço {chain} inválido",
+  "@invalidAddressForChain": {
     "placeholders": {
-      "coin": {
+      "chain": {
         "type": "String"
       }
     }

@@ -57,7 +57,7 @@ class CoinSettingsScreen extends StatelessWidget {
                     onBack: () => Navigator.pop(context),
                     center: CoinBadge(
                       wallet: wallet,
-                      label: '${wallet.coinName} ${i18n.settingsTitle}',
+                      label: '${wallet.blockchainName} ${i18n.settingsTitle}',
                     ),
                   ),
                 ),

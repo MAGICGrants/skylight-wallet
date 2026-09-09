@@ -1545,11 +1545,11 @@ abstract class AppLocalizations {
   /// **'No contacts with a {coinSymbol} address'**
   String addressBookNoContactsForCoin(String coinSymbol);
 
-  /// No description provided for @invalidAddressForCoin.
+  /// No description provided for @invalidAddressForChain.
   ///
   /// In en, this message translates to:
-  /// **'Invalid {coin} address'**
-  String invalidAddressForCoin(String coin);
+  /// **'Invalid {chain} address'**
+  String invalidAddressForChain(String chain);
 
   /// No description provided for @sendPriorityLow.
   ///

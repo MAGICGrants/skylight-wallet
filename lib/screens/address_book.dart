@@ -591,7 +591,7 @@ class _ContactSheetState extends State<_ContactSheet> {
   }
 
   String _addressHeaderLabel(AppLocalizations i18n) {
-    final coinName = xmrWallet(context)?.coinName ?? 'Monero';
+    final coinName = xmrWallet(context)?.blockchainName ?? 'Monero';
     final label = '$coinName ${i18n.address}';
     return _address == null ? '$label · ${i18n.restoreWalletNotSet}' : label;
   }
@@ -646,7 +646,7 @@ class _ContactSheetState extends State<_ContactSheet> {
   Widget _addressEntry() {
     final i18n = AppLocalizations.of(context)!;
     final wallet = xmrWallet(context);
-    final coinName = wallet?.coinName ?? 'Monero';
+    final coinName = wallet?.blockchainName ?? 'Monero';
     final tile = wallet != null
         ? CoinMark(coinSymbol: wallet.coinSymbol, iconAsset: wallet.iconAsset, size: 30)
         : const SizedBox(width: 30, height: 30);

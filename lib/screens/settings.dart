@@ -18,6 +18,7 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/widgets/language_sheet.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
@@ -425,36 +426,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLanguagePicker() {
-    final i18n = AppLocalizations.of(context)!;
-    final language = context.read<LanguageModel>();
-    showLanguagePickerSheet(
-      context,
-      labels: SettingsPickerLabels(
-        title: i18n.settingsLanguageLabel,
-        subtitle: i18n.settingsLanguageSheetSubtitle,
-        done: i18n.done,
-      ),
-      options: [
-        for (final locale in AppLocalizations.supportedLocales)
-          LanguagePickerOption(
-            code: locale.languageCode,
-            native: _languageNames[locale.languageCode]?.$1 ?? locale.languageCode,
-            english: _languageNames[locale.languageCode]?.$2 ?? '',
-          ),
-      ],
-      selected: language.language,
-      onSelect: language.setLanguage,
-      iconBg: BrandColors.surfaceTinted,
-      iconColor: BrandColors.primaryDeep,
-    );
-  }
-
-  static const _languageNames = {
-    'en': ('English', 'English'),
-    'pt': ('Português', 'Portuguese (Brazil)'),
-  };
-
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -506,9 +477,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             SettingsNavTile(
                               title: i18n.settingsLanguageLabel,
                               value:
-                                  _languageNames[language.language]?.$1 ??
+                                  languageNames[language.language]?.$1 ??
                                   language.language.toUpperCase(),
-                              onTap: _showLanguagePicker,
+                              onTap: () => showLanguageSheet(context),
                             ),
                             if (isMobile)
                               SettingsToggleTile(

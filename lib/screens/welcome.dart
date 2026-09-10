@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/floating_bob.dart';
+import 'package:skylight_wallet/widgets/language_sheet.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -46,6 +47,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       onGetStarted: () => Navigator.pushNamed(context, '/tor_settings'),
       onTerms: () => Navigator.pushNamed(context, '/terms_of_service'),
       onPrivacy: () => Navigator.pushNamed(context, '/privacy_policy'),
+      onLanguage: () => showLanguageSheet(context),
     );
   }
 }

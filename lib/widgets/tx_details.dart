@@ -33,6 +33,8 @@ class TxDetailsDialog {
         copyHint: i18n.txDetailsCopyHint,
         failed: i18n.txDetailsFailed,
         unknownStatus: i18n.txDetailsUnknownStatus,
+        receivedAt: i18n.txDetailsReceivedAtLabel,
+        unconfirmed: i18n.unconfirmed,
       ),
     );
   }

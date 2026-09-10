@@ -246,7 +246,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupAddressHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. 192.168.1.1:18090 or example.com:18090'**
+  /// **'lws.example.com:18090'**
   String get lwsSetupAddressHint;
 
   /// No description provided for @lwsSetupProxyPortLabel.
@@ -474,7 +474,7 @@ abstract class AppLocalizations {
   /// No description provided for @fiatApiSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Fiat Display Setup'**
+  /// **'Price Display Setup'**
   String get fiatApiSetupTitle;
 
   /// No description provided for @fiatApiSetupDescription.
@@ -510,19 +510,19 @@ abstract class AppLocalizations {
   /// No description provided for @fiatModeTorOnlyDesc.
   ///
   /// In en, this message translates to:
-  /// **'Rates fetched over Tor · recommended'**
+  /// **'Prices fetched over Tor · recommended'**
   String get fiatModeTorOnlyDesc;
 
   /// No description provided for @fiatModeClearnetDesc.
   ///
   /// In en, this message translates to:
-  /// **'Not private — the rate server sees your IP address'**
+  /// **'Not private, the price server sees your IP address'**
   String get fiatModeClearnetDesc;
 
   /// No description provided for @fiatModeDisabledDesc.
   ///
   /// In en, this message translates to:
-  /// **'No rates fetched, balances shown in crypto only'**
+  /// **'No prices fetched, balances shown in crypto only'**
   String get fiatModeDisabledDesc;
 
   /// No description provided for @fiatApiSettingsDisplayCurrencyLabel.
@@ -612,7 +612,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedTitleCovered.
   ///
   /// In en, this message translates to:
-  /// **'Your seed phrase'**
+  /// **'Seed Phrase'**
   String get generateSeedTitleCovered;
 
   /// No description provided for @generateSeedDescription.
@@ -630,7 +630,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedSubtitleRevealed.
   ///
   /// In en, this message translates to:
-  /// **'Anyone with these words has your funds.'**
+  /// **'Securely save these. Do not share them.'**
   String get generateSeedSubtitleRevealed;
 
   /// No description provided for @generateSeedScreenshotNote.
@@ -666,7 +666,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsDetailsDescription.
   ///
   /// In en, this message translates to:
-  /// **'You can use these details to whitelist this wallet on the light wallet server if needed.'**
+  /// **'If your Monero light wallet server (LWS) requires registration, you can use these details to add this wallet to that server. Not all servers require registration.'**
   String get lwsDetailsDescription;
 
   /// No description provided for @lwsDetailsPrimaryAddressLabel.
@@ -726,7 +726,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletScanFromReason.
   ///
   /// In en, this message translates to:
-  /// **'Earlier is slower but never misses funds.'**
+  /// **'Skip irrelevant history to save time'**
   String get restoreWalletScanFromReason;
 
   /// No description provided for @restoreWalletNotSet.
@@ -966,7 +966,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeFiatApiError.
   ///
   /// In en, this message translates to:
-  /// **'Error connecting to fiat API'**
+  /// **'Error connecting to price server'**
   String get homeFiatApiError;
 
   /// No description provided for @homeDisconnected.
@@ -1002,7 +1002,7 @@ abstract class AppLocalizations {
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: Unless you know what you\'re doing, please consider using subaddresses for better privacy.'**
+  /// **'Warning: Unless you know what you\'re doing, please use subaddresses for better privacy.'**
   String get receivePrimaryAddressWarn;
 
   /// No description provided for @receiveShareButton.
@@ -1140,7 +1140,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifyNewTxsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Notify New Transactions'**
+  /// **'Transaction Notifications'**
   String get settingsNotifyNewTxsLabel;
 
   /// No description provided for @settingsNotifyNewTxsDescription.
@@ -1176,7 +1176,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsVerboseLoggingLabel.
   ///
   /// In en, this message translates to:
-  /// **'Enable Logging to File'**
+  /// **'Diagnostic Logs'**
   String get settingsVerboseLoggingLabel;
 
   /// No description provided for @settingsVerboseLoggingDescription.
@@ -1272,7 +1272,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsFiatApiSettingsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Fiat Display Settings'**
+  /// **'Price Display Settings'**
   String get settingsFiatApiSettingsLabel;
 
   /// No description provided for @settingsLwsViewKeysLabel.
@@ -1383,11 +1383,23 @@ abstract class AppLocalizations {
   /// **'Recipients'**
   String get txDetailsRecipientsLabel;
 
+  /// No description provided for @txDetailsReceivedAtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Received At'**
+  String get txDetailsReceivedAtLabel;
+
   /// No description provided for @txDetailsChangeRecipientLabel.
   ///
   /// In en, this message translates to:
   /// **'Change'**
   String get txDetailsChangeRecipientLabel;
+
+  /// No description provided for @unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unconfirmed'**
+  String get unconfirmed;
 
   /// No description provided for @txDetailsCopyHint.
   ///

@@ -52,12 +52,12 @@ class TermsOfService extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Updated 2025-09-19', style: bodyStyle),
+                        Text('Updated 2026-09-03', style: bodyStyle),
                         SizedBox(height: 12),
 
                         sectionHeading('Acceptance'),
                         paragraph(
-                          'These Terms of Service (ToS) are entered into by and between You and MAGIC Grants, a Colorado nonprofit corporation (“we” or “us”). These terms govern your access to and use of Skylight Wallet (the “App”).',
+                          'These Terms of Service (ToS) are entered into by and between You and MAGIC Grants, a Colorado nonprofit corporation (“we” or “us”). These terms govern your access to and use of Skylight Wallet and Spice Wallet (the “App”).',
                         ),
                         paragraph(
                           'Please read the Terms of Service carefully before you start to use the App. By using the App you accept and agree to be bound and abide by these Terms of Service and our Privacy Policy. If you do not agree to these Terms of Service or the Privacy Policy, then you must not access or use the App.',
@@ -79,26 +79,41 @@ class TermsOfService extends StatelessWidget {
                         Container(
                           width: double.infinity,
                           margin: EdgeInsets.only(bottom: 10.0),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6.0)),
                           child: Text(
                             'THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.',
                             style: monospaceStyle,
                           ),
                         ),
 
-                        sectionHeading('Security'),
+                        sectionHeading('No Financial or Legal Advice'),
                         paragraph(
-                          'You are fully responsible for the security of your funds when using the App. You agree that MAGIC Grants is not liable for your loss of funds, including due to any bugs that are present in the application. You agree that MAGIC Grants has not warranted that the App is secure for your desired purpose. You agree that MAGIC Grants has not claimed that the App is bug-free.',
+                          'MAGIC Grants does not provide any financial or legal advice in connection with the App. You are responsible for all of your actions when using the App.',
+                        ),
+
+                        sectionHeading('Security and Network Risks'),
+                        paragraph(
+                          'You are fully responsible for the security of your funds when using the App. You agree that MAGIC Grants is not liable for your loss of funds, including due to any bugs that are present in the application. You agree that MAGIC Grants has not warranted that the App is secure for any particular purpose, including your desired purpose. You acknowledge that MAGIC Grants has not claimed that the App is bug-free.',
                         ),
                         paragraph(
-                          'You acknowledge that MAGIC Grants is not responsible for any loss of funds or other harms that could arise from related networks and software, including but not limited to the cryptocurrency networks that you connect to.',
+                          'You acknowledge that MAGIC Grants is not responsible for any loss of funds or other harms that could arise from related networks and software, including but not limited to the cryptocurrency networks that you connect to. These networks may have bugs (including severe ones which could lead to loss of funds or dilution of value), and infrastructure that you connect to can be malicious. Cryptocurrency networks may charge you fees, and you can lose value through value fluctuations and volatility, impermanent loss, slippage, and other market factors which may be very complex. You agree that MAGIC Grants is not liable for any of these issues. By interacting with these cryptocurrency networks, you agree that you are accepting all of the risks of these networks and accepting full responsibility for understanding them.',
+                        ),
+                        paragraph(
+                          'You acknowledge that MAGIC Grants offers no warranty of any kind, without limitation, for performance or security of the App or these cryptocurrency networks, even cryptocurrency networks that MAGIC Grants has commissioned security reviews for and cryptocurrency networks that MAGIC Grants runs our own nodes for.',
                         ),
 
                         sectionHeading('No Custody by MAGIC Grants'),
                         paragraph(
-                          'MAGIC Grants, the developer of this App, does not have custody of your funds while you are using the App. Skylight Wallet is a self-custody wallet. MAGIC Grants does not transmit funds for You. MAGIC Grants is not an exchange or money services business.',
+                          'MAGIC Grants does not have custody of your funds while you are using the App. The App is software that intends to allow you to manage your self-custody wallets. MAGIC Grants does not transmit funds for you. MAGIC Grants is not an exchange or money services business (MSB).',
                         ),
                         paragraph(
-                          'The App does not store cryptocurrencies, including Monero, Litecoin or Bitcoin. Cryptocurrencies exist only by virtue of the ownership record maintained in their respective networks. Any transfer of title in cryptocurrency occurs within a decentralized cryptocurrency network, and not in the App.',
+                          'If you use any feature in the App named swap, trade, exchange, add liquidity, remove liquidity, bridge, or similar, you acknowledge that MAGIC Grants is not involved with nor performing these activities/actions whatsoever. The App may include features that you may use to interact with decentralized exchanges; however, MAGIC Grants is not a party nor counterparty to these transactions. The App is solely software that allows you to connect to relevant cryptocurrency networks through mechanisms that you specify, and you have full, independent control over how you decide to connect.',
+                        ),
+                        paragraph(
+                          'MAGIC Grants may run our own nodes for various cryptocurrency networks, but MAGIC Grants does not include our nodes or any default nodes in the App. Even in cases where you create transactions in the App that are processed or reviewed in any way by MAGIC Grants nodes (which is a standard function of nodes on a cryptocurrency network), you agree that MAGIC Grants is not a party to your transaction, this action does not create any binding liability for MAGIC Grants, and MAGIC Grants is not responsible for performing any service to you.',
+                        ),
+                        paragraph(
+                          'Cryptocurrencies exist only by virtue of the ownership record maintained in their respective networks. Any transfer of title in cryptocurrency occurs within a decentralized cryptocurrency network.',
                         ),
 
                         sectionHeading('Restricted Use'),
@@ -108,12 +123,15 @@ class TermsOfService extends StatelessWidget {
 
                         sectionHeading('Third Party Services'),
                         paragraph(
-                          'The App includes links to other sites and resources provided by third parties, and the App incorporates information provided by third parties for convenience. MAGIC Grants does not guarantee that these sites, resources, and information are accurate or fit for Your desired purpose. We have no control over the contents of those sites or resources, and accept no responsibility for them or for any loss or damage that may arise from your use of them. If you decide to access any of the third-party services linked in this App, you do so entirely at your own risk and subject to the terms and conditions of use for such Apps.',
+                          'The App includes links to other sites and resources provided by third parties, and the App incorporates information provided by third parties for convenience. MAGIC Grants does not guarantee that these sites, resources, and information are accurate or fit for Your desired purpose. We have no control over the contents of those sites or resources, and you agree that we have no responsibility for them or for any loss or damage that may arise from your use of them. If you decide to access any of the third-party services linked in this App, you do so entirely at your own risk and subject to the terms and conditions of use for such Apps.',
                         ),
 
                         sectionHeading('Tax Matters'),
                         paragraph(
                           'The users of the App are solely responsible in determining what, if any, taxes apply to their cryptocurrency transactions. We are not responsible for determining any taxes that apply to such transactions.',
+                        ),
+                        paragraph(
+                          'If you donate to MAGIC Grants, a 501(c)(3) public charity, your donation may qualify for a tax deduction. Additional paperwork, especially for cryptocurrency donations, may be required. If you choose to donate to MAGIC Grants as a part of any other activity in the App, such as any transaction you make that includes a donation to MAGIC Grants, you acknowledge that the sole involvement by MAGIC Grants for such transactions is to receive your donation, and that MAGIC Grants is not otherwise party to nor responsible for your transaction in any other way.',
                         ),
 
                         sectionHeading('Indemnification'),

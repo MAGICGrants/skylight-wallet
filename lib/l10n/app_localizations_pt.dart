@@ -87,7 +87,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo.';
 
   @override
-  String get lwsSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
+  String get lwsSetupAddressHint => 'lws.example.com:18090';
 
   @override
   String get lwsSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
@@ -209,7 +209,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get fiatApiSetupTitle => 'Exibição de Saldo em Fiat';
+  String get fiatApiSetupTitle => 'Configuração de Exibição de Preços';
 
   @override
   String get fiatApiSetupDescription => 'Preço de referência opcional para seu saldo em XMR.';
@@ -227,13 +227,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fiatApiSettingsModeDisabled => 'Desativado';
 
   @override
-  String get fiatModeTorOnlyDesc => 'Cotações buscadas pelo Tor · recomendado';
+  String get fiatModeTorOnlyDesc => 'Preços buscados pelo Tor · recomendado';
 
   @override
-  String get fiatModeClearnetDesc => 'Não privado — o servidor de cotações vê seu endereço IP';
+  String get fiatModeClearnetDesc => 'Não privado, o servidor de preços vê seu endereço IP';
 
   @override
-  String get fiatModeDisabledDesc => 'Sem cotações; saldos exibidos apenas em cripto';
+  String get fiatModeDisabledDesc => 'Sem preços; saldos exibidos apenas em cripto';
 
   @override
   String get fiatApiSettingsDisplayCurrencyLabel => 'Moeda de Exibição';
@@ -280,7 +280,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generateSeedTitle => 'Anote-as, em ordem';
 
   @override
-  String get generateSeedTitleCovered => 'Sua frase seed';
+  String get generateSeedTitleCovered => 'Frase Seed';
 
   @override
   String get generateSeedDescription =>
@@ -291,7 +291,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Estas palavras, nesta ordem, são a sua carteira. Anote-as no papel — não em uma foto ou app de notas.';
 
   @override
-  String get generateSeedSubtitleRevealed => 'Qualquer pessoa com estas palavras tem seus fundos.';
+  String get generateSeedSubtitleRevealed => 'Guarde-as em segurança. Não as compartilhe.';
 
   @override
   String get generateSeedScreenshotNote =>
@@ -312,7 +312,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsDetailsDescription =>
-      'Você pode usar esses detalhes para permitir essa carteira no seu servidor de light wallet caso necessário.';
+      'Se o seu servidor Light Wallet Monero (LWS) exigir registro, você pode usar estes dados para adicionar esta carteira a esse servidor. Nem todos os servidores exigem registro.';
 
   @override
   String get lwsDetailsPrimaryAddressLabel => 'Endereço Primário';
@@ -343,7 +343,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletScanFrom => 'Escanear a partir de';
 
   @override
-  String get restoreWalletScanFromReason => 'Mais cedo é mais lento, mas nunca perde fundos.';
+  String get restoreWalletScanFromReason => 'Ignore o histórico irrelevante para economizar tempo';
 
   @override
   String get restoreWalletNotSet => 'Não definido';
@@ -470,7 +470,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeNoTransactions => 'Sem transações';
 
   @override
-  String get homeFiatApiError => 'Erro ao conectar à API de cotação';
+  String get homeFiatApiError => 'Erro ao conectar ao servidor de preços';
 
   @override
   String get homeDisconnected => 'Desconectado';
@@ -489,7 +489,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.';
+      'Aviso: A menos que saiba o que está fazendo, por favor use subendereços para melhor privacidade.';
 
   @override
   String get receiveShareButton => 'Compartilhar';
@@ -565,7 +565,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsSectionAbout => 'Sobre';
 
   @override
-  String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
+  String get settingsNotifyNewTxsLabel => 'Notificações de Transações';
 
   @override
   String get settingsNotifyNewTxsDescription =>
@@ -586,7 +586,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
 
   @override
-  String get settingsVerboseLoggingLabel => 'Salvar Logs em Arquivo';
+  String get settingsVerboseLoggingLabel => 'Logs de Diagnóstico';
 
   @override
   String get settingsVerboseLoggingDescription =>
@@ -637,7 +637,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsLanguageSheetSubtitle => 'Valores e datas seguem o idioma escolhido.';
 
   @override
-  String get settingsFiatApiSettingsLabel => 'Exibição de Moeda Local';
+  String get settingsFiatApiSettingsLabel => 'Configurações de Exibição de Preços';
 
   @override
   String get settingsLwsViewKeysLabel => 'Chaves de Visualização do LWS';
@@ -697,7 +697,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Destinatários';
 
   @override
+  String get txDetailsReceivedAtLabel => 'Recebido em';
+
+  @override
   String get txDetailsChangeRecipientLabel => 'Troco';
+
+  @override
+  String get unconfirmed => 'Não confirmado';
 
   @override
   String get txDetailsCopyHint => 'toque em qualquer valor para copiar';

@@ -83,6 +83,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     final result = await showScanFromSheet(
       context: context,
       initial: _restoreDate,
+      chosen: _scanChosen,
       labels: ScanFromSheetLabels(
         title: i18n.restoreScanTitle,
         description: i18n.restoreScanDescription,

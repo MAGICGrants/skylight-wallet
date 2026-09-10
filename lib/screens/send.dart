@@ -18,7 +18,11 @@ class SendScreenArgs {
   String destinationAddress;
   double? amount;
 
-  SendScreenArgs({required this.destinationAddress, this.amount});
+  /// Set when the address came from a contact (e.g. Send in the address book),
+  /// so Send opens showing the contact card rather than a bare address.
+  final Contact? contact;
+
+  SendScreenArgs({required this.destinationAddress, this.amount, this.contact});
 }
 
 class SendScreen extends StatefulWidget {
@@ -106,6 +110,8 @@ class _SendScreenState extends State<SendScreen> {
     if (args != null) {
       _destinationAddressController.text = args.destinationAddress;
       _amountController.text = args.amount != null ? args.amount.toString() : '';
+      // Same field the in-send picker sets, so the contact card renders here too.
+      _selectedContact = args.contact;
     }
   }
 

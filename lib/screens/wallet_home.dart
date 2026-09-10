@@ -228,11 +228,13 @@ class _BalanceHero extends StatelessWidget {
             Text(coinText, style: _balanceStyle),
           const SizedBox(height: 10),
           if (showFiat) Text(coinText, style: _balanceSubStyle),
+          // Funds that have arrived but aren't spendable yet — Monero locks a
+          // receipt for ten blocks, so the unlocked balance above omits it.
           if (lockedBalance > 0)
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(
-                '+${lockedBalance.toStringAsFixed(12)} ${i18n.pending.toLowerCase()}',
+                '${i18n.pending}: +${_amountText(lockedBalance)} XMR',
                 style: _balanceSubStyle,
               ),
             ),

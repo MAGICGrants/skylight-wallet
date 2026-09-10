@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
+import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -21,6 +22,7 @@ class AddressBookScreen extends StatefulWidget {
 class _AddressBookScreenState extends State<AddressBookScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _expandedId;
 
   @override
   void dispose() {
@@ -149,8 +151,12 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                         itemCount: contacts.length,
                         itemBuilder: (context, index) {
                           final contact = contacts[index];
+                          final expanded = contact.id == _expandedId;
                           return _ContactTile(
                             contact: contact,
+                            expanded: expanded,
+                            onToggle: () =>
+                                setState(() => _expandedId = expanded ? null : contact.id),
                             onEdit: () => _showEditContactDialog(contact),
                             onDelete: () => _showDeleteContactDialog(contact),
                             isLast: index == contacts.length - 1,
@@ -269,20 +275,145 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-/// Single-address contact row: monogram + name + shortened Monero address, with
-/// a brand popup menu for copy / edit / delete.
+/// Expandable contact: collapsed shows the monogram + name + chain; tapping
+/// opens a card with the Monero address row (copy / send) and edit / delete.
 class _ContactTile extends StatelessWidget {
   final Contact contact;
+  final bool expanded;
+  final VoidCallback onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final bool isLast;
 
   const _ContactTile({
     required this.contact,
+    required this.expanded,
+    required this.onToggle,
     required this.onEdit,
     required this.onDelete,
     required this.isLast,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+
+    if (!expanded) {
+      return Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                children: [
+                  _Avatar(name: contact.name),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          contact.name,
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: BrandColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          shortenMiddle(contact.address, head: 8, tail: 8),
+                          style: TextStyle(
+                            fontFamily: 'Ubuntu Mono',
+                            fontSize: 11.5,
+                            color: BrandColors.inkMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.keyboard_arrow_down, size: 22, color: BrandColors.inkMuted),
+                ],
+              ),
+            ),
+          ),
+          if (!isLast) Divider(height: 1, thickness: 1, color: BrandColors.surfaceTinted),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: BrandCard(
+        radius: 20,
+        child: Column(
+          children: [
+            InkWell(
+              onTap: onToggle,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(15, 15, 15, 13),
+                child: Row(
+                  children: [
+                    _Avatar(name: contact.name),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            contact.name,
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: BrandColors.ink,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.keyboard_arrow_up, size: 22, color: BrandColors.inkMuted),
+                  ],
+                ),
+              ),
+            ),
+            _AddressRow(contact: contact),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 6, 15, 15),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: BrandButton.secondary(
+                      label: i18n.addressBookEdit,
+                      dense: true,
+                      onPressed: onEdit,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: BrandButton.ghost(
+                      label: i18n.addressBookDelete,
+                      color: BrandColors.error,
+                      dense: true,
+                      onPressed: onDelete,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The Monero address row inside an expanded contact — icon, name, address, and
+/// copy / send actions.
+class _AddressRow extends StatelessWidget {
+  final Contact contact;
+  const _AddressRow({required this.contact});
 
   void _copy(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -293,110 +424,66 @@ class _ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: () => _copy(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Row(
-              children: [
-                _Avatar(name: contact.name),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        contact.name,
-                        style: TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                          color: BrandColors.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        shortenMiddle(contact.address, head: 8, tail: 8),
-                        style: TextStyle(
-                          fontFamily: 'Ubuntu Mono',
-                          fontSize: 11.5,
-                          color: BrandColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _ContactMenu(onCopy: () => _copy(context), onEdit: onEdit, onDelete: onDelete),
-              ],
+    final i18n = AppLocalizations.of(context)!;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: BrandColors.surfaceTinted)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              contact.address,
+              style: TextStyle(
+                fontFamily: 'Ubuntu Mono',
+                fontSize: 12,
+                height: 1.4,
+                color: BrandColors.ink,
+              ),
             ),
           ),
-        ),
-        if (!isLast) Divider(height: 1, thickness: 1, color: BrandColors.surfaceTinted),
-      ],
+          const SizedBox(width: 10),
+          _IconSquare(icon: Icons.copy_outlined, onTap: () => _copy(context)),
+          const SizedBox(width: 8),
+          BrandButton(
+            label: i18n.homeSend,
+            icon: Icons.north_east,
+            dense: true,
+            expand: false,
+            onPressed: () => Navigator.pushNamed(
+              context,
+              '/send',
+              arguments: SendScreenArgs(destinationAddress: contact.address, contact: contact),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _ContactMenu extends StatelessWidget {
-  final VoidCallback onCopy;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _ContactMenu({required this.onCopy, required this.onEdit, required this.onDelete});
+class _IconSquare extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _IconSquare({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final i18n = AppLocalizations.of(context)!;
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert, size: 22, color: BrandColors.inkMuted),
-      color: BrandColors.card,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onSelected: (value) {
-        switch (value) {
-          case 'copy':
-            onCopy();
-          case 'edit':
-            onEdit();
-          case 'delete':
-            onDelete();
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'copy',
-          child: Row(
-            children: [
-              Icon(Icons.copy_outlined, size: 18, color: BrandColors.primaryDeep),
-              const SizedBox(width: 10),
-              Text(i18n.addressBookCopyAddress, style: BrandText.body),
-            ],
-          ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: BrandColors.surfaceSunken,
+          border: Border.all(color: BrandColors.border),
+          borderRadius: BorderRadius.circular(12),
         ),
-        PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit_outlined, size: 18, color: BrandColors.primaryDeep),
-              const SizedBox(width: 10),
-              Text(i18n.addressBookEdit, style: BrandText.body),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline, size: 18, color: BrandColors.error),
-              const SizedBox(width: 10),
-              Text(
-                i18n.addressBookDelete,
-                style: BrandText.body.copyWith(color: BrandColors.error),
-              ),
-            ],
-          ),
-        ),
-      ],
+        child: Icon(icon, size: 18, color: BrandColors.primaryDeep),
+      ),
     );
   }
 }

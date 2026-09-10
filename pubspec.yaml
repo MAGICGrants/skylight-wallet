@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.12+404
+version: 2.0.0+405
 
 environment:
   sdk: 3.11.5
@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: 757bf8ef3874953a076b07a2407b17bf9eeef5c0
+      ref: 1b073ce7c6f74944474d26bd0f1dc4c9d89253ac
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
@@ -65,37 +65,37 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_openalias
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f674cb907ab971126a88dcc78c33b549b630f58f
+      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
       path: packages/wallet_ui
 
   cupertino_icons: 1.0.8

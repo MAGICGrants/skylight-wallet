@@ -174,10 +174,10 @@ class _SendScreenState extends State<SendScreen> {
         noContacts: i18n.addressBookNoContacts,
         noResults: i18n.addressBookNoSearchResults,
       ),
-      headerIcon: SizedBox(
-        width: 34,
-        height: 34,
-        child: SvgPicture.asset('assets/icons/monero.svg', width: 34, height: 34),
+      headerIcon: SheetIcon(
+        icon: Icons.people,
+        bg: BrandColors.surfaceTinted,
+        color: BrandColors.primaryDeep,
       ),
       // Skylight contacts hold a single Monero address, so every one is
       // selectable.

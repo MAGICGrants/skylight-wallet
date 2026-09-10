@@ -10,7 +10,6 @@ import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
-import 'package:skylight_wallet/widgets/status_icon.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:wallet_domain/wallet_domain.dart' show TxDetails;
@@ -31,6 +30,9 @@ TextStyle get _balanceSubStyle =>
 
 /// Monero is decimal-12; cap the displayed coin amount for legibility.
 String _amountText(double amount) => amount.toStringAsFixed(5);
+
+/// The resolved LWS connection state, driving the disconnected indicator.
+enum StatusIconStatus { loading, complete, fail }
 
 class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});

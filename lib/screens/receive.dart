@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/wallet_core_glue.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class ReceiveScreen extends StatefulWidget {
   const ReceiveScreen({super.key});
@@ -19,27 +21,18 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   var _showSubaddress = true;
   var _previousBrightness = 0.0;
 
+  static bool get _isMobile => Platform.isAndroid || Platform.isIOS;
+
   @override
   void initState() {
     super.initState();
-
-    if (Platform.isAndroid || Platform.isIOS) {
-      _setBrightnessToMax();
-    }
+    if (_isMobile) _setBrightnessToMax();
   }
 
   @override
   void dispose() {
-    if (Platform.isAndroid || Platform.isIOS) {
-      _setBrightnessToNormal();
-    }
+    if (_isMobile) _setBrightnessToNormal();
     super.dispose();
-  }
-
-  void _setShowSubaddress(bool value) {
-    setState(() {
-      _showSubaddress = value;
-    });
   }
 
   Future<void> _setBrightnessToMax() async {
@@ -53,115 +46,63 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 
   void _copyAddressToClipboard(String address) {
     final i18n = AppLocalizations.of(context)!;
-
     Clipboard.setData(ClipboardData(text: address));
-
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.addressCopied)));
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final brightness = Theme.of(context).brightness;
-    final isDarkTheme = brightness == Brightness.dark;
     final wallet = appWalletOf(context, listen: true);
     final primaryAddress = wallet.getPrimaryAddress();
     final subaddress = wallet.getUnusedSubaddress();
     final isDemoMode = wallet.connectionAddress == 'demo';
-    String? address;
+    final subSupported = wallet.serverSupportsSubaddresses;
+    final canToggle = subSupported == true && !isDemoMode;
 
-    if (wallet.serverSupportsSubaddresses == false || isDemoMode) {
+    String? address;
+    if (subSupported == false || isDemoMode) {
       address = primaryAddress;
     }
-
-    if (wallet.serverSupportsSubaddresses == true) {
+    if (subSupported == true) {
       address = _showSubaddress ? subaddress : primaryAddress;
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(i18n.receiveTitle)),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 480),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: (wallet.serverSupportsSubaddresses != null || isDemoMode) && address != null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 20,
-                    children: [
-                      QrImageView(
-                        data: address,
-                        eyeStyle: QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: isDarkTheme ? Colors.grey[300] : Colors.black,
-                        ),
-                        dataModuleStyle: QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
-                          color: isDarkTheme ? Colors.grey[300] : Colors.black,
-                        ),
-                      ),
-                      if (wallet.serverSupportsSubaddresses == false)
-                        Text(
-                          i18n.receiveServerNoSubaddressesWarn,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      if (!_showSubaddress)
-                        Text(
-                          i18n.receivePrimaryAddressWarn,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      if (_showSubaddress && wallet.unusedSubaddressIndexIsSupported == false)
-                        Text(
-                          i18n.receiveMaxSubaddressesReachedWarn,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      GestureDetector(
-                        child: Text(
-                          address,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontFamily: 'monospace'),
-                        ),
-                        onTap: () => _copyAddressToClipboard(address!),
-                      ),
-                      Row(
-                        spacing: 20,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (Platform.isAndroid || Platform.isIOS)
-                            FilledButton.icon(
-                              onPressed: () => SharePlus.instance.share(ShareParams(text: address)),
-                              icon: Icon(Icons.share),
-                              label: Text(i18n.receiveShareButton),
-                            ),
-                          if (Platform.isLinux || Platform.isWindows || Platform.isMacOS)
-                            FilledButton.icon(
-                              onPressed: () => _copyAddressToClipboard(address!),
-                              icon: Icon(Icons.copy),
-                              label: Text(i18n.copy),
-                            ),
-                          // Only show toggle button if server supports subaddresses
-                          if (wallet.serverSupportsSubaddresses == true && !_showSubaddress)
-                            TextButton(
-                              onPressed: () => _setShowSubaddress(true),
-                              child: Text(i18n.receiveShowSubaddressButton),
-                            ),
-                          if (wallet.serverSupportsSubaddresses == true && _showSubaddress)
-                            TextButton(
-                              onPressed: () => _setShowSubaddress(false),
-                              child: Text(i18n.receiveShowPrimaryAddressButton),
-                            ),
-                        ],
-                      ),
-                    ],
-                  )
-                : CircularProgressIndicator(),
-          ),
-        ),
-      ),
+    final ready = (subSupported != null || isDemoMode) && address != null;
+    final warning = _warning(i18n, wallet, subSupported);
+
+    return ReceiveView(
+      labels: ReceiveLabels(title: i18n.receiveTitle, copyAddress: i18n.receiveCopyAddress),
+      onBack: () => Navigator.of(context).pop(),
+      onShare: _isMobile ? () => SharePlus.instance.share(ShareParams(text: address!)) : null,
+      ready: ready,
+      // Monero-only app: no coin card (would just say "Monero" redundantly).
+      coinSymbol: 'XMR',
+      iconAsset: 'assets/icons/monero.svg',
+      coinName: null,
+      blockchainSubtitle: null,
+      tabLabels: canToggle ? [i18n.receiveSubaddressTab, i18n.receivePrimaryTab] : null,
+      selectedTab: _showSubaddress ? 0 : 1,
+      onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
+      address: address ?? '',
+      qrHeading: canToggle && _showSubaddress
+          ? (wallet.unusedSubaddressIndex != null
+                ? '${i18n.receiveSubaddressTab} #${wallet.unusedSubaddressIndex}'
+                : i18n.receiveSubaddressTab)
+          : i18n.receiveAddressHeading('Monero'),
+      warning: warning,
+      onCopy: () => _copyAddressToClipboard(address!),
     );
+  }
+
+  String? _warning(AppLocalizations i18n, AppWallet wallet, bool? subSupported) {
+    if (subSupported == false) return i18n.receiveServerNoSubaddressesWarn;
+    if (subSupported == true && !_showSubaddress) return i18n.receivePrimaryAddressWarn;
+    if (subSupported == true &&
+        _showSubaddress &&
+        wallet.unusedSubaddressIndexIsSupported == false) {
+      return i18n.receiveMaxSubaddressesReachedWarn;
+    }
+    return null;
   }
 }

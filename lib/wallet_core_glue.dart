@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
-import 'package:skylight_wallet/models/wallet_types.dart' show TxDetails;
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
 import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
 import 'package:skylight_wallet/services/foreground_sync_service.dart' show foregroundSyncCallback;
@@ -26,6 +25,7 @@ import 'package:wallet_domain/wallet_domain.dart'
         CryptoWallet,
         SeedSource,
         RestorePoint,
+        TxDetails,
         baseUnitsToDecimalString;
 import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
 import 'package:wallet_openalias/wallet_openalias.dart' show resolveOpenAlias;
@@ -149,15 +149,18 @@ AppWallet appWalletOf(BuildContext context, {bool listen = false}) {
   );
 }
 
-/// Shows the shared tx-details dialog (`wallet_ui`, D24) for a neutral [tx] from
-/// the tx list. Bridges to the engine wallet + its wallet_domain TxDetails, which
-/// carry the exact BigInt amounts the neutral display type rounds to double.
+/// The engine [CryptoWallet] for XMR, for display-only widgets (e.g. the shared
+/// tx-activity row) that need the wallet's decimals/symbols. Keeps the
+/// [WalletManager] access in the glue layer, not the screen.
+CryptoWallet? xmrWallet(BuildContext context) =>
+    Provider.of<WalletManager>(context, listen: false).getWallet('XMR');
+
+/// Shows the shared tx-details sheet (`wallet_ui`, D24) for [tx] from the tx
+/// list. The activity list now renders the engine's wallet_domain TxDetails
+/// directly, so no neutral-to-engine bridge is needed.
 void showTxDetailsDialog(BuildContext context, TxDetails tx) {
-  final wallet =
-      Provider.of<WalletManager>(context, listen: false).getWallet('XMR') as MoneroWallet;
-  final matches = wallet.txHistory.where((t) => t.hash == tx.hash);
-  if (matches.isEmpty) return;
-  TxDetailsDialog.show(context, wallet, matches.first);
+  final wallet = Provider.of<WalletManager>(context, listen: false).getWallet('XMR')!;
+  TxDetailsDialog.show(context, wallet, tx);
 }
 
 /// Sets the wallet-encryption password (desktop-entered). Mobile mints a random
@@ -181,16 +184,25 @@ Future<void> restoreWallet(
   manager.syncInBackground();
 }
 
-/// Creates a brand-new wallet, then opens + syncs. Returns its seed words and
-/// restore height (for the seed-backup screen and the connection step).
-Future<(String seed, int restoreHeight)> createWallet(BuildContext context) async {
+/// Generates a new seed IN MEMORY — no wallet file is written yet. Persist it
+/// with [commitGeneratedWallet] once the user confirms their backup.
+({SeedSource seed, DateTime restoreDate}) generateWalletSeed(BuildContext context) {
   final manager = Provider.of<WalletManager>(context, listen: false);
   if (!manager.hasPassword) manager.useGeneratedPassword();
-  final generated = manager.generateSeed();
-  await manager.restoreAll(seed: generated.seed, from: RestorePoint.date(generated.restoreDate));
+  return manager.generateSeed();
+}
+
+/// Writes the generated wallet to disk, then opens + syncs. Returns its restore
+/// height (for the LWS-details step). Call when the user taps Continue.
+Future<int> commitGeneratedWallet(
+  BuildContext context, {
+  required SeedSource seed,
+  required DateTime restoreDate,
+}) async {
+  final manager = Provider.of<WalletManager>(context, listen: false);
+  await manager.restoreAll(seed: seed, from: RestorePoint.date(restoreDate));
   manager.syncInBackground();
-  final height = await manager.getWallet('XMR')!.getRestoreHeight();
-  return (generated.seed.mnemonic, height);
+  return manager.getWallet('XMR')!.getRestoreHeight();
 }
 
 /// Opens an already-existing wallet (used by the welcome safety-net). Returns

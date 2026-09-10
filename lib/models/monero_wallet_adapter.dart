@@ -5,9 +5,18 @@ import 'package:skylight_wallet/models/wallet_types.dart'
     show TxDetails, TxRecipient, LWSConnectionDetails, ResolvedOpenAlias;
 
 import 'package:wallet_domain/wallet_domain.dart' as domain;
+import 'package:wallet_infra/wallet_infra.dart' show requiresSecureTransport;
 import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
 
 const _moneroDecimals = 12;
+
+/// Whether a bare `host:port` [address] gets a secure transport (D30).
+///
+/// wallet-core no longer stores a `useSsl` flag; the scheme is derived from the
+/// host — https for a routable one, plaintext for an onion or local one. This
+/// mirrors that so skylight's display (the connection banner) stays accurate.
+bool _deriveSsl(String address) =>
+    address.isNotEmpty && requiresSecureTransport(Uri.parse('http://$address').host);
 
 /// Presents a wallet-core [MoneroWallet] through skylight's [AppWallet] surface,
 /// converting wallet-core types (BigInt amounts, TxDetails, connection details)
@@ -38,7 +47,7 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   bool get connectionUseTor => _wallet.connectionUseTor;
   @override
-  bool get connectionUseSsl => _wallet.connectionUseSsl;
+  bool get connectionUseSsl => _deriveSsl(_wallet.connectionAddress);
   @override
   bool get usingTor => _wallet.usingTor;
   @override
@@ -69,6 +78,8 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   bool? get serverSupportsSubaddresses => _wallet.serverSupportsSubaddresses;
   @override
   String? getUnusedSubaddress() => _wallet.getUnusedSubaddress();
+  @override
+  int? get unusedSubaddressIndex => _wallet.unusedSubaddressIndex;
   @override
   bool? get unusedSubaddressIndexIsSupported => _wallet.unusedSubaddressIndexIsSupported;
   @override
@@ -115,7 +126,7 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
       address: c.address,
       proxyPort: c.proxyPort,
       useTor: c.useTor,
-      useSsl: c.useSsl,
+      useSsl: _deriveSsl(c.address),
       connectionType: c.connectionType,
     );
   }
@@ -125,13 +136,11 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
     required String address,
     required String proxyPort,
     required bool useTor,
-    required bool useSsl,
     String connectionType = '',
   }) => _wallet.setConnection(
     address: address,
     proxyPort: proxyPort,
     useTor: useTor,
-    useSsl: useSsl,
     connectionType: connectionType,
   );
 
@@ -144,13 +153,11 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   Future<void> testConnection({
     required String address,
     String? proxyPort,
-    required bool useSsl,
     required bool useTor,
     String connectionType = '',
   }) => _wallet.testConnection(
     address: address,
     proxyPort: proxyPort,
-    useSsl: useSsl,
     useTor: useTor,
     connectionType: connectionType,
   );

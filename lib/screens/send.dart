@@ -1,20 +1,18 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/screens/confirm_send.dart';
-import 'package:skylight_wallet/util/formatting.dart';
-import 'package:skylight_wallet/widgets/fiat_amount.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
-import 'package:skylight_wallet/widgets/monero_amount.dart';
-import 'package:skylight_wallet/models/wallet_types.dart';
-import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/models/wallet_types.dart';
+import 'package:skylight_wallet/util/formatting.dart';
+import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class SendScreenArgs {
   String destinationAddress;
@@ -43,6 +41,12 @@ final domainRegex = RegExp(
 
 /// How long the address field must sit still before an alias is resolved.
 const _openAliasTypingDelay = Duration(milliseconds: 600);
+
+/// Sentinel spliced into the high-fee warning so the shared confirm-send view
+/// can bold the percentage regardless of locale. Must not be a space or any
+/// substring of the sentence, since the view splits on it — the sentence is
+/// full of spaces, so a NUL marker is used.
+const _highFeeToken = '\u0000';
 
 class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
@@ -157,19 +161,41 @@ class _SendScreenState extends State<SendScreen> {
     }
   }
 
-  void _showContactPicker() {
-    showDialog(
+  void _showContactPicker() async {
+    final i18n = AppLocalizations.of(context)!;
+    final contactModel = Provider.of<ContactModel>(context, listen: false);
+
+    final contact = await showContactPickerSheet<Contact>(
       context: context,
-      builder: (context) => _ContactPickerDialog(
-        onContactSelected: (contact) {
-          setState(() {
-            _selectedContact = contact;
-            _destinationAddressController.text = contact.address;
-          });
-          Navigator.of(context).pop();
-        },
+      labels: ContactPickerLabels(
+        title: i18n.sendPickContactTitle,
+        searchHint: i18n.addressBookSearchHint,
+        cancel: i18n.cancel,
+        noContacts: i18n.addressBookNoContacts,
+        noResults: i18n.addressBookNoSearchResults,
       ),
+      headerIcon: SizedBox(
+        width: 34,
+        height: 34,
+        child: SvgPicture.asset('assets/icons/monero.svg', width: 34, height: 34),
+      ),
+      // Skylight contacts hold a single Monero address, so every one is
+      // selectable.
+      search: (query) => [
+        for (final c in contactModel.searchContacts(query))
+          ContactPickerEntry<Contact>(
+            value: c,
+            name: c.name,
+            addressShort: _shortenMiddle(c.address, head: 8, tail: 10),
+          ),
+      ],
     );
+
+    if (contact == null || !mounted) return;
+    setState(() {
+      _selectedContact = contact;
+      _destinationAddressController.text = contact.address;
+    });
   }
 
   void _clearSelectedContact() {
@@ -407,16 +433,11 @@ class _SendScreenState extends State<SendScreen> {
       });
 
       if (mounted) {
-        Navigator.pushNamed(
-          context,
-          '/confirm_send',
-          arguments: ConfirmSendScreenArgs(
-            tx: tx,
-            destinationAddress: destinationAddress,
-            destinationOpenAlias: destinationOpenAlias,
-            destinationOpenAliasName: destinationOpenAliasName,
-            destinationContactName: _selectedContact?.name,
-          ),
+        await _openConfirmSheet(
+          tx: tx,
+          destinationAddress: destinationAddress,
+          destinationOpenAlias: destinationOpenAlias,
+          destinationOpenAliasName: destinationOpenAliasName,
         );
       }
     } catch (error) {
@@ -442,6 +463,85 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
+  /// Opens the shared confirm-send bottom sheet, committing on confirm and,
+  /// on success, routing to the wallet home with the success toast (matching
+  /// the retired full-screen confirm route).
+  Future<void> _openConfirmSheet({
+    required AppPendingTx tx,
+    required String destinationAddress,
+    String? destinationOpenAlias,
+    String? destinationOpenAliasName,
+  }) async {
+    final i18n = AppLocalizations.of(context)!;
+    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
+    final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
+    final xmrRate = fiatRate.rateFor('XMR');
+    final amountFiat = xmrRate is double ? tx.amount * xmrRate : null;
+    final feeFiat = xmrRate is double ? tx.fee * xmrRate : null;
+
+    // Monero fee is same-currency, so compare directly. Warn when it's ≥10% of
+    // the amount (mirrors Spice's confirm-send high-fee guard).
+    final feeRatio = tx.amount > 0 ? tx.fee / tx.amount : null;
+    final showHighFeeWarning = feeRatio != null && feeRatio > 0.10;
+
+    final committed = await showConfirmSendSheet(
+      context: context,
+      labels: ConfirmSendLabels(
+        title: i18n.confirmSendTitle,
+        description: i18n.confirmSendDescription,
+        amount: i18n.amount,
+        networkFee: i18n.networkFee,
+        address: i18n.address,
+        send: i18n.sendSendButton,
+        cancel: i18n.cancel,
+      ),
+      coinSymbol: 'XMR',
+      amountText: '${tx.amount.toStringAsFixed(12)} XMR',
+      amountFiat: amountFiat != null ? formatFiat(amountFiat, fiatSymbol) : null,
+      feeText: '${tx.fee.toStringAsFixed(12)} XMR',
+      feeFiat: feeFiat != null ? formatFiat(feeFiat, fiatSymbol) : null,
+      address: destinationAddress,
+      openAlias: destinationOpenAlias,
+      openAliasName: destinationOpenAliasName,
+      contactName: _selectedContact?.name,
+      showHighFeeWarning: showHighFeeWarning,
+      highFeeWarning: showHighFeeWarning ? i18n.confirmSendHighFeeWarning(_highFeeToken) : null,
+      highFeeToken: _highFeeToken,
+      highFeePercent: showHighFeeWarning ? '${(feeRatio * 100).round()}%' : null,
+      onConfirm: () => _commitTx(tx, destinationAddress),
+    );
+
+    if (committed == true && mounted) {
+      Navigator.pushNamed(context, '/wallet_home', arguments: {'showTxSuccessToast': true});
+    }
+  }
+
+  /// Commits the transaction; surfaces its own errors as snackbars (matching the
+  /// retired confirm screen) and rethrows so the sheet stays open on failure.
+  Future<void> _commitTx(AppPendingTx tx, String destinationAddress) async {
+    final i18n = AppLocalizations.of(context)!;
+    final wallet = appWalletOf(context);
+
+    try {
+      await wallet.commitTx(tx, destinationAddress);
+    } on FormatException catch (error) {
+      var errorMsg = error.toString().replaceFirst('FormatException: ', '');
+      if (error.toString().contains('HTTP error code 500')) {
+        errorMsg = 'Failed to send transaction. You might have insufficient unlocked balance.';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+      }
+      rethrow;
+    } catch (error) {
+      log(LogLevel.error, error.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+      }
+      rethrow;
+    }
+  }
+
   void _setBalanceAsSendAmount() {
     final wallet = appWalletOf(context);
     _amountController.text = (wallet.unlockedBalance ?? 0).toString();
@@ -451,71 +551,9 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
-  void _showPrioritySelector() {
-    final i18n = AppLocalizations.of(context)!;
-    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Container(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(i18n.sendTransactionPriority, style: Theme.of(context).textTheme.titleLarge),
-              SizedBox(height: 20),
-              _PriorityOption(
-                label: i18n.sendPriorityLow,
-                priority: 0,
-                fees: _fees,
-                fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rateFor('XMR'),
-                isSelected: _selectedPriority == 0,
-                onTap: () {
-                  setState(() {
-                    _selectedPriority = 0;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              SizedBox(height: 12),
-              _PriorityOption(
-                label: i18n.sendPriorityNormal,
-                priority: 1,
-                fees: _fees,
-                fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rateFor('XMR'),
-                isSelected: _selectedPriority == 1,
-                onTap: () {
-                  setState(() {
-                    _selectedPriority = 1;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              SizedBox(height: 12),
-              _PriorityOption(
-                label: i18n.sendPriorityHigh,
-                priority: 2,
-                fees: _fees,
-                fiatSymbol: fiatSymbol,
-                fiatRate: fiatRate.rateFor('XMR'),
-                isSelected: _selectedPriority == 2,
-                onTap: () {
-                  setState(() {
-                    _selectedPriority = 2;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _setPriority(int priority) {
+    if (priority == _selectedPriority) return;
+    setState(() => _selectedPriority = priority);
   }
 
   /// Re-runs validation (without surfacing errors) and updates the send-button
@@ -527,6 +565,11 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _onAddressChanged() async {
+    // Setting text also clears a stale inline error so a corrected address
+    // doesn't keep showing the old warning.
+    if (_destinationAddressError.isNotEmpty) {
+      setState(() => _destinationAddressError = '');
+    }
     await _revalidate();
   }
 
@@ -546,6 +589,9 @@ class _SendScreenState extends State<SendScreen> {
       });
     }
 
+    if (_amountError.isNotEmpty) {
+      setState(() => _amountError = '');
+    }
     await _revalidate();
   }
 
@@ -553,451 +599,101 @@ class _SendScreenState extends State<SendScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context, listen: true);
+    final fiatRate = context.watch<FiatRateModel>();
+    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
+    final coinRate = fiatRate.rateFor('XMR');
 
-    return Scaffold(
-      appBar: AppBar(title: Text(i18n.sendTitle)),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            constraints: BoxConstraints(maxWidth: 440),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 28,
-              children: [
-                Column(
-                  spacing: 16,
-                  children: [
-                    if (_selectedContact == null)
-                      TextField(
-                        controller: _destinationAddressController,
-                        maxLines: null,
-                        textInputAction: TextInputAction.done,
-                        decoration: InputDecoration(
-                          labelText: i18n.address,
-                          border: OutlineInputBorder(),
-                          errorText: _destinationAddressError != ''
-                              ? _destinationAddressError
-                              : null,
-                          suffixIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                          suffixIcon: Container(
-                            margin: EdgeInsets.only(right: 14),
-                            child: Row(
-                              spacing: 16,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_openAliasResolving > 0)
-                                  SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(strokeWidth: 1.8),
-                                  ),
-                                GestureDetector(
-                                  onTap: _pasteAddressFromClipboard,
-                                  child: Icon(Icons.paste),
-                                ),
-                                if (Platform.isAndroid || Platform.isIOS)
-                                  GestureDetector(onTap: _scanQrCode, child: Icon(Icons.qr_code)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (_selectedContact != null)
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                  child: Text(
-                                    _selectedContact!.name.isNotEmpty
-                                        ? _selectedContact!.name[0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _selectedContact!.name,
-                                        style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
-                                      ),
-                                      Text(
-                                        i18n.sendSelectedContact,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: _clearSelectedContact,
-                                  icon: Icon(Icons.close, size: 20),
-                                  tooltip: i18n.sendClearSelectedContact,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    TextField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      textInputAction: TextInputAction.done,
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+(\.\d*)?'))],
-                      decoration: InputDecoration(
-                        labelText: i18n.amount,
-                        border: OutlineInputBorder(),
-                        errorText: _amountError != '' ? _amountError : null,
-                        suffixIcon: TextButton(
-                          onPressed: _setBalanceAsSendAmount,
-                          child: Text('Max'),
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _showPrioritySelector,
-                      child: Container(
-                        height: 40,
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.speed, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              _selectedPriority == 0
-                                  ? i18n.sendPriorityLow
-                                  : _selectedPriority == 1
-                                  ? i18n.sendPriorityNormal
-                                  : i18n.sendPriorityHigh,
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            Text(
-                              ' ${i18n.sendPriorityLabel}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            Spacer(),
-                            if (_isLoadingFees)
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            else if (_fees != null && _fees!.length > _selectedPriority)
-                              () {
-                                final fee = _fees![_selectedPriority];
-                                if (fee != null) {
-                                  return Row(
-                                    spacing: 8,
-                                    children: [
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        spacing: 4,
-                                        children: [
-                                          SvgPicture.asset(
-                                            'assets/icons/monero.svg',
-                                            width: 14,
-                                            height: 14,
-                                          ),
-                                          MoneroAmount(
-                                            amount: doubleAmountFromInt(fee),
-                                            maxFontSize: 14,
-                                            prefix: '~',
-                                          ),
-                                        ],
-                                      ),
-                                      Icon(Icons.arrow_drop_down),
-                                    ],
-                                  );
-                                } else {
-                                  return Row(
-                                    spacing: 8,
-                                    children: [
-                                      Text(
-                                        i18n.sendInsufficientBalanceError,
-                                        style: TextStyle(color: Colors.red, fontSize: 14),
-                                      ),
-                                      Icon(Icons.arrow_drop_down),
-                                    ],
-                                  );
-                                }
-                              }()
-                            else
-                              Icon(Icons.arrow_drop_down),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        if (_selectedContact == null)
-                          TextButton.icon(
-                            onPressed: _showContactPicker,
-                            icon: Icon(Icons.contacts_outlined, size: 18),
-                            label: Text(i18n.sendContactsButton),
-                          ),
-                        Spacer(),
-                        GestureDetector(
-                          onTap: _setBalanceAsSendAmount,
-                          child: Row(
-                            spacing: 6,
-                            children: [
-                              SvgPicture.asset('assets/icons/monero.svg', width: 18, height: 18),
-                              MoneroAmount(amount: wallet.unlockedBalance ?? 0, maxFontSize: 18),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  spacing: 20,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n.cancel)),
-                    LoadingButton(
-                      isLoading: _isLoading,
-                      onPressed: (_formValid && _openAliasResolving == 0) ? _send : null,
-                      icon: Icons.arrow_outward_rounded,
-                      label: i18n.sendSendButton,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    final amountFiat = coinRate != null ? amount * coinRate : 0.0;
+    final available = wallet.unlockedBalance ?? 0;
+    final xmr = xmrWallet(context);
+
+    return SendView(
+      labels: SendLabels(
+        title: i18n.sendTitle,
+        toLabel: i18n.sendToLabel,
+        amount: i18n.amount,
+        priorityHeading: i18n.sendPriorityHeading,
+        networkFee: i18n.sendNetworkFee,
+        sendButton: i18n.sendSendButton,
+        cancel: i18n.cancel,
+        pasteButton: i18n.sendPasteButton,
+        scanButton: i18n.sendScanButton,
+        contactsButton: i18n.sendContactsButton,
+        maxButton: i18n.sendMaxButton,
+        addressHint: i18n.address,
+        priorityLabels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
       ),
+      onBack: () => Navigator.of(context).pop(),
+      addressController: _destinationAddressController,
+      addressError: _destinationAddressError,
+      openAliasResolving: _openAliasResolving > 0,
+      onPaste: _pasteAddressFromClipboard,
+      onScan: _scanQrCode,
+      onPickContact: _showContactPicker,
+      contactName: _selectedContact?.name,
+      contactAddressShort: _selectedContact != null
+          ? _shortenMiddle(_destinationAddressController.text, head: 8, tail: 10)
+          : null,
+      onClearContact: _clearSelectedContact,
+      amountController: _amountController,
+      amountError: _amountError,
+      onMax: _setBalanceAsSendAmount,
+      coinSymbol: 'XMR',
+      amountFiatText: '≈ ${formatFiat(amountFiat, fiatSymbol)}',
+      availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
+      availableLeading: xmr != null
+          ? CoinMark(coinSymbol: xmr.coinSymbol, iconAsset: xmr.iconAsset, size: 16)
+          : const SizedBox(width: 16, height: 16),
+      onAvailableTap: _setBalanceAsSendAmount,
+      selectedPriority: _selectedPriority,
+      onSelectPriority: _setPriority,
+      feeValue: _feeValue(fiatSymbol, coinRate),
+      onCancel: () => Navigator.pop(context),
+      onSend: (_formValid && _openAliasResolving == 0 && !_isLoading) ? _send : null,
+      sendLoading: _isLoading,
+    );
+  }
+
+  Widget _feeValue(String fiatSymbol, double? coinRate) {
+    final feePiconero = (_fees != null && _fees!.length > _selectedPriority)
+        ? _fees![_selectedPriority]
+        : null;
+    if (_isLoadingFees) {
+      return SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(strokeWidth: 2, color: BrandColors.primary),
+      );
+    }
+    if (feePiconero == null) {
+      return Text(
+        '—',
+        style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12, color: BrandColors.inkMuted),
+      );
+    }
+    final fee = doubleAmountFromInt(feePiconero);
+    final feeFiat = coinRate != null ? ' · ${formatFiat(fee * coinRate, fiatSymbol)}' : '';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset('assets/icons/monero.svg', width: 13, height: 13),
+        const SizedBox(width: 5),
+        Text(
+          '~${_amountText(fee)}$feeFiat',
+          style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12, color: BrandColors.inkMuted),
+        ),
+      ],
     );
   }
 }
 
-class _ContactPickerDialog extends StatefulWidget {
-  final Function(Contact) onContactSelected;
+/// Monero is decimal-12; cap the displayed amount for legibility.
+String _amountText(double amount) => amount.toStringAsFixed(5);
 
-  const _ContactPickerDialog({required this.onContactSelected});
-
-  @override
-  State<_ContactPickerDialog> createState() => _ContactPickerDialogState();
-}
-
-class _ContactPickerDialogState extends State<_ContactPickerDialog> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final i18n = AppLocalizations.of(context)!;
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    final dialogWidth = screenWidth.clamp(0.0, 500.0);
-
-    return AlertDialog(
-      constraints: BoxConstraints.tightFor(width: dialogWidth),
-      insetPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 400,
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                hintText: i18n.addressBookSearchHint,
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-              ),
-            ),
-            SizedBox(height: 16),
-            Expanded(
-              child: Consumer<ContactModel>(
-                builder: (context, contactModel, child) {
-                  final filteredContacts = contactModel.searchContacts(_searchQuery);
-
-                  if (filteredContacts.isEmpty) {
-                    return Center(
-                      child: Text(
-                        _searchQuery.isEmpty
-                            ? i18n.addressBookNoContacts
-                            : i18n.addressBookNoSearchResults,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: filteredContacts.length,
-                    itemBuilder: (context, index) {
-                      final contact = filteredContacts[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          child: Text(
-                            contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500)),
-                        subtitle: Text(
-                          contact.address,
-                          style: TextStyle(fontFamily: 'monospace', fontSize: 12),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () => widget.onContactSelected(contact),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n.cancel))],
-    );
-  }
-}
-
-class _PriorityOption extends StatelessWidget {
-  final String label;
-  final int priority;
-  final List<int?>? fees;
-  final String fiatSymbol;
-  final double? fiatRate;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PriorityOption({
-    required this.label,
-    required this.priority,
-    required this.fees,
-    required this.fiatSymbol,
-    required this.fiatRate,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final i18n = AppLocalizations.of(context)!;
-    final feePiconero = fees?[priority];
-    final fee = feePiconero != null ? doubleAmountFromInt(feePiconero) : null;
-    final currentFiatRate = fiatRate;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          color: isSelected
-              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
-              : null,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-            Spacer(),
-            if (fee != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    spacing: 4,
-                    children: [
-                      Text(
-                        '${i18n.sendFeeLabel}:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      SvgPicture.asset('assets/icons/monero.svg', width: 14, height: 14),
-                      MoneroAmount(amount: fee, maxFontSize: 14, prefix: '~'),
-                    ],
-                  ),
-                  if (currentFiatRate != null)
-                    FiatAmount(prefix: fiatSymbol, amount: fee * currentFiatRate, maxFontSize: 12),
-                ],
-              )
-            else if (fees != null)
-              Text(
-                i18n.sendInsufficientBalanceError,
-                style: TextStyle(color: Colors.red, fontSize: 14),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+/// `abcd…wxyz`: keeps [head] leading and [tail] trailing chars of a long
+/// address, eliding the middle. Returns the string unchanged when short.
+String _shortenMiddle(String value, {required int head, required int tail}) {
+  if (value.length <= head + tail + 1) return value;
+  return '${value.substring(0, head)}…${value.substring(value.length - tail)}';
 }

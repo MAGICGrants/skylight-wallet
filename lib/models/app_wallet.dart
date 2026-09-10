@@ -60,7 +60,6 @@ abstract interface class AppWallet implements Listenable {
     required String address,
     required String proxyPort,
     required bool useTor,
-    required bool useSsl,
     String connectionType,
   });
   Future<void> persistCurrentConnection();
@@ -68,7 +67,6 @@ abstract interface class AppWallet implements Listenable {
   Future<void> testConnection({
     required String address,
     String? proxyPort,
-    required bool useSsl,
     required bool useTor,
     String connectionType,
   });
@@ -77,6 +75,7 @@ abstract interface class AppWallet implements Listenable {
 
   // Notifications
   Future<void> markExistingTxsAsNotified();
+
   /// [announce] false records current history as seen without firing an OS
   /// notification — the foreground uses it so a tx the user watched arrive is
   /// not re-notified by a background isolate.
@@ -89,16 +88,19 @@ abstract interface class AppWallet implements Listenable {
   Future<String> readPublicSpendKey();
   Future<String> readLegacySeed();
   Future<String> readPolyseed();
+
   /// The original backed-up mnemonic (bip39 shows its own words, not the
   /// derived legacy seed), or null when no seed store is kept.
   Future<StoredSeed?> readStoredSeed();
 
   // Receive (serverSupportsSubaddresses is declared with the sync getters above)
   String? getUnusedSubaddress();
+  int? get unusedSubaddressIndex;
   bool? get unusedSubaddressIndexIsSupported;
 
   // Send
   bool isAddressValid(String address);
+
   /// Estimated network fee in base units (piconero), or null when the backend
   /// can't estimate it (typically insufficient balance for that priority).
   Future<int?> estimateFee(

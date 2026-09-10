@@ -4,6 +4,7 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class LwsKeysScreen extends StatefulWidget {
   const LwsKeysScreen({super.key});
@@ -35,107 +36,32 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
     });
   }
 
+  void _copy(String value, {required bool sensitive}) {
+    if (value.isEmpty) return;
+    SecureClipboard.copy(value);
+    final i18n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.copiedToClipboard)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final primaryAddress = _primaryAddress;
-    final secretViewKey = _secretViewKey;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(i18n.lwsKeysTitle)),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            spacing: 20,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: i18n.lwsKeysPrimaryAddress,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () => SecureClipboard.copy(primaryAddress),
-                              icon: Icon(Icons.copy),
-                            ),
-                          ),
-                          controller: TextEditingController(
-                            text: primaryAddress,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: i18n.lwsKeysSecretViewKey,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () => SecureClipboard.copy(secretViewKey),
-                              icon: Icon(Icons.copy),
-                            ),
-                          ),
-                          controller: TextEditingController(
-                            text: secretViewKey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: i18n.lwsKeysRestoreHeight,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () => SecureClipboard.copy(_restoreHeight.toString()),
-                              icon: Icon(Icons.copy),
-                            ),
-                          ),
-                          controller: TextEditingController(
-                            text: _restoreHeight.toString(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    return LwsKeysView(
+      labels: LwsKeysLabels(
+        title: i18n.lwsKeysTitle,
+        description: i18n.lwsDetailsDescription,
+        primaryAddressLabel: i18n.lwsKeysPrimaryAddress,
+        viewKeyLabel: i18n.lwsKeysSecretViewKey,
+        restoreHeightLabel: i18n.lwsKeysRestoreHeight,
+        reveal: i18n.generateSeedReveal,
+        warning: i18n.lwsKeysWarning,
       ),
+      primaryAddress: _primaryAddress,
+      secretViewKey: _secretViewKey,
+      restoreHeight: _restoreHeight.toString(),
+      onCopy: _copy,
+      onBack: () => Navigator.pop(context),
     );
   }
 }

@@ -10,7 +10,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/screens/confirm_send.dart';
 import 'package:skylight_wallet/screens/lws_details.dart';
 import 'package:skylight_wallet/screens/lws_keys.dart';
 import 'package:skylight_wallet/screens/scan_qr.dart';
@@ -29,10 +28,8 @@ import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/screens/restore_wallet.dart';
-import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
-import 'package:skylight_wallet/screens/tor_info.dart';
 import 'package:skylight_wallet/screens/tor_settings.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
@@ -40,6 +37,8 @@ import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/theme/palette.dart';
+import 'package:wallet_ui/wallet_ui.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
@@ -57,6 +56,7 @@ void main() async {
       WidgetsFlutterBinding.ensureInitialized();
 
       installWalletCore();
+      BrandColors.install(skylightPalette);
 
       // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
@@ -142,6 +142,53 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   // Desktop-only foreground announce: listens for tx-history growth (see below).
   AppWallet? _announceWallet;
   int _lastAnnouncedTxCount = 0;
+
+  // Brightness-flip repaint: screens read BrandColors globally (not via
+  // Theme.of), so a theme change doesn't dirty cached routes on its own. On an
+  // actual flip we force an in-place rebuild of the navigator subtree.
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  Brightness? _lastBrightness;
+
+  static void _markSubtreeDirty(Element element) {
+    element.markNeedsBuild();
+    element.visitChildren(_markSubtreeDirty);
+  }
+
+  // The bottom-nav destinations. Tapping a nav tab must not animate, so these
+  // get a zero-duration route in _onGenerateRoute.
+  static const _noTransitionRoutes = {'/wallet_home', '/address_book', '/settings'};
+
+  Map<String, WidgetBuilder> get _routes => {
+    '/welcome': (context) => WelcomeScreen(),
+    '/tor_settings': (context) => TorSettingsScreen(),
+    '/connection_setup': (context) => ConnectionSetupScreen(),
+    '/fiat_api_setup': (context) => FiatApiSetupScreen(),
+    '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
+    '/create_wallet': (context) => CreateWalletScreen(),
+    '/generate_seed': (context) => GenerateSeedScreen(),
+    '/lws_details': (context) => LwsDetailsScreen(),
+    '/restore_wallet': (context) => RestoreWalletScreen(),
+    '/unlock': (context) => UnlockScreen(),
+    '/wallet_home': (context) => WalletHomeScreen(),
+    '/settings': (context) => SettingsScreen(),
+    '/lws_keys': (context) => LwsKeysScreen(),
+    '/secret_keys': (context) => SecretKeysScreen(),
+    '/send': (context) => SendScreen(),
+    '/scan_qr': (context) => ScanQrScreen(),
+    '/receive': (context) => ReceiveScreen(),
+    '/address_book': (context) => AddressBookScreen(),
+    '/terms_of_service': (context) => TermsOfService(),
+    '/privacy_policy': (context) => PrivacyPolicy(),
+  };
+
+  Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    final builder = _routes[settings.name];
+    if (builder == null) return null;
+    if (_noTransitionRoutes.contains(settings.name)) {
+      return _NoTransitionPageRoute(builder: builder, settings: settings);
+    }
+    return MaterialPageRoute(builder: builder, settings: settings);
+  }
 
   @override
   void initState() {
@@ -236,48 +283,34 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
               }
 
               return MaterialApp(
+                navigatorKey: _navigatorKey,
                 title: 'Skylight Monero Wallet',
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
-                theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-                darkTheme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: Colors.blue,
-                    brightness: Brightness.dark,
-                  ),
-                ),
+                theme: brandLightTheme(),
+                darkTheme: brandDarkTheme(),
                 themeMode: theme == 'dark'
                     ? ThemeMode.dark
                     : theme == 'light'
                     ? ThemeMode.light
                     : ThemeMode.system,
+                // Pin brand tokens to the resolved brightness before any screen
+                // builds; rebuild the navigator subtree in place on a real flip.
+                builder: (context, child) {
+                  final brightness = Theme.of(context).brightness;
+                  BrandColors.setBrightness(brightness);
+                  if (_lastBrightness != null && _lastBrightness != brightness) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      final navContext = _navigatorKey.currentContext;
+                      if (navContext is Element) navContext.visitChildElements(_markSubtreeDirty);
+                    });
+                  }
+                  _lastBrightness = brightness;
+                  return child ?? const SizedBox.shrink();
+                },
                 initialRoute: initialRoute,
                 locale: Locale.fromSubtags(languageCode: languageProvider.language),
-                routes: {
-                  '/welcome': (context) => WelcomeScreen(),
-                  '/tor_info': (context) => TorInfoScreen(),
-                  '/tor_settings': (context) => TorSettingsScreen(),
-                  '/connection_setup': (context) => ConnectionSetupScreen(),
-                  '/fiat_api_setup': (context) => FiatApiSetupScreen(),
-                  '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
-                  '/create_wallet': (context) => CreateWalletScreen(),
-                  '/generate_seed': (context) => GenerateSeedScreen(),
-                  '/lws_details': (context) => LwsDetailsScreen(),
-                  '/restore_warning': (context) => RestoreWarningScreen(),
-                  '/restore_wallet': (context) => RestoreWalletScreen(),
-                  '/unlock': (context) => UnlockScreen(),
-                  '/wallet_home': (context) => WalletHomeScreen(),
-                  '/settings': (context) => SettingsScreen(),
-                  '/lws_keys': (context) => LwsKeysScreen(),
-                  '/secret_keys': (context) => SecretKeysScreen(),
-                  '/send': (context) => SendScreen(),
-                  '/confirm_send': (context) => ConfirmSendScreen(),
-                  '/scan_qr': (context) => ScanQrScreen(),
-                  '/receive': (context) => ReceiveScreen(),
-                  '/address_book': (context) => AddressBookScreen(),
-                  '/terms_of_service': (context) => TermsOfService(),
-                  '/privacy_policy': (context) => PrivacyPolicy(),
-                },
+                onGenerateRoute: _onGenerateRoute,
               );
             }
 
@@ -287,19 +320,31 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
             return MaterialApp(
               title: 'Skylight Monero Wallet',
-              theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-              darkTheme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: Colors.blue,
-                  brightness: Brightness.dark,
-                ),
-              ),
+              theme: brandLightTheme(),
+              darkTheme: brandDarkTheme(),
               themeMode: ThemeMode.system,
-              builder: (context, child) => Scaffold(),
+              builder: (context, child) {
+                BrandColors.setBrightness(Theme.of(context).brightness);
+                return Scaffold(backgroundColor: BrandColors.paper);
+              },
             );
           },
         );
       },
     );
   }
+}
+
+/// A [MaterialPageRoute] whose own push/pop is instant — used for the bottom-nav
+/// destinations so tapping a tab doesn't animate. Subclassing (rather than a bare
+/// PageRouteBuilder) keeps Material's transition machinery, so the *secondary*
+/// transition still plays when another screen is pushed over a nav screen.
+class _NoTransitionPageRoute<T> extends MaterialPageRoute<T> {
+  _NoTransitionPageRoute({required super.builder, super.settings});
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
 }

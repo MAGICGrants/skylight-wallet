@@ -115,6 +115,7 @@ dependencies:
   flutter_riverpod: 2.6.1
   screen_brightness: 2.1.7
   flutter_zxing: 2.3.0
+  camera: 0.12.0
   permission_handler: 12.0.1
   flutter_svg: 2.2.3
   skeletonizer: 2.1.1
@@ -158,6 +159,25 @@ flutter:
     - assets/icons/
     - assets/cacert.pem
     - assets/app_icon.ico
+    - assets/launcher_icon.png
+    - assets/logo.svg
+    - assets/logo_nobg.svg
+
+  fonts:
+    - family: Ubuntu
+      fonts:
+        - asset: fonts/Ubuntu-Regular.ttf
+          weight: 400
+        - asset: fonts/Ubuntu-Medium.ttf
+          weight: 500
+        - asset: fonts/Ubuntu-Bold.ttf
+          weight: 700
+    - family: Ubuntu Mono
+      fonts:
+        - asset: fonts/UbuntuMono-Regular.ttf
+          weight: 400
+        - asset: fonts/UbuntuMono-Bold.ttf
+          weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

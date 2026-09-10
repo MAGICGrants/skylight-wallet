@@ -4,6 +4,7 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class SecretKeysScreen extends StatefulWidget {
   const SecretKeysScreen({super.key});
@@ -53,48 +54,68 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
     });
   }
 
-  Widget _field(String label, String value) => TextFormField(
-    readOnly: true,
-    decoration: InputDecoration(
-      labelText: label,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-      suffixIcon: IconButton(
-        onPressed: () => SecureClipboard.copy(value),
-        icon: const Icon(Icons.copy),
-      ),
-    ),
-    controller: TextEditingController(text: value),
-  );
+  void _copy(String value, {required bool sensitive}) {
+    if (value.isEmpty) return;
+    SecureClipboard.copy(value);
+    final i18n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.copiedToClipboard)));
+  }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final data = _data;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(i18n.secretKeysTitle)),
-      body: SafeArea(
-        child: data == null
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  spacing: 20,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(),
-                    if (data.bip39 != null)
-                      _field('${i18n.secretKeysMnemonic} (bip39)', data.bip39!),
-                    _field('${i18n.secretKeysMnemonic} (legacy)', data.legacy),
-                    if (data.polyseed.isNotEmpty)
-                      _field('${i18n.secretKeysMnemonic} (polyseed)', data.polyseed),
-                    _field(i18n.secretKeysPublicSpendKey, data.publicSpendKey),
-                    _field(i18n.secretKeysSecretSpendKey, data.secretSpendKey),
-                    _field(i18n.secretKeysPublicViewKey, data.publicViewKey),
-                  ],
-                ),
-              ),
-      ),
+    if (data == null) {
+      return Scaffold(
+        backgroundColor: BrandColors.paper,
+        body: const SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    // Seeds and the secret spend key are blurred until revealed; the public keys
+    // aren't sensitive.
+    return KeyRevealView(
+      title: i18n.secretKeysTitle,
+      description: i18n.secretKeysDescription,
+      warning: i18n.secretKeysWarning,
+      revealLabel: i18n.generateSeedReveal,
+      onCopy: _copy,
+      onBack: () => Navigator.pop(context),
+      fields: [
+        if (data.bip39 != null)
+          KeyRevealField(
+            label: '${i18n.secretKeysMnemonic} (bip39)',
+            value: data.bip39!,
+            revealable: true,
+          ),
+        KeyRevealField(
+          label: '${i18n.secretKeysMnemonic} (legacy)',
+          value: data.legacy,
+          revealable: true,
+        ),
+        if (data.polyseed.isNotEmpty)
+          KeyRevealField(
+            label: '${i18n.secretKeysMnemonic} (polyseed)',
+            value: data.polyseed,
+            revealable: true,
+          ),
+        KeyRevealField(
+          label: i18n.secretKeysSecretSpendKey,
+          value: data.secretSpendKey,
+          revealable: true,
+        ),
+        KeyRevealField(
+          label: i18n.secretKeysPublicSpendKey,
+          value: data.publicSpendKey,
+          sensitive: false,
+        ),
+        KeyRevealField(
+          label: i18n.secretKeysPublicViewKey,
+          value: data.publicViewKey,
+          sensitive: false,
+        ),
+      ],
     );
   }
 }

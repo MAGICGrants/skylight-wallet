@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/floating_bob.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
 
 class UnlockScreen extends StatefulWidget {
@@ -14,18 +16,17 @@ class UnlockScreen extends StatefulWidget {
 }
 
 class _UnlockScreenState extends State<UnlockScreen> {
+  static bool get _isDesktop => Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+
   final TextEditingController _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
+  bool _obscure = true;
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _error;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!Platform.isLinux && !Platform.isWindows && !Platform.isMacOS) {
-      _promptUnlock();
-    }
+    if (!_isDesktop) _promptUnlock();
   }
 
   @override
@@ -52,121 +53,50 @@ class _UnlockScreenState extends State<UnlockScreen> {
   }
 
   Future<void> _unlockWithPassword() async {
-    if (!_formKey.currentState!.validate()) {
+    final i18n = AppLocalizations.of(context)!;
+    if (_passwordController.text.isEmpty) {
+      setState(() => _error = i18n.fieldEmptyError);
       return;
     }
-
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _error = null;
     });
 
     try {
-      final enteredPassword = _passwordController.text;
-      await unlockWithPassword(context, enteredPassword);
-
+      await unlockWithPassword(context, _passwordController.text);
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
+        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
-        final i18n = AppLocalizations.of(context)!;
-
         setState(() {
-          _errorMessage = i18n.unlockIncorrectPasswordError;
+          _error = i18n.unlockIncorrectPasswordError;
           _isLoading = false;
         });
       }
     }
   }
 
-  String? _validatePasswordField(String? value) {
-    if (value == null || value.isEmpty) {
-      return AppLocalizations.of(context)!.fieldEmptyError;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
-      body: SafeArea(
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(maxWidth: 500),
-            padding: EdgeInsets.all(20),
-            child: isDesktop
-                ? Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 20,
-                      children: [
-                        Column(
-                          spacing: 10,
-                          children: [
-                            Text(
-                              i18n.unlockTitle,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
-                            Text(
-                              i18n.unlockDescription,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ],
-                        ),
-                        Column(
-                          spacing: 15,
-                          children: [
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              textInputAction: TextInputAction.done,
-                              validator: _validatePasswordField,
-                              enabled: !_isLoading,
-                              decoration: InputDecoration(
-                                labelText: i18n.unlockPasswordLabel,
-                                hintText: i18n.unlockPasswordHint,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                                errorText: _errorMessage,
-                              ),
-                              onFieldSubmitted: (_) => _unlockWithPassword(),
-                            ),
-                            LoadingButton(
-                              isLoading: _isLoading,
-                              onPressed: _unlockWithPassword,
-                              label: i18n.unlockButton,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                : FilledButton.icon(
-                    onPressed: _promptUnlock,
-                    label: Text(i18n.unlockButton),
-                    icon: Icon(Icons.lock_open),
-                  ),
-          ),
-        ),
+    return UnlockView(
+      logo: FloatingBob(child: SvgPicture.asset('assets/logo_nobg.svg', width: 100, height: 100)),
+      labels: UnlockLabels(
+        title: i18n.unlockTitle,
+        passwordHint: i18n.unlockPasswordHint,
+        unlockButton: i18n.unlockButton,
       ),
+      isDesktop: _isDesktop,
+      passwordController: _passwordController,
+      obscure: _obscure,
+      onToggleObscure: () => setState(() => _obscure = !_obscure),
+      error: _error,
+      loading: _isLoading,
+      onUnlockPassword: _unlockWithPassword,
+      onUnlockBiometric: _promptUnlock,
     );
   }
 }

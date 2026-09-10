@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -13,18 +11,11 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
 
 const connectionTypeOptions = ['lws', 'node'];
-
-final ipAddressRegex = RegExp(
-  r'(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}(?::\d{1,5})?$',
-);
-final domainAddressRegex = RegExp(
-  r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::\d{1,5})?$',
-);
-final onionAddressRegex = RegExp(r'[a-z2-7]{56}.onion(:\d{1,5})?$');
 
 /// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog
 class ConnectionSettingsForm extends StatefulWidget {
@@ -50,7 +41,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   final TextEditingController _customProxyPortController = TextEditingController();
 
   bool _useTor = false;
-  bool _useSsl = false;
   String _connectionType = 'lws';
   bool _hasTested = false;
   bool _connectionTestIsLoading = false;
@@ -60,6 +50,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _foregroundSyncEnabled = false;
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
+  bool _testCancelled = false;
+  int? _latencyMs;
 
   bool get _isNode => _connectionType == 'node';
 
@@ -113,26 +105,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
   }
 
-  Widget _syncCheckbox({
-    required String label,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return CheckboxListTile(
-      title: Text(label),
-      value: value,
-      onChanged: (v) => onChanged(v ?? false),
-      controlAffinity: ListTileControlAffinity.leading,
-      contentPadding: EdgeInsets.zero,
-      secondary: Tooltip(
-        message: description,
-        triggerMode: TooltipTriggerMode.tap,
-        child: Icon(Icons.help_outline, size: 20),
-      ),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -155,7 +127,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
       _useTor = conn.useTor && TorSettingsService.sharedInstance.torMode != TorMode.disabled;
-      _useSsl = conn.useSsl;
       _connectionType = connectionTypeOptions.contains(conn.connectionType)
           ? conn.connectionType
           : 'lws';
@@ -181,37 +152,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     return !_isNonLocalIp(value);
   }
 
-  /// Private/loopback IPv4 ranges we consider "local network".
-  bool _isLocalIp(String host) {
-    if (host.startsWith('192.168.') || host.startsWith('10.') || host.startsWith('127.')) {
-      return true;
-    }
-    final match = RegExp(r'^172\.(\d{1,3})\.').firstMatch(host);
-    if (match != null) {
-      final second = int.tryParse(match.group(1)!) ?? 0;
-      return second >= 16 && second <= 31;
-    }
-    return false;
-  }
-
   /// Public IP literals aren't allowed: use a domain (SSL) or a local IP.
   bool _isNonLocalIp(String value) {
     final host = value.split(':').first;
-    return ipAddressRegex.hasMatch(value) && !_isLocalIp(host);
-  }
-
-  bool _sslForAddress(String value) {
-    final host = value.split(':').first;
-    if (onionAddressRegex.hasMatch(value)) return false;
-    if (ipAddressRegex.hasMatch(value)) return false;
-    if (host.endsWith('.local')) return false;
-    return domainAddressRegex.hasMatch(value);
-  }
-
-  bool _isLocalAddress(String value) {
-    final host = value.split(':').first;
-    if (ipAddressRegex.hasMatch(value)) return _isLocalIp(host);
-    return host.endsWith('.local');
+    return ipAddressRegex.hasMatch(value) && !isLocalIp(host);
   }
 
   Future<void> _scanQrCode() async {
@@ -254,15 +198,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
 
     final useTor = onionAddressRegex.hasMatch(value);
-    var useSsl = _sslForAddress(value);
 
-    if (rawValue.startsWith('https://')) {
-      useSsl = true;
-    } else if (rawValue.startsWith('http://')) {
-      useSsl = false;
-    }
-
-    _setUseSsl(useSsl);
     // Never auto-disable Tor if the user already turned it on.
     _setUseTor(useTor || _useTor);
 
@@ -276,7 +212,9 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(useSsl ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp),
+            content: Text(
+              addressUsesSsl(value) ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp,
+            ),
           ),
         );
     }
@@ -319,13 +257,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
         });
         timer.cancel();
       }
-    });
-  }
-
-  void _setUseSsl(bool? value) {
-    setState(() {
-      _useSsl = value ?? false;
-      _hasTested = false;
     });
   }
 
@@ -383,38 +314,52 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
 
     setState(() {
+      _testCancelled = false;
       _hasTested = true;
       _connectionTestIsLoading = true;
       _connectionSuccess = false;
       _errorMessage = null;
+      _latencyMs = null;
     });
 
+    final stopwatch = Stopwatch()..start();
     try {
       final proxyPort = await _resolveProxyPort();
       await wallet.testConnection(
         address: daemonAddress,
         proxyPort: proxyPort,
-        useSsl: _useSsl,
         useTor: _useTor,
         connectionType: _connectionType,
       );
-      if (!mounted) return;
+      if (!mounted || _testCancelled) return;
       setState(() {
         _connectionSuccess = true;
+        _latencyMs = stopwatch.elapsedMilliseconds;
       });
     } catch (error) {
       log(LogLevel.warn, 'testConnection failed: $error');
-      if (!mounted) return;
+      if (!mounted || _testCancelled) return;
       setState(() {
         _connectionSuccess = false;
       });
     } finally {
-      if (mounted) {
+      if (mounted && !_testCancelled) {
         setState(() {
           _connectionTestIsLoading = false;
         });
       }
     }
+  }
+
+  /// Best-effort UI cancel: the in-flight network call can't be aborted, but we
+  /// drop its result and return the card to the untested state.
+  void _stopTest() {
+    setState(() {
+      _testCancelled = true;
+      _hasTested = false;
+      _connectionTestIsLoading = false;
+      _connectionSuccess = false;
+    });
   }
 
   Future<void> _saveConnection() async {
@@ -433,7 +378,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       address: daemonAddress,
       proxyPort: proxyAddress,
       useTor: _useTor,
-      useSsl: _useSsl,
       connectionType: _connectionType,
     );
 
@@ -455,58 +399,23 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     widget.onSaved();
   }
 
-  Widget _statusChip({required Widget icon, required String label, required Color color}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        icon,
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
+  /// How the successful probe reached the server (the one server fact we can
+  /// state from an unauthenticated test).
+  String _successDetail(AppLocalizations i18n) {
+    if (_useTor) return i18n.connectionReachedOverTor;
+    if (_customProxyPortController.text.trim().isNotEmpty) return i18n.connectionReachedViaProxy;
+    return i18n.connectionReachedDirect;
   }
 
-  Widget _buildConnectionIndicators(AppLocalizations i18n, TorMode torMode) {
-    final chips = <Widget>[];
-
-    if (_useTor) {
-      chips.add(
-        _statusChip(
-          icon: SvgPicture.asset('assets/icons/tor.svg', width: 13, height: 13),
-          label: torMode == TorMode.builtIn
-              ? i18n.connectionIndicatorTorInternal
-              : i18n.connectionIndicatorTorExternal(TorSettingsService.sharedInstance.socksPort),
-          color: Colors.purple,
-        ),
-      );
+  /// Maps this wrapper's flags onto the shared test-card state: starting-Tor
+  /// takes over; then idle / testing / success / failure.
+  ConnectionTestState _testState(TorMode torMode) {
+    if (_useTor && torMode == TorMode.builtIn && _torStatus != TorConnectionStatus.connected) {
+      return ConnectionTestState.startingTor;
     }
-
-    if (_useSsl) {
-      chips.add(
-        _statusChip(
-          icon: Icon(Icons.lock, size: 13, color: Colors.green),
-          label: i18n.connectionIndicatorHttps,
-          color: Colors.green,
-        ),
-      );
-    } else if (_isLocalAddress(_cleanAddress(_addressController.text))) {
-      chips.add(
-        _statusChip(
-          icon: Icon(Icons.lock_open, size: 13, color: Colors.grey),
-          label: i18n.connectionIndicatorLocal,
-          color: Colors.grey,
-        ),
-      );
-    }
-
-    if (chips.isEmpty) return const SizedBox.shrink();
-
-    return Center(
-      child: Wrap(spacing: 16, alignment: WrapAlignment.center, children: chips),
-    );
+    if (!_hasTested) return ConnectionTestState.idle;
+    if (_connectionTestIsLoading) return ConnectionTestState.testing;
+    return _connectionSuccess ? ConnectionTestState.success : ConnectionTestState.failure;
   }
 
   @override
@@ -514,127 +423,65 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
     final addressHint = _isNode ? i18n.connectionNodeAddressHint : i18n.lwsSetupAddressHint;
+    final canSave = _hasTested && _connectionSuccess && !_connectionTestIsLoading;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 10,
-      children: [
-        Center(
-          child: SegmentedButton<String>(
-            segments: connectionTypeOptions
-                .map(
-                  (type) => ButtonSegment<String>(
-                    value: type,
-                    label: Text(_connectionTypeLabel(i18n, type)),
-                  ),
-                )
-                .toList(),
-            selected: {_connectionType},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) => _setConnectionType(selection.first),
-          ),
-        ),
-        TextFormField(
-          controller: _addressController,
-          onChanged: _onAddressChange,
-          decoration: InputDecoration(
-            labelText: i18n.address,
-            hintText: addressHint,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-            suffixIcon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (Platform.isAndroid || Platform.isIOS)
-                  IconButton(onPressed: _scanQrCode, icon: Icon(Icons.qr_code)),
-                if (_hasTested && !_connectionTestIsLoading)
-                  Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: Icon(
-                      _connectionSuccess ? Icons.check : Icons.cancel_outlined,
-                      color: _connectionSuccess ? Colors.teal : Colors.red,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          keyboardType: TextInputType.url,
-          textInputAction: TextInputAction.done,
-        ),
-        if (_errorMessage != null)
-          Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-        TextFormField(
-          controller: _customProxyPortController,
-          onChanged: _onProxyPortChange,
-          enabled: !_useTor,
-          decoration: InputDecoration(
-            labelText: i18n.lwsSetupProxyPortLabel,
-            hintText: i18n.lwsSetupProxyPortHint,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-          ),
-          keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.done,
-          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-        ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CheckboxListTile(
-              title: Text(i18n.lwsSetupUseTorLabel),
-              value: _useTor,
-              onChanged: torMode == TorMode.disabled ? null : _setUseTor,
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-            ),
-            if (_showSyncOptions) ...[
-              _syncCheckbox(
+    return ConnectionFormView(
+      labels: ConnectionFormLabels(
+        proxyPortLabel: i18n.lwsSetupProxyPortLabel,
+        proxyPortHint: i18n.lwsSetupProxyPortHint,
+        useTorLabel: i18n.lwsSetupUseTorLabel,
+        startingTorTitle: i18n.lwsSetupStartingTor,
+        testButton: i18n.lwsSetupTestConnectionButton,
+        testStop: i18n.connectionTestStop,
+        testingTitle: i18n.connectionTestingTitle,
+        testingDetail: i18n.connectionTestingDetail,
+        testAgain: i18n.connectionTestAgain,
+        resultWorksTitle: i18n.connectionResultWorksTitle,
+        resultFailedTitle: i18n.connectionResultFailedTitle,
+        resultFailedDetail: i18n.connectionResultFailedDetail,
+      ),
+      addressLabel: i18n.address,
+      addressHint: addressHint,
+      addressController: _addressController,
+      onAddressChanged: _onAddressChange,
+      onScan: (Platform.isAndroid || Platform.isIOS) ? _scanQrCode : null,
+      errorMessage: _errorMessage,
+      proxyController: _customProxyPortController,
+      onProxyChanged: _onProxyPortChange,
+      proxyEnabled: !_useTor,
+      connectionTypeLabels: [for (final t in connectionTypeOptions) _connectionTypeLabel(i18n, t)],
+      selectedTypeIndex: connectionTypeOptions.indexOf(_connectionType),
+      onSelectType: (i) => _setConnectionType(connectionTypeOptions[i]),
+      useTor: _useTor,
+      torDisabled: torMode == TorMode.disabled,
+      onToggleTor: () => _setUseTor(!_useTor),
+      pillProxyPort: _customProxyPortController.text,
+      pillAddress: _cleanAddress(_addressController.text),
+      syncRows: _showSyncOptions
+          ? [
+              ConnectionSyncRow(
                 label: i18n.settingsBackgroundSyncLabel,
-                description: i18n.settingsBackgroundSyncDescription,
-                value: _backgroundSyncEnabled,
-                onChanged: _setBackgroundSyncEnabled,
+                help: i18n.settingsBackgroundSyncDescription,
+                checked: _backgroundSyncEnabled,
+                onToggle: _setBackgroundSyncEnabled,
               ),
-              _syncCheckbox(
+              ConnectionSyncRow(
                 label: i18n.settingsForegroundSyncLabel,
-                description: i18n.settingsForegroundSyncDescription,
-                value: _foregroundSyncEnabled,
-                onChanged: _setForegroundSyncEnabled,
+                help: i18n.settingsForegroundSyncDescription,
+                checked: _foregroundSyncEnabled,
+                onToggle: _setForegroundSyncEnabled,
               ),
-            ],
-          ],
-        ),
-        _buildConnectionIndicators(i18n, torMode),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 10,
-          children: [
-            if (_useTor &&
-                torMode == TorMode.builtIn &&
-                _torStatus != TorConnectionStatus.connected)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                  SizedBox(width: 8),
-                  Text(i18n.lwsSetupStartingTor),
-                ],
-              )
-            else
-              TextButton.icon(
-                label: Text(i18n.lwsSetupTestConnectionButton),
-                onPressed: () => _testConnection(),
-                icon: !_connectionTestIsLoading
-                    ? Icon(Icons.network_check)
-                    : SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-              ),
-            if (_connectionSuccess && _hasTested && !_connectionTestIsLoading)
-              FilledButton.icon(onPressed: _saveConnection, label: Text(widget.saveButtonLabel)),
-          ],
-        ),
-      ],
+            ]
+          : const [],
+      testState: _testState(torMode),
+      onTest: _testConnection,
+      onStopTest: _stopTest,
+      onTestAgain: _testConnection,
+      successDetail: _successDetail(i18n),
+      successLatency: _latencyMs != null ? '$_latencyMs ms' : null,
+      saveButtonLabel: widget.saveButtonLabel,
+      canSave: canSave,
+      onSave: _saveConnection,
     );
   }
 }

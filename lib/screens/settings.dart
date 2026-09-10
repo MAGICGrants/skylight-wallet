@@ -399,9 +399,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           label: i18n.settingsThemeDark,
           description: i18n.settingsThemeDarkDesc,
           swatch: const ThemeSwatchSpec(
-            ground: Color(0xFF102A4C),
-            barColor: Color(0xFF2E4A6B),
-            accentColor: Color(0xFFED8E4E),
+            ground: Color(0xFF03090F),
+            barColor: Color(0xFF1A2837),
+            accentColor: Color(0xFFF2883C),
           ),
         ),
         ThemePickerOption(

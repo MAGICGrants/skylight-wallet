@@ -168,6 +168,7 @@ jobs:
 
   build-linux-x86_64:
     name: Linux (x86_64)
+    if: false  # desktop builds disabled for now (also dropped from release job's needs)
     runs-on: ubuntu-latest
     environment: Release
     needs: version
@@ -203,6 +204,7 @@ jobs:
 
   build-windows:
     name: Windows (x64)
+    if: false  # desktop builds disabled for now (also dropped from release job's needs)
     runs-on: windows-2022
     environment: Release
     needs: version
@@ -355,8 +357,6 @@ jobs:
     needs:
       - version
       - build-android
-      - build-linux-x86_64
-      - build-windows
     permissions:
       contents: write
     steps:

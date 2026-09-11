@@ -8,6 +8,7 @@ on:
       - 'Dockerfile.builder'
       - '.github/workflows/build-builder-image.yml'
       - 'pubspec.yaml'
+      - 'rust-toolchain.toml'
   workflow_dispatch:
 
 env:
@@ -34,6 +35,13 @@ jobs:
           FLUTTER_VERSION=$(grep -E '^\s+flutter:\s+' pubspec.yaml | head -1 | sed 's/.*flutter:\s*//')
           echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> $GITHUB_OUTPUT
           echo "Using Flutter version: ${FLUTTER_VERSION}"
+
+      - name: Extract Rust toolchain from rust-toolchain.toml
+        id: rust
+        run: |
+          RUST_VERSION=$(sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' rust-toolchain.toml | head -1)
+          echo "RUST_VERSION=${RUST_VERSION}" >> $GITHUB_OUTPUT
+          echo "Using Rust toolchain: ${RUST_VERSION}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
@@ -66,6 +74,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             FLUTTER_VERSION=${{ steps.flutter.outputs.FLUTTER_VERSION }}
+            RUST_VERSION=${{ steps.rust.outputs.RUST_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

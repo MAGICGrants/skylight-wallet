@@ -71,7 +71,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 git add -u                                  # tracked modifications (pubspec, scripts, ...)
-git add scripts/reproducible.patch scripts/pin-rust-toolchain.sh scripts/fdroid-build.sh scripts/build-moneroc.sh 2>/dev/null || true
+git add rust-toolchain.toml scripts/reproducible.patch scripts/pin-rust-toolchain.sh scripts/fdroid-build.sh scripts/build-moneroc.sh 2>/dev/null || true
 TREE=$(git write-tree)
 TMP_COMMIT=$(git commit-tree "$TREE" -p HEAD -m "repro test (throwaway)")
 git branch -f "$TMP_BRANCH" "$TMP_COMMIT"

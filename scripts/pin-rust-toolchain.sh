@@ -9,18 +9,19 @@
 # cargokit's config only allows the channel enum (stable/beta/nightly), not an exact
 # version — so we patch the default in the package instead.
 #
-# Two cargokit copies need patching, in different places:
-#   - tor_ffi_plugin: a pub.dev/git dependency -> its cargokit lives in PUB_CACHE.
-#   - openalias_ffi:  an in-repo PATH plugin   -> its cargokit lives in plugins/.
+# Both Rust plugins — tor_ffi_plugin and wallet_openalias — are git/pub
+# dependencies now, so their cargokit copies live in PUB_CACHE. We still scan the
+# in-repo plugins/ dir for any local path plugin, though there are none today.
 #
-# Run AFTER `flutter pub get` (so the tor package is in PUB_CACHE) and BEFORE the
+# Run AFTER `flutter pub get` (so both packages are in PUB_CACHE) and BEFORE the
 # flutter build. Idempotent; safe if the string is already pinned.
 #
 set -euo pipefail
 
-TOOLCHAIN="${1:-1.96.1}"
 CACHE="${PUB_CACHE:-$HOME/.pub-cache}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Single source of truth: rust-toolchain.toml (arg still overrides, for ad-hoc use).
+TOOLCHAIN="${1:-$(sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$ROOT/rust-toolchain.toml" | head -1)}"
 
 n=0
 while IFS= read -r f; do

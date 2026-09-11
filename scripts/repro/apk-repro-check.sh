@@ -85,7 +85,8 @@ docker run --rm \
       cd "$app"
       test -f "android/app/src/main/jniLibs/$ABI/libmonero_libwallet2_api_c.so"
       : "${SOURCE_DATE_EPOCH:=1700000000}"   # from host -e (.git not copied)
-      rustup default 1.83.0 >/dev/null 2>&1 || true
+      RUST_TOOLCHAIN=$(sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' rust-toolchain.toml | head -1)
+      rustup default "$RUST_TOOLCHAIN" >/dev/null 2>&1 || true
       rustup target add "$RUST" >/dev/null 2>&1 || true
       export PUB_CACHE="$app/.pub-cache"
       echo "==> [$app] flutter pub get..."

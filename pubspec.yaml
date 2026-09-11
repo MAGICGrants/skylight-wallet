@@ -49,7 +49,7 @@ dependencies:
   tor_ffi_plugin:
     git:
       url: https://github.com/cypherstack/tor
-      ref: main
+      ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: 1b073ce7c6f74944474d26bd0f1dc4c9d89253ac
+      ref: 4595fb7bdabb5a99bd4ef29fc6d9f169cb600a64
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
@@ -65,39 +65,43 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_openalias
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: cf9c5946905ad37f4043e7c06e421b1f4c6fa4e4
+      ref: 79498ef294fc54271727f96b881beb204f2b09cc
       path: packages/wallet_ui
 
+  bip39:
+    git:
+      url: https://github.com/cypherstack/stack-bip39
+      ref: 0cd6d54e2860bea68fc50c801cb9db2a760192fb
   cupertino_icons: 1.0.8
   path: 1.9.1
   provider: 6.1.5+1
@@ -124,7 +128,6 @@ dependencies:
   flutter_launcher_icons: 0.14.4
   gpt_markdown: 1.1.4
   polyseed: 0.0.7
-  bip39: 1.0.6
   bip32: 2.0.0
   package_info_plus: 8.3.0
   screen_protector: 1.5.2

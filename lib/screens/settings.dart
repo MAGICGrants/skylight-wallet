@@ -114,9 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Enabling app-lock is an explicit opt-in, so decline and error both report.
       if (result != BiometricAuthResult.authenticated) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
+          showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
         }
         return;
       }
@@ -145,9 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (logFiles.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.settingsExportLogsError)));
+          showBrandToast(context, i18n.settingsExportLogsError);
         }
         return;
       }
@@ -165,9 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.settingsExportLogsError)));
+        showBrandToast(context, i18n.settingsExportLogsError);
       }
     }
   }

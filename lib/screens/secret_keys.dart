@@ -54,11 +54,11 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
     });
   }
 
-  void _copy(String value, {required bool sensitive}) {
+  void _copy(String value) {
     if (value.isEmpty) return;
     SecureClipboard.copy(value);
     final i18n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.copiedToClipboard)));
+    showCopyToast(context, i18n.copiedToClipboard);
   }
 
   @override
@@ -73,8 +73,8 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
       );
     }
 
-    // Seeds and the secret spend key are blurred until revealed; the public keys
-    // aren't sensitive.
+    // Seeds and the secret spend key are blurred until revealed; the public
+    // keys are shown outright.
     return KeyRevealView(
       title: i18n.secretKeysTitle,
       description: i18n.secretKeysDescription,
@@ -105,16 +105,8 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
           value: data.secretSpendKey,
           revealable: true,
         ),
-        KeyRevealField(
-          label: i18n.secretKeysPublicSpendKey,
-          value: data.publicSpendKey,
-          sensitive: false,
-        ),
-        KeyRevealField(
-          label: i18n.secretKeysPublicViewKey,
-          value: data.publicViewKey,
-          sensitive: false,
-        ),
+        KeyRevealField(label: i18n.secretKeysPublicSpendKey, value: data.publicSpendKey),
+        KeyRevealField(label: i18n.secretKeysPublicViewKey, value: data.publicViewKey),
       ],
     );
   }

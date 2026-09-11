@@ -45,9 +45,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
       if (mounted) Navigator.pushReplacementNamed(context, '/wallet_home');
     } else if (result == BiometricAuthResult.error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.unlockUnableToAuthError)));
+        showBrandToast(context, i18n.unlockUnableToAuthError);
       }
     }
   }

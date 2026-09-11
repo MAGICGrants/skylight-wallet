@@ -138,9 +138,7 @@ class _SendScreenState extends State<SendScreen> {
     if (uri != null && uri.scheme == 'monero') {
       if (!wallet.isAddressValid(uri.path)) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+          showBrandToast(context, i18n.sendInvalidAddressError);
         }
         return;
       }
@@ -154,9 +152,7 @@ class _SendScreenState extends State<SendScreen> {
       address = result;
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+        showBrandToast(context, i18n.sendInvalidAddressError);
       }
       return;
     }
@@ -371,9 +367,7 @@ class _SendScreenState extends State<SendScreen> {
           _isLoadingFees = false;
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.sendFailedToGetFeesError)));
+        showBrandToast(context, i18n.sendFailedToGetFeesError);
       }
     }
   }
@@ -459,7 +453,7 @@ class _SendScreenState extends State<SendScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+          showBrandToast(context, i18n.unknownError);
         }
       }
     }
@@ -536,13 +530,13 @@ class _SendScreenState extends State<SendScreen> {
         errorMsg = 'Failed to send transaction. You might have insufficient unlocked balance.';
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+        showBrandToast(context, errorMsg);
       }
       rethrow;
     } catch (error) {
       log(LogLevel.error, error.toString());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+        showBrandToast(context, i18n.unknownError);
       }
       rethrow;
     }

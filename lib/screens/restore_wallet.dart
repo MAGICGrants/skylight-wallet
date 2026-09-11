@@ -128,14 +128,14 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
         final message = errorMsg == 'Invalid mnemonic.'
             ? i18n.restoreWalletInvalidMnemonic
             : i18n.unknownError;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        showBrandToast(context, message);
       }
       return;
     } catch (error) {
       log(LogLevel.error, error.toString());
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+        showBrandToast(context, i18n.unknownError);
       }
       return;
     }

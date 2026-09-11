@@ -64,7 +64,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
       } else {
         log(LogLevel.error, error.toString());
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+      showBrandToast(context, errorMsg);
     }
   }
 

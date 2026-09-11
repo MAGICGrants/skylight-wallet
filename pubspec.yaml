@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: 4595fb7bdabb5a99bd4ef29fc6d9f169cb600a64
+      ref: 075265e24bbf3628d6ce0407c7d1bb7945aa48e7
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
@@ -65,37 +65,37 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_openalias
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 79498ef294fc54271727f96b881beb204f2b09cc
+      ref: 90e22b953f2f7aafb3d022f9bc2113efd4f00d79
       path: packages/wallet_ui
 
   bip39:

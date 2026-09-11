@@ -240,7 +240,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Connect to a Monero light-wallet server (LWS) or your own full node.'**
+  /// **'Connect to a Monero light-wallet server (LWS) or your own full node. Only select a server you trust. Even if you use Tor, this server can learn information about you. With an LWS, your private view key and primary address will be shared with this server.'**
   String get lwsSetupDescription;
 
   /// No description provided for @lwsSetupAddressHint.
@@ -480,7 +480,7 @@ abstract class AppLocalizations {
   /// No description provided for @fiatApiSetupDescription.
   ///
   /// In en, this message translates to:
-  /// **'Optional reference price for your XMR balance.'**
+  /// **'Skylight Wallet can automatically fetch the latest Monero price. Your balances are not sent to the server. How do you want to fetch this price data?'**
   String get fiatApiSetupDescription;
 
   /// No description provided for @fiatApiSettingsModeLabel.
@@ -534,13 +534,13 @@ abstract class AppLocalizations {
   /// No description provided for @createWalletTitle.
   ///
   /// In en, this message translates to:
-  /// **'Create Wallet'**
+  /// **'Wallet Setup'**
   String get createWalletTitle;
 
   /// No description provided for @createWalletDescription.
   ///
   /// In en, this message translates to:
-  /// **'Do you already have a Monero wallet seed, or do you need to make a new one?'**
+  /// **'Would you like to create a new wallet or restore an existing wallet?'**
   String get createWalletDescription;
 
   /// No description provided for @createWalletRestoreExistingButton.
@@ -624,7 +624,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedSubtitleCovered.
   ///
   /// In en, this message translates to:
-  /// **'These words, in this order, are your wallet. Write them on paper — not in a photo or a notes app.'**
+  /// **'These words, in this order, are your wallet. Write them down and keep them in a physical safe. If you lose these words or if you share them with anyone else, you will lose your money permanently. Careful planning now avoids a potential disaster later.'**
   String get generateSeedSubtitleCovered;
 
   /// No description provided for @generateSeedSubtitleRevealed.
@@ -738,13 +738,13 @@ abstract class AppLocalizations {
   /// No description provided for @restoreScanTitle.
   ///
   /// In en, this message translates to:
-  /// **'When did this seed first hold funds?'**
+  /// **'When did this wallet first receive funds?'**
   String get restoreScanTitle;
 
   /// No description provided for @restoreScanDescription.
   ///
   /// In en, this message translates to:
-  /// **'Skylight Wallet only scans forward from this point. Guess early — a wrong-but-earlier answer costs sync time, a wrong-but-later one hides transactions.'**
+  /// **'Skylight Wallet can skip irrelevant history to save you time. Either pick the first month that you used the wallet or select I\'m not sure to check everything. It\'s okay to pick a month that is too early, but it\'s bad to pick a month that is too late.'**
   String get restoreScanDescription;
 
   /// No description provided for @restoreScanPickMonth.
@@ -1146,7 +1146,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifyNewTxsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Shows a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.'**
+  /// **'Show a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.'**
   String get settingsNotifyNewTxsDescription;
 
   /// No description provided for @settingsNotifyNewTxsDescriptionIos.
@@ -1182,13 +1182,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsVerboseLoggingDescription.
   ///
   /// In en, this message translates to:
-  /// **'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.'**
+  /// **'Log wallet operations to a text file in the app\'s data folder for debugging purposes.'**
   String get settingsVerboseLoggingDescription;
 
   /// No description provided for @settingsVerboseLoggingDescriptionIos.
   ///
   /// In en, this message translates to:
-  /// **'Logs wallet operations and allows the logs to be exported to a text file.'**
+  /// **'Log wallet operations and allow the logs to be exported to a text file.'**
   String get settingsVerboseLoggingDescriptionIos;
 
   /// No description provided for @settingsExportLogsLabel.
@@ -1254,7 +1254,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsThemeSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Changes take effect straight away. Amount colours stay the same in both.'**
+  /// **'Pick a theme to match your style.'**
   String get settingsThemeSheetSubtitle;
 
   /// No description provided for @settingsLanguageLabel.
@@ -1266,7 +1266,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLanguageSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Amounts and dates follow the language you pick.'**
+  /// **'Pick your language and localization.'**
   String get settingsLanguageSheetSubtitle;
 
   /// No description provided for @settingsFiatApiSettingsLabel.
@@ -1392,7 +1392,7 @@ abstract class AppLocalizations {
   /// No description provided for @txDetailsChangeRecipientLabel.
   ///
   /// In en, this message translates to:
-  /// **'Change'**
+  /// **'Change Recipient'**
   String get txDetailsChangeRecipientLabel;
 
   /// No description provided for @unconfirmed.
@@ -1452,7 +1452,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsKeysWarning.
   ///
   /// In en, this message translates to:
-  /// **'Screenshots are blocked on this screen. The view key lets a server see everything you receive — share it only with a server you run or trust.'**
+  /// **'Screenshots are blocked on this screen. Make sure nobody is looking over your shoulder.'**
   String get lwsKeysWarning;
 
   /// No description provided for @secretKeysTitle.
@@ -1830,13 +1830,13 @@ abstract class AppLocalizations {
   /// No description provided for @torChoiceTitle.
   ///
   /// In en, this message translates to:
-  /// **'How should Skylight Wallet reach the network?'**
+  /// **'Tor Connection Setup'**
   String get torChoiceTitle;
 
   /// No description provided for @torChoiceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing connects until you choose. Tor hides your IP address from the servers Skylight Wallet talks to.'**
+  /// **'Tor can hide your IP address from servers you connect to. This does not reduce the information that is stored on public blockchains. In general, how do you want Skylight Wallet to handle Tor connections?'**
   String get torChoiceSubtitle;
 
   /// No description provided for @torSettingsSocksPortLabel.

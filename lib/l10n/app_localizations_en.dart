@@ -84,7 +84,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lwsSetupDescription =>
-      'Connect to a Monero light-wallet server (LWS) or your own full node.';
+      'Connect to a Monero light-wallet server (LWS) or your own full node. Only select a server you trust. Even if you use Tor, this server can learn information about you. With an LWS, your private view key and primary address will be shared with this server.';
 
   @override
   String get lwsSetupAddressHint => 'lws.example.com:18090';
@@ -212,7 +212,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiatApiSetupTitle => 'Price Display Setup';
 
   @override
-  String get fiatApiSetupDescription => 'Optional reference price for your XMR balance.';
+  String get fiatApiSetupDescription =>
+      'Skylight Wallet can automatically fetch the latest Monero price. Your balances are not sent to the server. How do you want to fetch this price data?';
 
   @override
   String get fiatApiSettingsModeLabel => 'Mode';
@@ -239,11 +240,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiatApiSettingsDisplayCurrencyLabel => 'Display Currency';
 
   @override
-  String get createWalletTitle => 'Create Wallet';
+  String get createWalletTitle => 'Wallet Setup';
 
   @override
   String get createWalletDescription =>
-      'Do you already have a Monero wallet seed, or do you need to make a new one?';
+      'Would you like to create a new wallet or restore an existing wallet?';
 
   @override
   String get createWalletRestoreExistingButton => 'Restore Existing';
@@ -288,7 +289,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generateSeedSubtitleCovered =>
-      'These words, in this order, are your wallet. Write them on paper — not in a photo or a notes app.';
+      'These words, in this order, are your wallet. Write them down and keep them in a physical safe. If you lose these words or if you share them with anyone else, you will lose your money permanently. Careful planning now avoids a potential disaster later.';
 
   @override
   String get generateSeedSubtitleRevealed => 'Securely save these. Do not share them.';
@@ -349,11 +350,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreWalletNotSet => 'Not set';
 
   @override
-  String get restoreScanTitle => 'When did this seed first hold funds?';
+  String get restoreScanTitle => 'When did this wallet first receive funds?';
 
   @override
   String get restoreScanDescription =>
-      'Skylight Wallet only scans forward from this point. Guess early — a wrong-but-earlier answer costs sync time, a wrong-but-later one hides transactions.';
+      'Skylight Wallet can skip irrelevant history to save you time. Either pick the first month that you used the wallet or select I\'m not sure to check everything. It\'s okay to pick a month that is too early, but it\'s bad to pick a month that is too late.';
 
   @override
   String get restoreScanPickMonth => 'Pick a month';
@@ -569,7 +570,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNotifyNewTxsDescription =>
-      'Shows a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.';
+      'Show a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.';
 
   @override
   String get settingsNotifyNewTxsDescriptionIos =>
@@ -590,11 +591,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsVerboseLoggingDescription =>
-      'Logs wallet operations to a text file in the app\'s data folder for debugging purposes.';
+      'Log wallet operations to a text file in the app\'s data folder for debugging purposes.';
 
   @override
   String get settingsVerboseLoggingDescriptionIos =>
-      'Logs wallet operations and allows the logs to be exported to a text file.';
+      'Log wallet operations and allow the logs to be exported to a text file.';
 
   @override
   String get settingsExportLogsLabel => 'Export Logs';
@@ -627,14 +628,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsThemeSystemDesc => 'Follows your phone';
 
   @override
-  String get settingsThemeSheetSubtitle =>
-      'Changes take effect straight away. Amount colours stay the same in both.';
+  String get settingsThemeSheetSubtitle => 'Pick a theme to match your style.';
 
   @override
   String get settingsLanguageLabel => 'Language';
 
   @override
-  String get settingsLanguageSheetSubtitle => 'Amounts and dates follow the language you pick.';
+  String get settingsLanguageSheetSubtitle => 'Pick your language and localization.';
 
   @override
   String get settingsFiatApiSettingsLabel => 'Price Display Settings';
@@ -700,7 +700,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get txDetailsReceivedAtLabel => 'Received At';
 
   @override
-  String get txDetailsChangeRecipientLabel => 'Change';
+  String get txDetailsChangeRecipientLabel => 'Change Recipient';
 
   @override
   String get unconfirmed => 'Unconfirmed';
@@ -732,7 +732,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lwsKeysWarning =>
-      'Screenshots are blocked on this screen. The view key lets a server see everything you receive — share it only with a server you run or trust.';
+      'Screenshots are blocked on this screen. Make sure nobody is looking over your shoulder.';
 
   @override
   String get secretKeysTitle => 'Secret Restore Keys';
@@ -929,11 +929,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torChoiceTestFailed => 'Test failed';
 
   @override
-  String get torChoiceTitle => 'How should Skylight Wallet reach the network?';
+  String get torChoiceTitle => 'Tor Connection Setup';
 
   @override
   String get torChoiceSubtitle =>
-      'Nothing connects until you choose. Tor hides your IP address from the servers Skylight Wallet talks to.';
+      'Tor can hide your IP address from servers you connect to. This does not reduce the information that is stored on public blockchains. In general, how do you want Skylight Wallet to handle Tor connections?';
 
   @override
   String get torSettingsSocksPortLabel => 'SOCKS Port';

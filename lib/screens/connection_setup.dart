@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class ConnectionSetupScreen extends StatelessWidget {
   const ConnectionSetupScreen({super.key});
@@ -15,42 +16,36 @@ class ConnectionSetupScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
-      body: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
+      backgroundColor: BrandColors.paper,
+      body: SafeArea(
+        child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 20,
-                    children: [
-                      Column(
-                        spacing: 10,
-                        children: [
-                          Text(
-                            i18n.lwsSetupTitle,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          Text(
-                            i18n.lwsSetupDescription,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ],
-                      ),
-                      ConnectionSettingsForm(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: BrandSpacing.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: BrandSpacing.sm),
+                  BrandScreenHeader(
+                    onBack: () => Navigator.of(context).pop(),
+                    center: const StepDots(count: 5, index: 1),
+                  ),
+                  const SizedBox(height: BrandSpacing.lg),
+                  Text(i18n.lwsSetupTitle, style: BrandText.title),
+                  const SizedBox(height: BrandSpacing.sm),
+                  Text(i18n.lwsSetupDescription, style: BrandText.bodyMuted),
+                  const SizedBox(height: BrandSpacing.xl),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: ConnectionSettingsForm(
                         saveButtonLabel: i18n.lwsSetupContinueButton,
                         onSaved: onSaved,
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: BrandSpacing.sm),
+                ],
               ),
             ),
           ),

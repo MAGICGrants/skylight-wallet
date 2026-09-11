@@ -4,6 +4,8 @@ import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class FiatApiSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
@@ -27,7 +29,11 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
   }
 
   Future<void> _load() async {
-    final mode = await FiatRateModel.loadFiatApiMode();
+    var mode = await FiatRateModel.loadFiatApiMode();
+    // Tor-only fiat is unreachable with global Tor off; fall back to clearnet.
+    if (mode == FiatApiMode.torOnly && _globalTorDisabled) {
+      mode = FiatApiMode.clearnet;
+    }
     final cur =
         await SharedPreferencesService.get<String>(SharedPreferencesKeys.fiatCurrency) ?? 'USD';
     if (mounted) {
@@ -39,8 +45,13 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
     }
   }
 
+  bool get _globalTorDisabled => TorSettingsService.sharedInstance.torMode == TorMode.disabled;
+
   Future<void> _save() async {
     await FiatRateModel.saveFiatApiMode(_mode);
+    // A manual choice takes over from the Tor auto-disable, so re-enabling Tor
+    // no longer overrides it.
+    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatAutoDisabledByTor);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _currency);
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
     await widget.onSaved();
@@ -48,58 +59,35 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded) {
-      return SizedBox(
-        width: 280,
-        height: 120,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
     final i18n = AppLocalizations.of(context)!;
+    if (!_loaded) {
+      return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 12,
       children: [
-        DropdownButtonFormField<FiatApiMode>(
-          decoration: InputDecoration(
-            labelText: i18n.fiatApiSettingsModeLabel,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          value: _mode,
-          items: [
-            DropdownMenuItem(value: FiatApiMode.torOnly, child: Text(i18n.fiatApiSettingsModeTorOnly)),
-            DropdownMenuItem(
-              value: FiatApiMode.clearnet,
-              child: Text(i18n.fiatApiSettingsModeClearnet),
-            ),
-            DropdownMenuItem(
-              value: FiatApiMode.disabled,
-              child: Text(i18n.fiatApiSettingsModeDisabled),
-            ),
+        FiatModesView(
+          modeLabel: i18n.fiatApiSettingsModeLabel,
+          torOnly: i18n.fiatApiSettingsModeTorOnly,
+          torOnlyDesc: i18n.fiatModeTorOnlyDesc,
+          clearnet: i18n.fiatApiSettingsModeClearnet,
+          clearnetDesc: i18n.fiatModeClearnetDesc,
+          disabled: i18n.fiatApiSettingsModeDisabled,
+          disabledDesc: i18n.fiatModeDisabledDesc,
+          offerTorOnly: !_globalTorDisabled,
+          modeIndex: _mode.index,
+          onModeChanged: (i) => setState(() => _mode = FiatApiMode.values[i]),
+          currencyLabel: i18n.fiatApiSettingsDisplayCurrencyLabel,
+          currencies: [
+            for (final code in supportedFiatCurrencies)
+              FiatCurrencyOption(code: code, symbol: currencySymbols[code] ?? ''),
           ],
-          onChanged: (v) {
-            if (v != null) setState(() => _mode = v);
-          },
+          currency: _currency,
+          onCurrencyChanged: (c) => setState(() => _currency = c),
         ),
-        if (_mode != FiatApiMode.disabled)
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              labelText: i18n.fiatApiSettingsDisplayCurrencyLabel,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            value: _currency,
-            items: supportedFiatCurrencies
-                .map((c) => DropdownMenuItem<String>(value: c, child: Text(c)))
-                .toList(),
-            onChanged: (v) {
-              if (v != null) setState(() => _currency = v);
-            },
-          ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton(onPressed: _save, child: Text(widget.saveButtonLabel)),
-        ),
+        const SizedBox(height: 18),
+        BrandButton(label: widget.saveButtonLabel, onPressed: _save),
       ],
     );
   }

@@ -46,3 +46,4 @@ app.*.map.json
 
 # Local reproducibility test outputs (.so builds + logs)
 /repro-out/
+pubspec_overrides.yaml

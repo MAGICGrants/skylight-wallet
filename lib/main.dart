@@ -10,7 +10,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
-import 'package:skylight_wallet/screens/confirm_send.dart';
 import 'package:skylight_wallet/screens/lws_details.dart';
 import 'package:skylight_wallet/screens/lws_keys.dart';
 import 'package:skylight_wallet/screens/scan_qr.dart';
@@ -20,7 +19,7 @@ import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
@@ -29,10 +28,8 @@ import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/screens/restore_wallet.dart';
-import 'package:skylight_wallet/screens/restore_warning.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
-import 'package:skylight_wallet/screens/tor_info.dart';
 import 'package:skylight_wallet/screens/tor_settings.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
@@ -40,11 +37,14 @@ import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
+import 'package:skylight_wallet/theme/palette.dart';
+import 'package:wallet_ui/wallet_ui.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/cacert.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
 final isMobile = Platform.isAndroid || Platform.isIOS;
@@ -54,6 +54,9 @@ void main() async {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      installWalletCore();
+      BrandColors.install(skylightPalette);
 
       // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
@@ -103,22 +106,6 @@ void main() async {
   );
 }
 
-Future<bool> loadExistingWalletIfExists(WalletModel wallet) async {
-  if (await wallet.hasExistingWallet()) {
-    if (isMobile) {
-      // Load the persisted connection first so the wallet opens the file for
-      // the correct mode (LWS vs node).
-      await wallet.loadPersistedConnection();
-      await wallet.openExisting();
-      wallet.load();
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -126,7 +113,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => WalletModel()),
+        walletManagerProvider(),
         ChangeNotifierProvider(create: (context) => LanguageModel()),
         ChangeNotifierProvider(create: (context) => ThemeModel()),
         ChangeNotifierProvider(create: (context) => FiatRateModel()),
@@ -144,7 +131,7 @@ class _AppRoot extends StatefulWidget {
   State<_AppRoot> createState() => _AppRootState();
 }
 
-class _AppRootState extends State<_AppRoot> {
+class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   // Started once, on the first build. Building it inside the builder would
   // re-run it on every theme/language change, opening the wallet again — a
   // second wallet on the same file, with its own sync loop, while the first is
@@ -152,13 +139,100 @@ class _AppRootState extends State<_AppRoot> {
   Future<List<Object>>? _startup;
   // Services that must fire once the startup work is done, not on every build.
   var _startedServices = false;
+  // Desktop-only foreground announce: listens for tx-history growth (see below).
+  AppWallet? _announceWallet;
+  int _lastAnnouncedTxCount = 0;
+
+  // Brightness-flip repaint: screens read BrandColors globally (not via
+  // Theme.of), so a theme change doesn't dirty cached routes on its own. On an
+  // actual flip we force an in-place rebuild of the navigator subtree.
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  Brightness? _lastBrightness;
+
+  static void _markSubtreeDirty(Element element) {
+    element.markNeedsBuild();
+    element.visitChildren(_markSubtreeDirty);
+  }
+
+  // The bottom-nav destinations. Tapping a nav tab must not animate, so these
+  // get a zero-duration route in _onGenerateRoute.
+  static const _noTransitionRoutes = {'/wallet_home', '/address_book', '/settings'};
+
+  Map<String, WidgetBuilder> get _routes => {
+    '/welcome': (context) => WelcomeScreen(),
+    '/tor_settings': (context) => TorSettingsScreen(),
+    '/connection_setup': (context) => ConnectionSetupScreen(),
+    '/fiat_api_setup': (context) => FiatApiSetupScreen(),
+    '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
+    '/create_wallet': (context) => CreateWalletScreen(),
+    '/generate_seed': (context) => GenerateSeedScreen(),
+    '/lws_details': (context) => LwsDetailsScreen(),
+    '/restore_wallet': (context) => RestoreWalletScreen(),
+    '/unlock': (context) => UnlockScreen(),
+    '/wallet_home': (context) => WalletHomeScreen(),
+    '/settings': (context) => SettingsScreen(),
+    '/lws_keys': (context) => LwsKeysScreen(),
+    '/secret_keys': (context) => SecretKeysScreen(),
+    '/send': (context) => SendScreen(),
+    '/scan_qr': (context) => ScanQrScreen(),
+    '/receive': (context) => ReceiveScreen(),
+    '/address_book': (context) => AddressBookScreen(),
+    '/terms_of_service': (context) => TermsOfService(),
+    '/privacy_policy': (context) => PrivacyPolicy(),
+  };
+
+  Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    final builder = _routes[settings.name];
+    if (builder == null) return null;
+    if (_noTransitionRoutes.contains(settings.name)) {
+      return _NoTransitionPageRoute(builder: builder, settings: settings);
+    }
+    return MaterialPageRoute(builder: builder, settings: settings);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _announceWallet?.removeListener(_announceNewTxsOnGrowth);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Mobile only: leaving the app marks everything on screen as seen so a
+    // background isolate won't re-notify a tx the user just watched arrive.
+    // Desktop has no background isolate — and doing this would pre-empt its
+    // foreground announce. Marks only synced history (hash-based), so an
+    // unsynced receipt is still announced later.
+    if (state == AppLifecycleState.paused && isMobile) {
+      unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
+    }
+  }
+
+  // Desktop has no background isolate to announce incoming txs, so the
+  // foreground announces when the wallet's history grows. notifyNewIncomingTxs
+  // is the decider (hash-based, net-receipt only, respects the notifications
+  // toggle); the count is a cheap gate so unrelated notifications (connectivity,
+  // balance) don't hit the keystore.
+  void _announceNewTxsOnGrowth() {
+    final wallet = _announceWallet;
+    if (wallet == null) return;
+    final count = wallet.txHistory.length;
+    if (count <= _lastAnnouncedTxCount) return;
+    _lastAnnouncedTxCount = count;
+    unawaited(wallet.notifyNewIncomingTxs());
+  }
 
   Future<List<Object>> _runStartup() {
-    final wallet = Provider.of<WalletModel>(context, listen: false);
-
-    // We need to check for wallet existence to determine the correct initial route,
-    // but we'll do this quickly without loading the wallet to avoid startup delay.
-    return Future.wait([SharedPreferences.getInstance(), loadExistingWalletIfExists(wallet)]);
+    // Wallet existence drives the initial route; done quickly without a full load.
+    final walletExists = startupWalletManager(context);
+    return Future.wait([SharedPreferences.getInstance(), walletExists]);
   }
 
   @override
@@ -192,54 +266,51 @@ class _AppRootState extends State<_AppRoot> {
                 TorSettingsService.sharedInstance.loadSettings();
                 TorService.sharedInstance.start();
 
+                // Attach the manager once so the (multicoin) fiat model knows to
+                // fetch XMR; every startService() afterwards can stay argless.
+                attachFiatWalletManager(context);
                 if (walletExists) {
                   fiatRate.startService();
+                }
+
+                // Desktop has no background isolate to announce incoming txs, so
+                // the foreground announces on tx-history growth. Mobile announces
+                // from its background isolates.
+                if (isDesktop) {
+                  _announceWallet = appWalletOf(context, listen: false)
+                    ..addListener(_announceNewTxsOnGrowth);
                 }
               }
 
               return MaterialApp(
+                navigatorKey: _navigatorKey,
                 title: 'Skylight Monero Wallet',
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
-                theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-                darkTheme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: Colors.blue,
-                    brightness: Brightness.dark,
-                  ),
-                ),
+                theme: brandLightTheme(),
+                darkTheme: brandDarkTheme(),
                 themeMode: theme == 'dark'
                     ? ThemeMode.dark
                     : theme == 'light'
                     ? ThemeMode.light
                     : ThemeMode.system,
+                // Pin brand tokens to the resolved brightness before any screen
+                // builds; rebuild the navigator subtree in place on a real flip.
+                builder: (context, child) {
+                  final brightness = Theme.of(context).brightness;
+                  BrandColors.setBrightness(brightness);
+                  if (_lastBrightness != null && _lastBrightness != brightness) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      final navContext = _navigatorKey.currentContext;
+                      if (navContext is Element) navContext.visitChildElements(_markSubtreeDirty);
+                    });
+                  }
+                  _lastBrightness = brightness;
+                  return child ?? const SizedBox.shrink();
+                },
                 initialRoute: initialRoute,
                 locale: Locale.fromSubtags(languageCode: languageProvider.language),
-                routes: {
-                  '/welcome': (context) => WelcomeScreen(),
-                  '/tor_info': (context) => TorInfoScreen(),
-                  '/tor_settings': (context) => TorSettingsScreen(),
-                  '/connection_setup': (context) => ConnectionSetupScreen(),
-                  '/fiat_api_setup': (context) => FiatApiSetupScreen(),
-                  '/create_wallet_password': (context) => CreateWalletPasswordScreen(),
-                  '/create_wallet': (context) => CreateWalletScreen(),
-                  '/generate_seed': (context) => GenerateSeedScreen(),
-                  '/lws_details': (context) => LwsDetailsScreen(),
-                  '/restore_warning': (context) => RestoreWarningScreen(),
-                  '/restore_wallet': (context) => RestoreWalletScreen(),
-                  '/unlock': (context) => UnlockScreen(),
-                  '/wallet_home': (context) => WalletHomeScreen(),
-                  '/settings': (context) => SettingsScreen(),
-                  '/lws_keys': (context) => LwsKeysScreen(),
-                  '/secret_keys': (context) => SecretKeysScreen(),
-                  '/send': (context) => SendScreen(),
-                  '/confirm_send': (context) => ConfirmSendScreen(),
-                  '/scan_qr': (context) => ScanQrScreen(),
-                  '/receive': (context) => ReceiveScreen(),
-                  '/address_book': (context) => AddressBookScreen(),
-                  '/terms_of_service': (context) => TermsOfService(),
-                  '/privacy_policy': (context) => PrivacyPolicy(),
-                },
+                onGenerateRoute: _onGenerateRoute,
               );
             }
 
@@ -249,19 +320,31 @@ class _AppRootState extends State<_AppRoot> {
 
             return MaterialApp(
               title: 'Skylight Monero Wallet',
-              theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-              darkTheme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: Colors.blue,
-                  brightness: Brightness.dark,
-                ),
-              ),
+              theme: brandLightTheme(),
+              darkTheme: brandDarkTheme(),
               themeMode: ThemeMode.system,
-              builder: (context, child) => Scaffold(),
+              builder: (context, child) {
+                BrandColors.setBrightness(Theme.of(context).brightness);
+                return Scaffold(backgroundColor: BrandColors.paper);
+              },
             );
           },
         );
       },
     );
   }
+}
+
+/// A [MaterialPageRoute] whose own push/pop is instant — used for the bottom-nav
+/// destinations so tapping a tab doesn't animate. Subclassing (rather than a bare
+/// PageRouteBuilder) keeps Material's transition machinery, so the *secondary*
+/// transition still plays when another screen is pushed over a nav screen.
+class _NoTransitionPageRoute<T> extends MaterialPageRoute<T> {
+  _NoTransitionPageRoute({required super.builder, super.settings});
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
 }

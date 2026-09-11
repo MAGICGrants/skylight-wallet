@@ -15,6 +15,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get done => 'Concluir';
+
+  @override
   String get close => 'Fechar';
 
   @override
@@ -49,10 +52,22 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get welcomeDescription =>
-      'A Skylight é uma das mais simples carteiras de Monero. Nós o ajudaremos a configurar uma carteira e se conectar à um servidor.';
+      'A Skylight Wallet é uma das mais simples carteiras de Monero. Nós o ajudaremos a configurar uma carteira e se conectar à um servidor.';
 
   @override
   String get welcomeGetStarted => 'Começar';
+
+  @override
+  String get welcomeAgreePrefix => 'Ao continuar, você concorda com os ';
+
+  @override
+  String get welcomeTermsLink => 'Termos de Serviço';
+
+  @override
+  String get welcomeAgreeMiddle => ' e a ';
+
+  @override
+  String get welcomePrivacyLink => 'Política de Privacidade';
 
   @override
   String get restoreWarningTitle => 'Aviso de Restauração';
@@ -72,7 +87,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo.';
 
   @override
-  String get lwsSetupAddressHint => 'ex: 192.168.1.1:18090 ou exemplo.com:18090';
+  String get lwsSetupAddressHint => 'lws.example.com:18090';
 
   @override
   String get lwsSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
@@ -112,6 +127,37 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionProtocolHttp => 'Removendo protocolo. Usando HTTP para endereços locais.';
 
   @override
+  String get connectionTestStop => 'Parar';
+
+  @override
+  String get connectionTestingTitle => 'Testando conexão';
+
+  @override
+  String get connectionTestingDetail => 'Verificando se o servidor responde.';
+
+  @override
+  String get connectionTestAgain => 'Testar novamente';
+
+  @override
+  String get connectionResultWorksTitle => 'A conexão funciona';
+
+  @override
+  String get connectionResultFailedTitle => 'Não foi possível acessar este servidor';
+
+  @override
+  String get connectionResultFailedDetail =>
+      'Nada respondeu. Verifique o endereço e a porta, e se o servidor aceita sua conexão.';
+
+  @override
+  String get connectionReachedOverTor => 'Acessado via Tor';
+
+  @override
+  String get connectionReachedViaProxy => 'Acessado pelo seu proxy';
+
+  @override
+  String get connectionReachedDirect => 'Acessado diretamente';
+
+  @override
   String get connectionIndicatorHttps => 'HTTPS';
 
   @override
@@ -127,6 +173,21 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsConnectionSettingsLabel => 'Configurações de conexão';
+
+  @override
+  String get settingsConnectionServerLws => 'LWS';
+
+  @override
+  String get settingsConnectionServerNode => 'Nó';
+
+  @override
+  String get settingsConnectionOverTor => 'via Tor';
+
+  @override
+  String get settingsConnectionOverClearnet => 'via Clearnet';
+
+  @override
+  String get settingsConnectionInLocalNetwork => 'na rede local';
 
   @override
   String get settingsBackgroundSyncLabel => 'Sincronização em segundo plano';
@@ -148,7 +209,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get fiatApiSetupTitle => 'Exibição de Saldo em Fiat';
+  String get fiatApiSetupTitle => 'Configuração de Exibição de Preços';
 
   @override
   String get fiatApiSetupDescription => 'Preço de referência opcional para seu saldo em XMR.';
@@ -166,6 +227,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fiatApiSettingsModeDisabled => 'Desativado';
 
   @override
+  String get fiatModeTorOnlyDesc => 'Preços buscados pelo Tor · recomendado';
+
+  @override
+  String get fiatModeClearnetDesc => 'Não privado, o servidor de preços vê seu endereço IP';
+
+  @override
+  String get fiatModeDisabledDesc => 'Sem preços; saldos exibidos apenas em cripto';
+
+  @override
   String get fiatApiSettingsDisplayCurrencyLabel => 'Moeda de Exibição';
 
   @override
@@ -179,14 +249,60 @@ class AppLocalizationsPt extends AppLocalizations {
   String get createWalletRestoreExistingButton => 'Restaurar Existente';
 
   @override
+  String get createWalletRestoreExistingDesc => 'Insira uma semente Monero existente';
+
+  @override
   String get createWalletCreateNewButton => 'Criar Nova';
 
   @override
-  String get generateSeedTitle => 'Nova Carteira';
+  String get createWalletCreateNewDesc => 'A Skylight Wallet gera uma nova polyseed';
+
+  @override
+  String get createWalletPasswordTitle => 'Criar Senha da Carteira';
+
+  @override
+  String get createWalletPasswordDescription =>
+      'Crie uma senha para proteger sua carteira. Esta senha será necessária para desbloquear sua carteira.';
+
+  @override
+  String get createWalletPasswordHint => 'Digite sua senha';
+
+  @override
+  String get createWalletConfirmPasswordHint => 'Confirme sua senha';
+
+  @override
+  String get passwordTooShortError => 'A senha deve ter pelo menos 8 caracteres.';
+
+  @override
+  String get passwordsDoNotMatchError => 'As senhas não coincidem.';
+
+  @override
+  String get generateSeedTitle => 'Anote-as, em ordem';
+
+  @override
+  String get generateSeedTitleCovered => 'Frase Seed';
 
   @override
   String get generateSeedDescription =>
       'Esta é a sua polyseed. Anote-a e guarde-a em um lugar seguro.';
+
+  @override
+  String get generateSeedSubtitleCovered =>
+      'Estas palavras, nesta ordem, são a sua carteira. Anote-as no papel — não em uma foto ou app de notas.';
+
+  @override
+  String get generateSeedSubtitleRevealed => 'Guarde-as em segurança. Não as compartilhe.';
+
+  @override
+  String get generateSeedScreenshotNote =>
+      'As capturas de tela estão bloqueadas nesta tela. Certifique-se de que ninguém está olhando por cima do seu ombro.';
+
+  @override
+  String get generateSeedReveal => 'Toque para revelar';
+
+  @override
+  String get generateSeedConfirm =>
+      'Anotei todas as palavras e as guardei em um lugar que só eu posso acessar.';
 
   @override
   String get generateSeedContinueButton => 'Eu anotei';
@@ -196,7 +312,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsDetailsDescription =>
-      'Você pode usar esses detalhes para permitir essa carteira no seu servidor de light wallet caso necessário.';
+      'Se o seu servidor Light Wallet Monero (LWS) exigir registro, você pode usar estes dados para adicionar esta carteira a esse servidor. Nem todos os servidores exigem registro.';
 
   @override
   String get lwsDetailsPrimaryAddressLabel => 'Endereço Primário';
@@ -224,10 +340,71 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletRestoreDateLabel => 'Data de Restauração (opcional)';
 
   @override
+  String get restoreWalletScanFrom => 'Escanear a partir de';
+
+  @override
+  String get restoreWalletScanFromReason => 'Ignore o histórico irrelevante para economizar tempo';
+
+  @override
+  String get restoreWalletNotSet => 'Não definido';
+
+  @override
+  String get restoreScanTitle => 'Quando esta seed teve fundos pela primeira vez?';
+
+  @override
+  String get restoreScanDescription =>
+      'A Skylight Wallet só escaneia a partir deste ponto. Chute cedo — uma resposta mais antiga custa tempo de sincronização, uma mais recente esconde transações.';
+
+  @override
+  String get restoreScanPickMonth => 'Escolher um mês';
+
+  @override
+  String get restoreScanNotSure => 'Não tenho certeza';
+
+  @override
+  String get restoreScanNotSureDesc =>
+      'Escanear tudo. Mais lento nesta configuração inicial, mas não depois. Sempre completo.';
+
+  @override
+  String get restoreScanFromStart => 'Genesis';
+
+  @override
+  String get restoreScanDone => 'Concluir';
+
+  @override
   String get restoreWalletRestoreButton => 'Restaurar';
 
   @override
   String get restoreWalletInvalidMnemonic => 'Semente inválida.';
+
+  @override
+  String get restoreWalletSeedLength => 'Tamanho da semente';
+
+  @override
+  String get restoreWalletPaste => 'Colar';
+
+  @override
+  String get restoreWalletSeedTypePolyseed => 'Polyseed';
+
+  @override
+  String get restoreWalletSeedTypeBip39 => 'BIP39';
+
+  @override
+  String get restoreWalletSeedTypeLegacy => 'Legado';
+
+  @override
+  String restoreWalletBadWord(int position) {
+    return 'A palavra $position não é uma palavra BIP39.';
+  }
+
+  @override
+  String restoreWalletDidYouMean(String word) {
+    return 'Você quis dizer $word?';
+  }
+
+  @override
+  String get restoreWalletChecksumError =>
+      'Esta não é uma frase-semente válida — verifique as palavras e sua ordem.';
 
   @override
   String get navigationBarWallet => 'Carteira';
@@ -293,14 +470,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeNoTransactions => 'Sem transações';
 
   @override
-  String get homeFiatApiError => 'Erro ao conectar à API de cotação';
+  String get homeFiatApiError => 'Erro ao conectar ao servidor de preços';
+
+  @override
+  String get homeDisconnected => 'Desconectado';
+
+  @override
+  String get coinHomeActivityTitle => 'Atividade';
+
+  @override
+  String get coinHomeReceived => 'Recebido';
+
+  @override
+  String get coinHomeSent => 'Enviado';
 
   @override
   String get receiveTitle => 'Receber';
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Aviso: A menos que saiba o que está fazendo, por favor considere usar subendereços para melhor privacidade.';
+      'Aviso: A menos que saiba o que está fazendo, por favor use subendereços para melhor privacidade.';
 
   @override
   String get receiveShareButton => 'Compartilhar';
@@ -318,6 +507,25 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get receiveMaxSubaddressesReachedWarn =>
       'Você atingiu o número máximo de subendereços suportados por este servidor. Este é um endereço já usado.';
+
+  @override
+  String get receiveSubaddressTab => 'Subendereço';
+
+  @override
+  String get receivePrimaryTab => 'Endereço primário';
+
+  @override
+  String get receiveCopyAddress => 'Copiar endereço';
+
+  @override
+  String receiveAddressHeading(String coin) {
+    return 'Seu endereço $coin';
+  }
+
+  @override
+  String receiveBlockchainSubtitle(String coin) {
+    return 'Blockchain $coin';
+  }
 
   @override
   String get sendTitle => 'Enviar';
@@ -345,7 +553,23 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsTitle => 'Configurações';
 
   @override
-  String get settingsNotifyNewTxsLabel => 'Notificar Novas Transações';
+  String get settingsSectionGeneral => 'Geral';
+
+  @override
+  String get settingsSectionBehaviour => 'Comportamento';
+
+  @override
+  String get settingsSectionWallet => 'Carteira';
+
+  @override
+  String get settingsSectionAbout => 'Sobre';
+
+  @override
+  String get settingsNotifyNewTxsLabel => 'Notificações de Transações';
+
+  @override
+  String get settingsNotifyNewTxsDescription =>
+      'Mostra uma notificação quando você recebe uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.';
 
   @override
   String get settingsNotifyNewTxsDescriptionIos =>
@@ -362,7 +586,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
 
   @override
-  String get settingsVerboseLoggingLabel => 'Logs Detalhados';
+  String get settingsVerboseLoggingLabel => 'Logs de Diagnóstico';
 
   @override
   String get settingsVerboseLoggingDescription =>
@@ -394,10 +618,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsThemeDark => 'Escuro';
 
   @override
+  String get settingsThemeLightDesc => 'Claro e limpo';
+
+  @override
+  String get settingsThemeDarkDesc => 'Fundo escuro, melhor à noite';
+
+  @override
+  String get settingsThemeSystemDesc => 'Segue o seu telefone';
+
+  @override
+  String get settingsThemeSheetSubtitle =>
+      'As mudanças têm efeito imediato. As cores dos valores permanecem iguais nos dois.';
+
+  @override
   String get settingsLanguageLabel => 'Idioma';
 
   @override
-  String get settingsFiatApiSettingsLabel => 'Configs. da API de Moeda Local';
+  String get settingsLanguageSheetSubtitle => 'Valores e datas seguem o idioma escolhido.';
+
+  @override
+  String get settingsFiatApiSettingsLabel => 'Configurações de Exibição de Preços';
 
   @override
   String get settingsLwsViewKeysLabel => 'Chaves de Visualização do LWS';
@@ -436,7 +676,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsDeleteWalletDialogDeleteButton => 'Excluir';
 
   @override
-  String get txDetailsTitle => 'Transação';
+  String get txDetailsTitle => 'Detalhes da transação';
 
   @override
   String get txDetailsHashLabel => 'Hash';
@@ -457,6 +697,28 @@ class AppLocalizationsPt extends AppLocalizations {
   String get txDetailsRecipientsLabel => 'Destinatários';
 
   @override
+  String get txDetailsReceivedAtLabel => 'Recebido em';
+
+  @override
+  String get txDetailsChangeRecipientLabel => 'Troco';
+
+  @override
+  String get unconfirmed => 'Não confirmado';
+
+  @override
+  String get txDetailsCopyHint => 'toque em qualquer valor para copiar';
+
+  @override
+  String get txDetailsFailed => 'Esta transação falhou. Os fundos não foram enviados.';
+
+  @override
+  String get txDetailsUnknownStatus =>
+      'Esta transação não foi confirmada como enviada. Verifique antes de enviar novamente.';
+
+  @override
+  String get copiedToClipboard => 'Copiado para a área de transferência';
+
+  @override
   String get lwsKeysTitle => 'Chaves do LWS';
 
   @override
@@ -469,7 +731,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lwsKeysSecretViewKey => 'Chave Privada de Visualização';
 
   @override
+  String get lwsKeysWarning =>
+      'Capturas de tela estão bloqueadas nesta tela. A chave de visualização permite que um servidor veja tudo o que você recebe — compartilhe-a apenas com um servidor que você opera ou confia.';
+
+  @override
   String get secretKeysTitle => 'Chaves Privadas de Restauração';
+
+  @override
+  String get secretKeysDescription =>
+      'Estas sementes e chaves restauram o controle total da sua carteira. Qualquer pessoa que as veja pode gastar seus fundos.';
 
   @override
   String get secretKeysMnemonic => 'Semente';
@@ -484,6 +754,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get secretKeysPublicViewKey => 'Chave Pública de Visualização';
 
   @override
+  String get secretKeysWarning =>
+      'Nunca as compartilhe ou insira em qualquer site. Guarde-as offline.';
+
+  @override
   String get scanQrTitle => 'Escanear QR Code';
 
   @override
@@ -492,6 +766,11 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get confirmSendDescription =>
       'As transações são irreversíveis, então verifique se estes detalhes correspondem exatamente.';
+
+  @override
+  String confirmSendHighFeeWarning(String percent) {
+    return 'A taxa de rede é $percent do valor que você está enviando.';
+  }
 
   @override
   String get addressBookTitle => 'Lista de Contatos';
@@ -535,6 +814,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get addressBookContactName => 'Nome do Contato';
 
   @override
+  String get addressBookNameHint => 'Nome';
+
+  @override
+  String get addressBookAddressHint => 'Endereço Monero';
+
+  @override
+  String get addressBookAddDescription => 'Um nome e um endereço Monero para pagá-lo.';
+
+  @override
+  String get addressBookEditDescription => 'Atualize o nome ou o endereço deste contato.';
+
+  @override
   String get addressBookUpdate => 'Atualizar';
 
   @override
@@ -568,6 +859,30 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendContactsButton => 'Contatos';
 
   @override
+  String get sendToLabel => 'Para';
+
+  @override
+  String get sendPasteButton => 'Colar';
+
+  @override
+  String get sendScanButton => 'Escanear';
+
+  @override
+  String get sendMaxButton => 'MÁX';
+
+  @override
+  String get sendNetworkFee => 'Taxa de rede';
+
+  @override
+  String get sendPriorityHeading => 'Prioridade';
+
+  @override
+  String get sendPickContactTitle => 'Enviar para um contato';
+
+  @override
+  String get sendAvailableSuffix => 'disponível';
+
+  @override
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
 
   @override
@@ -575,7 +890,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get torInfoDescription =>
-      'A Carteira Skylight usa automaticamente Tor integrado para proteger suas conexões de internet.';
+      'A Skylight Wallet usa automaticamente Tor integrado para proteger suas conexões de internet.';
 
   @override
   String get torInfoContinueButton => 'Continuar';
@@ -599,6 +914,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get torSettingsModeDisabled => 'Sem Tor';
 
   @override
+  String get torChoiceBuiltInDesc => 'Incluído na Skylight Wallet · recomendado';
+
+  @override
+  String get torChoiceExternalDesc => 'Orbot, ou um daemon que você mesmo executa';
+
+  @override
+  String get torChoiceNoTorDesc =>
+      'Os servidores aos quais você se conecta podem ver seu endereço IP';
+
+  @override
+  String get torChoiceConnected => 'Conectado ao Tor';
+
+  @override
+  String get torChoiceTestFailed => 'Falha no teste';
+
+  @override
+  String get torChoiceTitle => 'Como a Skylight Wallet deve acessar a rede?';
+
+  @override
+  String get torChoiceSubtitle =>
+      'Nada se conecta até você escolher. O Tor oculta seu endereço IP dos servidores com os quais a Skylight Wallet se comunica.';
+
+  @override
   String get torSettingsSocksPortLabel => 'Porta SOCKS';
 
   @override
@@ -615,6 +953,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get torSettingsTestConnectionButton => 'Testar Conexão';
+
+  @override
+  String get torDisabledWalletsWarningTitle => 'Desativar o Tor?';
+
+  @override
+  String get torDisabledWalletsWarningBody =>
+      'Algumas carteiras estão configuradas para conectar via Tor. Desativar o Tor irá desconectá-las, e elas permanecerão desconectadas até que você reconfigure a conexão.';
+
+  @override
+  String get torDisabledWalletsWarningConfirm => 'Desativar o Tor';
 
   @override
   String get settingsTorSettingsLabel => 'Configurações do Tor';

@@ -28,7 +28,8 @@ VC="${1:-4022}"
 APPID="org.magicgrants.skylight"
 IMAGE="registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-FDD="$ROOT/fdroiddata"
+# fdroiddata is a sibling clone (../fdroiddata); override with $FDROIDDATA.
+FDD="${FDROIDDATA:-$(cd "$ROOT/.." && pwd)/fdroiddata}"
 RECIPE="$FDD/metadata/$APPID.yml"
 OUT="$ROOT/repro-out/fdroid-$VC"
 RUNS="${RUNS:-2}"
@@ -70,7 +71,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 git add -u                                  # tracked modifications (pubspec, scripts, ...)
-git add scripts/reproducible.patch scripts/pin-rust-toolchain.sh scripts/fdroid-build.sh scripts/build-moneroc.sh 2>/dev/null || true
+git add rust-toolchain.toml scripts/reproducible.patch scripts/pin-rust-toolchain.sh scripts/fdroid-build.sh scripts/build-moneroc.sh 2>/dev/null || true
 TREE=$(git write-tree)
 TMP_COMMIT=$(git commit-tree "$TREE" -p HEAD -m "repro test (throwaway)")
 git branch -f "$TMP_BRANCH" "$TMP_COMMIT"

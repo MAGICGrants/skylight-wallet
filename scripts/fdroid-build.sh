@@ -51,7 +51,8 @@ cp "/tmp/monero_c/monero_libwallet2_api_c/build/$ARCH/libwallet2_api_c.so" \
 rm -rf /tmp/monero_c
 cd /tmp/skylight
 export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
-rustup default 1.83.0
+RUST_TOOLCHAIN=$(sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' rust-toolchain.toml | head -1)
+rustup default "$RUST_TOOLCHAIN"
 rustup target add "$RUST"
 export PUB_CACHE=/tmp/skylight/.pub-cache
 export CARGO_HOME=/tmp/skylight-cargo

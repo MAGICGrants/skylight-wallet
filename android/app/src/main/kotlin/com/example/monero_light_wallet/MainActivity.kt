@@ -9,7 +9,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val secureClipboardChannel = "org.magicgrants.skylight/secure_clipboard"
+    // App-neutral name shared with wallet-core's SecureClipboard (D10).
+    private val secureClipboardChannel = "org.magicgrants.wallet/secure_clipboard"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

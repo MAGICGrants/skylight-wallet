@@ -1,139 +1,38 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
-import 'package:skylight_wallet/widgets/fiat_amount.dart';
-import 'package:skylight_wallet/widgets/monero_amount.dart';
-import 'package:skylight_wallet/widgets/status_icon.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:timeago/timeago.dart' as timeago;
-import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
+
 import 'package:skylight_wallet/consts.dart' as consts;
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/services/tor_service.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
-import 'package:skylight_wallet/widgets/tx_details.dart';
+import 'package:wallet_domain/wallet_domain.dart' show TxDetails;
 
-enum LwsConnectionStatus { disconnected, connecting, connected }
+/// The balance hero's big number style, mirroring Spice's `coin_home.dart`.
+TextStyle get _balanceStyle => TextStyle(
+  fontFamily: 'Ubuntu Mono',
+  fontSize: 33,
+  height: 1,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.66,
+  color: BrandColors.ink,
+  fontFeatures: const [FontFeature.tabularFigures()],
+);
 
-enum DeviceType { phone, tablet, desktop }
+TextStyle get _balanceSubStyle =>
+    TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 13.5, height: 1, color: BrandColors.inkMuted);
 
-class _TransactionListItem extends StatefulWidget {
-  final TxDetails tx;
-  final AppLocalizations i18n;
-  final Locale currentLocale;
-  final FiatRateModel fiatRate;
-  final String fiatSymbol;
-  final VoidCallback onTap;
+/// Monero is decimal-12; cap the displayed coin amount for legibility.
+String _amountText(double amount) => amount.toStringAsFixed(5);
 
-  const _TransactionListItem({
-    required this.tx,
-    required this.i18n,
-    required this.currentLocale,
-    required this.fiatRate,
-    required this.fiatSymbol,
-    required this.onTap,
-  });
-
-  @override
-  State<_TransactionListItem> createState() => _TransactionListItemState();
-}
-
-class _TransactionListItemState extends State<_TransactionListItem> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final amountFiat = widget.fiatRate.rate is double
-        ? widget.tx.amount * widget.fiatRate.rate!
-        : null;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Container(
-        height: 64,
-        decoration: BoxDecoration(
-          color: _isHovered
-              ? Theme.of(context).colorScheme.surfaceContainerHighest
-              : Colors.transparent,
-        ),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          child: Padding(
-            padding: EdgeInsetsDirectional.symmetric(vertical: 10, horizontal: 20),
-            child: Row(
-              spacing: 20,
-              children: [
-                if (widget.tx.direction == consts.txDirectionOutgoing)
-                  Icon(
-                    Icons.arrow_outward_rounded,
-                    color: Colors.red,
-                    size: 20,
-                    semanticLabel: widget.i18n.homeOutgoingTxSemanticLabel,
-                  ),
-                if (widget.tx.direction == consts.txDirectionIncoming)
-                  Transform.rotate(
-                    angle: 90 * math.pi / 180,
-                    child: Icon(
-                      Icons.arrow_outward_rounded,
-                      color: Colors.teal,
-                      size: 20,
-                      semanticLabel: widget.i18n.homeIncomingTxSemanticLabel,
-                    ),
-                  ),
-                Column(
-                  mainAxisAlignment: widget.fiatRate.isDisabled
-                      ? MainAxisAlignment.center
-                      : MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MoneroAmount(amount: widget.tx.amount, maxFontSize: 16),
-                    if (amountFiat == null && !widget.fiatRate.isDisabled)
-                      Skeletonizer(
-                        enabled: true,
-                        child: Text('Potato', style: TextStyle(fontSize: 14)),
-                      ),
-                    if (amountFiat is double && !widget.fiatRate.isDisabled)
-                      FiatAmount(prefix: widget.fiatSymbol, amount: amountFiat, maxFontSize: 14),
-                  ],
-                ),
-                Spacer(),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (widget.tx.confirmations < 10 || widget.tx.height == -1)
-                      Row(
-                        children: [
-                          Text(
-                            '${widget.tx.height == -1 ? '0' : widget.tx.confirmations}/10',
-                            style: TextStyle(color: Colors.amber.shade700),
-                          ),
-                          Icon(Icons.hourglass_top_rounded, color: Colors.amber.shade700, size: 20),
-                        ],
-                      ),
-                    if (widget.tx.confirmations >= 10 && widget.tx.height != -1) Text(''),
-                    Text(
-                      timeago.format(
-                        DateTime.fromMillisecondsSinceEpoch(widget.tx.timestamp * 1000),
-                        locale: widget.currentLocale.languageCode,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+/// The resolved LWS connection state, driving the disconnected indicator.
+enum StatusIconStatus { loading, complete, fail }
 
 class WalletHomeScreen extends StatefulWidget {
   const WalletHomeScreen({super.key});
@@ -143,21 +42,6 @@ class WalletHomeScreen extends StatefulWidget {
 }
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> {
-  // Breakpoints for responsive design
-  static const double _phoneMaxWidth = 700;
-  static const double _tabletMaxWidth = 1024;
-
-  DeviceType _getDeviceType(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width < _phoneMaxWidth) {
-      return DeviceType.phone;
-    } else if (width < _tabletMaxWidth) {
-      return DeviceType.tablet;
-    } else {
-      return DeviceType.desktop;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -166,24 +50,14 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       final Map<String, dynamic>? args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
-      if (args != null && args['showTxSuccessToast']) {
+      if (args != null && args['showTxSuccessToast'] == true) {
         _showTxSuccessToast();
       }
     });
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
   void _showTxDetails(TxDetails txDetails) {
-    TxDetailsDialog.show(context, txDetails);
+    showTxDetailsDialog(context, txDetails);
   }
 
   void _showTxSuccessToast() {
@@ -194,180 +68,22 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
     ).showSnackBar(SnackBar(content: Text(i18n.sendTransactionSuccessfullySent)));
   }
 
-  Widget _buildStatusIcons(
-    BuildContext context,
-    WalletModel wallet,
-    StatusIconStatus lwsConnectionIconStatus,
-  ) {
-    final i18n = AppLocalizations.of(context)!;
-    String message;
-
-    // Deliberately not connected: say so, rather than reporting a Tor
-    // connection that isn't happening.
-    if (wallet.torRequirementBroken) {
-      return Tooltip(
-        message:
-            'Not connecting: this connection requires Tor, but no Tor proxy is available. '
-            'Re-enable Tor, or edit the connection.',
-        triggerMode: TooltipTriggerMode.tap,
-        child: StatusIcon(status: StatusIconStatus.fail, torIsEnabled: wallet.usingTor),
-      );
-    }
-
-    // While syncing a full node, show the sync progress instead of the address.
-    final blocksRemaining = wallet.syncBlocksRemaining;
-    if (lwsConnectionIconStatus != StatusIconStatus.complete && blocksRemaining != null) {
-      message = i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(blocksRemaining));
-    } else {
-      message = lwsConnectionIconStatus == StatusIconStatus.complete
-          ? 'Connected to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}'
-          : lwsConnectionIconStatus == StatusIconStatus.loading
-          ? 'Connecting to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}...'
-          : 'Failed to connect to ${wallet.connectionUseSsl ? 'https' : 'http'}://${wallet.connectionAddress}';
-
-      if (wallet.connectionUseTor) {
-        message += ' via Tor';
-      }
-
-      if (wallet.connectionProxyPort != '') {
-        message += ' via proxy port ${wallet.connectionProxyPort}';
-      }
-    }
-
-    return Tooltip(
-      message: message,
-      triggerMode: TooltipTriggerMode.tap,
-      child: StatusIcon(status: lwsConnectionIconStatus, torIsEnabled: wallet.usingTor),
-    );
-  }
-
-  Widget _buildBalanceDisplay(
-    BuildContext context,
-    AppLocalizations i18n,
-    WalletModel wallet,
-    double? unlockedBalanceFiat,
-    double lockedBalance,
-    String fiatSymbol,
-    FiatRateModel fiatRate,
-  ) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          spacing: 10,
-          children: [
-            SvgPicture.asset('assets/icons/monero.svg', width: 22, height: 22),
-            MoneroAmount(amount: wallet.unlockedBalance ?? 0, maxFontSize: 30),
-          ],
-        ),
-        if (lockedBalance > 0)
-          Text(
-            '+${lockedBalance.toStringAsFixed(12)} ${i18n.pending.toLowerCase()}',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 4,
-          children: [
-            if (fiatRate.hasFailed)
-              Tooltip(
-                message: i18n.homeFiatApiError,
-                child: Icon(Icons.warning_rounded, size: 18, color: Colors.red),
-              ),
-            if (unlockedBalanceFiat == null && !fiatRate.isDisabled)
-              Skeletonizer(enabled: true, child: Text('Potato', style: TextStyle(fontSize: 18))),
-            if (unlockedBalanceFiat is double && !fiatRate.isDisabled)
-              FiatAmount(prefix: fiatSymbol, amount: unlockedBalanceFiat, maxFontSize: 18),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(AppLocalizations i18n) {
-    return Row(
-      spacing: 10,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        FilledButton.icon(
-          style: ButtonStyle(),
-          label: Text(i18n.homeReceive),
-          icon: Transform.rotate(
-            angle: 90 * math.pi / 180,
-            child: Icon(Icons.arrow_outward_rounded),
-          ),
-          onPressed: () => Navigator.pushNamed(context, '/receive'),
-        ),
-        FilledButton.icon(
-          label: Text(i18n.homeSend),
-          icon: Icon(Icons.arrow_outward_rounded),
-          onPressed: () => Navigator.pushNamed(context, '/send'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTransactionListItem(
-    BuildContext context,
-    AppLocalizations i18n,
-    Locale currentLocale,
-    TxDetails tx,
-    FiatRateModel fiatRate,
-    String fiatSymbol,
-  ) {
-    return _TransactionListItem(
-      tx: tx,
-      i18n: i18n,
-      currentLocale: currentLocale,
-      fiatRate: fiatRate,
-      fiatSymbol: fiatSymbol,
-      onTap: () => _showTxDetails(tx),
-    );
-  }
-
-  Widget _buildTransactionList(
-    BuildContext context,
-    AppLocalizations i18n,
-    Locale currentLocale,
-    WalletModel wallet,
-    FiatRateModel fiatRate,
-    String fiatSymbol,
-  ) {
-    if (wallet.txHistory.isEmpty) {
-      return Text(i18n.homeNoTransactions);
-    }
-
-    return Expanded(
-      child: ListView.separated(
-        separatorBuilder: (context, index) =>
-            Container(height: 1, color: Theme.of(context).colorScheme.surfaceContainerHighest),
-        itemCount: wallet.txHistory.length,
-        itemBuilder: (BuildContext context, int index) {
-          final tx = wallet.txHistory[index];
-          return _buildTransactionListItem(context, i18n, currentLocale, tx, fiatRate, fiatSymbol);
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final currentLocale = Localizations.localeOf(context);
-    final wallet = context.watch<WalletModel>();
+    final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
-    final deviceType = _getDeviceType(context);
-    final unlockedBalanceFiat = fiatRate.rate is double && wallet.unlockedBalance is double
-        ? wallet.unlockedBalance! * fiatRate.rate!
+
+    final unlockedBalance = wallet.unlockedBalance ?? 0;
+    final unlockedBalanceFiat =
+        fiatRate.rateFor('XMR') is double && wallet.unlockedBalance is double
+        ? wallet.unlockedBalance! * fiatRate.rateFor('XMR')!
         : null;
     final lockedBalance = (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
     final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
-    var lwsConnectionIconStatus = StatusIconStatus.fail;
-    var fiatApiIconStatus = StatusIconStatus.loading;
 
-    if (wallet.isConnected && wallet.isSynced && (wallet.syncedHeight ?? 0) > 0) {
+    var lwsConnectionIconStatus = StatusIconStatus.fail;
+    if (wallet.isFullySynced) {
       lwsConnectionIconStatus = StatusIconStatus.complete;
     } else if (wallet.usingTor &&
             TorService.sharedInstance.status == TorConnectionStatus.connecting ||
@@ -377,248 +93,318 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       lwsConnectionIconStatus = StatusIconStatus.loading;
     }
 
-    if (fiatRate.rate is double &&
-        !fiatRate.hasFailed &&
-        TorService.sharedInstance.status == TorConnectionStatus.connected) {
-      fiatApiIconStatus = StatusIconStatus.complete;
-    } else if (fiatRate.isLoading) {
-      fiatApiIconStatus = StatusIconStatus.loading;
-    } else if (fiatRate.hasFailed) {
-      fiatApiIconStatus = StatusIconStatus.fail;
-    }
-
     return Scaffold(
+      backgroundColor: BrandColors.paper,
       bottomNavigationBar: WalletNavigationBar(selectedIndex: 0),
       body: SafeArea(
-        child: _buildResponsiveLayout(
-          context,
-          deviceType,
-          i18n,
-          currentLocale,
-          wallet,
-          fiatRate,
-          lwsConnectionIconStatus,
-          fiatApiIconStatus,
-          unlockedBalanceFiat,
-          lockedBalance,
-          fiatSymbol,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _Header(),
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _BalanceHero(
+                              wallet: wallet,
+                              unlockedBalance: unlockedBalance,
+                              unlockedBalanceFiat: unlockedBalanceFiat,
+                              lockedBalance: lockedBalance,
+                              fiatSymbol: fiatSymbol,
+                              fiatRate: fiatRate,
+                              disconnected:
+                                  wallet.torRequirementBroken ||
+                                  lwsConnectionIconStatus == StatusIconStatus.fail,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
+                              child: _ActionRow(
+                                onReceive: () => Navigator.pushNamed(context, '/receive'),
+                                onSend: () => Navigator.pushNamed(context, '/send'),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                              child: SectionHeader(
+                                label: i18n.coinHomeActivityTitle,
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _ActivitySliver(
+                        wallet: wallet,
+                        i18n: i18n,
+                        fiatRate: fiatRate,
+                        fiatSymbol: fiatSymbol,
+                        onTapTx: _showTxDetails,
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildResponsiveLayout(
-    BuildContext context,
-    DeviceType deviceType,
-    AppLocalizations i18n,
-    Locale currentLocale,
-    WalletModel wallet,
-    FiatRateModel fiatRate,
-    StatusIconStatus lwsConnectionIconStatus,
-    StatusIconStatus fiatApiIconStatus,
-    double? unlockedBalanceFiat,
-    double lockedBalance,
-    String fiatSymbol,
-  ) {
-    switch (deviceType) {
-      case DeviceType.phone:
-        return _buildPhoneLayout(
-          context,
-          i18n,
-          currentLocale,
-          wallet,
-          fiatRate,
-          lwsConnectionIconStatus,
-          fiatApiIconStatus,
-          unlockedBalanceFiat,
-          lockedBalance,
-          fiatSymbol,
-        );
-      case DeviceType.tablet:
-        return _buildTabletLayout(
-          context,
-          i18n,
-          currentLocale,
-          wallet,
-          fiatRate,
-          lwsConnectionIconStatus,
-          fiatApiIconStatus,
-          unlockedBalanceFiat,
-          lockedBalance,
-          fiatSymbol,
-        );
-      case DeviceType.desktop:
-        return _buildDesktopLayout(
-          context,
-          i18n,
-          currentLocale,
-          wallet,
-          fiatRate,
-          lwsConnectionIconStatus,
-          fiatApiIconStatus,
-          unlockedBalanceFiat,
-          lockedBalance,
-          fiatSymbol,
-        );
-    }
-  }
+class _Header extends StatelessWidget {
+  const _Header();
 
-  Widget _buildPhoneLayout(
-    BuildContext context,
-    AppLocalizations i18n,
-    Locale currentLocale,
-    WalletModel wallet,
-    FiatRateModel fiatRate,
-    StatusIconStatus lwsConnectionIconStatus,
-    StatusIconStatus fiatApiIconStatus,
-    double? unlockedBalanceFiat,
-    double lockedBalance,
-    String fiatSymbol,
-  ) {
-    return Column(
-      spacing: 20,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: EdgeInsetsGeometry.all(20),
-          child: Column(
-            spacing: 20,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                height: 86,
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: _buildStatusIcons(context, wallet, lwsConnectionIconStatus),
-                    ),
-                    Center(
-                      child: _buildBalanceDisplay(
-                        context,
-                        i18n,
-                        wallet,
-                        unlockedBalanceFiat,
-                        lockedBalance,
-                        fiatSymbol,
-                        fiatRate,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildActionButtons(i18n),
-            ],
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(horizontal: 20),
-            child: Text(
-              i18n.homeTransactionsTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start,
-            ),
-          ),
-        ),
-        _buildTransactionList(context, i18n, currentLocale, wallet, fiatRate, fiatSymbol),
-      ],
-    );
-  }
-
-  Widget _buildTabletLayout(
-    BuildContext context,
-    AppLocalizations i18n,
-    Locale currentLocale,
-    WalletModel wallet,
-    FiatRateModel fiatRate,
-    StatusIconStatus lwsConnectionIconStatus,
-    StatusIconStatus fiatApiIconStatus,
-    double? unlockedBalanceFiat,
-    double lockedBalance,
-    String fiatSymbol,
-  ) {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 2),
       child: Row(
-        spacing: 20,
         children: [
-          SizedBox(
-            width: 340,
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  child: _buildStatusIcons(context, wallet, lwsConnectionIconStatus),
-                ),
-                Column(
-                  children: [
-                    _buildBalanceDisplay(
-                      context,
-                      i18n,
-                      wallet,
-                      unlockedBalanceFiat,
-                      lockedBalance,
-                      fiatSymbol,
-                      fiatRate,
-                    ),
-                    SizedBox(height: 10),
-                    _buildActionButtons(i18n),
-                  ],
-                ),
-              ],
-            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: SvgPicture.asset('assets/logo.svg', width: 26, height: 26),
           ),
-          Expanded(
-            child: Column(
-              spacing: 20,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: EdgeInsetsGeometry.symmetric(horizontal: 20),
-                    child: Text(
-                      i18n.homeTransactionsTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.start,
-                    ),
-                  ),
-                ),
-                _buildTransactionList(context, i18n, currentLocale, wallet, fiatRate, fiatSymbol),
-              ],
+          const SizedBox(width: 9),
+          Text(
+            'Skylight Wallet',
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 17,
+              height: 1,
+              color: BrandColors.ink,
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDesktopLayout(
-    BuildContext context,
-    AppLocalizations i18n,
-    Locale currentLocale,
-    WalletModel wallet,
-    FiatRateModel fiatRate,
-    StatusIconStatus lwsConnectionIconStatus,
-    StatusIconStatus fiatApiIconStatus,
-    double? unlockedBalanceFiat,
-    double lockedBalance,
-    String fiatSymbol,
-  ) {
-    return _buildTabletLayout(
-      context,
-      i18n,
-      currentLocale,
-      wallet,
-      fiatRate,
-      lwsConnectionIconStatus,
-      fiatApiIconStatus,
-      unlockedBalanceFiat,
-      lockedBalance,
-      fiatSymbol,
+class _BalanceHero extends StatelessWidget {
+  final AppWallet wallet;
+  final double unlockedBalance;
+  final double? unlockedBalanceFiat;
+  final double lockedBalance;
+  final String fiatSymbol;
+  final FiatRateModel fiatRate;
+  final bool disconnected;
+
+  const _BalanceHero({
+    required this.wallet,
+    required this.unlockedBalance,
+    required this.unlockedBalanceFiat,
+    required this.lockedBalance,
+    required this.fiatSymbol,
+    required this.fiatRate,
+    required this.disconnected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+    final showFiat = !fiatRate.isDisabled && unlockedBalanceFiat != null;
+    final coinText = '${_amountText(unlockedBalance)} XMR';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 30, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Fiat leads when available; otherwise the coin amount is the hero,
+          // with a skeleton while the rate is still loading.
+          if (showFiat)
+            BalanceText.split(formatFiat(unlockedBalanceFiat!, fiatSymbol), style: _balanceStyle)
+          else if (!fiatRate.isDisabled && !fiatRate.hasFailed)
+            Skeletonizer(child: Text('0.0000', style: _balanceStyle))
+          else
+            Text(coinText, style: _balanceStyle),
+          const SizedBox(height: 10),
+          if (showFiat) Text(coinText, style: _balanceSubStyle),
+          // Funds that have arrived but aren't spendable yet — Monero locks a
+          // receipt for ten blocks, so the unlocked balance above omits it.
+          if (lockedBalance > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '${i18n.pending}: +${_amountText(lockedBalance)} XMR',
+                style: _balanceSubStyle,
+              ),
+            ),
+          if (fiatRate.hasFailed && !fiatRate.isDisabled)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_rounded, size: 15, color: BrandColors.error),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      i18n.homeFiatApiError,
+                      overflow: TextOverflow.ellipsis,
+                      style: BrandText.caption.copyWith(color: BrandColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          _connectionRow(context, i18n),
+        ],
+      ),
+    );
+  }
+
+  /// The connection info row: transport/kind pills. While syncing the pills
+  /// compact to icons with "x blocks left" beside them; when the connection has
+  /// failed, the same slot shows "Disconnected" in red.
+  Widget _connectionRow(BuildContext context, AppLocalizations i18n) {
+    final cw = xmrWallet(context);
+    if (cw == null || cw.connectionAddress.isEmpty) return const SizedBox.shrink();
+    final blocks = wallet.syncBlocksRemaining;
+    final trailing = blocks != null
+        ? i18n.homeBlocksRemaining(NumberFormat.decimalPattern().format(blocks))
+        : disconnected
+        ? i18n.homeDisconnected
+        : null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: trailing == null
+          ? ConnectionPills(wallet: cw)
+          : Row(
+              children: [
+                ConnectionPills(wallet: cw, compact: true),
+                const SizedBox(width: 10),
+                Container(width: 1, height: 14, color: BrandColors.borderStrong),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    trailing,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Ubuntu Mono',
+                      fontSize: 13,
+                      height: 1,
+                      color: disconnected ? BrandColors.error : BrandColors.inkMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  final VoidCallback onReceive;
+  final VoidCallback onSend;
+
+  const _ActionRow({required this.onReceive, required this.onSend});
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+    return Row(
+      children: [
+        Expanded(
+          child: ActionButton(
+            icon: Icons.arrow_downward,
+            label: i18n.homeReceive,
+            onPressed: onReceive,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ActionButton(icon: Icons.arrow_upward, label: i18n.homeSend, onPressed: onSend),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivitySliver extends StatelessWidget {
+  final AppWallet wallet;
+  final AppLocalizations i18n;
+  final FiatRateModel fiatRate;
+  final String fiatSymbol;
+  final void Function(TxDetails tx) onTapTx;
+
+  const _ActivitySliver({
+    required this.wallet,
+    required this.i18n,
+    required this.fiatRate,
+    required this.fiatSymbol,
+    required this.onTapTx,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // The engine wallet supplies the exact-BigInt tx history the shared row
+    // reads; the parent watches the neutral wallet (listen: true) so this
+    // subtree rebuilds when the history changes.
+    final asset = xmrWallet(context)!;
+    final txs = asset.txHistory;
+
+    if (txs.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Text(
+            i18n.homeNoTransactions,
+            textAlign: TextAlign.center,
+            style: BrandText.bodyMuted,
+          ),
+        ),
+      );
+    }
+
+    // Flatten into day-header strings interleaved with tx entries (matches Spice).
+    final rows = <Object>[];
+    DateTime? lastDay;
+    for (final tx in txs) {
+      final d = DateTime.fromMillisecondsSinceEpoch(tx.timestamp * 1000);
+      final day = DateTime(d.year, d.month, d.day);
+      if (day != lastDay) {
+        rows.add(DateFormat('d MMMM').format(day).toUpperCase());
+        lastDay = day;
+      }
+      rows.add(tx);
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverList.builder(
+        itemCount: rows.length,
+        itemBuilder: (context, index) {
+          final row = rows[index];
+          if (row is String) {
+            return Padding(
+              padding: EdgeInsets.only(top: index == 0 ? 4 : 16, bottom: 4),
+              child: SectionHeader(label: row, padding: EdgeInsets.zero),
+            );
+          }
+          final tx = row as TxDetails;
+          // No coin icon: Skylight is single-coin (Monero), so the leading badge
+          // is a coin-agnostic direction circle. Divider only within a day group.
+          final next = index + 1 < rows.length ? rows[index + 1] : null;
+          return TxActivityRow(
+            tx: tx,
+            asset: asset,
+            showCoinIcon: false,
+            labels: TxActivityLabels(received: i18n.coinHomeReceived, sent: i18n.coinHomeSent),
+            fiatRate: fiatRate,
+            fiatSymbol: fiatSymbol,
+            showDivider: next is TxDetails,
+            onTap: () => onTapTx(tx),
+          );
+        },
+      ),
     );
   }
 }

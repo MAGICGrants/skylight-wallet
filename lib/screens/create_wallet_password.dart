@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/wallet_model.dart';
-import 'package:skylight_wallet/widgets/loading_button.dart';
-import 'package:provider/provider.dart';
+import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class CreateWalletPasswordScreen extends StatefulWidget {
   const CreateWalletPasswordScreen({super.key});
@@ -12,35 +11,14 @@ class CreateWalletPasswordScreen extends StatefulWidget {
 }
 
 class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen> {
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _savePassword() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _savePassword(String password) async {
+    setState(() => _isLoading = true);
 
     try {
-      final password = _passwordController.text;
-
       if (mounted) {
-        final wallet = Provider.of<WalletModel>(context, listen: false);
-        wallet.setWalletPassword(password);
+        setWalletPassword(context, password);
         Navigator.pushNamed(context, '/create_wallet');
       }
     } catch (e) {
@@ -51,120 +29,27 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return AppLocalizations.of(context)!.fieldEmptyError;
-    }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters long.';
-    }
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return AppLocalizations.of(context)!.fieldEmptyError;
-    }
-    if (value != _passwordController.text) {
-      return 'Passwords do not match.';
-    }
-    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Skylight Monero Wallet')),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 500),
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 20,
-                children: [
-                  Column(
-                    spacing: 10,
-                    children: [
-                      Text(
-                        'Create Wallet Password',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      Text(
-                        'Create a password to protect your wallet. This password will be required to unlock your wallet.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
-                  Column(
-                    spacing: 15,
-                    children: [
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        validator: _validatePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Enter your password',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                        ),
-                        enabled: !_isLoading,
-                      ),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        validator: _validateConfirmPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          hintText: 'Confirm your password',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                        ),
-                        enabled: !_isLoading,
-                        onFieldSubmitted: (_) => _savePassword(),
-                      ),
-                      LoadingButton(
-                        isLoading: _isLoading,
-                        onPressed: _savePassword,
-                        label: i18n.continueText,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return CreatePasswordView(
+      loading: _isLoading,
+      onSubmit: _savePassword,
+      labels: CreatePasswordLabels(
+        title: i18n.createWalletPasswordTitle,
+        description: i18n.createWalletPasswordDescription,
+        passwordHint: i18n.createWalletPasswordHint,
+        confirmPasswordHint: i18n.createWalletConfirmPasswordHint,
+        submit: i18n.continueText,
+        fieldEmptyError: i18n.fieldEmptyError,
+        tooShortError: i18n.passwordTooShortError,
+        doNotMatchError: i18n.passwordsDoNotMatchError,
       ),
     );
   }

@@ -225,6 +225,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  double _sheetMaxHeight(BuildContext sheetContext) {
+    final media = MediaQuery.of(sheetContext);
+    return (media.size.height - media.viewInsets.bottom) * 0.86;
+  }
+
   /// Settings popup chrome, matching Spice's sheets: a handle, an icon + title
   /// header, then the form scrolling below (the form carries its own save
   /// button and pops on success).
@@ -236,10 +241,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return showBrandSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         top: false,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.86),
+          constraints: BoxConstraints(maxHeight: _sheetMaxHeight(sheetContext)),
           child: Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Column(

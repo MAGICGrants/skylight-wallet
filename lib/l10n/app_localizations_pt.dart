@@ -423,6 +423,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get unlockUnableToAuthError => 'Não foi possível autenticar.';
 
   @override
+  String get unlockWithFaceId => 'Desbloquear com Face ID';
+
+  @override
+  String get unlockWithTouchId => 'Desbloquear com Touch ID';
+
+  @override
   String get unlockTitle => 'Desbloquear Carteira';
 
   @override

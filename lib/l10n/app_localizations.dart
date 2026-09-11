@@ -867,6 +867,18 @@ abstract class AppLocalizations {
   /// **'Unable to authenticate.'**
   String get unlockUnableToAuthError;
 
+  /// No description provided for @unlockWithFaceId.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with Face ID'**
+  String get unlockWithFaceId;
+
+  /// No description provided for @unlockWithTouchId.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with Touch ID'**
+  String get unlockWithTouchId;
+
   /// No description provided for @unlockTitle.
   ///
   /// In en, this message translates to:

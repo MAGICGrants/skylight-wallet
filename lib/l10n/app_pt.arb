@@ -157,6 +157,8 @@
   "unlockButton": "Desbloquear",
   "unlockReason": "Desbloquear carteira",
   "unlockUnableToAuthError": "Não foi possível autenticar.",
+  "unlockWithFaceId": "Desbloquear com Face ID",
+  "unlockWithTouchId": "Desbloquear com Touch ID",
   "unlockTitle": "Desbloquear Carteira",
   "unlockDescription": "Digite a senha da sua carteira para desbloquear",
   "unlockPasswordLabel": "Senha",

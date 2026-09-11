@@ -157,6 +157,8 @@
   "unlockButton": "Unlock",
   "unlockReason": "Unlock Wallet",
   "unlockUnableToAuthError": "Unable to authenticate.",
+  "unlockWithFaceId": "Unlock with Face ID",
+  "unlockWithTouchId": "Unlock with Touch ID",
   "unlockTitle": "Unlock Wallet",
   "unlockDescription": "Enter your wallet password to unlock",
   "unlockPasswordLabel": "Password",

@@ -423,6 +423,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlockUnableToAuthError => 'Unable to authenticate.';
 
   @override
+  String get unlockWithFaceId => 'Unlock with Face ID';
+
+  @override
+  String get unlockWithTouchId => 'Unlock with Touch ID';
+
+  @override
   String get unlockTitle => 'Unlock Wallet';
 
   @override

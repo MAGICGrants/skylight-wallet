@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: Update pubspec.yaml version
-        if: steps.check.outputs.VERSION_MATCHES == 'false'
+        if: steps.check.outputs.VERSION_MATCHES == 'false' && !endsWith(github.ref_name, '-test')
         run: |
           TAG_VERSION="${GITHUB_REF#refs/tags/v}"
           PUBSPEC_BUILD=$(grep -E '^version:\s+' pubspec.yaml | sed 's/version:\s*//' | grep -oE '\+[0-9]+$' | tr -d '+' || echo "0")
@@ -58,7 +58,7 @@ jobs:
           grep "^version:" pubspec.yaml
 
       - name: Create Pull Request
-        if: steps.check.outputs.VERSION_MATCHES == 'false'
+        if: steps.check.outputs.VERSION_MATCHES == 'false' && !endsWith(github.ref_name, '-test')
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -72,7 +72,7 @@ jobs:
           base: main
 
       - name: Fail if version mismatch
-        if: steps.check.outputs.VERSION_MATCHES == 'false'
+        if: steps.check.outputs.VERSION_MATCHES == 'false' && !endsWith(github.ref_name, '-test')
         run: |
           echo "::error::Version mismatch detected. A PR has been created to update pubspec.yaml."
           echo "Please merge the PR and re-trigger this workflow."
@@ -350,6 +350,7 @@ jobs:
 
   release:
     name: Sign + Release
+    if: ${{ !endsWith(github.ref_name, '-test') }}
     runs-on: ubuntu-latest
     environment: Release
     needs:

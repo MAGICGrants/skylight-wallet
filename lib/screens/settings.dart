@@ -197,8 +197,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showViewSecretKeysDialog() {
+  /// Gate the seed behind a device auth even though the app is already
+  /// unlocked. Reaching this screen hands over the seed and secret spend key,
+  /// which is total, irreversible control of the funds; the warning sheet alone
+  /// stops nobody holding the phone.
+  Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      final result = await BiometricAuth.authenticate(reason: i18n.revealSeedAuthReason);
+      if (result != BiometricAuthResult.authenticated) {
+        if (mounted) {
+          showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
+        }
+        return;
+      }
+      if (!mounted) return;
+    }
+
     showConfirmSheet(
       context: context,
       icon: Icons.warning_amber_rounded,

@@ -1299,6 +1299,12 @@ abstract class AppLocalizations {
   /// **'View'**
   String get settingsLwsViewKeysButton;
 
+  /// No description provided for @revealSeedAuthReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm it\'s you to view your seed phrase'**
+  String get revealSeedAuthReason;
+
   /// No description provided for @settingsSecretKeysLabel.
   ///
   /// In en, this message translates to:

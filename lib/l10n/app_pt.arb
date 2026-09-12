@@ -243,6 +243,7 @@
   "settingsFiatApiSettingsLabel": "Configurações de Exibição de Preços",
   "settingsLwsViewKeysLabel": "Chaves de Visualização do LWS",
   "settingsLwsViewKeysButton": "Ver",
+  "revealSeedAuthReason": "Confirme sua identidade para ver a frase seed",
   "settingsSecretKeysLabel": "Chaves Privadas de Restauração",
   "settingsSecretKeysButton": "Ver",
   "settingsViewLwsKeysDialogText": "Somente compartilhe estas informações com o seu servidor light-wallet. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.",

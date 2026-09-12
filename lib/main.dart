@@ -147,6 +147,8 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   // Theme.of), so a theme change doesn't dirty cached routes on its own. On an
   // actual flip we force an in-place rebuild of the navigator subtree.
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final _CurrentRouteObserver _routeObserver = _CurrentRouteObserver();
+  bool _relockPending = false;
   Brightness? _lastBrightness;
 
   static void _markSubtreeDirty(Element element) {
@@ -205,14 +207,35 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Mobile only: leaving the app marks everything on screen as seen so a
-    // background isolate won't re-notify a tx the user just watched arrive.
-    // Desktop has no background isolate — and doing this would pre-empt its
-    // foreground announce. Marks only synced history (hash-based), so an
-    // unsynced receipt is still announced later.
-    if (state == AppLifecycleState.paused && isMobile) {
+    if (!isMobile) return;
+
+    if (state == AppLifecycleState.paused) {
+      // App Lock has to cover backgrounding, not just a cold start. Without
+      // this, resuming walked straight back into an unlocked wallet with the
+      // password still in memory, and the seed was reachable from there.
+      unawaited(_maybeArmRelock());
+
+      // Leaving the app marks everything on screen as seen so a background
+      // isolate won't re-notify a tx the user just watched arrive. Desktop has
+      // no background isolate — and doing this would pre-empt its foreground
+      // announce. Marks only synced history (hash-based), so an unsynced
+      // receipt is still announced later.
       unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
+    } else if (state == AppLifecycleState.resumed && _relockPending) {
+      _relockPending = false;
+      // Pushed ON TOP of the current stack rather than replacing it, so
+      // unlocking pops straight back to the screen the user left. Skipped when
+      // one is already showing, which would stack duplicates.
+      if (_routeObserver.currentName != '/unlock') {
+        _navigatorKey.currentState?.pushNamed('/unlock');
+      }
     }
+  }
+
+  /// On background: with App Lock on and a wallet present, drop the in-memory
+  /// password and arm a re-lock so the next resume returns to the lock screen.
+  Future<void> _maybeArmRelock() async {
+    _relockPending = await armAppLockRelock(context);
   }
 
   // Desktop has no background isolate to announce incoming txs, so the
@@ -284,6 +307,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
               return MaterialApp(
                 navigatorKey: _navigatorKey,
+                navigatorObservers: [_routeObserver],
                 title: 'Skylight Monero Wallet',
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
@@ -347,4 +371,22 @@ class _NoTransitionPageRoute<T> extends MaterialPageRoute<T> {
 
   @override
   Duration get reverseTransitionDuration => Duration.zero;
+}
+
+/// Tracks the name of the route currently on top, so the re-lock does not stack
+/// a second `/unlock` on one that is already showing.
+class _CurrentRouteObserver extends NavigatorObserver {
+  String? currentName;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      currentName = route.settings.name;
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      currentName = previousRoute?.settings.name;
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
+      currentName = newRoute?.settings.name;
 }

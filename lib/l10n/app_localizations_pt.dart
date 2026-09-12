@@ -652,6 +652,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsLwsViewKeysButton => 'Ver';
 
   @override
+  String get revealSeedAuthReason => 'Confirme sua identidade para ver a frase seed';
+
+  @override
   String get settingsSecretKeysLabel => 'Chaves Privadas de Restauração';
 
   @override

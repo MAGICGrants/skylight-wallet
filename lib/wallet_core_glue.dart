@@ -205,6 +205,13 @@ Future<int> commitGeneratedWallet(
   return manager.getWallet('XMR')!.getRestoreHeight();
 }
 
+/// Arms the app-lock re-lock when the app goes to the background; see
+/// [WalletManager.armAppLockRelock], which both apps share so the behaviour
+/// cannot drift. Wrapped here only because Skylight reaches wallet-core through
+/// this layer rather than from screens.
+Future<bool> armAppLockRelock(BuildContext context) =>
+    Provider.of<WalletManager>(context, listen: false).armAppLockRelock();
+
 /// Opens an already-existing wallet (used by the welcome safety-net). Returns
 /// false when there is none. Mobile only — desktop unlocks with a password.
 Future<bool> openExistingWallet(BuildContext context) async {

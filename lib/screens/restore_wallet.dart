@@ -11,11 +11,11 @@ import 'package:polyseed/polyseed.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
-import 'package:skylight_wallet/util/restore_qr.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
+import 'package:wallet_domain/wallet_domain.dart' show parseRestoreQr;
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});

@@ -419,7 +419,7 @@ class _AddressRow extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
     // Treat as sensitive (auto-cleared) like other address/key copies.
     SecureClipboard.copy(contact.address);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.addressCopied)));
+    showCopyToast(context, i18n.addressCopied);
   }
 
   @override
@@ -578,7 +578,7 @@ class _ContactSheetState extends State<_ContactSheet> {
       if (mounted) Navigator.pop(context);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+        showBrandToast(context, i18n.unknownError);
         setState(() => _saving = false);
       }
     }

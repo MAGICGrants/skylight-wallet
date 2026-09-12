@@ -28,7 +28,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       final args = ModalRoute.of(context)?.settings.arguments as CreateWalletScreenArgs?;
 
       if (args != null && args.toastMessage != '') {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(args.toastMessage)));
+        showBrandToast(context, args.toastMessage);
       }
     });
   }

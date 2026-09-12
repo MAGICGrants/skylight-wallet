@@ -36,11 +36,11 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
     });
   }
 
-  void _copy(String value, {required bool sensitive}) {
+  void _copy(String value) {
     if (value.isEmpty) return;
     SecureClipboard.copy(value);
     final i18n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.copiedToClipboard)));
+    showCopyToast(context, i18n.copiedToClipboard);
   }
 
   @override

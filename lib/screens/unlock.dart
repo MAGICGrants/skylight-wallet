@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:local_auth/local_auth.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -22,11 +23,36 @@ class _UnlockScreenState extends State<UnlockScreen> {
   bool _obscure = true;
   bool _isLoading = false;
   String? _error;
+  String? _biometricLabel; // resolved per device on iOS (Face ID vs Touch ID)
+  bool _started = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isDesktop) _promptUnlock();
+    // Guarded: didChangeDependencies re-fires whenever an inherited dependency
+    // changes -- a locale or theme flip, for instance -- and _promptUnlock
+    // reads Localizations. Without this the biometric sheet is raised a second
+    // time on top of the first, which iOS resolves by cancelling both.
+    if (_started || _isDesktop) return;
+    _started = true;
+    _resolveBiometricLabel();
+    _promptUnlock();
+  }
+
+  /// iOS labels the affordance by the device's biometric (Face ID / Touch ID);
+  /// Android and desktop keep the generic "Unlock".
+  Future<void> _resolveBiometricLabel() async {
+    if (!Platform.isIOS) return;
+    final i18n = AppLocalizations.of(context)!;
+    try {
+      final types = await LocalAuthentication().getAvailableBiometrics();
+      final label = types.contains(BiometricType.face)
+          ? i18n.unlockWithFaceId
+          : i18n.unlockWithTouchId;
+      if (mounted) setState(() => _biometricLabel = label);
+    } catch (_) {
+      // Leave the generic label.
+    }
   }
 
   @override
@@ -45,9 +71,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
       if (mounted) Navigator.pushReplacementNamed(context, '/wallet_home');
     } else if (result == BiometricAuthResult.error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.unlockUnableToAuthError)));
+        showBrandToast(context, i18n.unlockUnableToAuthError);
       }
     }
   }
@@ -95,6 +119,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
       onToggleObscure: () => setState(() => _obscure = !_obscure),
       error: _error,
       loading: _isLoading,
+      biometricLabel: _biometricLabel,
       onUnlockPassword: _unlockWithPassword,
       onUnlockBiometric: _promptUnlock,
     );

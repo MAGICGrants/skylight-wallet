@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -46,8 +46,8 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 
   void _copyAddressToClipboard(String address) {
     final i18n = AppLocalizations.of(context)!;
-    Clipboard.setData(ClipboardData(text: address));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.addressCopied)));
+    SecureClipboard.copy(address);
+    showCopyToast(context, i18n.addressCopied);
   }
 
   @override

@@ -23,9 +23,7 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save password: $e')));
+        showBrandToast(context, 'Failed to save password: $e');
       }
     } finally {
       if (mounted) {

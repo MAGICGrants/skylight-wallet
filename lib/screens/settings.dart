@@ -114,9 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Enabling app-lock is an explicit opt-in, so decline and error both report.
       if (result != BiometricAuthResult.authenticated) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.settingsAppLockUnableToAuthError)));
+          showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
         }
         return;
       }
@@ -145,9 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (logFiles.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.settingsExportLogsError)));
+          showBrandToast(context, i18n.settingsExportLogsError);
         }
         return;
       }
@@ -165,9 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.settingsExportLogsError)));
+        showBrandToast(context, i18n.settingsExportLogsError);
       }
     }
   }
@@ -203,8 +197,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showViewSecretKeysDialog() {
+  /// Gate the seed behind a device auth even though the app is already
+  /// unlocked. Reaching this screen hands over the seed and secret spend key,
+  /// which is total, irreversible control of the funds; the warning sheet alone
+  /// stops nobody holding the phone.
+  Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      final result = await BiometricAuth.authenticate(reason: i18n.revealSeedAuthReason);
+      if (result != BiometricAuthResult.authenticated) {
+        if (mounted) {
+          showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
+        }
+        return;
+      }
+      if (!mounted) return;
+    }
+
     showConfirmSheet(
       context: context,
       icon: Icons.warning_amber_rounded,
@@ -225,6 +235,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  double _sheetMaxHeight(BuildContext sheetContext) {
+    final media = MediaQuery.of(sheetContext);
+    return (media.size.height - media.viewInsets.bottom) * 0.86;
+  }
+
   /// Settings popup chrome, matching Spice's sheets: a handle, an icon + title
   /// header, then the form scrolling below (the form carries its own save
   /// button and pops on success).
@@ -236,10 +251,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return showBrandSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         top: false,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.86),
+          constraints: BoxConstraints(maxHeight: _sheetMaxHeight(sheetContext)),
           child: Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Column(

@@ -138,9 +138,7 @@ class _SendScreenState extends State<SendScreen> {
     if (uri != null && uri.scheme == 'monero') {
       if (!wallet.isAddressValid(uri.path)) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+          showBrandToast(context, i18n.sendInvalidAddressError);
         }
         return;
       }
@@ -154,9 +152,7 @@ class _SendScreenState extends State<SendScreen> {
       address = result;
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.sendInvalidAddressError)));
+        showBrandToast(context, i18n.sendInvalidAddressError);
       }
       return;
     }
@@ -365,15 +361,19 @@ class _SendScreenState extends State<SendScreen> {
         });
       }
     } catch (error) {
+      // Let the same address+amount be asked again. The key is claimed before
+      // the work starts, so without this a single failure pins the fee at '—'
+      // for that pair forever: every later revalidation matches the key and
+      // returns early, and only editing the address or amount can clear it.
+      _lastFeeFetchKey = '';
+
       // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {
         setState(() {
           _isLoadingFees = false;
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(i18n.sendFailedToGetFeesError)));
+        showBrandToast(context, i18n.sendFailedToGetFeesError);
       }
     }
   }
@@ -459,7 +459,7 @@ class _SendScreenState extends State<SendScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+          showBrandToast(context, i18n.unknownError);
         }
       }
     }
@@ -536,13 +536,13 @@ class _SendScreenState extends State<SendScreen> {
         errorMsg = 'Failed to send transaction. You might have insufficient unlocked balance.';
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+        showBrandToast(context, errorMsg);
       }
       rethrow;
     } catch (error) {
       log(LogLevel.error, error.toString());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.unknownError)));
+        showBrandToast(context, i18n.unknownError);
       }
       rethrow;
     }
@@ -550,7 +550,7 @@ class _SendScreenState extends State<SendScreen> {
 
   void _setBalanceAsSendAmount() {
     final wallet = appWalletOf(context);
-    _amountController.text = (wallet.unlockedBalance ?? 0).toString();
+    _amountController.text = _plainAmount(wallet.unlockedBalance ?? 0);
 
     setState(() {
       _isSweepAll = true;
@@ -696,6 +696,24 @@ class _SendScreenState extends State<SendScreen> {
 
 /// Monero is decimal-12; cap the displayed amount for legibility.
 String _amountText(double amount) => amount.toStringAsFixed(5);
+
+/// Monero's decimal places. Matches the adapter's own constant; kept local so
+/// this file does not reach into the adapter's privates.
+const _xmrDecimals = 12;
+
+/// [amount] as a plain decimal, never exponential.
+///
+/// `double.toString()` switches to exponential notation below 1e-6 -- a
+/// 500000-piconero balance renders as "5e-7". `decimalToBaseUnits` splits on
+/// '.' and hands the rest to `BigInt.parse`, which throws on an exponent, so
+/// the fee estimate fails and the field cannot be sent. Only the Max button
+/// fills this field from a raw double, which is why it only broke there.
+String _plainAmount(double amount) {
+  final fixed = amount.toStringAsFixed(_xmrDecimals);
+  if (!fixed.contains('.')) return fixed;
+  final trimmed = fixed.replaceFirst(RegExp(r'0+$'), '');
+  return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
+}
 
 /// `abcd…wxyz`: keeps [head] leading and [tail] trailing chars of a long
 /// address, eliding the middle. Returns the string unchanged when short.

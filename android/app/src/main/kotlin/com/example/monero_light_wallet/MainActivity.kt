@@ -3,6 +3,7 @@ package org.magicgrants.skylight
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
 import android.os.PersistableBundle
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -20,6 +21,12 @@ class MainActivity : FlutterFragmentActivity() {
                     "copySensitive" -> {
                         copySensitive(call.argument<String>("text") ?: "")
                         result.success(null)
+                    }
+                    // Android 13 shows its own clipboard confirmation, so the
+                    // app must not add a second one. Older releases show
+                    // nothing and still need the in-app toast.
+                    "systemConfirmsCopy" -> {
+                        result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                     }
                     else -> result.notImplemented()
                 }

@@ -82,5 +82,7 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to scan QR codes for connection and wallet addresses.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>We use Face ID to unlock your wallet without typing your password.</string>
 </dict>
 </plist>

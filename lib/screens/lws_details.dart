@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -27,11 +27,11 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> {
     setState(() => _secretViewKey = key);
   }
 
-  void _copy(String value, {required bool sensitive}) {
+  void _copy(String value) {
     if (value.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: value));
+    SecureClipboard.copy(value);
     final i18n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(i18n.copiedToClipboard)));
+    showCopyToast(context, i18n.copiedToClipboard);
   }
 
   @override

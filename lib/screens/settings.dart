@@ -155,13 +155,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ExportLogsLabels(
             title: i18n.settingsExportLogsLabel,
             cancel: i18n.cancel,
-            exportError: i18n.settingsExportLogsError,
+            exportError: i18n.settingsExportLogsFailed,
           ),
         );
       }
     } catch (e) {
+      // Not "no logs found": the listing itself failed, which is a different
+      // thing to tell the user than an empty list.
       if (mounted) {
-        showBrandToast(context, i18n.settingsExportLogsError);
+        showBrandToast(context, i18n.settingsExportLogsFailed);
       }
     }
   }

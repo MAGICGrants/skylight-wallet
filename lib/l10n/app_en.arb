@@ -231,6 +231,7 @@
   "settingsExportLogsLabel": "Export Logs",
   "settingsExportLogsButton": "Export",
   "settingsExportLogsError": "No logs found to export.",
+  "settingsExportLogsFailed": "Could not export the log file",
   "settingsThemeLabel": "Theme",
   "settingsThemeSystem": "System",
   "settingsThemeLight": "Light",

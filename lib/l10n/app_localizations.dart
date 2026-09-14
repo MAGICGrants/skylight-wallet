@@ -1227,6 +1227,12 @@ abstract class AppLocalizations {
   /// **'No logs found to export.'**
   String get settingsExportLogsError;
 
+  /// No description provided for @settingsExportLogsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export the log file'**
+  String get settingsExportLogsFailed;
+
   /// No description provided for @settingsThemeLabel.
   ///
   /// In en, this message translates to:

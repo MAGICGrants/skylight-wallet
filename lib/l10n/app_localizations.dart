@@ -1065,6 +1065,12 @@ abstract class AppLocalizations {
   /// **'Copy address'**
   String get receiveCopyAddress;
 
+  /// No description provided for @receiveShareError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the share sheet'**
+  String get receiveShareError;
+
   /// No description provided for @receiveAddressHeading.
   ///
   /// In en, this message translates to:

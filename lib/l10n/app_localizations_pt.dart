@@ -525,6 +525,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get receiveCopyAddress => 'Copiar endereço';
 
   @override
+  String get receiveShareError => 'Não foi possível abrir a janela de compartilhamento';
+
+  @override
   String receiveAddressHeading(String coin) {
     return 'Seu endereço $coin';
   }

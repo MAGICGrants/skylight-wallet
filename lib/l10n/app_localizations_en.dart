@@ -525,6 +525,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveCopyAddress => 'Copy address';
 
   @override
+  String get receiveShareError => 'Could not open the share sheet';
+
+  @override
   String receiveAddressHeading(String coin) {
     return 'Your $coin address';
   }

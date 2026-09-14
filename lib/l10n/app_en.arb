@@ -190,6 +190,7 @@
   "receiveSubaddressTab": "Subaddress",
   "receivePrimaryTab": "Primary address",
   "receiveCopyAddress": "Copy address",
+  "receiveShareError": "Could not open the share sheet",
   "receiveAddressHeading": "Your {coin} address",
   "@receiveAddressHeading": {
     "placeholders": {

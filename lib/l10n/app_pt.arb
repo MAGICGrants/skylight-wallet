@@ -190,6 +190,7 @@
   "receiveSubaddressTab": "Subendereço",
   "receivePrimaryTab": "Endereço primário",
   "receiveCopyAddress": "Copiar endereço",
+  "receiveShareError": "Não foi possível abrir a janela de compartilhamento",
   "receiveAddressHeading": "Seu endereço {coin}",
   "@receiveAddressHeading": {
     "placeholders": {

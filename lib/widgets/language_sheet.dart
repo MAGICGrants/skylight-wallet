@@ -12,15 +12,21 @@ const languageNames = {'en': ('English', 'English'), 'pt': ('Português', 'Portu
 /// (welcome has no route to Settings, so a reader who can't read it can switch
 /// here before anything else).
 void showLanguageSheet(BuildContext context) {
-  final i18n = AppLocalizations.of(context)!;
   final language = context.read<LanguageModel>();
   showLanguagePickerSheet(
     context,
-    labels: SettingsPickerLabels(
-      title: i18n.settingsLanguageLabel,
-      subtitle: i18n.settingsLanguageSheetSubtitle,
-      done: i18n.done,
-    ),
+    // Resolved per build from the sheet's own context rather than captured
+    // here: picking a language re-localizes the app while this sheet is still
+    // the thing on screen, and a snapshot would leave it in the old language --
+    // looking for all the world like the setting did not take.
+    labels: (context) {
+      final i18n = AppLocalizations.of(context)!;
+      return SettingsPickerLabels(
+        title: i18n.settingsLanguageLabel,
+        subtitle: i18n.settingsLanguageSheetSubtitle,
+        done: i18n.done,
+      );
+    },
     options: [
       for (final locale in AppLocalizations.supportedLocales)
         LanguagePickerOption(

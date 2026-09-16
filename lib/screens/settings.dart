@@ -203,11 +203,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// unlocked. Reaching this screen hands over the seed and secret spend key,
   /// which is total, irreversible control of the funds; the warning sheet alone
   /// stops nobody holding the phone.
+  ///
+  /// Only when app lock is on, though -- turning it off is the user saying this
+  /// app does not ask the device who is holding the phone, and a prompt that
+  /// appears anyway reads as the setting being ignored.
   Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
 
     if (Platform.isAndroid || Platform.isIOS) {
-      final result = await BiometricAuth.authenticate(reason: i18n.revealSeedAuthReason);
+      final result = await BiometricAuth.authenticateIfAppLockEnabled(
+        reason: i18n.revealSeedAuthReason,
+      );
       if (result != BiometricAuthResult.authenticated) {
         if (mounted) {
           showBrandToast(context, i18n.settingsAppLockUnableToAuthError);

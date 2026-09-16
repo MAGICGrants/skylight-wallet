@@ -6,7 +6,12 @@ import 'package:wallet_background/wallet_background.dart';
 // The handler + service control live in wallet-core (`wallet_background`); the
 // app keeps only the isolate entry point (see periodic_tasks.dart).
 export 'package:wallet_background/wallet_background.dart'
-    show startForegroundSync, stopForegroundSync, startForegroundSyncIfEnabled, isWalletFullySynced;
+    show
+        startForegroundSync,
+        stopForegroundSync,
+        startForegroundSyncIfEnabled,
+        isWalletFullySynced,
+        stopSyncAndDeleteWallets;
 
 /// Foreground-service isolate entry: bootstrap this isolate, then hand off to
 /// the shared handler. Top-level `@pragma` so it survives tree-shaking.

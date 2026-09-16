@@ -9,7 +9,8 @@ import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
 import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
-import 'package:skylight_wallet/services/foreground_sync_service.dart' show foregroundSyncCallback;
+import 'package:skylight_wallet/services/foreground_sync_service.dart'
+    show foregroundSyncCallback, stopSyncAndDeleteWallets;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
@@ -230,10 +231,15 @@ Future<void> unlockWithPassword(BuildContext context, String password) async {
 }
 
 /// Deletes the wallet and everything derived from it.
+///
+/// Through wallet-core's teardown rather than a bare `deleteAll`: the
+/// foreground service holds its own wallet2 instance open on these files in its
+/// own isolate, and deleting them while it runs leaves it syncing -- and
+/// rewriting -- a wallet the user just deleted.
 Future<void> deleteWallet(BuildContext context) async {
   // TODO(wallet-core): pass skylight's own pref keys (contacts, pending tx,
   // notification state) once the delete path is validated on device.
-  await Provider.of<WalletManager>(context, listen: false).deleteAll();
+  await stopSyncAndDeleteWallets(Provider.of<WalletManager>(context, listen: false));
 }
 
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.

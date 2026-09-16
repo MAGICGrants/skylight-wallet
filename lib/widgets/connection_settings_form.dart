@@ -256,6 +256,34 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _errorMessage = null;
     });
     if (value == 'node' && Platform.isAndroid) _loadSyncPrefs();
+    _loadConnectionForType(value);
+  }
+
+  /// Swaps the fields to the server saved for [type].
+  ///
+  /// Servers are stored per connection type, so selecting a mode selects that
+  /// mode's server. Leaving the previous mode's address in the field is how an
+  /// LWS connection could be saved pointing at a Monero node, which would hand
+  /// the node the private view key.
+  ///
+  /// A mode with nothing saved clears the field rather than inheriting the other
+  /// one's address. `_initial*` is deliberately not updated: switching mode is a
+  /// change, so Save stays gated on a passing test.
+  Future<void> _loadConnectionForType(String type) async {
+    final wallet = appWalletOf(context);
+    final conn = await wallet.getPersistedConnectionForType(type);
+    // The user may have tapped another type while this was in flight.
+    if (!mounted || _connectionType != type) return;
+
+    final useTor = conn.useTor && TorSettingsService.sharedInstance.torMode != TorMode.disabled;
+    setState(() {
+      _addressController.text = conn.address;
+      _customProxyPortController.text = conn.proxyPort;
+      _useTor = useTor;
+      _hasTested = false;
+      _connectionSuccess = false;
+      _errorMessage = null;
+    });
   }
 
   String _connectionTypeLabel(AppLocalizations i18n, String type) {

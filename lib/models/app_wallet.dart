@@ -56,6 +56,13 @@ abstract interface class AppWallet implements Listenable {
 
   // Connection ops
   Future<LWSConnectionDetails> getPersistedConnection();
+
+  /// The server saved for [type], whichever type is currently active.
+  ///
+  /// Servers are stored per connection type, so the setup form can show the
+  /// server belonging to the mode being selected instead of leaving the other
+  /// mode's address in the field.
+  Future<LWSConnectionDetails> getPersistedConnectionForType(String type);
   void setConnection({
     required String address,
     required String proxyPort,

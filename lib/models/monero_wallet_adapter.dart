@@ -132,6 +132,18 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   }
 
   @override
+  Future<LWSConnectionDetails> getPersistedConnectionForType(String type) async {
+    final c = await _wallet.getPersistedConnectionForType(type);
+    return LWSConnectionDetails(
+      address: c.address,
+      proxyPort: c.proxyPort,
+      useTor: c.useTor,
+      useSsl: _deriveSsl(c.address),
+      connectionType: c.connectionType,
+    );
+  }
+
+  @override
   void setConnection({
     required String address,
     required String proxyPort,

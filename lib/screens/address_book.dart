@@ -589,89 +589,88 @@ class _ContactSheetState extends State<_ContactSheet> {
     final i18n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(padding: EdgeInsets.only(top: 8), child: SheetHandle()),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+    // No keyboard padding here: showBrandSheet applies it once for the
+    // whole sheet, and a second one lifts this clear off the keyboard.
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxSheetHeight(context)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(padding: EdgeInsets.only(top: 8), child: SheetHandle()),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SheetIcon(
+                        icon: _isEditing ? Icons.edit_outlined : Icons.person_outline,
+                        bg: BrandColors.surfaceTinted,
+                        color: BrandColors.primaryDeep,
+                      ),
+                      const SizedBox(width: 11),
+                      Text(
+                        _isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact,
+                        style: BrandText.sheetTitle,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    _isEditing ? i18n.addressBookEditDescription : i18n.addressBookAddDescription,
+                    style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        SheetIcon(
-                          icon: _isEditing ? Icons.edit_outlined : Icons.person_outline,
-                          bg: BrandColors.surfaceTinted,
-                          color: BrandColors.primaryDeep,
-                        ),
-                        const SizedBox(width: 11),
-                        Text(
-                          _isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact,
-                          style: BrandText.sheetTitle,
-                        ),
-                      ],
+                    SectionHeader(
+                      label: i18n.addressBookContactName,
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
                     ),
-                    const SizedBox(height: 7),
-                    Text(
-                      _isEditing ? i18n.addressBookEditDescription : i18n.addressBookAddDescription,
-                      style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+                    _nameField(name),
+                    const SizedBox(height: 16),
+                    SectionHeader(
+                      label: _addressHeaderLabel(i18n),
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
                     ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        label: i18n.addressBookContactName,
-                        padding: const EdgeInsets.only(left: 4, bottom: 8),
-                      ),
-                      _nameField(name),
-                      const SizedBox(height: 16),
-                      SectionHeader(
-                        label: _addressHeaderLabel(i18n),
-                        padding: const EdgeInsets.only(left: 4, bottom: 8),
-                      ),
-                      _addressEntry(),
-                      if (_error != null) ...[
-                        const SizedBox(height: 10),
-                        Text(_error!, style: BrandText.caption.copyWith(color: BrandColors.error)),
-                      ],
+                    _addressEntry(),
+                    if (_error != null) ...[
+                      const SizedBox(height: 10),
+                      Text(_error!, style: BrandText.caption.copyWith(color: BrandColors.error)),
                     ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
-                child: Column(
-                  children: [
-                    BrandButton(
-                      label: _isEditing ? i18n.addressBookUpdate : i18n.addressBookSave,
-                      loading: _saving,
-                      onPressed: (_saving || name.isEmpty || _address == null) ? null : _save,
-                    ),
-                    const SizedBox(height: 4),
-                    BrandButton.ghost(
-                      label: i18n.cancel,
-                      color: BrandColors.inkMuted,
-                      onPressed: () => Navigator.pop(context),
-                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+              child: Column(
+                children: [
+                  BrandButton(
+                    label: _isEditing ? i18n.addressBookUpdate : i18n.addressBookSave,
+                    loading: _saving,
+                    onPressed: (_saving || name.isEmpty || _address == null) ? null : _save,
+                  ),
+                  const SizedBox(height: 4),
+                  BrandButton.ghost(
+                    label: i18n.cancel,
+                    color: BrandColors.inkMuted,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

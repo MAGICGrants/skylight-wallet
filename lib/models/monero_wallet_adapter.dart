@@ -73,6 +73,8 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   double? get unlockedBalance => _wallet.unlockedBalance;
   @override
+  BigInt? get unlockedBalanceBaseUnits => _wallet.unlockedBalanceBaseUnits;
+  @override
   double? get totalBalance => _wallet.totalBalance;
   @override
   bool? get serverSupportsSubaddresses => _wallet.serverSupportsSubaddresses;
@@ -207,15 +209,10 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   bool isAddressValid(String address) => _wallet.isAddressValid(address);
 
   @override
-  Future<int?> estimateFee(
-    String destinationAddress,
-    double amount, {
-    int priority = 0,
-    String? amountText,
-  }) async {
+  Future<int?> estimateFee(String destinationAddress, String amount, {int priority = 0}) async {
     final fee = await _wallet.estimateFee(
       destinationAddress,
-      _toBaseUnits(amount, amountText),
+      domain.decimalToBaseUnits(amount, _moneroDecimals),
       priority: priority,
     );
     return fee?.toInt();
@@ -224,14 +221,13 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   Future<AppPendingTx> createTx(
     String destinationAddress,
-    double amount,
+    String amount,
     bool isSweepAll, {
     int priority = 0,
-    String? amountText,
   }) async {
     final tx = await _wallet.createTx(
       destinationAddress,
-      _toBaseUnits(amount, amountText),
+      domain.decimalToBaseUnits(amount, _moneroDecimals),
       isSweepAll,
       priority: priority,
     );
@@ -258,12 +254,6 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
       return null;
     }
   }
-
-  // Prefer the exact decimal string; a double loses precision (D4).
-  static BigInt _toBaseUnits(double amount, String? amountText) => domain.decimalToBaseUnits(
-    amountText ?? amount.toStringAsFixed(_moneroDecimals),
-    _moneroDecimals,
-  );
 }
 
 /// Wraps a wallet-core [domain.PendingTransaction] as the neutral [AppPendingTx].

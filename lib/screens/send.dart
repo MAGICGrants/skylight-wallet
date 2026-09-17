@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:wallet_domain/wallet_domain.dart' show baseUnitsToDecimalString, decimalToBaseUnits;
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -16,7 +17,9 @@ import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 class SendScreenArgs {
   String destinationAddress;
-  double? amount;
+
+  /// Exact decimal text, never a double: this is a spend amount.
+  String? amount;
 
   /// Set when the address came from a contact (e.g. Send in the address book),
   /// so Send opens showing the contact card rather than a bare address.
@@ -109,7 +112,7 @@ class _SendScreenState extends State<SendScreen> {
 
     if (args != null) {
       _destinationAddressController.text = args.destinationAddress;
-      _amountController.text = args.amount != null ? args.amount.toString() : '';
+      _amountController.text = args.amount ?? '';
       // Same field the in-send picker sets, so the contact card renders here too.
       _selectedContact = args.contact;
     }
@@ -132,7 +135,7 @@ class _SendScreenState extends State<SendScreen> {
     if (result == null || result is! String) return;
 
     String address = '';
-    double? amount;
+    String? amount;
     final uri = Uri.tryParse(result);
 
     if (uri != null && uri.scheme == 'monero') {
@@ -145,9 +148,7 @@ class _SendScreenState extends State<SendScreen> {
 
       address = uri.path;
 
-      if (uri.queryParameters.containsKey('tx_amount')) {
-        amount = double.tryParse(uri.queryParameters['tx_amount']!);
-      }
+      amount = uri.queryParameters['tx_amount'];
     } else if (wallet.isAddressValid(result)) {
       address = result;
     } else {
@@ -159,7 +160,24 @@ class _SendScreenState extends State<SendScreen> {
 
     _destinationAddressController.text = address;
     if (amount != null) {
-      _amountController.text = amount.toString();
+      _amountController.text = _asExactAmount(amount);
+    }
+  }
+
+  /// A scanned amount as Monero can actually express it.
+  ///
+  /// Text the whole way. Parsing to a double and back is what used to change
+  /// the value; base units are exact, so this round trip can only drop digits
+  /// finer than one piconero — and it shows the user the amount that will
+  /// really be spent instead of one that gets truncated later.
+  ///
+  /// Unparseable input goes in the field verbatim, so the form's own validation
+  /// rejects it and the user can see what was scanned.
+  String _asExactAmount(String raw) {
+    try {
+      return baseUnitsToDecimalString(decimalToBaseUnits(raw, _xmrDecimals), _xmrDecimals);
+    } on FormatException {
+      return raw;
     }
   }
 
@@ -332,14 +350,13 @@ class _SendScreenState extends State<SendScreen> {
 
     final destinationAddress = await _resolveDestinationAddress();
     final amountText = _amountController.text;
-    final amount = double.parse(amountText);
 
     try {
       // Estimate the fee per priority natively (no full tx build).
       final fees = await Future.wait([
-        wallet.estimateFee(destinationAddress, amount, priority: 1, amountText: amountText),
-        wallet.estimateFee(destinationAddress, amount, priority: 2, amountText: amountText),
-        wallet.estimateFee(destinationAddress, amount, priority: 3, amountText: amountText),
+        wallet.estimateFee(destinationAddress, amountText, priority: 1),
+        wallet.estimateFee(destinationAddress, amountText, priority: 2),
+        wallet.estimateFee(destinationAddress, amountText, priority: 3),
       ]);
 
       // Only update state if this is still the latest request
@@ -398,7 +415,6 @@ class _SendScreenState extends State<SendScreen> {
     }
 
     final destinationAddressUnresolved = _destinationAddressController.text;
-    final amount = double.parse(_amountController.text);
     String destinationAddress = '';
     String? destinationOpenAlias;
     String? destinationOpenAliasName;
@@ -428,10 +444,9 @@ class _SendScreenState extends State<SendScreen> {
       // screen are estimates, not tx objects, so always construct here).
       final tx = await wallet.createTx(
         destinationAddress,
-        amount,
+        _amountController.text,
         _isSweepAll,
         priority: _selectedPriority + 1,
-        amountText: _amountController.text,
       );
 
       setState(() {
@@ -448,7 +463,10 @@ class _SendScreenState extends State<SendScreen> {
       }
     } catch (error) {
       if (error.toString().contains('Unlocked funds too low')) {
-        if (wallet.unlockedBalance! > amount) {
+        // Display-only: picks which of two error messages to show, so the
+        // imprecision of a double cannot reach an amount anyone spends.
+        final approxAmount = double.tryParse(_amountController.text) ?? 0;
+        if (wallet.unlockedBalance! > approxAmount) {
           setState(() {
             _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
           });
@@ -550,7 +568,12 @@ class _SendScreenState extends State<SendScreen> {
 
   void _setBalanceAsSendAmount() {
     final wallet = appWalletOf(context);
-    _amountController.text = _plainAmount(wallet.unlockedBalance ?? 0);
+    // From base units, not from the display double: Max fills a field that is
+    // about to be spent, and a balance over ~9007 XMR does not survive a double
+    // intact. Sweep-all normally makes the amount moot, but editing the field
+    // clears that flag and the number becomes the real amount.
+    final units = wallet.unlockedBalanceBaseUnits;
+    _amountController.text = units == null ? '' : baseUnitsToDecimalString(units, _xmrDecimals);
 
     setState(() {
       _isSweepAll = true;
@@ -700,20 +723,6 @@ String _amountText(double amount) => amount.toStringAsFixed(5);
 /// Monero's decimal places. Matches the adapter's own constant; kept local so
 /// this file does not reach into the adapter's privates.
 const _xmrDecimals = 12;
-
-/// [amount] as a plain decimal, never exponential.
-///
-/// `double.toString()` switches to exponential notation below 1e-6 -- a
-/// 500000-piconero balance renders as "5e-7". `decimalToBaseUnits` splits on
-/// '.' and hands the rest to `BigInt.parse`, which throws on an exponent, so
-/// the fee estimate fails and the field cannot be sent. Only the Max button
-/// fills this field from a raw double, which is why it only broke there.
-String _plainAmount(double amount) {
-  final fixed = amount.toStringAsFixed(_xmrDecimals);
-  if (!fixed.contains('.')) return fixed;
-  final trimmed = fixed.replaceFirst(RegExp(r'0+$'), '');
-  return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
-}
 
 /// `abcd…wxyz`: keeps [head] leading and [tail] trailing chars of a long
 /// address, eliding the middle. Returns the string unchanged when short.

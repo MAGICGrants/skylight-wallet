@@ -62,7 +62,7 @@ void installWalletCore() {
 
   FiatRates.install(getTorProxy: TorSettingsService.sharedInstance.getProxy);
 
-  // The whole logger lives in wallet-core now (D25): console + file sinks fan out
+  // The whole logger lives in wallet-core now: console + file sinks fan out
   // from one installed sink; the file sink is verbose-gated internally.
   wcore.WalletLog.sink = wcore.CompositeLogSink([
     const wcore.DebugPrintLogSink(),
@@ -99,6 +99,14 @@ void installWalletCore() {
 /// wallet connects through. (Background open + the node/Tor gate now live inside
 /// `wallet_background`.)
 Future<bool> _ensureTorConnected() async {
+  final settings = TorSettingsService.sharedInstance;
+  await settings.ensureLoaded();
+  if (settings.torMode != TorMode.builtIn) {
+    // External: the proxy is the user's, and `getProxy` fails closed if it is
+    // not usable. Disabled: there is no Tor to report.
+    return settings.torMode == TorMode.external;
+  }
+
   await TorService.sharedInstance.start();
   return TorService.sharedInstance.waitUntilConnected(timeout: const Duration(minutes: 2));
 }
@@ -156,7 +164,7 @@ AppWallet appWalletOf(BuildContext context, {bool listen = false}) {
 CryptoWallet? xmrWallet(BuildContext context) =>
     Provider.of<WalletManager>(context, listen: false).getWallet('XMR');
 
-/// Shows the shared tx-details sheet (`wallet_ui`, D24) for [tx] from the tx
+/// Shows the shared tx-details sheet (`wallet_ui`) for [tx] from the tx
 /// list. The activity list now renders the engine's wallet_domain TxDetails
 /// directly, so no neutral-to-engine bridge is needed.
 void showTxDetailsDialog(BuildContext context, TxDetails tx) {

@@ -315,7 +315,7 @@ class _SendScreenState extends State<SendScreen> {
       return false;
     }
 
-    if (amount > (wallet.unlockedBalance ?? 0)) {
+    if (_amountUnits() > (wallet.unlockedBalanceBaseUnits ?? BigInt.zero)) {
       if (setErrors) {
         setState(() {
           _amountError = i18n.sendInsufficientBalanceError;
@@ -602,17 +602,28 @@ class _SendScreenState extends State<SendScreen> {
     await _revalidate();
   }
 
+  /// The typed amount in piconero, or zero when the field is not a number.
+  BigInt _amountUnits() {
+    try {
+      return decimalToBaseUnits(_amountController.text, _xmrDecimals);
+    } on FormatException {
+      return BigInt.zero;
+    }
+  }
+
   Future<void> _onAmountChanged() async {
     final wallet = appWalletOf(context);
-    final amount = double.tryParse(_amountController.text) ?? 0;
+    // Base units for the same reason as in `_validateForm`: `==` between two
+    // differently-rounded doubles decided whether this is a sweep.
+    final isFullBalance = _amountUnits() == wallet.unlockedBalanceBaseUnits;
 
-    if (amount == wallet.unlockedBalance! && !_isSweepAll) {
+    if (isFullBalance && !_isSweepAll) {
       setState(() {
         _isSweepAll = true;
       });
     }
 
-    if (amount != wallet.unlockedBalance! && _isSweepAll) {
+    if (!isFullBalance && _isSweepAll) {
       setState(() {
         _isSweepAll = false;
       });

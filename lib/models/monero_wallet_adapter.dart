@@ -10,7 +10,7 @@ import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
 
 const _moneroDecimals = 12;
 
-/// Whether a bare `host:port` [address] gets a secure transport (D30).
+/// Whether a bare `host:port` [address] gets a secure transport.
 ///
 /// wallet-core no longer stores a `useSsl` flag; the scheme is derived from the
 /// host — https for a routable one, plaintext for an onion or local one. This

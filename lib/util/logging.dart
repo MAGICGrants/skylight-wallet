@@ -1,4 +1,4 @@
-// The whole logger lives in wallet-core (wallet_infra, D25): the log() API +
+// The whole logger lives in wallet-core (wallet_infra): the log() API +
 // formatter, the verbose gate, the file sink (FileLogSink), log rotation
 // (cleanOldLogFiles), and file listing/export. The app only installs the sink
 // (console + file) in wallet_core_glue.dart.

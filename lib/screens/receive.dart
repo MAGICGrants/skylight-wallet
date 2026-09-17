@@ -6,6 +6,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -50,6 +51,23 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     showCopyToast(context, i18n.addressCopied);
   }
 
+  /// Opens the system share sheet on [address], anchored at [origin].
+  ///
+  /// [origin] is the share button's rect. iOS presents the sheet as a popover
+  /// pointing at it and share_plus rejects the call without one, so dropping it
+  /// left the button doing nothing at all. Awaited and caught for the same
+  /// reason: a fire-and-forget share turns every failure into silence.
+  Future<void> _share(String address, Rect? origin) async {
+    final i18n = AppLocalizations.of(context)!;
+    final toast = BrandToast.of(context);
+    try {
+      await SharePlus.instance.share(ShareParams(text: address, sharePositionOrigin: origin));
+    } catch (error) {
+      log(LogLevel.error, 'Address share failed (origin=${origin ?? 'none'}): $error');
+      toast.show(i18n.receiveShareError);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
@@ -74,7 +92,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     return ReceiveView(
       labels: ReceiveLabels(title: i18n.receiveTitle, copyAddress: i18n.receiveCopyAddress),
       onBack: () => Navigator.of(context).pop(),
-      onShare: _isMobile ? () => SharePlus.instance.share(ShareParams(text: address!)) : null,
+      onShare: _isMobile ? (origin) => _share(address!, origin) : null,
       ready: ready,
       // Monero-only app: no coin card (would just say "Monero" redundantly).
       coinSymbol: 'XMR',

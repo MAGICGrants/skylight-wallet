@@ -19,6 +19,13 @@ class AddressBookScreen extends StatefulWidget {
   State<AddressBookScreen> createState() => _AddressBookScreenState();
 }
 
+/// The address this screen shows for [contact].
+///
+/// The shared address book holds one address per chain. Skylight is Monero-only
+/// today, so it renders that entry; when Serai swaps add other chains this is
+/// the single place that has to learn about them.
+String _xmrAddress(Contact contact) => contact.addressFor('XMR') ?? '';
+
 class _AddressBookScreenState extends State<AddressBookScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -323,7 +330,7 @@ class _ContactTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          shortenMiddle(contact.address, head: 8, tail: 8),
+                          shortenMiddle(_xmrAddress(contact), head: 8, tail: 8),
                           style: TextStyle(
                             fontFamily: 'Ubuntu Mono',
                             fontSize: 11.5,
@@ -418,7 +425,7 @@ class _AddressRow extends StatelessWidget {
   void _copy(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     // Treat as sensitive (auto-cleared) like other address/key copies.
-    SecureClipboard.copy(contact.address);
+    SecureClipboard.copy(_xmrAddress(contact));
     showCopyToast(context, i18n.addressCopied);
   }
 
@@ -434,7 +441,7 @@ class _AddressRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              contact.address,
+              _xmrAddress(contact),
               style: TextStyle(
                 fontFamily: 'Ubuntu Mono',
                 fontSize: 12,
@@ -454,7 +461,7 @@ class _AddressRow extends StatelessWidget {
             onPressed: () => Navigator.pushNamed(
               context,
               '/send',
-              arguments: SendScreenArgs(destinationAddress: contact.address, contact: contact),
+              arguments: SendScreenArgs(destinationAddress: _xmrAddress(contact), contact: contact),
             ),
           ),
         ],
@@ -514,7 +521,7 @@ class _ContactSheetState extends State<_ContactSheet> {
     super.initState();
     if (widget.contact != null) {
       _nameController.text = widget.contact!.name;
-      _address = widget.contact!.address;
+      _address = _xmrAddress(widget.contact!);
     }
   }
 
@@ -571,9 +578,9 @@ class _ContactSheetState extends State<_ContactSheet> {
     try {
       final model = Provider.of<ContactModel>(context, listen: false);
       if (widget.contact == null) {
-        await model.addContact(name, address);
+        await model.addContact(name, {'XMR': address});
       } else {
-        await model.updateContact(widget.contact!.id, name, address);
+        await model.updateContact(widget.contact!.id, name, {'XMR': address});
       }
       if (mounted) Navigator.pop(context);
     } catch (_) {
@@ -589,89 +596,88 @@ class _ContactSheetState extends State<_ContactSheet> {
     final i18n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(padding: EdgeInsets.only(top: 8), child: SheetHandle()),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+    // No keyboard padding here: showBrandSheet applies it once for the
+    // whole sheet, and a second one lifts this clear off the keyboard.
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxSheetHeight(context)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(padding: EdgeInsets.only(top: 8), child: SheetHandle()),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SheetIcon(
+                        icon: _isEditing ? Icons.edit_outlined : Icons.person_outline,
+                        bg: BrandColors.surfaceTinted,
+                        color: BrandColors.primaryDeep,
+                      ),
+                      const SizedBox(width: 11),
+                      Text(
+                        _isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact,
+                        style: BrandText.sheetTitle,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    _isEditing ? i18n.addressBookEditDescription : i18n.addressBookAddDescription,
+                    style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        SheetIcon(
-                          icon: _isEditing ? Icons.edit_outlined : Icons.person_outline,
-                          bg: BrandColors.surfaceTinted,
-                          color: BrandColors.primaryDeep,
-                        ),
-                        const SizedBox(width: 11),
-                        Text(
-                          _isEditing ? i18n.addressBookEditContact : i18n.addressBookAddContact,
-                          style: BrandText.sheetTitle,
-                        ),
-                      ],
+                    SectionHeader(
+                      label: i18n.addressBookContactName,
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
                     ),
-                    const SizedBox(height: 7),
-                    Text(
-                      _isEditing ? i18n.addressBookEditDescription : i18n.addressBookAddDescription,
-                      style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+                    _nameField(name),
+                    const SizedBox(height: 16),
+                    SectionHeader(
+                      label: _addressHeaderLabel(i18n),
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
                     ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        label: i18n.addressBookContactName,
-                        padding: const EdgeInsets.only(left: 4, bottom: 8),
-                      ),
-                      _nameField(name),
-                      const SizedBox(height: 16),
-                      SectionHeader(
-                        label: _addressHeaderLabel(i18n),
-                        padding: const EdgeInsets.only(left: 4, bottom: 8),
-                      ),
-                      _addressEntry(),
-                      if (_error != null) ...[
-                        const SizedBox(height: 10),
-                        Text(_error!, style: BrandText.caption.copyWith(color: BrandColors.error)),
-                      ],
+                    _addressEntry(),
+                    if (_error != null) ...[
+                      const SizedBox(height: 10),
+                      Text(_error!, style: BrandText.caption.copyWith(color: BrandColors.error)),
                     ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
-                child: Column(
-                  children: [
-                    BrandButton(
-                      label: _isEditing ? i18n.addressBookUpdate : i18n.addressBookSave,
-                      loading: _saving,
-                      onPressed: (_saving || name.isEmpty || _address == null) ? null : _save,
-                    ),
-                    const SizedBox(height: 4),
-                    BrandButton.ghost(
-                      label: i18n.cancel,
-                      color: BrandColors.inkMuted,
-                      onPressed: () => Navigator.pop(context),
-                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+              child: Column(
+                children: [
+                  BrandButton(
+                    label: _isEditing ? i18n.addressBookUpdate : i18n.addressBookSave,
+                    loading: _saving,
+                    onPressed: (_saving || name.isEmpty || _address == null) ? null : _save,
+                  ),
+                  const SizedBox(height: 4),
+                  BrandButton.ghost(
+                    label: i18n.cancel,
+                    color: BrandColors.inkMuted,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

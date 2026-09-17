@@ -9,7 +9,8 @@ import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
 import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
-import 'package:skylight_wallet/services/foreground_sync_service.dart' show foregroundSyncCallback;
+import 'package:skylight_wallet/services/foreground_sync_service.dart'
+    show foregroundSyncCallback, stopSyncAndDeleteWallets;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
@@ -61,7 +62,7 @@ void installWalletCore() {
 
   FiatRates.install(getTorProxy: TorSettingsService.sharedInstance.getProxy);
 
-  // The whole logger lives in wallet-core now (D25): console + file sinks fan out
+  // The whole logger lives in wallet-core now: console + file sinks fan out
   // from one installed sink; the file sink is verbose-gated internally.
   wcore.WalletLog.sink = wcore.CompositeLogSink([
     const wcore.DebugPrintLogSink(),
@@ -98,6 +99,14 @@ void installWalletCore() {
 /// wallet connects through. (Background open + the node/Tor gate now live inside
 /// `wallet_background`.)
 Future<bool> _ensureTorConnected() async {
+  final settings = TorSettingsService.sharedInstance;
+  await settings.ensureLoaded();
+  if (settings.torMode != TorMode.builtIn) {
+    // External: the proxy is the user's, and `getProxy` fails closed if it is
+    // not usable. Disabled: there is no Tor to report.
+    return settings.torMode == TorMode.external;
+  }
+
   await TorService.sharedInstance.start();
   return TorService.sharedInstance.waitUntilConnected(timeout: const Duration(minutes: 2));
 }
@@ -155,7 +164,7 @@ AppWallet appWalletOf(BuildContext context, {bool listen = false}) {
 CryptoWallet? xmrWallet(BuildContext context) =>
     Provider.of<WalletManager>(context, listen: false).getWallet('XMR');
 
-/// Shows the shared tx-details sheet (`wallet_ui`, D24) for [tx] from the tx
+/// Shows the shared tx-details sheet (`wallet_ui`) for [tx] from the tx
 /// list. The activity list now renders the engine's wallet_domain TxDetails
 /// directly, so no neutral-to-engine bridge is needed.
 void showTxDetailsDialog(BuildContext context, TxDetails tx) {
@@ -230,10 +239,15 @@ Future<void> unlockWithPassword(BuildContext context, String password) async {
 }
 
 /// Deletes the wallet and everything derived from it.
+///
+/// Through wallet-core's teardown rather than a bare `deleteAll`: the
+/// foreground service holds its own wallet2 instance open on these files in its
+/// own isolate, and deleting them while it runs leaves it syncing -- and
+/// rewriting -- a wallet the user just deleted.
 Future<void> deleteWallet(BuildContext context) async {
   // TODO(wallet-core): pass skylight's own pref keys (contacts, pending tx,
   // notification state) once the delete path is validated on device.
-  await Provider.of<WalletManager>(context, listen: false).deleteAll();
+  await stopSyncAndDeleteWallets(Provider.of<WalletManager>(context, listen: false));
 }
 
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.

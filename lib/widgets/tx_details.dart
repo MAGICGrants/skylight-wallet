@@ -5,7 +5,7 @@ import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet, TxDetails;
 import 'package:wallet_ui/wallet_ui.dart' show TxDetailsSheetLabels, showTxDetailsSheet;
 
 /// The tx-details popup is the shared brand bottom sheet in wallet-core
-/// (`wallet_ui`, D24), localization-agnostic. This adapter keeps the app's call
+/// (`wallet_ui`), localization-agnostic. This adapter keeps the app's call
 /// site unchanged and supplies Skylight's translated strings (incl. the status
 /// banner).
 class TxDetailsDialog {

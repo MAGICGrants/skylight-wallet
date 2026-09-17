@@ -39,6 +39,10 @@ abstract interface class AppWallet implements Listenable {
 
   // Balances + history
   double? get unlockedBalance;
+
+  /// The same balance, exactly. [unlockedBalance] is a double for display and
+  /// fiat maths; anything that becomes a spend amount must start here.
+  BigInt? get unlockedBalanceBaseUnits;
   double? get totalBalance;
   List<TxDetails> get txHistory;
   bool? get serverSupportsSubaddresses;
@@ -56,6 +60,13 @@ abstract interface class AppWallet implements Listenable {
 
   // Connection ops
   Future<LWSConnectionDetails> getPersistedConnection();
+
+  /// The server saved for [type], whichever type is currently active.
+  ///
+  /// Servers are stored per connection type, so the setup form can show the
+  /// server belonging to the mode being selected instead of leaving the other
+  /// mode's address in the field.
+  Future<LWSConnectionDetails> getPersistedConnectionForType(String type);
   void setConnection({
     required String address,
     required String proxyPort,
@@ -103,18 +114,14 @@ abstract interface class AppWallet implements Listenable {
 
   /// Estimated network fee in base units (piconero), or null when the backend
   /// can't estimate it (typically insufficient balance for that priority).
-  Future<int?> estimateFee(
-    String destinationAddress,
-    double amount, {
-    int priority,
-    String? amountText,
-  });
+  /// [amount] is exact decimal text, never a double. A spend amount that has
+  /// been through a double is no longer the amount the user asked for.
+  Future<int?> estimateFee(String destinationAddress, String amount, {int priority});
   Future<AppPendingTx> createTx(
     String destinationAddress,
-    double amount,
+    String amount,
     bool isSweepAll, {
     int priority,
-    String? amountText,
   });
   Future<void> commitTx(AppPendingTx tx, String destinationAddress);
   Future<ResolvedOpenAlias?> resolveOpenAlias(String alias);

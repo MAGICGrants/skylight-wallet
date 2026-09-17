@@ -19,6 +19,13 @@ class AddressBookScreen extends StatefulWidget {
   State<AddressBookScreen> createState() => _AddressBookScreenState();
 }
 
+/// The address this screen shows for [contact].
+///
+/// The shared address book holds one address per chain. Skylight is Monero-only
+/// today, so it renders that entry; when Serai swaps add other chains this is
+/// the single place that has to learn about them.
+String _xmrAddress(Contact contact) => contact.addressFor('XMR') ?? '';
+
 class _AddressBookScreenState extends State<AddressBookScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -323,7 +330,7 @@ class _ContactTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          shortenMiddle(contact.address, head: 8, tail: 8),
+                          shortenMiddle(_xmrAddress(contact), head: 8, tail: 8),
                           style: TextStyle(
                             fontFamily: 'Ubuntu Mono',
                             fontSize: 11.5,
@@ -418,7 +425,7 @@ class _AddressRow extends StatelessWidget {
   void _copy(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     // Treat as sensitive (auto-cleared) like other address/key copies.
-    SecureClipboard.copy(contact.address);
+    SecureClipboard.copy(_xmrAddress(contact));
     showCopyToast(context, i18n.addressCopied);
   }
 
@@ -434,7 +441,7 @@ class _AddressRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              contact.address,
+              _xmrAddress(contact),
               style: TextStyle(
                 fontFamily: 'Ubuntu Mono',
                 fontSize: 12,
@@ -454,7 +461,7 @@ class _AddressRow extends StatelessWidget {
             onPressed: () => Navigator.pushNamed(
               context,
               '/send',
-              arguments: SendScreenArgs(destinationAddress: contact.address, contact: contact),
+              arguments: SendScreenArgs(destinationAddress: _xmrAddress(contact), contact: contact),
             ),
           ),
         ],
@@ -514,7 +521,7 @@ class _ContactSheetState extends State<_ContactSheet> {
     super.initState();
     if (widget.contact != null) {
       _nameController.text = widget.contact!.name;
-      _address = widget.contact!.address;
+      _address = _xmrAddress(widget.contact!);
     }
   }
 
@@ -571,9 +578,9 @@ class _ContactSheetState extends State<_ContactSheet> {
     try {
       final model = Provider.of<ContactModel>(context, listen: false);
       if (widget.contact == null) {
-        await model.addContact(name, address);
+        await model.addContact(name, {'XMR': address});
       } else {
-        await model.updateContact(widget.contact!.id, name, address);
+        await model.updateContact(widget.contact!.id, name, {'XMR': address});
       }
       if (mounted) Navigator.pop(context);
     } catch (_) {

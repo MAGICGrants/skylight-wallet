@@ -206,7 +206,7 @@ class _SendScreenState extends State<SendScreen> {
           ContactPickerEntry<Contact>(
             value: c,
             name: c.name,
-            addressShort: _shortenMiddle(c.address, head: 8, tail: 10),
+            addressShort: _shortenMiddle(c.addressFor('XMR') ?? '', head: 8, tail: 10),
           ),
       ],
     );
@@ -214,7 +214,7 @@ class _SendScreenState extends State<SendScreen> {
     if (contact == null || !mounted) return;
     setState(() {
       _selectedContact = contact;
-      _destinationAddressController.text = contact.address;
+      _destinationAddressController.text = contact.addressFor('XMR') ?? '';
     });
   }
 

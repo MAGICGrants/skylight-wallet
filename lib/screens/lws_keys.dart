@@ -15,7 +15,6 @@ class LwsKeysScreen extends StatefulWidget {
 
 class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
   var _restoreHeight = 0;
-  var _primaryAddress = '';
   var _secretViewKey = '';
 
   @override
@@ -31,7 +30,6 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
     if (!mounted) return;
     setState(() {
       _restoreHeight = restoreHeight;
-      _primaryAddress = wallet.getPrimaryAddress();
       _secretViewKey = secretViewKey;
     });
   }
@@ -46,6 +44,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+    final primaryAddress = appWalletOf(context, listen: true).getPrimaryAddress();
 
     return LwsKeysView(
       labels: LwsKeysLabels(
@@ -57,7 +56,7 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
         reveal: i18n.generateSeedReveal,
         warning: i18n.lwsKeysWarning,
       ),
-      primaryAddress: _primaryAddress,
+      primaryAddress: primaryAddress,
       secretViewKey: _secretViewKey,
       restoreHeight: _restoreHeight.toString(),
       onCopy: _copy,

@@ -38,7 +38,7 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final primaryAddress = appWalletOf(context).getPrimaryAddress();
+    final primaryAddress = appWalletOf(context, listen: true).getPrimaryAddress();
     final restoreHeight = ModalRoute.of(context)!.settings.arguments as int;
 
     return LwsKeysView(

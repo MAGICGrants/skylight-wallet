@@ -58,6 +58,9 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   bool get hasAttemptedConnection => _wallet.hasAttemptedConnection;
   @override
   bool get torRequirementBroken => _wallet.torRequirementBroken;
+  @override
+  String connectionAddressExampleForType(String type) =>
+      _wallet.connectionAddressExampleForType(type);
 
   // Sync
   @override

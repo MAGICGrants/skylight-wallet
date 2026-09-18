@@ -31,6 +31,8 @@ abstract interface class AppWallet implements Listenable {
   bool get hasAttemptedConnection;
   bool get torRequirementBroken;
 
+  String connectionAddressExampleForType(String type);
+
   // Sync
   bool get isConnected;
   bool get isSynced;

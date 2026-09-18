@@ -84,6 +84,8 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   String? getUnusedSubaddress() => _wallet.getUnusedSubaddress();
   @override
+  ({int index, String address})? get unusedSubaddress => _wallet.unusedSubaddress;
+  @override
   int? get unusedSubaddressIndex => _wallet.unusedSubaddressIndex;
   @override
   bool? get unusedSubaddressIndexIsSupported => _wallet.unusedSubaddressIndexIsSupported;

@@ -108,6 +108,9 @@ abstract interface class AppWallet implements Listenable {
 
   // Receive (serverSupportsSubaddresses is declared with the sync getters above)
   String? getUnusedSubaddress();
+
+  /// The subaddress to hand out with the index it actually is, as one value.
+  ({int index, String address})? get unusedSubaddress;
   int? get unusedSubaddressIndex;
   bool? get unusedSubaddressIndexIsSupported;
 

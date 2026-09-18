@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: 075265e24bbf3628d6ce0407c7d1bb7945aa48e7
+      ref: de1f52cafd0e0ab7057e63994bc751af81f9ca76
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling

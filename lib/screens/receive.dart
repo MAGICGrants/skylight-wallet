@@ -73,8 +73,10 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context, listen: true);
     final primaryAddress = wallet.getPrimaryAddress();
-    final subaddress = wallet.getUnusedSubaddress();
     final isDemoMode = wallet.connectionAddress == 'demo';
+    // The address and the index that labels it, as one value: read separately
+    // they can name different subaddresses.
+    final sub = isDemoMode ? null : wallet.unusedSubaddress;
     final subSupported = wallet.serverSupportsSubaddresses;
     final canToggle = subSupported == true && !isDemoMode;
 
@@ -83,7 +85,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       address = primaryAddress;
     }
     if (subSupported == true) {
-      address = _showSubaddress ? subaddress : primaryAddress;
+      address = _showSubaddress ? sub?.address : primaryAddress;
     }
 
     final ready = (subSupported != null || isDemoMode) && address != null;
@@ -104,9 +106,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
       address: address ?? '',
       qrHeading: canToggle && _showSubaddress
-          ? (wallet.unusedSubaddressIndex != null
-                ? '${i18n.receiveSubaddressTab} #${wallet.unusedSubaddressIndex}'
-                : i18n.receiveSubaddressTab)
+          ? (sub != null ? '${i18n.receiveSubaddressTab} #${sub.index}' : i18n.receiveSubaddressTab)
           : i18n.receiveAddressHeading('Monero'),
       warning: warning,
       onCopy: () => _copyAddressToClipboard(address!),

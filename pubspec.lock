@@ -1233,8 +1233,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_background"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1242,8 +1242,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_domain"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1251,8 +1251,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_fiat"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1260,8 +1260,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_infra"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1269,8 +1269,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_monero"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1278,8 +1278,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_openalias"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1287,8 +1287,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_ui"
-      ref: "68eae37137948d9e6e06004190b0a09f51a62451"
-      resolved-ref: "68eae37137948d9e6e06004190b0a09f51a62451"
+      ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
+      resolved-ref: "4285c22d6545d15a59d4762390e3e1f5593230a8"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"

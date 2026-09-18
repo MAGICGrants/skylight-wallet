@@ -87,9 +87,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connect to a Monero light-wallet server (LWS) or your own full node. Only select a server you trust. Even if you use Tor, this server can learn information about you. With an LWS, your private view key and primary address will be shared with this server.';
 
   @override
-  String get lwsSetupAddressHint => 'lws.example.com:18090';
-
-  @override
   String get lwsSetupProxyPortLabel => 'HTTP Proxy Port (Optional)';
 
   @override
@@ -112,9 +109,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionTypeNode => 'Monero Node';
-
-  @override
-  String get connectionNodeAddressHint => 'e.g. node.example.com:18081';
 
   @override
   String get connectionRemoteIpNotAllowed =>

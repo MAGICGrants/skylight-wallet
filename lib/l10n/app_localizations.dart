@@ -243,12 +243,6 @@ abstract class AppLocalizations {
   /// **'Connect to a Monero light-wallet server (LWS) or your own full node. Only select a server you trust. Even if you use Tor, this server can learn information about you. With an LWS, your private view key and primary address will be shared with this server.'**
   String get lwsSetupDescription;
 
-  /// No description provided for @lwsSetupAddressHint.
-  ///
-  /// In en, this message translates to:
-  /// **'lws.example.com:18090'**
-  String get lwsSetupAddressHint;
-
   /// No description provided for @lwsSetupProxyPortLabel.
   ///
   /// In en, this message translates to:
@@ -296,12 +290,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Monero Node'**
   String get connectionTypeNode;
-
-  /// No description provided for @connectionNodeAddressHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. node.example.com:18081'**
-  String get connectionNodeAddressHint;
 
   /// No description provided for @connectionRemoteIpNotAllowed.
   ///

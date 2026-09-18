@@ -431,7 +431,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final torMode = TorSettingsService.sharedInstance.torMode;
-    final addressHint = _isNode ? i18n.connectionNodeAddressHint : i18n.lwsSetupAddressHint;
+    final addressHint = appWalletOf(context).connectionAddressExampleForType(_connectionType);
 
     final hasWorkingConnection = _hasTested && _connectionSuccess && !_connectionTestIsLoading;
     final connectionChanged =

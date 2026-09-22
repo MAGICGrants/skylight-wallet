@@ -243,6 +243,12 @@ abstract class AppLocalizations {
   /// **'Connect to a Monero light-wallet server (LWS) or your own full node. Only select a server you trust. Even if you use Tor, this server can learn information about you. With an LWS, your private view key and primary address will be shared with this server.'**
   String get lwsSetupDescription;
 
+  /// No description provided for @lwsSetupAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'lws.example.com:18090'**
+  String get lwsSetupAddressHint;
+
   /// No description provided for @lwsSetupProxyPortLabel.
   ///
   /// In en, this message translates to:
@@ -252,7 +258,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupProxyPortHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. 4444 for I2P'**
+  /// **'4444 for I2P'**
   String get lwsSetupProxyPortHint;
 
   /// No description provided for @lwsSetupUseTorLabel.
@@ -290,6 +296,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Monero Node'**
   String get connectionTypeNode;
+
+  /// No description provided for @connectionNodeAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'node.example.com:18081'**
+  String get connectionNodeAddressHint;
 
   /// No description provided for @connectionRemoteIpNotAllowed.
   ///
@@ -1052,6 +1064,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy address'**
   String get receiveCopyAddress;
+
+  /// No description provided for @receiveEnlargeQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to enlarge and brighten'**
+  String get receiveEnlargeQr;
+
+  /// No description provided for @receiveShrinkQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to shrink'**
+  String get receiveShrinkQr;
 
   /// No description provided for @receiveShareError.
   ///
@@ -1866,7 +1890,7 @@ abstract class AppLocalizations {
   /// No description provided for @torSettingsSocksPortHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. 9050'**
+  /// **'9050'**
   String get torSettingsSocksPortHint;
 
   /// No description provided for @torSettingsUseOrbotLabel.

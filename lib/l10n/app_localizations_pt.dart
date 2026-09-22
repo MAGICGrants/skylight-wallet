@@ -87,10 +87,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você. Com um LWS, sua chave privada de visualização e seu endereço primário serão compartilhados com este servidor.';
 
   @override
+  String get lwsSetupAddressHint => 'lws.example.com:18090';
+
+  @override
   String get lwsSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
 
   @override
-  String get lwsSetupProxyPortHint => 'ex: 4444 para I2P';
+  String get lwsSetupProxyPortHint => '4444 para I2P';
 
   @override
   String get lwsSetupUseTorLabel => 'Usar Tor';
@@ -109,6 +112,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get connectionTypeNode => 'Nó Monero';
+
+  @override
+  String get connectionNodeAddressHint => 'node.example.com:18081';
 
   @override
   String get connectionRemoteIpNotAllowed =>
@@ -517,6 +523,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receiveCopyAddress => 'Copiar endereço';
+
+  @override
+  String get receiveEnlargeQr => 'Toque para ampliar e aumentar o brilho';
+
+  @override
+  String get receiveShrinkQr => 'Toque para reduzir';
 
   @override
   String get receiveShareError => 'Não foi possível abrir a janela de compartilhamento';
@@ -949,7 +961,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get torSettingsSocksPortLabel => 'Porta SOCKS';
 
   @override
-  String get torSettingsSocksPortHint => 'ex: 9050';
+  String get torSettingsSocksPortHint => '9050';
 
   @override
   String get torSettingsUseOrbotLabel => 'Usar Orbot/InviZible';

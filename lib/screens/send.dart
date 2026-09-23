@@ -10,8 +10,10 @@ import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/wallet_types.dart';
+import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -648,6 +650,13 @@ class _SendScreenState extends State<SendScreen> {
     final available = wallet.unlockedBalance ?? 0;
     final xmr = xmrWallet(context);
 
+    if (isDesktop) {
+      return DesktopShell(
+        active: DesktopNav.home,
+        child: _desktopBody(context, i18n, fiatSymbol, coinRate, amountFiat, available),
+      );
+    }
+
     return SendView(
       labels: SendLabels(
         title: i18n.sendTitle,
@@ -694,6 +703,332 @@ class _SendScreenState extends State<SendScreen> {
       sendLoading: _isLoading,
     );
   }
+
+  // ----- Desktop two-column form (Monero-only: no from-card / asset picker) -----
+
+  Widget _desktopBody(
+    BuildContext context,
+    AppLocalizations i18n,
+    String fiatSymbol,
+    double? coinRate,
+    double amountFiat,
+    double available,
+  ) {
+    final canSend = _formValid && _openAliasResolving == 0 && !_isLoading;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(44, 30, 44, 36),
+      children: [
+        DesktopBackLink(label: i18n.navigationBarWallet, onTap: () => Navigator.pop(context)),
+        const SizedBox(height: 16),
+        Text(i18n.sendTitle, style: desktopTitleStyle),
+        const SizedBox(height: 24),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _dField(i18n.sendToLabel, _dToCard(i18n)),
+                  if (_destinationAddressError.isNotEmpty) _dError(_destinationAddressError),
+                  const SizedBox(height: 16),
+                  _dField(i18n.amount, _dAmountCard(i18n, fiatSymbol, amountFiat, available)),
+                  if (_amountError.isNotEmpty) _dError(_amountError),
+                ],
+              ),
+            ),
+            const SizedBox(width: 28),
+            SizedBox(
+              width: 316,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _dField(
+                    i18n.sendPriorityHeading,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        BrandSegmented(
+                          labels: [
+                            i18n.sendPriorityLow,
+                            i18n.sendPriorityNormal,
+                            i18n.sendPriorityHigh,
+                          ],
+                          selectedIndex: _selectedPriority,
+                          onSelect: _setPriority,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              i18n.sendNetworkFee,
+                              style: TextStyle(
+                                fontFamily: 'Ubuntu',
+                                fontSize: 12.5,
+                                color: BrandColors.inkMuted,
+                              ),
+                            ),
+                            _feeValue(fiatSymbol, coinRate),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  BrandButton(
+                    label: i18n.sendSendButton,
+                    loading: _isLoading,
+                    onPressed: canSend ? _send : null,
+                  ),
+                  const SizedBox(height: 9),
+                  BrandButton.ghost(label: i18n.cancel, onPressed: () => Navigator.pop(context)),
+                  const SizedBox(height: 16),
+                  Text(
+                    i18n.sendIrreversibleNote,
+                    style: TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontSize: 12,
+                      height: 1.6,
+                      color: BrandColors.inkMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _dField(String caption, Widget child) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(caption.toUpperCase(), style: BrandText.section),
+      ),
+      const SizedBox(height: 8),
+      child,
+    ],
+  );
+
+  Widget _dError(String text) => Padding(
+    padding: const EdgeInsets.only(top: 8, left: 2),
+    child: Text(text, style: BrandText.caption.copyWith(color: BrandColors.error)),
+  );
+
+  Widget _dCard({required Widget child}) => Container(
+    decoration: BoxDecoration(
+      color: BrandColors.card,
+      border: Border.all(color: BrandColors.border),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    child: child,
+  );
+
+  Widget _dToCard(AppLocalizations i18n) {
+    final contact = _selectedContact;
+    return _dCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (contact != null)
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contact.name,
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: BrandColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _shortenMiddle(_destinationAddressController.text, head: 10, tail: 12),
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu Mono',
+                          fontSize: 12,
+                          color: BrandColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, size: 18, color: BrandColors.inkMuted),
+                  onPressed: _clearSelectedContact,
+                ),
+              ],
+            )
+          else
+            TextField(
+              controller: _destinationAddressController,
+              minLines: 1,
+              maxLines: 2,
+              style: TextStyle(
+                fontFamily: 'Ubuntu Mono',
+                fontSize: 13.5,
+                height: 1.6,
+                color: BrandColors.ink,
+              ),
+              decoration: InputDecoration.collapsed(
+                hintText: i18n.address,
+                hintStyle: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 13.5,
+                  height: 1.6,
+                  color: BrandColors.inkFaint,
+                ),
+              ),
+            ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _dPill(Icons.content_paste, i18n.sendPasteButton, _pasteAddressFromClipboard),
+              const SizedBox(width: 8),
+              _dPill(Icons.people_outline, i18n.sendContactsButton, _showContactPicker),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dAmountCard(
+    AppLocalizations i18n,
+    String fiatSymbol,
+    double amountFiat,
+    double available,
+  ) {
+    return _dCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu Mono',
+                    fontSize: 28,
+                    height: 1,
+                    fontWeight: FontWeight.w700,
+                    color: BrandColors.ink,
+                  ),
+                  decoration: InputDecoration.collapsed(
+                    hintText: '0',
+                    hintStyle: TextStyle(
+                      fontFamily: 'Ubuntu Mono',
+                      fontSize: 28,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
+                      color: BrandColors.inkDisabled,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'XMR',
+                style: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: BrandColors.ink,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Material(
+                color: BrandColors.surfaceTinted,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  mouseCursor: WidgetStateMouseCursor.clickable,
+                  onTap: _setBalanceAsSendAmount,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                    child: Text(
+                      i18n.sendMaxButton,
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu Mono',
+                        fontSize: 10.5,
+                        height: 1,
+                        fontWeight: FontWeight.w700,
+                        color: BrandColors.primaryDeep,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '≈ ${formatFiat(amountFiat, fiatSymbol)}',
+                style: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 12.5,
+                  color: BrandColors.inkMuted,
+                ),
+              ),
+              Text(
+                '${_amountText(available)} ${i18n.sendAvailableSuffix}',
+                style: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 12.5,
+                  color: BrandColors.inkMuted,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dPill(IconData icon, String label, VoidCallback onTap) => Material(
+    color: BrandColors.surfaceSunken,
+    borderRadius: BorderRadius.circular(11),
+    child: InkWell(
+      mouseCursor: WidgetStateMouseCursor.clickable,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(11),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: BrandColors.primaryDeep),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontSize: 12.5,
+                height: 1,
+                fontWeight: FontWeight.w500,
+                color: BrandColors.primaryDeep,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Widget _feeValue(String fiatSymbol, double? coinRate) {
     final feePiconero = (_fees != null && _fees!.length > _selectedPriority)

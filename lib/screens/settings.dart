@@ -12,7 +12,11 @@ import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
 import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
+import 'package:skylight_wallet/screens/desktop/home_shell.dart';
+import 'package:skylight_wallet/screens/lws_keys.dart';
+import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -183,9 +187,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showViewLwsKeysDialog() {
+  Future<void> _showViewLwsKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
-    showConfirmSheet(
+    final ok = await showConfirmSheet(
       context: context,
       icon: Icons.warning_amber_rounded,
       iconBg: BrandColors.warningBg,
@@ -195,8 +199,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       confirmLabel: i18n.settingsViewLwsKeysDialogRevealButton,
       cancelLabel: i18n.cancel,
       confirmColor: BrandColors.warning,
-      onConfirm: () => Navigator.pushNamed(context, '/lws_keys'),
     );
+    if (ok != true || !mounted) return;
+    if (isDesktop) {
+      await showLwsKeysSheet(context);
+    } else {
+      await Navigator.pushNamed(context, '/lws_keys');
+    }
   }
 
   /// Gate the seed behind a device auth even though the app is already
@@ -223,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
     }
 
-    showConfirmSheet(
+    final ok = await showConfirmSheet(
       context: context,
       icon: Icons.warning_amber_rounded,
       iconBg: BrandColors.errorBg,
@@ -232,8 +241,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: i18n.settingsViewSecretKeysDialogText,
       confirmLabel: i18n.settingsViewSecretKeysDialogRevealButton,
       cancelLabel: i18n.cancel,
-      onConfirm: () => Navigator.pushNamed(context, '/secret_keys'),
     );
+    if (ok != true || !mounted) return;
+    if (isDesktop) {
+      await showSecretKeysSheet(context);
+    } else {
+      await Navigator.pushNamed(context, '/secret_keys');
+    }
   }
 
   Future<void> _deleteWallet() async {
@@ -259,42 +273,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return showBrandSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: _sheetMaxHeight(sheetContext)),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SheetHandle(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                  child: Row(
-                    children: [
-                      SheetIcon(
-                        icon: icon,
-                        bg: BrandColors.surfaceTinted,
-                        color: BrandColors.primaryDeep,
-                      ),
-                      const SizedBox(width: 11),
-                      Expanded(child: Text(title, style: BrandText.sheetTitle)),
-                    ],
+      builder: (sheetContext) {
+        // Desktop modal: the card owns the edge padding and drops the drag handle.
+        final hpad = isDesktopModal ? 0.0 : 22.0;
+        return SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: _sheetMaxHeight(sheetContext)),
+            child: Padding(
+              padding: EdgeInsets.only(top: isDesktopModal ? 0 : 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SheetHandle(),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(hpad, 0, hpad, 16),
+                    child: Row(
+                      children: [
+                        SheetIcon(
+                          icon: icon,
+                          bg: BrandColors.surfaceTinted,
+                          color: BrandColors.primaryDeep,
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(child: Text(title, style: BrandText.sheetTitle)),
+                      ],
+                    ),
                   ),
-                ),
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                    child: form,
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(hpad, 0, hpad, 16),
+                      child: form,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -463,6 +481,138 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? _fiatModeLabel(i18n)
         : '${_fiatModeLabel(i18n)} · ${fiatRate.fiatCode}';
 
+    final tiles = <Widget>[
+      SettingsGroup(
+        label: i18n.settingsSectionGeneral,
+        tiles: [
+          SettingsNavTile(
+            title: i18n.settingsThemeLabel,
+            value: _themeLabel(i18n, theme.theme),
+            onTap: _showThemePicker,
+          ),
+          SettingsNavTile(
+            title: i18n.settingsLanguageLabel,
+            value: languageNames[language.language]?.$1 ?? language.language.toUpperCase(),
+            onTap: () => showLanguageSheet(context),
+          ),
+          if (isMobile)
+            SettingsToggleTile(
+              title: i18n.settingsAppLockLabel,
+              value: _appLockEnabled,
+              onChanged: _setAppLockEnabled,
+              animate: _animateToggles,
+            ),
+          SettingsLinkTile(
+            title: i18n.settingsConnectionSettingsLabel,
+            subtitle: connectionSubtitle,
+            linkLabel: i18n.settingsLwsViewKeysButton,
+            onTap: _showConnectionSettings,
+          ),
+          SettingsLinkTile(
+            title: i18n.settingsTorSettingsLabel,
+            subtitle: _torModeLabel(i18n),
+            linkLabel: i18n.settingsLwsViewKeysButton,
+            onTap: _showTorSettings,
+          ),
+          SettingsLinkTile(
+            title: i18n.settingsFiatApiSettingsLabel,
+            subtitle: fiatSubtitle,
+            linkLabel: i18n.settingsLwsViewKeysButton,
+            onTap: _showFiatApiSettings,
+          ),
+        ],
+      ),
+      const SizedBox(height: 18),
+      SettingsGroup(
+        label: i18n.settingsSectionBehaviour,
+        tiles: [
+          if (showNotifyToggle)
+            SettingsToggleTile(
+              title: i18n.settingsNotifyNewTxsLabel,
+              description: Platform.isIOS
+                  ? i18n.settingsNotifyNewTxsDescriptionIos
+                  : i18n.settingsNotifyNewTxsDescription,
+              value: _newTxNotificationsEnabled,
+              onChanged: _setTxNotificationsEnabled,
+              animate: _animateToggles,
+            ),
+          SettingsToggleTile(
+            title: i18n.settingsVerboseLoggingLabel,
+            description: Platform.isIOS
+                ? i18n.settingsVerboseLoggingDescriptionIos
+                : i18n.settingsVerboseLoggingDescription,
+            value: _verboseLoggingEnabled,
+            onChanged: _setVerboseLoggingEnabled,
+            animate: _animateToggles,
+          ),
+          // Only meaningful with logs to export, so hide it when
+          // verbose logging is off rather than disabling it.
+          if (Platform.isIOS && _verboseLoggingEnabled)
+            SettingsLinkTile(
+              title: i18n.settingsExportLogsLabel,
+              linkLabel: i18n.settingsExportLogsButton,
+              onTap: _exportLogs,
+            ),
+        ],
+      ),
+      const SizedBox(height: 18),
+      SettingsGroup(
+        label: i18n.settingsSectionWallet,
+        tiles: [
+          SettingsLinkTile(
+            title: i18n.settingsLwsViewKeysLabel,
+            titleColor: BrandColors.warning,
+            onTap: _showViewLwsKeysDialog,
+          ),
+          SettingsLinkTile(
+            title: i18n.settingsSecretKeysLabel,
+            titleColor: BrandColors.error,
+            onTap: _showViewSecretKeysDialog,
+          ),
+          SettingsLinkTile(
+            title: i18n.settingsDeleteWalletButton,
+            titleColor: BrandColors.error,
+            onTap: _showDeleteWalletDialog,
+          ),
+        ],
+      ),
+      const SizedBox(height: 18),
+      SettingsGroup(
+        label: i18n.settingsSectionAbout,
+        tiles: [
+          SettingsNavTile(
+            title: i18n.welcomeTermsLink,
+            onTap: () => Navigator.pushNamed(context, '/terms_of_service', arguments: true),
+          ),
+          SettingsNavTile(
+            title: i18n.welcomePrivacyLink,
+            onTap: () => Navigator.pushNamed(context, '/privacy_policy', arguments: true),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Center(
+        child: Text(
+          'Skylight Wallet v$_appVersion (build $_buildNumber)',
+          style: BrandText.caption.copyWith(color: BrandColors.inkFaint),
+        ),
+      ),
+    ];
+
+    if (isDesktop) {
+      return DesktopShell(
+        active: DesktopNav.settings,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(44, 30, 44, 36),
+          children: [
+            Text(i18n.settingsTitle, style: desktopTitleStyle),
+            const SizedBox(height: 24),
+            ...tiles,
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: BrandColors.paper,
       bottomNavigationBar: const WalletNavigationBar(selectedIndex: 2),
@@ -486,128 +636,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SettingsGroup(
-                          label: i18n.settingsSectionGeneral,
-                          tiles: [
-                            SettingsNavTile(
-                              title: i18n.settingsThemeLabel,
-                              value: _themeLabel(i18n, theme.theme),
-                              onTap: _showThemePicker,
-                            ),
-                            SettingsNavTile(
-                              title: i18n.settingsLanguageLabel,
-                              value:
-                                  languageNames[language.language]?.$1 ??
-                                  language.language.toUpperCase(),
-                              onTap: () => showLanguageSheet(context),
-                            ),
-                            if (isMobile)
-                              SettingsToggleTile(
-                                title: i18n.settingsAppLockLabel,
-                                value: _appLockEnabled,
-                                onChanged: _setAppLockEnabled,
-                                animate: _animateToggles,
-                              ),
-                            SettingsLinkTile(
-                              title: i18n.settingsConnectionSettingsLabel,
-                              subtitle: connectionSubtitle,
-                              linkLabel: i18n.settingsLwsViewKeysButton,
-                              onTap: _showConnectionSettings,
-                            ),
-                            SettingsLinkTile(
-                              title: i18n.settingsTorSettingsLabel,
-                              subtitle: _torModeLabel(i18n),
-                              linkLabel: i18n.settingsLwsViewKeysButton,
-                              onTap: _showTorSettings,
-                            ),
-                            SettingsLinkTile(
-                              title: i18n.settingsFiatApiSettingsLabel,
-                              subtitle: fiatSubtitle,
-                              linkLabel: i18n.settingsLwsViewKeysButton,
-                              onTap: _showFiatApiSettings,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        SettingsGroup(
-                          label: i18n.settingsSectionBehaviour,
-                          tiles: [
-                            if (showNotifyToggle)
-                              SettingsToggleTile(
-                                title: i18n.settingsNotifyNewTxsLabel,
-                                description: Platform.isIOS
-                                    ? i18n.settingsNotifyNewTxsDescriptionIos
-                                    : i18n.settingsNotifyNewTxsDescription,
-                                value: _newTxNotificationsEnabled,
-                                onChanged: _setTxNotificationsEnabled,
-                                animate: _animateToggles,
-                              ),
-                            SettingsToggleTile(
-                              title: i18n.settingsVerboseLoggingLabel,
-                              description: Platform.isIOS
-                                  ? i18n.settingsVerboseLoggingDescriptionIos
-                                  : i18n.settingsVerboseLoggingDescription,
-                              value: _verboseLoggingEnabled,
-                              onChanged: _setVerboseLoggingEnabled,
-                              animate: _animateToggles,
-                            ),
-                            // Only meaningful with logs to export, so hide it when
-                            // verbose logging is off rather than disabling it.
-                            if (Platform.isIOS && _verboseLoggingEnabled)
-                              SettingsLinkTile(
-                                title: i18n.settingsExportLogsLabel,
-                                linkLabel: i18n.settingsExportLogsButton,
-                                onTap: _exportLogs,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        SettingsGroup(
-                          label: i18n.settingsSectionWallet,
-                          tiles: [
-                            SettingsLinkTile(
-                              title: i18n.settingsLwsViewKeysLabel,
-                              titleColor: BrandColors.warning,
-                              onTap: _showViewLwsKeysDialog,
-                            ),
-                            SettingsLinkTile(
-                              title: i18n.settingsSecretKeysLabel,
-                              titleColor: BrandColors.error,
-                              onTap: _showViewSecretKeysDialog,
-                            ),
-                            SettingsLinkTile(
-                              title: i18n.settingsDeleteWalletButton,
-                              titleColor: BrandColors.error,
-                              onTap: _showDeleteWalletDialog,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        SettingsGroup(
-                          label: i18n.settingsSectionAbout,
-                          tiles: [
-                            SettingsNavTile(
-                              title: i18n.welcomeTermsLink,
-                              onTap: () => Navigator.pushNamed(context, '/terms_of_service'),
-                            ),
-                            SettingsNavTile(
-                              title: i18n.welcomePrivacyLink,
-                              onTap: () => Navigator.pushNamed(context, '/privacy_policy'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Center(
-                          child: Text(
-                            'Skylight Wallet v$_appVersion (build $_buildNumber)',
-                            style: BrandText.caption.copyWith(color: BrandColors.inkFaint),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: tiles),
                   ),
                 ),
               ],

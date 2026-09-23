@@ -21,6 +21,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get close => 'Fechar';
 
   @override
+  String get back => 'Voltar';
+
+  @override
   String get unknownError => 'Erro desconhecido.';
 
   @override
@@ -87,6 +90,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você. Com um LWS, sua chave privada de visualização e seu endereço primário serão compartilhados com este servidor.';
 
   @override
+  String get lwsSetupAddressHint => 'lws.example.com:18090';
+
+  @override
   String get lwsSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
 
   @override
@@ -109,6 +115,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get connectionTypeNode => 'Nó Monero';
+
+  @override
+  String get connectionNodeAddressHint => 'e.g. node.example.com:18081';
 
   @override
   String get connectionRemoteIpNotAllowed =>
@@ -303,6 +312,82 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generateSeedContinueButton => 'Eu anotei';
 
   @override
+  String get generateSeedBirthdayLabel => 'Aniversário da carteira';
+
+  @override
+  String get generateSeedBirthdayReason => 'Onde uma futura restauração começa a escanear';
+
+  @override
+  String get onboardingTorNotePrivacy =>
+      'O Tor esconde seu endereço do nó que você consulta — mais lento, e vale a pena.';
+
+  @override
+  String get onboardingTorNoteChangeable => 'Pode ser alterado depois em Configurações → Conexões.';
+
+  @override
+  String get onboardingPriceNoteRatesOnly =>
+      'O serviço de preços recebe apenas pedidos de cotações — nunca endereços ou valores.';
+
+  @override
+  String get onboardingPriceNoteTor => 'Roteado pelo Tor por padrão, separado do tráfego da rede.';
+
+  @override
+  String get onboardingConnectionNoteServer =>
+      'Aponte a Skylight para um servidor de carteira leve (LWS), ou conecte-se ao seu próprio nó Monero.';
+
+  @override
+  String get onboardingConnectionNoteChangeable =>
+      'Pode ser alterado depois em Configurações → Conexão.';
+
+  @override
+  String get onboardingWalletNoteGenerated =>
+      'A seed de uma nova carteira é gerada aqui, offline, e mostrada a você uma única vez.';
+
+  @override
+  String get onboardingWalletNoteRestore =>
+      'A restauração pergunta aproximadamente quando a seed teve fundos pela primeira vez, para pular anos de escaneamento.';
+
+  @override
+  String get onboardingWalletCreateBullet1 => 'Uma frase seed Monero, mostrada uma vez';
+
+  @override
+  String get onboardingWalletCreateBullet2 => 'Começa vazia, sincroniza a partir de hoje';
+
+  @override
+  String get onboardingWalletCreateBullet3 => 'Leva cerca de dois minutos';
+
+  @override
+  String get onboardingWalletRestoreBullet1 => 'Uma seed Monero Polyseed, BIP39 ou legada';
+
+  @override
+  String get onboardingWalletRestoreBullet2 => 'Data de escaneamento opcional';
+
+  @override
+  String get onboardingWalletRestoreBullet3 => 'Recupera seu saldo e histórico existentes';
+
+  @override
+  String get onboardingSeedNotePassword =>
+      'A Skylight Wallet pede sua senha antes de mostrá-las novamente.';
+
+  @override
+  String get onboardingPasswordNoteLaunch =>
+      'Pedida a cada abertura, e antes de a seed ser mostrada.';
+
+  @override
+  String get onboardingPasswordNoteNotCloud =>
+      'Não é uma conta na nuvem. Perdê-la significa restaurar a partir da sua frase seed.';
+
+  @override
+  String get onboardingPasswordStrong => 'Forte';
+
+  @override
+  String get onboardingPasswordMatch => 'As duas entradas coincidem';
+
+  @override
+  String get onboardingPasswordAcknowledge =>
+      'Entendo que ninguém — incluindo a equipe da Skylight Wallet — pode recuperar esta senha para mim.';
+
+  @override
   String get lwsDetailsTitle => 'Detalhes da Carteira';
 
   @override
@@ -444,6 +529,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeSyncing => 'Sincronizando';
 
   @override
+  String get homeSynced => 'Sincronizado';
+
+  @override
   String get homeHeight => 'Bloco';
 
   @override
@@ -517,6 +605,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receiveCopyAddress => 'Copiar endereço';
+
+  @override
+  String get receiveQrHint => 'Escaneie este código para enviar Monero para esta carteira.';
 
   @override
   String get receiveShareError => 'Não foi possível abrir a janela de compartilhamento';
@@ -890,6 +981,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sendAvailableSuffix => 'disponível';
+
+  @override
+  String get sendIrreversibleNote =>
+      'Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.';
 
   @override
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';

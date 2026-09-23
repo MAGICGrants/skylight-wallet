@@ -117,6 +117,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
   /// No description provided for @unknownError.
   ///
   /// In en, this message translates to:
@@ -243,6 +249,12 @@ abstract class AppLocalizations {
   /// **'Connect to a Monero light-wallet server (LWS) or your own full node. Only select a server you trust. Even if you use Tor, this server can learn information about you. With an LWS, your private view key and primary address will be shared with this server.'**
   String get lwsSetupDescription;
 
+  /// No description provided for @lwsSetupAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'lws.example.com:18090'**
+  String get lwsSetupAddressHint;
+
   /// No description provided for @lwsSetupProxyPortLabel.
   ///
   /// In en, this message translates to:
@@ -290,6 +302,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Monero Node'**
   String get connectionTypeNode;
+
+  /// No description provided for @connectionNodeAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. node.example.com:18081'**
+  String get connectionNodeAddressHint;
 
   /// No description provided for @connectionRemoteIpNotAllowed.
   ///
@@ -645,6 +663,138 @@ abstract class AppLocalizations {
   /// **'I Wrote It Down'**
   String get generateSeedContinueButton;
 
+  /// No description provided for @generateSeedBirthdayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet birthday'**
+  String get generateSeedBirthdayLabel;
+
+  /// No description provided for @generateSeedBirthdayReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Where a future restore starts scanning'**
+  String get generateSeedBirthdayReason;
+
+  /// No description provided for @onboardingTorNotePrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor hides your address from the node you query — slower, and worth it.'**
+  String get onboardingTorNotePrivacy;
+
+  /// No description provided for @onboardingTorNoteChangeable.
+  ///
+  /// In en, this message translates to:
+  /// **'Changeable later under Settings → Connections.'**
+  String get onboardingTorNoteChangeable;
+
+  /// No description provided for @onboardingPriceNoteRatesOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The price service is asked for rates only — never for addresses or amounts.'**
+  String get onboardingPriceNoteRatesOnly;
+
+  /// No description provided for @onboardingPriceNoteTor.
+  ///
+  /// In en, this message translates to:
+  /// **'Routed over Tor by default, separately from chain traffic.'**
+  String get onboardingPriceNoteTor;
+
+  /// No description provided for @onboardingConnectionNoteServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Point Skylight at a light-wallet server (LWS), or connect to your own Monero node.'**
+  String get onboardingConnectionNoteServer;
+
+  /// No description provided for @onboardingConnectionNoteChangeable.
+  ///
+  /// In en, this message translates to:
+  /// **'Changeable later under Settings → Connection.'**
+  String get onboardingConnectionNoteChangeable;
+
+  /// No description provided for @onboardingWalletNoteGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'A new wallet’s seed is generated here, offline, and shown to you once.'**
+  String get onboardingWalletNoteGenerated;
+
+  /// No description provided for @onboardingWalletNoteRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring asks roughly when the seed first held funds, to skip years of scanning.'**
+  String get onboardingWalletNoteRestore;
+
+  /// No description provided for @onboardingWalletCreateBullet1.
+  ///
+  /// In en, this message translates to:
+  /// **'A Monero seed phrase, shown once'**
+  String get onboardingWalletCreateBullet1;
+
+  /// No description provided for @onboardingWalletCreateBullet2.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts empty, syncs from today'**
+  String get onboardingWalletCreateBullet2;
+
+  /// No description provided for @onboardingWalletCreateBullet3.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes about two minutes'**
+  String get onboardingWalletCreateBullet3;
+
+  /// No description provided for @onboardingWalletRestoreBullet1.
+  ///
+  /// In en, this message translates to:
+  /// **'A Polyseed, BIP39 or legacy Monero seed'**
+  String get onboardingWalletRestoreBullet1;
+
+  /// No description provided for @onboardingWalletRestoreBullet2.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional scan-from date'**
+  String get onboardingWalletRestoreBullet2;
+
+  /// No description provided for @onboardingWalletRestoreBullet3.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovers your existing balance and history'**
+  String get onboardingWalletRestoreBullet3;
+
+  /// No description provided for @onboardingSeedNotePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Skylight Wallet asks for your password before ever showing them again.'**
+  String get onboardingSeedNotePassword;
+
+  /// No description provided for @onboardingPasswordNoteLaunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked for at every launch, and before the seed is ever shown.'**
+  String get onboardingPasswordNoteLaunch;
+
+  /// No description provided for @onboardingPasswordNoteNotCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a cloud account. Losing it means restoring from your seed phrase.'**
+  String get onboardingPasswordNoteNotCloud;
+
+  /// No description provided for @onboardingPasswordStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get onboardingPasswordStrong;
+
+  /// No description provided for @onboardingPasswordMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Both entries match'**
+  String get onboardingPasswordMatch;
+
+  /// No description provided for @onboardingPasswordAcknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand that no one — including the Skylight Wallet team — can recover this password for me.'**
+  String get onboardingPasswordAcknowledge;
+
   /// No description provided for @lwsDetailsTitle.
   ///
   /// In en, this message translates to:
@@ -909,6 +1059,12 @@ abstract class AppLocalizations {
   /// **'Syncing'**
   String get homeSyncing;
 
+  /// No description provided for @homeSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced'**
+  String get homeSynced;
+
   /// No description provided for @homeHeight.
   ///
   /// In en, this message translates to:
@@ -1052,6 +1208,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy address'**
   String get receiveCopyAddress;
+
+  /// No description provided for @receiveQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this code to send Monero to this wallet.'**
+  String get receiveQrHint;
 
   /// No description provided for @receiveShareError.
   ///
@@ -1754,6 +1916,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'available'**
   String get sendAvailableSuffix;
+
+  /// No description provided for @sendIrreversibleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Monero transactions are irreversible. Double-check the address and amount before sending.'**
+  String get sendIrreversibleNote;
 
   /// No description provided for @sendFailedToGetFeesError.
   ///

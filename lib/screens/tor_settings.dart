@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/screens/desktop/tor_choice_view.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/socks_http.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -42,39 +44,52 @@ class TorSettingsScreen extends StatelessWidget {
       useOrbot: useOrbot,
     );
     if (!context.mounted) return;
-    Navigator.pushNamed(context, '/connection_setup');
+    Navigator.pushNamed(context, '/fiat_api_setup');
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isMobile = Platform.isAndroid || Platform.isIOS;
+
+    final labels = TorChoiceLabels(
+      title: i18n.torChoiceTitle,
+      subtitle: i18n.torChoiceSubtitle,
+      builtIn: i18n.torSettingsModeBuiltIn,
+      builtInDesc: i18n.torChoiceBuiltInDesc,
+      external: i18n.torSettingsModeExternal,
+      externalDesc: i18n.torChoiceExternalDesc,
+      noTor: i18n.torSettingsModeDisabled,
+      noTorDesc: i18n.torChoiceNoTorDesc,
+      socksPortLabel: i18n.torSettingsSocksPortLabel,
+      orbotLabel: Platform.isIOS
+          ? i18n.torSettingsUseOrbotLabelIos
+          : i18n.torSettingsUseOrbotLabel,
+      testButton: i18n.torSettingsTestConnectionButton,
+      connected: i18n.torChoiceConnected,
+      testFailed: i18n.torChoiceTestFailed,
+      continueText: i18n.continueText,
+    );
+
+    void onContinue({required int modeIndex, required String port, required bool useOrbot}) =>
+        _continue(context, modeIndex: modeIndex, port: port, useOrbot: useOrbot);
+
+    if (isDesktop) {
+      return DesktopTorChoiceView(
+        labels: labels,
+        notePrivacy: i18n.onboardingTorNotePrivacy,
+        noteChangeable: i18n.onboardingTorNoteChangeable,
+        onTest: _test,
+        onContinue: onContinue,
+      );
+    }
 
     return TorChoiceView(
-      labels: TorChoiceLabels(
-        title: i18n.torChoiceTitle,
-        subtitle: i18n.torChoiceSubtitle,
-        builtIn: i18n.torSettingsModeBuiltIn,
-        builtInDesc: i18n.torChoiceBuiltInDesc,
-        external: i18n.torSettingsModeExternal,
-        externalDesc: i18n.torChoiceExternalDesc,
-        noTor: i18n.torSettingsModeDisabled,
-        noTorDesc: i18n.torChoiceNoTorDesc,
-        socksPortLabel: i18n.torSettingsSocksPortLabel,
-        orbotLabel: Platform.isIOS
-            ? i18n.torSettingsUseOrbotLabelIos
-            : i18n.torSettingsUseOrbotLabel,
-        testButton: i18n.torSettingsTestConnectionButton,
-        connected: i18n.torChoiceConnected,
-        testFailed: i18n.torChoiceTestFailed,
-        continueText: i18n.continueText,
-      ),
+      labels: labels,
       initialModeIndex: 0,
       isMobile: isMobile,
       onTest: _test,
-      onContinue: ({required modeIndex, required port, required useOrbot}) =>
-          _continue(context, modeIndex: modeIndex, port: port, useOrbot: useOrbot),
-      stepCount: 5,
+      onContinue: onContinue,
+      stepCount: 6,
       stepIndex: 0,
     );
   }

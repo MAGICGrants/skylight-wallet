@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -41,8 +42,13 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
     final primaryAddress = appWalletOf(context, listen: true).getPrimaryAddress();
     final restoreHeight = ModalRoute.of(context)!.settings.arguments as int;
 
-    return LwsKeysView(
+    final view = LwsKeysView(
       largeTitle: true,
+      // Desktop: content-only render, framed in the completion card below.
+      asModal: isDesktop,
+      headerIcon: isDesktop
+          ? Icon(Icons.check_circle_outline, size: 26, color: BrandColors.success)
+          : null,
       labels: LwsKeysLabels(
         title: i18n.lwsDetailsTitle,
         description: i18n.lwsDetailsDescription,
@@ -62,6 +68,31 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
           context,
           '/wallet_home',
           (Route<dynamic> route) => false,
+        ),
+      ),
+    );
+
+    if (!isDesktop) return view;
+
+    // Desktop: a centered completion card on the paper ground — no sidebar yet,
+    // since the wallet is only entered on Continue.
+    return Scaffold(
+      backgroundColor: BrandColors.paper,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 760),
+            child: Container(
+              decoration: BoxDecoration(
+                color: BrandColors.card,
+                border: Border.all(color: BrandColors.border),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              padding: const EdgeInsets.all(32),
+              child: view,
+            ),
+          ),
         ),
       ),
     );

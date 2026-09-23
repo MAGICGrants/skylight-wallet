@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
+import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/screens/send.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -96,9 +98,73 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
     );
   }
 
+  /// The searchable contact list, shared by the mobile and desktop layouts; the
+  /// caller supplies the list padding for its gutters.
+  Widget _contactsList(EdgeInsets padding) {
+    return Consumer<ContactModel>(
+      builder: (context, contactModel, child) {
+        final contacts = contactModel.searchContacts(_searchQuery);
+        if (contacts.isEmpty) return _EmptyState(searching: _searchQuery.isNotEmpty);
+        return ListView.builder(
+          padding: padding,
+          itemCount: contacts.length,
+          itemBuilder: (context, index) {
+            final contact = contacts[index];
+            final expanded = contact.id == _expandedId;
+            return _ContactTile(
+              contact: contact,
+              expanded: expanded,
+              onToggle: () => setState(() => _expandedId = expanded ? null : contact.id),
+              onEdit: () => _showEditContactDialog(contact),
+              onDelete: () => _showDeleteContactDialog(contact),
+              isLast: index == contacts.length - 1,
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
+
+    if (isDesktop) {
+      return DesktopShell(
+        active: DesktopNav.addressBook,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(44, 30, 44, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Text(i18n.addressBookTitle, style: desktopTitleStyle)),
+                      BrandButton.secondary(
+                        label: i18n.addressBookAddContact,
+                        icon: Icons.add,
+                        expand: false,
+                        onPressed: _showAddContactDialog,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  _SearchField(
+                    controller: _searchController,
+                    onChanged: (q) => setState(() => _searchQuery = q),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(child: _contactsList(const EdgeInsets.fromLTRB(44, 6, 44, 36))),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: BrandColors.paper,
@@ -148,31 +214,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: Consumer<ContactModel>(
-                    builder: (context, contactModel, child) {
-                      final contacts = contactModel.searchContacts(_searchQuery);
-                      if (contacts.isEmpty) return _EmptyState(searching: _searchQuery.isNotEmpty);
-                      return ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
-                        itemCount: contacts.length,
-                        itemBuilder: (context, index) {
-                          final contact = contacts[index];
-                          final expanded = contact.id == _expandedId;
-                          return _ContactTile(
-                            contact: contact,
-                            expanded: expanded,
-                            onToggle: () =>
-                                setState(() => _expandedId = expanded ? null : contact.id),
-                            onEdit: () => _showEditContactDialog(contact),
-                            onDelete: () => _showDeleteContactDialog(contact),
-                            isLast: index == contacts.length - 1,
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
+                Expanded(child: _contactsList(const EdgeInsets.fromLTRB(16, 6, 16, 24))),
               ],
             ),
           ),

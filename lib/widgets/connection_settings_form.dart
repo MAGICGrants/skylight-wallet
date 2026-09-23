@@ -17,6 +17,23 @@ const isDemoMode = String.fromEnvironment('DEMO_MODE') == 'true';
 
 const connectionTypeOptions = ['lws', 'node'];
 
+/// Drives the form's Save from outside — for the desktop onboarding footer,
+/// whose Continue button sits beside Back rather than inside the form. Attach
+/// with [ConnectionSettingsForm.controller]; [canSave] mirrors the internal
+/// save gating and [save] triggers it.
+class ConnectionFormController {
+  _ConnectionSettingsFormState? _state;
+
+  final ValueNotifier<bool> canSave = ValueNotifier(false);
+
+  void save() => _state?._saveConnection();
+
+  void _attach(_ConnectionSettingsFormState s) => _state = s;
+  void _detach(_ConnectionSettingsFormState s) {
+    if (_state == s) _state = null;
+  }
+}
+
 /// Shared form widget used by both ConnectionSetupScreen and the connection settings dialog
 class ConnectionSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
@@ -24,12 +41,19 @@ class ConnectionSettingsForm extends StatefulWidget {
   final bool isInDialog;
   final Future<void> Function()? onBeforeSave;
 
+  /// Hide the built-in Save button and publish save state to [controller] — the
+  /// host renders its own Save/Continue (desktop onboarding footer).
+  final bool embedded;
+  final ConnectionFormController? controller;
+
   const ConnectionSettingsForm({
     super.key,
     required this.saveButtonLabel,
     required this.onSaved,
     this.isInDialog = false,
     this.onBeforeSave,
+    this.embedded = false,
+    this.controller,
   });
 
   @override
@@ -119,11 +143,13 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._attach(this);
     _loadPersistedConnection();
   }
 
   @override
   void dispose() {
+    widget.controller?._detach(this);
     _torStatusTimer?.cancel();
     _addressController.dispose();
     _customProxyPortController.dispose();
@@ -450,6 +476,14 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final disablingSyncOnly = syncChanged && !enablingSync && !connectionChanged;
     final canSave = !_connectionTestIsLoading && (hasWorkingConnection || disablingSyncOnly);
 
+    // Publish save state for an external Continue button (embedded mode).
+    final controller = widget.controller;
+    if (controller != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) controller.canSave.value = canSave;
+      });
+    }
+
     return ConnectionFormView(
       labels: ConnectionFormLabels(
         proxyPortLabel: i18n.lwsSetupProxyPortLabel,
@@ -507,6 +541,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       saveButtonLabel: widget.saveButtonLabel,
       canSave: canSave,
       onSave: _saveConnection,
+      showSave: !widget.embedded,
     );
   }
 }

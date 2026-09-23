@@ -6,7 +6,10 @@ import 'package:screen_brightness/screen_brightness.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/screens/desktop/home_shell.dart';
+import 'package:skylight_wallet/screens/desktop/receive_view.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -90,6 +93,30 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 
     final ready = (subSupported != null || isDemoMode) && address != null;
     final warning = _warning(i18n, wallet, subSupported);
+    final qrHeading = canToggle && _showSubaddress
+        ? (sub != null ? '${i18n.receiveSubaddressTab} #${sub.index}' : i18n.receiveSubaddressTab)
+        : i18n.receiveAddressHeading('Monero');
+
+    if (isDesktop) {
+      return DesktopShell(
+        active: DesktopNav.home,
+        child: DesktopReceiveView(
+          title: i18n.receiveTitle,
+          backLabel: i18n.navigationBarWallet,
+          copyLabel: i18n.receiveCopyAddress,
+          qrHint: i18n.receiveQrHint,
+          ready: ready,
+          address: address ?? '',
+          qrHeading: ready ? qrHeading : '',
+          tabLabels: canToggle ? [i18n.receiveSubaddressTab, i18n.receivePrimaryTab] : null,
+          selectedTab: _showSubaddress ? 0 : 1,
+          onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
+          warning: warning,
+          onCopy: () => _copyAddressToClipboard(address!),
+          onBack: () => Navigator.of(context).pop(),
+        ),
+      );
+    }
 
     return ReceiveView(
       labels: ReceiveLabels(title: i18n.receiveTitle, copyAddress: i18n.receiveCopyAddress),
@@ -105,9 +132,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       selectedTab: _showSubaddress ? 0 : 1,
       onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
       address: address ?? '',
-      qrHeading: canToggle && _showSubaddress
-          ? (sub != null ? '${i18n.receiveSubaddressTab} #${sub.index}' : i18n.receiveSubaddressTab)
-          : i18n.receiveAddressHeading('Monero'),
+      qrHeading: qrHeading,
       warning: warning,
       onCopy: () => _copyAddressToClipboard(address!),
     );

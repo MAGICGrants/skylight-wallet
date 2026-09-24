@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -160,7 +161,7 @@ class _DesktopShellState extends State<DesktopShell> {
     return Material(
       type: MaterialType.transparency,
       child: Container(
-        width: 236,
+        width: 280,
         decoration: BoxDecoration(
           color: BrandColors.surfaceSunken,
           border: Border(right: BorderSide(color: BrandColors.border)),
@@ -206,7 +207,13 @@ class _DesktopShellState extends State<DesktopShell> {
               '/address_book',
             ),
             const Spacer(),
-            _navItem(DesktopNav.settings, Icons.tune, i18n.navigationBarSettings, '/settings'),
+            // Settings opens as a modal over the current screen (not a page).
+            _navTile(
+              icon: Icons.tune,
+              label: i18n.navigationBarSettings,
+              active: false,
+              onTap: () => showSettingsSheet(context),
+            ),
             const SizedBox(height: 6),
             _torStatus(),
             if (_version.isNotEmpty)
@@ -280,10 +287,11 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 
   Widget _torStatus() {
+    final i18n = AppLocalizations.of(context)!;
     final (Color color, String text) = switch (_torState) {
-      TorConnectionStatus.connected => (BrandColors.purple, 'Tor · connected'),
-      TorConnectionStatus.connecting => (BrandColors.warning, 'Tor · connecting'),
-      TorConnectionStatus.disconnected => (BrandColors.inkFaint, 'Tor · off'),
+      TorConnectionStatus.connected => (BrandColors.purple, i18n.homeTorConnected),
+      TorConnectionStatus.connecting => (BrandColors.warning, i18n.homeTorConnecting),
+      TorConnectionStatus.disconnected => (BrandColors.inkFaint, i18n.homeTorOff),
     };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),

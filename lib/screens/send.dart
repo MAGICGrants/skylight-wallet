@@ -722,83 +722,98 @@ class _SendScreenState extends State<SendScreen> {
         const SizedBox(height: 16),
         Text(i18n.sendTitle, style: desktopTitleStyle),
         const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _dField(i18n.sendToLabel, _dToCard(i18n)),
-                  if (_destinationAddressError.isNotEmpty) _dError(_destinationAddressError),
-                  const SizedBox(height: 16),
-                  _dField(i18n.amount, _dAmountCard(i18n, fiatSymbol, amountFiat, available)),
-                  if (_amountError.isNotEmpty) _dError(_amountError),
-                ],
+        _sendForm(context, i18n, fiatSymbol, coinRate, amountFiat, available, canSend),
+      ],
+    );
+  }
+
+  Widget _sendForm(
+    BuildContext context,
+    AppLocalizations i18n,
+    String fiatSymbol,
+    double? coinRate,
+    double amountFiat,
+    double available,
+    bool canSend,
+  ) {
+    final formColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _dField(i18n.sendToLabel, _dToCard(i18n)),
+        if (_destinationAddressError.isNotEmpty) _dError(_destinationAddressError),
+        const SizedBox(height: 16),
+        _dField(i18n.amount, _dAmountCard(i18n, fiatSymbol, amountFiat, available)),
+        if (_amountError.isNotEmpty) _dError(_amountError),
+      ],
+    );
+    final sideColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _dField(
+          i18n.sendPriorityHeading,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              BrandSegmented(
+                labels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
+                selectedIndex: _selectedPriority,
+                onSelect: _setPriority,
               ),
-            ),
-            const SizedBox(width: 28),
-            SizedBox(
-              width: 316,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _dField(
-                    i18n.sendPriorityHeading,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        BrandSegmented(
-                          labels: [
-                            i18n.sendPriorityLow,
-                            i18n.sendPriorityNormal,
-                            i18n.sendPriorityHigh,
-                          ],
-                          selectedIndex: _selectedPriority,
-                          onSelect: _setPriority,
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              i18n.sendNetworkFee,
-                              style: TextStyle(
-                                fontFamily: 'Ubuntu',
-                                fontSize: 12.5,
-                                color: BrandColors.inkMuted,
-                              ),
-                            ),
-                            _feeValue(fiatSymbol, coinRate),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  BrandButton(
-                    label: i18n.sendSendButton,
-                    loading: _isLoading,
-                    onPressed: canSend ? _send : null,
-                  ),
-                  const SizedBox(height: 9),
-                  BrandButton.ghost(label: i18n.cancel, onPressed: () => Navigator.pop(context)),
-                  const SizedBox(height: 16),
                   Text(
-                    i18n.sendIrreversibleNote,
+                    i18n.sendNetworkFee,
                     style: TextStyle(
                       fontFamily: 'Ubuntu',
-                      fontSize: 12,
-                      height: 1.6,
+                      fontSize: 12.5,
                       color: BrandColors.inkMuted,
                     ),
                   ),
+                  _feeValue(fiatSymbol, coinRate),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        BrandButton(label: i18n.sendSendButton, loading: _isLoading, onPressed: canSend ? _send : null),
+        const SizedBox(height: 9),
+        BrandButton.ghost(label: i18n.cancel, onPressed: () => Navigator.pop(context)),
+        const SizedBox(height: 16),
+        Text(
+          i18n.sendIrreversibleNote,
+          style: TextStyle(
+            fontFamily: 'Ubuntu',
+            fontSize: 12,
+            height: 1.6,
+            color: BrandColors.inkMuted,
+          ),
         ),
       ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Two columns only when the form + fixed side column both fit; below
+        // that, stack them into a single column.
+        const twoColMinWidth = 640.0;
+        if (constraints.maxWidth < twoColMinWidth) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [formColumn, const SizedBox(height: 24), sideColumn],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: formColumn),
+            const SizedBox(width: 28),
+            SizedBox(width: 316, child: sideColumn),
+          ],
+        );
+      },
     );
   }
 

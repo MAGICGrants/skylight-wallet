@@ -58,6 +58,9 @@ void main() async {
 
       installWalletCore();
       BrandColors.install(skylightPalette);
+      // Selected onboarding option cards stay white — only the accent border
+      // marks the selection (no tinted fill).
+      OnboardingRadioCard.selectedFill = () => BrandColors.card;
 
       // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {

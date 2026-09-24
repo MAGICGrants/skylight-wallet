@@ -55,15 +55,18 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
     final i18n = AppLocalizations.of(context)!;
     showBrandSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 8, 22, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SheetHandle(),
+      builder: (sheetContext) {
+        // Desktop modal: the card owns the edge padding (like every other sheet).
+        final hpad = isDesktopModal ? 0.0 : 22.0;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(hpad, isDesktopModal ? 0 : 8, hpad, isDesktopModal ? 0 : 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SheetHandle(),
               Row(
                 children: [
                   SheetIcon(
@@ -91,10 +94,11 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                   Navigator.pop(sheetContext);
                 },
               ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -197,7 +201,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      GestureDetector(
+                      Tappable(
                         behavior: HitTestBehavior.opaque,
                         onTap: _showAddContactDialog,
                         child: Container(
@@ -519,7 +523,7 @@ class _IconSquare extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Tappable(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
@@ -637,6 +641,8 @@ class _ContactSheetState extends State<_ContactSheet> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
+    // Desktop modal: the card owns the edge padding (like every other sheet).
+    final hpad = isDesktopModal ? 0.0 : 22.0;
 
     // No keyboard padding here: showBrandSheet applies it once for the
     // whole sheet, and a second one lifts this clear off the keyboard.
@@ -648,9 +654,12 @@ class _ContactSheetState extends State<_ContactSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(padding: EdgeInsets.only(top: 8), child: SheetHandle()),
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+              padding: EdgeInsets.only(top: isDesktopModal ? 0 : 8),
+              child: const SheetHandle(),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(hpad, 0, hpad, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -678,7 +687,7 @@ class _ContactSheetState extends State<_ContactSheet> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
+                padding: EdgeInsets.fromLTRB(hpad, 0, hpad, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -702,7 +711,7 @@ class _ContactSheetState extends State<_ContactSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+              padding: EdgeInsets.fromLTRB(hpad, 18, hpad, isDesktopModal ? 0 : 8),
               child: Column(
                 children: [
                   BrandButton(
@@ -726,9 +735,7 @@ class _ContactSheetState extends State<_ContactSheet> {
   }
 
   String _addressHeaderLabel(AppLocalizations i18n) {
-    final coinName = xmrWallet(context)?.blockchainName ?? 'Monero';
-    final label = '$coinName ${i18n.address}';
-    return _address == null ? '$label · ${i18n.restoreWalletNotSet}' : label;
+    return _address == null ? '${i18n.address} · ${i18n.restoreWalletNotSet}' : i18n.address;
   }
 
   Widget _nameField(String name) {
@@ -780,11 +787,6 @@ class _ContactSheetState extends State<_ContactSheet> {
 
   Widget _addressEntry() {
     final i18n = AppLocalizations.of(context)!;
-    final wallet = xmrWallet(context);
-    final coinName = wallet?.blockchainName ?? 'Monero';
-    final tile = wallet != null
-        ? CoinMark(coinSymbol: wallet.coinSymbol, iconAsset: wallet.iconAsset, size: 30)
-        : const SizedBox(width: 30, height: 30);
     final address = _address;
 
     if (address != null) {
@@ -793,33 +795,18 @@ class _ContactSheetState extends State<_ContactSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
         child: Row(
           children: [
-            tile,
-            const SizedBox(width: 11),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    coinName,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                      color: BrandColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    shortenMiddle(address, head: 9, tail: 9),
-                    style: TextStyle(
-                      fontFamily: 'Ubuntu Mono',
-                      fontSize: 11,
-                      color: BrandColors.inkMuted,
-                    ),
-                  ),
-                ],
+              child: Text(
+                shortenMiddle(address, head: 12, tail: 12),
+                style: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 12.5,
+                  color: BrandColors.ink,
+                ),
               ),
             ),
-            GestureDetector(
+            const SizedBox(width: 11),
+            Tappable(
               behavior: HitTestBehavior.opaque,
               onTap: () => setState(() {
                 _address = null;
@@ -854,18 +841,7 @@ class _ContactSheetState extends State<_ContactSheet> {
           children: [
             Row(
               children: [
-                tile,
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Text(
-                    coinName,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                      color: BrandColors.inkFaint,
-                    ),
-                  ),
-                ),
+                const Spacer(),
                 MiniActionButton(
                   bordered: true,
                   color: BrandColors.card,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:wallet_domain/wallet_domain.dart' show SeedSource;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
-import 'package:skylight_wallet/screens/desktop/generate_seed_view.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -52,6 +52,9 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
 
     if (isDesktop) {
       return DesktopGenerateSeedView(
+        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+        step: 5,
+        totalSteps: 6,
         title: i18n.generateSeedTitle,
         description: i18n.generateSeedSubtitleRevealed,
         seedWords: _seed ?? const [],
@@ -63,8 +66,8 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
               ).format(_generated!.restoreDate)
             : null,
         confirmLabel: i18n.generateSeedConfirm,
-        screenshotNote: i18n.generateSeedScreenshotNote,
         passwordNote: i18n.onboardingSeedNotePassword,
+        revealLabel: i18n.generateSeedReveal,
         continueText: i18n.continueText,
         onContinue: _continue,
         onBack: () => Navigator.pop(context),

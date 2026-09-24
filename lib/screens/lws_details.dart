@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/platform.dart';
@@ -42,59 +43,54 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
     final primaryAddress = appWalletOf(context, listen: true).getPrimaryAddress();
     final restoreHeight = ModalRoute.of(context)!.settings.arguments as int;
 
-    final view = LwsKeysView(
-      largeTitle: true,
-      // Desktop: content-only render, framed in the completion card below.
-      asModal: isDesktop,
-      headerIcon: isDesktop
-          ? Icon(Icons.check_circle_outline, size: 26, color: BrandColors.success)
-          : null,
-      labels: LwsKeysLabels(
+    final labels = LwsKeysLabels(
+      title: i18n.lwsDetailsTitle,
+      description: i18n.lwsDetailsDescription,
+      primaryAddressLabel: i18n.lwsDetailsPrimaryAddressLabel,
+      viewKeyLabel: i18n.lwsDetailsSecretViewKeyLabel,
+      restoreHeightLabel: i18n.lwsDetailsRestoreHeightLabel,
+      reveal: i18n.generateSeedReveal,
+      warning: i18n.lwsKeysWarning,
+    );
+
+    void goHome() => Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/wallet_home',
+      (Route<dynamic> route) => false,
+    );
+
+    // Desktop: an unnumbered onboarding step — the two-pane chrome carries the
+    // title/description/warning, the content slot shows just the value cards.
+    if (isDesktop) {
+      return DesktopOnboardingScaffold(
+        showSteps: false,
+        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
         title: i18n.lwsDetailsTitle,
         description: i18n.lwsDetailsDescription,
-        primaryAddressLabel: i18n.lwsDetailsPrimaryAddressLabel,
-        viewKeyLabel: i18n.lwsDetailsSecretViewKeyLabel,
-        restoreHeightLabel: i18n.lwsDetailsRestoreHeightLabel,
-        reveal: i18n.generateSeedReveal,
-        warning: i18n.lwsKeysWarning,
-      ),
+        step: 0,
+        totalSteps: 0,
+        continueLabel: i18n.continueText,
+        onContinue: goHome,
+        notes: [OnboardingNote(Icons.visibility_off_outlined, i18n.lwsKeysWarning)],
+        content: LwsKeysView(
+          fieldsOnly: true,
+          labels: labels,
+          primaryAddress: primaryAddress,
+          secretViewKey: _secretViewKey,
+          restoreHeight: restoreHeight.toString(),
+          onCopy: _copy,
+        ),
+      );
+    }
+
+    return LwsKeysView(
+      largeTitle: true,
+      labels: labels,
       primaryAddress: primaryAddress,
       secretViewKey: _secretViewKey,
       restoreHeight: restoreHeight.toString(),
       onCopy: _copy,
-      footer: BrandButton(
-        label: i18n.continueText,
-        onPressed: () => Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/wallet_home',
-          (Route<dynamic> route) => false,
-        ),
-      ),
-    );
-
-    if (!isDesktop) return view;
-
-    // Desktop: a centered completion card on the paper ground — no sidebar yet,
-    // since the wallet is only entered on Continue.
-    return Scaffold(
-      backgroundColor: BrandColors.paper,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 760),
-            child: Container(
-              decoration: BoxDecoration(
-                color: BrandColors.card,
-                border: Border.all(color: BrandColors.border),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              padding: const EdgeInsets.all(32),
-              child: view,
-            ),
-          ),
-        ),
-      ),
+      footer: BrandButton(label: i18n.continueText, onPressed: goHome),
     );
   }
 }

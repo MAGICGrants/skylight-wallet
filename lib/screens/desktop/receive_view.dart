@@ -52,13 +52,31 @@ class DesktopReceiveView extends StatelessWidget {
         const SizedBox(height: 16),
         Text(title, style: desktopTitleStyle),
         const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(width: 300, child: _qrCard()),
-            const SizedBox(width: 28),
-            Expanded(child: _details(context)),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Two columns (QR beside details) only when there's room; below that,
+            // stack the QR above the details.
+            const twoColMinWidth = 640.0;
+            final qr = SizedBox(width: 300, child: _qrCard());
+            if (constraints.maxWidth < twoColMinWidth) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(child: qr),
+                  const SizedBox(height: 24),
+                  _details(context),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                qr,
+                const SizedBox(width: 28),
+                Expanded(child: _details(context)),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -147,6 +165,7 @@ class DesktopReceiveView extends StatelessWidget {
             label: copyLabel,
             icon: Icons.copy_outlined,
             expand: false,
+            dense: true,
             onPressed: onCopy,
           ),
         ),

@@ -225,7 +225,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _PortField(
+        TorPortField(
           controller: _socksPortController,
           label: i18n.torSettingsSocksPortLabel,
           enabled: portEnabled,
@@ -250,9 +250,17 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
         const SizedBox(height: BrandSpacing.md),
         Row(
           children: [
-            Expanded(child: _testStatus(i18n)),
+            Expanded(
+              child: TorTestStatus(
+                testing: _isTestingConnection,
+                tested: _hasTested,
+                ok: _connectionSuccess,
+                connectedLabel: i18n.torChoiceConnected,
+                failedLabel: i18n.torChoiceTestFailed,
+              ),
+            ),
             const SizedBox(width: BrandSpacing.md),
-            _TestChip(
+            TorTestChip(
               label: i18n.torSettingsTestConnectionButton,
               onTap: _isTestingConnection ? null : _testConnection,
             ),
@@ -261,9 +269,30 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
       ],
     );
   }
+}
 
-  Widget _testStatus(AppLocalizations i18n) {
-    if (_isTestingConnection) {
+/// The inline connection-test status for the external-Tor controls: a spinner
+/// while [testing], then a success dot / error icon with label once [tested].
+/// Shared by the settings Tor sheet and the desktop onboarding Tor step.
+class TorTestStatus extends StatelessWidget {
+  final bool testing;
+  final bool tested;
+  final bool ok;
+  final String connectedLabel;
+  final String failedLabel;
+
+  const TorTestStatus({
+    super.key,
+    required this.testing,
+    required this.tested,
+    required this.ok,
+    required this.connectedLabel,
+    required this.failedLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (testing) {
       return Align(
         alignment: Alignment.centerLeft,
         child: SizedBox(
@@ -273,8 +302,8 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
         ),
       );
     }
-    if (!_hasTested) return const SizedBox.shrink();
-    if (_connectionSuccess) {
+    if (!tested) return const SizedBox.shrink();
+    if (ok) {
       return Row(
         children: [
           Container(
@@ -284,7 +313,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
           ),
           const SizedBox(width: BrandSpacing.sm),
           Text(
-            i18n.torChoiceConnected,
+            connectedLabel,
             style: BrandText.caption.copyWith(
               color: BrandColors.success,
               fontWeight: FontWeight.w500,
@@ -298,7 +327,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
         Icon(Icons.error_outline, color: BrandColors.error, size: 18),
         const SizedBox(width: BrandSpacing.sm),
         Text(
-          i18n.torChoiceTestFailed,
+          failedLabel,
           style: BrandText.caption.copyWith(color: BrandColors.error, fontWeight: FontWeight.w500),
         ),
       ],
@@ -307,65 +336,89 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
 }
 
 /// Labeled inset field — a small-caps mono label above the value, per the
-/// design (not a Material floating-label box).
-class _PortField extends StatelessWidget {
+/// design (not a Material floating-label box). The whole box is a tap target for
+/// the field, so a tap on the padding (not just the thin text line) still puts
+/// the caret in — otherwise, nested in a card's tap handler, it reads as unfocusable.
+class TorPortField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final bool enabled;
   final VoidCallback onChanged;
 
-  const _PortField({
+  const TorPortField({
+    super.key,
     required this.controller,
     required this.label,
-    required this.enabled,
+    this.enabled = true,
     required this.onChanged,
   });
 
   @override
+  State<TorPortField> createState() => _TorPortFieldState();
+}
+
+class _TorPortFieldState extends State<TorPortField> {
+  final _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 13),
-      decoration: BoxDecoration(
-        color: BrandColors.paper,
-        borderRadius: BorderRadius.circular(BrandRadii.tile),
-        border: Border.all(color: BrandColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontFamily: 'Ubuntu Mono',
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.4,
-              color: BrandColors.inkFaint,
-            ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.enabled ? _focusNode.requestFocus : null,
+      child: MouseRegion(
+        cursor: widget.enabled ? SystemMouseCursors.text : MouseCursor.defer,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 13),
+          decoration: BoxDecoration(
+            color: BrandColors.paper,
+            borderRadius: BorderRadius.circular(BrandRadii.tile),
+            border: Border.all(color: BrandColors.border),
           ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: controller,
-            enabled: enabled,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 14, color: BrandColors.ink),
-            cursorColor: BrandColors.primary,
-            decoration: const InputDecoration.collapsed(hintText: '9050'),
-            onChanged: (_) => onChanged(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.label.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  color: BrandColors.inkFaint,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: widget.controller,
+                focusNode: _focusNode,
+                enabled: widget.enabled,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 14, color: BrandColors.ink),
+                cursorColor: BrandColors.primary,
+                decoration: const InputDecoration.collapsed(hintText: '9050'),
+                onChanged: (_) => widget.onChanged(),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 /// Small compact chip for the connection test action.
-class _TestChip extends StatelessWidget {
+class TorTestChip extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _TestChip({required this.label, required this.onTap});
+  const TorTestChip({super.key, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:skylight_wallet/widgets/tor_settings_form.dart'
+    show TorPortField, TorTestChip, TorTestStatus;
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// Desktop Step 1 of 5 — Tor connection choice (Built-in / External / No Tor).
@@ -34,7 +36,7 @@ class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
 
   int? _selected;
   final _portController = TextEditingController(text: '9050');
-  bool _useOrbot = false;
+  final bool _useOrbot = false;
   bool _testing = false;
   bool? _testOk;
 
@@ -116,44 +118,32 @@ class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
 
   Widget _externalForm(TorChoiceLabels l) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Same labeled port field + compact test chip / inline status as the
+        // settings Tor sheet (shared widgets from tor_settings_form).
+        TorPortField(
+          controller: _portController,
+          label: l.socksPortLabel,
+          onChanged: () {
+            if (_testOk != null) setState(() => _testOk = null);
+          },
+        ),
+        const SizedBox(height: 12),
         Row(
           children: [
-            SizedBox(
-              width: 140,
-              child: BrandTextField(
-                controller: _portController,
-                label: l.socksPortLabel,
-                keyboardType: TextInputType.number,
+            Expanded(
+              child: TorTestStatus(
+                testing: _testing,
+                tested: _testOk != null,
+                ok: _testOk == true,
+                connectedLabel: l.connected,
+                failedLabel: l.testFailed,
               ),
             ),
             const SizedBox(width: 12),
-            BrandButton(
-              label: l.testButton,
-              onPressed: _testing ? null : _runTest,
-              variant: BrandButtonVariant.secondary,
-              expand: false,
-              loading: _testing,
-            ),
-            const SizedBox(width: 12),
-            if (_testOk == true)
-              StatusPill(label: l.connected, color: BrandColors.success)
-            else if (_testOk == false)
-              StatusPill(label: l.testFailed, color: BrandColors.error),
+            TorTestChip(label: l.testButton, onTap: _testing ? null : _runTest),
           ],
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          mouseCursor: WidgetStateMouseCursor.clickable,
-          onTap: () => setState(() => _useOrbot = !_useOrbot),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Checkbox(value: _useOrbot, onChanged: (v) => setState(() => _useOrbot = v ?? false)),
-              Text(l.orbotLabel, style: BrandText.bodyMuted),
-            ],
-          ),
         ),
       ],
     );

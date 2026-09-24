@@ -14,16 +14,12 @@
   "copy": "Copiar",
   "addressCopied": "Endereço copiado para a área de transferência",
   "fieldEmptyError": "Este campo não pode ficar vazio.",
-  "welcomeTitle": "Bem-vindo!",
   "welcomeDescription": "A Skylight Wallet é uma das mais simples carteiras de Monero. Nós o ajudaremos a configurar uma carteira e se conectar à um servidor.",
   "welcomeGetStarted": "Começar",
   "welcomeAgreePrefix": "Ao continuar, você concorda com os ",
   "welcomeTermsLink": "Termos de Serviço",
   "welcomeAgreeMiddle": " e a ",
   "welcomePrivacyLink": "Política de Privacidade",
-  "restoreWarningTitle": "Aviso de Restauração",
-  "restoreWarningDescription": "Você tem certeza? O servidor ao qual você se conectar poderá ver seu histórico de transações Monero passadas e futuras.",
-  "restoreWarningContinueButton": "Continuar",
   "lwsSetupTitle": "Configuração da conexão",
   "lwsSetupDescription": "Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você. Com um LWS, sua chave privada de visualização e seu endereço primário serão compartilhados com este servidor.",
   "lwsSetupProxyPortLabel": "Porta do Proxy HTTP (opcional)",
@@ -47,17 +43,6 @@
   "connectionReachedOverTor": "Acessado via Tor",
   "connectionReachedViaProxy": "Acessado pelo seu proxy",
   "connectionReachedDirect": "Acessado diretamente",
-  "connectionIndicatorHttps": "HTTPS",
-  "connectionIndicatorLocal": "Local",
-  "connectionIndicatorTorInternal": "Tor Interno",
-  "connectionIndicatorTorExternal": "Usando Porta {port}",
-  "@connectionIndicatorTorExternal": {
-    "placeholders": {
-      "port": {
-        "type": "String"
-      }
-    }
-  },
   "settingsConnectionSettingsLabel": "Configurações de conexão",
   "settingsConnectionServerLws": "LWS",
   "settingsConnectionServerNode": "Nó",
@@ -100,13 +85,11 @@
   "passwordsDoNotMatchError": "As senhas não coincidem.",
   "generateSeedTitle": "Anote-as, em ordem",
   "generateSeedTitleCovered": "Frase Seed",
-  "generateSeedDescription": "Esta é a sua polyseed. Anote-a e guarde-a em um lugar seguro.",
   "generateSeedSubtitleCovered": "Estas palavras, nesta ordem, são a sua carteira. Anote-as e guarde-as em um cofre físico. Se você perder estas palavras ou compartilhá-las com outra pessoa, perderá seu dinheiro permanentemente. Um planejamento cuidadoso agora evita um possível desastre depois.",
   "generateSeedSubtitleRevealed": "Guarde-as em segurança. Não as compartilhe.",
   "generateSeedScreenshotNote": "As capturas de tela estão bloqueadas nesta tela. Certifique-se de que ninguém está olhando por cima do seu ombro.",
   "generateSeedReveal": "Toque para revelar",
   "generateSeedConfirm": "Anotei todas as palavras e as guardei em um lugar que só eu posso acessar.",
-  "generateSeedContinueButton": "Eu anotei",
   "generateSeedBirthdayLabel": "Aniversário da carteira",
   "generateSeedBirthdayReason": "Onde uma futura restauração começa a escanear",
   "onboardingTorNotePrivacy": "O Tor esconde seu endereço do nó que você consulta — mais lento, e vale a pena.",
@@ -128,7 +111,6 @@
   "onboardingPasswordNoteNotCloud": "Não é uma conta na nuvem. Perdê-la significa restaurar a partir da sua frase seed.",
   "onboardingPasswordStrong": "Forte",
   "onboardingPasswordMatch": "As duas entradas coincidem",
-  "onboardingPasswordAcknowledge": "Entendo que ninguém — incluindo a equipe da Skylight Wallet — pode recuperar esta senha para mim.",
   "lwsDetailsTitle": "Detalhes da Carteira",
   "lwsDetailsDescription": "Se o seu servidor Light Wallet Monero (LWS) exigir registro, você pode usar estes dados para adicionar esta carteira a esse servidor. Nem todos os servidores exigem registro.",
   "lwsDetailsPrimaryAddressLabel": "Endereço Primário",
@@ -136,9 +118,6 @@
   "lwsDetailsRestoreHeightLabel": "Bloco de Restauração",
   "restoreWalletTitle": "Restaurar Carteira",
   "restoreWalletDescription": "Insira sua semente Monero abaixo. Verificaremos os formatos comuns.",
-  "restoreWalletSeedLabel": "Semente",
-  "restoreWalletRestoreHeightLabel": "Bloco de Restauração (opcional)",
-  "restoreWalletRestoreDateLabel": "Data de Restauração (opcional)",
   "restoreWalletScanFrom": "Escanear a partir de",
   "restoreWalletScanFromReason": "Ignore o histórico irrelevante para economizar tempo",
   "restoreWalletNotSet": "Não definido",
@@ -181,21 +160,15 @@
   "unlockWithFaceId": "Desbloquear com Face ID",
   "unlockWithTouchId": "Desbloquear com Touch ID",
   "unlockTitle": "Desbloquear Carteira",
-  "unlockDescription": "Digite a senha da sua carteira para desbloquear",
-  "unlockPasswordLabel": "Senha",
   "unlockPasswordHint": "Digite sua senha",
   "unlockIncorrectPasswordError": "Senha incorreta. Tente novamente.",
-  "homeConnecting": "Conectando",
   "homeSyncing": "Sincronizando",
   "homeSynced": "Sincronizado",
-  "homeHeight": "Bloco",
+  "homeTorConnected": "Tor · conectado",
+  "homeTorConnecting": "Tor · conectando",
+  "homeTorOff": "Tor · desligado",
   "homeReceive": "Receber",
   "homeSend": "Enviar",
-  "homeBalanceLocked": "travado",
-  "homeTransactionsTitle": "Transações",
-  "homeOutgoingTxSemanticLabel": "Transação de Saída",
-  "homeIncomingTxSemanticLabel": "Transação de Entrada",
-  "homeTransactionConfirmed": "Confirmado",
   "homeNoTransactions": "Sem transações",
   "homeFiatApiError": "Erro ao conectar ao servidor de preços",
   "homeDisconnected": "Desconectado",
@@ -204,9 +177,6 @@
   "coinHomeSent": "Enviado",
   "receiveTitle": "Receber",
   "receivePrimaryAddressWarn": "Aviso: A menos que saiba o que está fazendo, por favor use subendereços para melhor privacidade.",
-  "receiveShareButton": "Compartilhar",
-  "receiveShowSubaddressButton": "Mostrar Subendereço",
-  "receiveShowPrimaryAddressButton": "Mostrar Endereço Primário",
   "receiveServerNoSubaddressesWarn": "Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.",
   "receiveMaxSubaddressesReachedWarn": "Você atingiu o número máximo de subendereços suportados por este servidor. Este é um endereço já usado.",
   "receiveSubaddressTab": "Subendereço",
@@ -216,14 +186,6 @@
   "receiveShareError": "Não foi possível abrir a janela de compartilhamento",
   "receiveAddressHeading": "Seu endereço {coin}",
   "@receiveAddressHeading": {
-    "placeholders": {
-      "coin": {
-        "type": "String"
-      }
-    }
-  },
-  "receiveBlockchainSubtitle": "Blockchain {coin}",
-  "@receiveBlockchainSubtitle": {
     "placeholders": {
       "coin": {
         "type": "String"
@@ -270,7 +232,6 @@
   "settingsLwsViewKeysButton": "Ver",
   "revealSeedAuthReason": "Confirme sua identidade para ver a frase seed",
   "settingsSecretKeysLabel": "Chaves Privadas de Restauração",
-  "settingsSecretKeysButton": "Ver",
   "settingsViewLwsKeysDialogText": "Somente compartilhe estas informações com o seu servidor light-wallet. Essas chaves permitem que o portador veja permanentemente todas as transações relacionadas às suas carteiras. Compartilhá-las com uma pessoa não confiável prejudicará significativamente sua privacidade.",
   "settingsViewLwsKeysDialogRevealButton": "Revelar",
   "settingsViewSecretKeysDialogText": "Não compartilhe essas chaves com ninguém, incluindo pessoas que aleguem ser suporte. Se você receber um pedido para fornecê-las, está sendo vítima de um golpe. Se você fornecer essas informações a outra pessoa, perderá seu dinheiro e ele não poderá ser recuperado.",
@@ -332,23 +293,16 @@
   "addressBookNoContacts": "Nenhum contato ainda",
   "addressBookNoContactsDescription": "Adicione seu primeiro contato tocando no botão +",
   "addressBookNoSearchResults": "Nenhum contato encontrado",
-  "addressBookCopyAddress": "Copiar Endereço",
   "addressBookEdit": "Editar",
   "addressBookContactName": "Nome do Contato",
   "addressBookNameHint": "Nome",
-  "addressBookAddressHint": "Endereço Monero",
   "addressBookAddDescription": "Um nome e um endereço Monero para pagá-lo.",
   "addressBookEditDescription": "Atualize o nome ou o endereço deste contato.",
   "addressBookUpdate": "Atualizar",
   "addressBookSave": "Salvar",
-  "sendSelectedContact": "Contato selecionado",
-  "sendClearSelectedContact": "Limpar contato selecionado",
   "sendPriorityLow": "Baixa",
   "sendPriorityNormal": "Normal",
   "sendPriorityHigh": "Alta",
-  "sendPriorityLabel": "prioridade",
-  "sendTransactionPriority": "Prioridade da Transação",
-  "sendFeeLabel": "Taxa",
   "sendContactsButton": "Contatos",
   "sendToLabel": "Para",
   "sendPasteButton": "Colar",
@@ -360,12 +314,7 @@
   "sendAvailableSuffix": "disponível",
   "sendIrreversibleNote": "Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.",
   "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
-  "torInfoTitle": "Tor Integrado",
-  "torInfoDescription": "A Skylight Wallet usa automaticamente Tor integrado para proteger suas conexões de internet.",
-  "torInfoContinueButton": "Continuar",
-  "torInfoConfigureButton": "Configurar",
   "torSettingsTitle": "Configurações do Tor",
-  "torSettingsModeLabel": "Modo Tor",
   "torSettingsModeBuiltIn": "Tor Integrado",
   "torSettingsModeExternal": "Tor Externo",
   "torSettingsModeDisabled": "Sem Tor",
@@ -377,7 +326,6 @@
   "torChoiceTitle": "Configuração da Conexão Tor",
   "torChoiceSubtitle": "O Tor pode ocultar seu endereço IP dos servidores aos quais você se conecta. Isso não reduz as informações que ficam armazenadas em blockchains públicas. De modo geral, como você quer que a Skylight Wallet lide com as conexões Tor?",
   "torSettingsSocksPortLabel": "Porta SOCKS",
-  "torSettingsSocksPortHint": "ex: 9050",
   "torSettingsUseOrbotLabel": "Usar Orbot/InviZible",
   "torSettingsUseOrbotLabelIos": "Usar Orbot",
   "torSettingsSaveButton": "Salvar",
@@ -386,15 +334,6 @@
   "torDisabledWalletsWarningBody": "Algumas carteiras estão configuradas para conectar via Tor. Desativar o Tor irá desconectá-las, e elas permanecerão desconectadas até que você reconfigure a conexão.",
   "torDisabledWalletsWarningConfirm": "Desativar o Tor",
   "settingsTorSettingsLabel": "Configurações do Tor",
-  "lwsSetupUsingInternalTor": "Usando Tor interno",
-  "lwsSetupUsingExternalTor": "Usando proxy Tor externo em {address}",
-  "@lwsSetupUsingExternalTor": {
-    "placeholders": {
-      "address": {
-        "type": "String"
-      }
-    }
-  },
   "lwsSetupTorDisabledError": "O Tor está desativado. Por favor, volte e ative-o.",
   "lwsSetupInvalidQrCode": "Endereço de conexão inválido."
 }

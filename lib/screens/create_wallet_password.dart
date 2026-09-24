@@ -88,7 +88,6 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
         noteNotCloud: i18n.onboardingPasswordNoteNotCloud,
         strongLabel: i18n.onboardingPasswordStrong,
         matchLabel: i18n.onboardingPasswordMatch,
-        acknowledgeLabel: i18n.onboardingPasswordAcknowledge,
         loading: _isLoading,
         onSubmit: submit,
         onBack: () => Navigator.pop(context),

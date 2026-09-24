@@ -129,7 +129,8 @@ class _CurrencyChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? BrandColors.surfaceSunken : BrandColors.card,
+          // Selected chip stays white — only the accent border marks it.
+          color: BrandColors.card,
           border: Border.all(
             color: selected ? BrandColors.primary : BrandColors.border,
             width: selected ? 1.5 : 1,

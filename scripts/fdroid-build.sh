@@ -44,7 +44,7 @@ bash scripts/build-moneroc.sh "$ARCH"
 # 2) Flutter app at a FIXED path (AOT/tor/zxing bake the build dir -> must be identical).
 rm -rf /tmp/skylight
 cp -a "$REPO" /tmp/skylight
-rm -rf /tmp/skylight/build /tmp/skylight/.dart_tool /tmp/skylight/.pub-cache
+rm -rf /tmp/skylight/build /tmp/skylight/.dart_tool
 mkdir -p "/tmp/skylight/android/app/src/main/jniLibs/$ABI"
 cp "/tmp/monero_c/monero_libwallet2_api_c/build/$ARCH/libwallet2_api_c.so" \
    "/tmp/skylight/android/app/src/main/jniLibs/$ABI/libmonero_libwallet2_api_c.so"
@@ -58,7 +58,7 @@ export PUB_CACHE=/tmp/skylight/.pub-cache
 export CARGO_HOME=/tmp/skylight-cargo
 # cargokit requires an NDK package.xml (absent in unzipped NDKs)
 [ -f "$ANDROID_HOME/ndk/$NDK/package.xml" ] || touch "$ANDROID_HOME/ndk/$NDK/package.xml"
-"$FLUTTER/bin/flutter" pub get --enforce-lockfile
+"$FLUTTER/bin/flutter" pub get --offline --enforce-lockfile
 bash scripts/pin-rust-toolchain.sh
 "$FLUTTER/bin/flutter" build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$PLATFORM"
 

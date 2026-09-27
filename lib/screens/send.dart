@@ -4,7 +4,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart' show baseUnitsToDecimalString, decimalToBaseUnits;
 
-import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
@@ -59,7 +58,9 @@ class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
   bool _isLoadingFees = false;
   final _destinationAddressController = TextEditingController(text: '');
-  final _amountController = TextEditingController(text: '');
+  /// The amount, typed in XMR or fiat. Read what is spent from
+  /// `_amount.baseUnits` / `_amount.coinText`, never from its field.
+  late final AmountEntryController _amount;
   bool _isSweepAll = false;
   Contact? _selectedContact;
   List<int?>? _fees; // estimated fee (piconero) per priority; null = estimate failed
@@ -84,9 +85,9 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void dispose() {
     _destinationAddressController.removeListener(_onAddressChanged);
-    _amountController.removeListener(_onAmountChanged);
+    _amount.removeListener(_onAmountChanged);
     _destinationAddressController.dispose();
-    _amountController.dispose();
+    _amount.dispose();
     super.dispose();
   }
 
@@ -100,9 +101,14 @@ class _SendScreenState extends State<SendScreen> {
     if (_didInit) return;
     _didInit = true;
 
+    _amount = AmountEntryController(
+      quotes: Provider.of<FiatRateModel>(context, listen: false),
+      coinSymbol: 'XMR',
+      coinDecimals: _xmrDecimals,
+    );
     _loadFormFromArgs();
     _destinationAddressController.addListener(_onAddressChanged);
-    _amountController.addListener(_onAmountChanged);
+    _amount.addListener(_onAmountChanged);
     // Validate any prefilled values (contact/QR args) so the button reflects them.
     _revalidate();
   }
@@ -112,7 +118,8 @@ class _SendScreenState extends State<SendScreen> {
 
     if (args != null) {
       _destinationAddressController.text = args.destinationAddress;
-      _amountController.text = args.amount ?? '';
+      final amount = args.amount;
+      if (amount != null && amount.isNotEmpty) _amount.setCoinText(amount);
       // Same field the in-send picker sets, so the contact card renders here too.
       _selectedContact = args.contact;
     }
@@ -160,7 +167,8 @@ class _SendScreenState extends State<SendScreen> {
 
     _destinationAddressController.text = address;
     if (amount != null) {
-      _amountController.text = _asExactAmount(amount);
+      // A payment request is denominated in XMR, so entry switches to XMR.
+      _amount.setCoinText(_asExactAmount(amount));
     }
   }
 
@@ -285,10 +293,9 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<bool> _validateForm({bool setErrors = true}) async {
-    final amount = double.tryParse(_amountController.text) ?? 0;
     final unresolvedDestinationAddress = _destinationAddressController.text;
 
-    if (amount == 0) {
+    if (_amount.baseUnits == BigInt.zero) {
       return false;
     }
 
@@ -315,7 +322,7 @@ class _SendScreenState extends State<SendScreen> {
       return false;
     }
 
-    if (_amountUnits() > (wallet.unlockedBalanceBaseUnits ?? BigInt.zero)) {
+    if (_amount.baseUnits > (wallet.unlockedBalanceBaseUnits ?? BigInt.zero)) {
       if (setErrors) {
         setState(() {
           _amountError = i18n.sendInsufficientBalanceError;
@@ -328,7 +335,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _calculateFees() async {
-    final feeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
+    final feeFetchKey = '${_destinationAddressController.text}-${_amount.coinText}';
 
     if (feeFetchKey == _lastFeeFetchKey) {
       return;
@@ -349,7 +356,7 @@ class _SendScreenState extends State<SendScreen> {
     });
 
     final destinationAddress = await _resolveDestinationAddress();
-    final amountText = _amountController.text;
+    final amountText = _amount.coinText;
 
     try {
       // Estimate the fee per priority natively (no full tx build).
@@ -444,7 +451,7 @@ class _SendScreenState extends State<SendScreen> {
       // screen are estimates, not tx objects, so always construct here).
       final tx = await wallet.createTx(
         destinationAddress,
-        _amountController.text,
+        _amount.coinText,
         _isSweepAll,
         priority: _selectedPriority + 1,
       );
@@ -465,7 +472,7 @@ class _SendScreenState extends State<SendScreen> {
       if (error.toString().contains('Unlocked funds too low')) {
         // Display-only: picks which of two error messages to show, so the
         // imprecision of a double cannot reach an amount anyone spends.
-        final approxAmount = double.tryParse(_amountController.text) ?? 0;
+        final approxAmount = double.tryParse(_amount.coinText) ?? 0;
         if (wallet.unlockedBalance! > approxAmount) {
           setState(() {
             _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
@@ -497,11 +504,9 @@ class _SendScreenState extends State<SendScreen> {
     String? destinationOpenAliasName,
   }) async {
     final i18n = AppLocalizations.of(context)!;
-    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-    final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
-    final xmrRate = fiatRate.rateFor('XMR');
-    final amountFiat = xmrRate is double ? tx.amount * xmrRate : null;
-    final feeFiat = xmrRate is double ? tx.fee * xmrRate : null;
+    final quote = Provider.of<FiatRateModel>(context, listen: false).quoteFor('XMR');
+    final amountFiat = quote != null ? tx.amount * quote.rate : null;
+    final feeFiat = quote != null ? tx.fee * quote.rate : null;
 
     // Monero fee is same-currency, so compare directly. Warn when it's ≥10% of
     // the amount (mirrors Spice's confirm-send high-fee guard).
@@ -521,9 +526,9 @@ class _SendScreenState extends State<SendScreen> {
       ),
       coinSymbol: 'XMR',
       amountText: '${tx.amount.toStringAsFixed(12)} XMR',
-      amountFiat: amountFiat != null ? formatFiat(amountFiat, fiatSymbol) : null,
+      amountFiat: amountFiat != null ? formatFiat(amountFiat, quote!.currency) : null,
       feeText: '${tx.fee.toStringAsFixed(12)} XMR',
-      feeFiat: feeFiat != null ? formatFiat(feeFiat, fiatSymbol) : null,
+      feeFiat: feeFiat != null ? formatFiat(feeFiat, quote!.currency) : null,
       address: destinationAddress,
       openAlias: destinationOpenAlias,
       openAliasName: destinationOpenAliasName,
@@ -573,7 +578,11 @@ class _SendScreenState extends State<SendScreen> {
     // intact. Sweep-all normally makes the amount moot, but editing the field
     // clears that flag and the number becomes the real amount.
     final units = wallet.unlockedBalanceBaseUnits;
-    _amountController.text = units == null ? '' : baseUnitsToDecimalString(units, _xmrDecimals);
+    if (units == null) {
+      _amount.clear();
+    } else {
+      _amount.setMax(units);
+    }
 
     setState(() {
       _isSweepAll = true;
@@ -602,20 +611,11 @@ class _SendScreenState extends State<SendScreen> {
     await _revalidate();
   }
 
-  /// The typed amount in piconero, or zero when the field is not a number.
-  BigInt _amountUnits() {
-    try {
-      return decimalToBaseUnits(_amountController.text, _xmrDecimals);
-    } on FormatException {
-      return BigInt.zero;
-    }
-  }
-
   Future<void> _onAmountChanged() async {
     final wallet = appWalletOf(context);
     // Base units for the same reason as in `_validateForm`: `==` between two
     // differently-rounded doubles decided whether this is a sweep.
-    final isFullBalance = _amountUnits() == wallet.unlockedBalanceBaseUnits;
+    final isFullBalance = _amount.baseUnits == wallet.unlockedBalanceBaseUnits;
 
     if (isFullBalance && !_isSweepAll) {
       setState(() {
@@ -639,12 +639,7 @@ class _SendScreenState extends State<SendScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context, listen: true);
-    final fiatRate = context.watch<FiatRateModel>();
-    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
-    final coinRate = fiatRate.rateFor('XMR');
-
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    final amountFiat = coinRate != null ? amount * coinRate : 0.0;
+    final quote = context.watch<FiatRateModel>().quoteFor('XMR');
     final available = wallet.unlockedBalance ?? 0;
     final xmr = xmrWallet(context);
 
@@ -663,6 +658,7 @@ class _SendScreenState extends State<SendScreen> {
         maxButton: i18n.sendMaxButton,
         addressHint: i18n.address,
         priorityLabels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
+        switchUnit: i18n.sendSwitchUnit,
       ),
       onBack: () => Navigator.of(context).pop(),
       addressController: _destinationAddressController,
@@ -676,11 +672,9 @@ class _SendScreenState extends State<SendScreen> {
           ? _shortenMiddle(_destinationAddressController.text, head: 8, tail: 10)
           : null,
       onClearContact: _clearSelectedContact,
-      amountController: _amountController,
+      amount: _amount,
       amountError: _amountError,
       onMax: _setBalanceAsSendAmount,
-      coinSymbol: 'XMR',
-      amountFiatText: '≈ ${formatFiat(amountFiat, fiatSymbol)}',
       availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
       availableLeading: xmr != null
           ? CoinMark(coinSymbol: xmr.coinSymbol, iconAsset: xmr.iconAsset, size: 16)
@@ -688,14 +682,14 @@ class _SendScreenState extends State<SendScreen> {
       onAvailableTap: _setBalanceAsSendAmount,
       selectedPriority: _selectedPriority,
       onSelectPriority: _setPriority,
-      feeValue: _feeValue(fiatSymbol, coinRate),
+      feeValue: _feeValue(quote),
       onCancel: () => Navigator.pop(context),
       onSend: (_formValid && _openAliasResolving == 0 && !_isLoading) ? _send : null,
       sendLoading: _isLoading,
     );
   }
 
-  Widget _feeValue(String fiatSymbol, double? coinRate) {
+  Widget _feeValue(FiatQuote? quote) {
     final feePiconero = (_fees != null && _fees!.length > _selectedPriority)
         ? _fees![_selectedPriority]
         : null;
@@ -713,7 +707,7 @@ class _SendScreenState extends State<SendScreen> {
       );
     }
     final fee = doubleAmountFromInt(feePiconero);
-    final feeFiat = coinRate != null ? ' · ${formatFiat(fee * coinRate, fiatSymbol)}' : '';
+    final feeFiat = quote != null ? ' · ${formatFiat(fee * quote.rate, quote.currency)}' : '';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

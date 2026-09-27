@@ -333,6 +333,7 @@
   "sendPriorityHeading": "Prioridade",
   "sendPickContactTitle": "Enviar para um contato",
   "sendAvailableSuffix": "disponível",
+  "sendSwitchUnit": "Alternar unidade do valor",
   "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
   "torInfoTitle": "Tor Integrado",
   "torInfoDescription": "A Skylight Wallet usa automaticamente Tor integrado para proteger suas conexões de internet.",

@@ -335,6 +335,7 @@
   "sendPriorityHeading": "Priority",
   "sendPickContactTitle": "Send to a contact",
   "sendAvailableSuffix": "available",
+  "sendSwitchUnit": "Switch amount unit",
   "sendFailedToGetFeesError": "Failed to get fees.",
   "torInfoTitle": "Tor Built-in",
   "torInfoDescription": "Skylight Wallet automatically uses built-in Tor to protect your internet connections.",

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -61,10 +60,6 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
         currencyLabel: i18n.fiatApiSettingsDisplayCurrencyLabel,
         continueText: i18n.lwsSetupContinueButton,
       ),
-      currencies: [
-        for (final code in supportedFiatCurrencies)
-          FiatCurrencyOption(code: code, symbol: currencySymbols[code] ?? ''),
-      ],
       modeIndex: _fiatMode.index,
       currency: _fiatCurrency,
       offerTorOnly: !_globalTorDisabled,

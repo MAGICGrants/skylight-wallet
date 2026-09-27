@@ -87,6 +87,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Conecte-se a um servidor light-wallet Monero (LWS) ou ao seu próprio nó completo. Selecione apenas um servidor em que você confia. Mesmo se você usar o Tor, este servidor pode obter informações sobre você. Com um LWS, sua chave privada de visualização e seu endereço primário serão compartilhados com este servidor.';
 
   @override
+  String get lwsSetupAddressHint => 'lws.example.com:18090';
+
+  @override
   String get lwsSetupProxyPortLabel => 'Porta do Proxy HTTP (opcional)';
 
   @override
@@ -109,6 +112,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get connectionTypeNode => 'Nó Monero';
+
+  @override
+  String get connectionNodeAddressHint => 'e.g. node.example.com:18081';
 
   @override
   String get connectionRemoteIpNotAllowed =>
@@ -890,6 +896,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sendAvailableSuffix => 'disponível';
+
+  @override
+  String get sendSwitchUnit => 'Alternar unidade do valor';
 
   @override
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:skylight_wallet/consts.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -79,10 +78,6 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
           modeIndex: _mode.index,
           onModeChanged: (i) => setState(() => _mode = FiatApiMode.values[i]),
           currencyLabel: i18n.fiatApiSettingsDisplayCurrencyLabel,
-          currencies: [
-            for (final code in supportedFiatCurrencies)
-              FiatCurrencyOption(code: code, symbol: currencySymbols[code] ?? ''),
-          ],
           currency: _currency,
           onCurrencyChanged: (c) => setState(() => _currency = c),
         ),

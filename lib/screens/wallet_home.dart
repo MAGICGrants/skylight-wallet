@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -78,7 +77,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
         ? wallet.unlockedBalance! * fiatRate.rateFor('XMR')!
         : null;
     final lockedBalance = (wallet.totalBalance ?? 0) - (wallet.unlockedBalance ?? 0);
-    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
 
     var lwsConnectionIconStatus = StatusIconStatus.fail;
     if (wallet.isFullySynced) {
@@ -114,7 +112,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                               unlockedBalance: unlockedBalance,
                               unlockedBalanceFiat: unlockedBalanceFiat,
                               lockedBalance: lockedBalance,
-                              fiatSymbol: fiatSymbol,
                               fiatRate: fiatRate,
                               disconnected:
                                   wallet.torRequirementBroken ||
@@ -141,7 +138,6 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
                         wallet: wallet,
                         i18n: i18n,
                         fiatRate: fiatRate,
-                        fiatSymbol: fiatSymbol,
                         onTapTx: _showTxDetails,
                       ),
                       const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -191,7 +187,6 @@ class _BalanceHero extends StatelessWidget {
   final double unlockedBalance;
   final double? unlockedBalanceFiat;
   final double lockedBalance;
-  final String fiatSymbol;
   final FiatRateModel fiatRate;
   final bool disconnected;
 
@@ -200,7 +195,6 @@ class _BalanceHero extends StatelessWidget {
     required this.unlockedBalance,
     required this.unlockedBalanceFiat,
     required this.lockedBalance,
-    required this.fiatSymbol,
     required this.fiatRate,
     required this.disconnected,
   });
@@ -219,7 +213,7 @@ class _BalanceHero extends StatelessWidget {
           // Fiat leads when available; otherwise the coin amount is the hero,
           // with a skeleton while the rate is still loading.
           if (showFiat)
-            BalanceText.split(formatFiat(unlockedBalanceFiat!, fiatSymbol), style: _balanceStyle)
+            BalanceText.split(formatFiat(unlockedBalanceFiat!, fiatRate.fiatCurrency), style: _balanceStyle)
           else if (!fiatRate.isDisabled && !fiatRate.hasFailed)
             Skeletonizer(child: Text('0.0000', style: _balanceStyle))
           else
@@ -330,14 +324,12 @@ class _ActivitySliver extends StatelessWidget {
   final AppWallet wallet;
   final AppLocalizations i18n;
   final FiatRateModel fiatRate;
-  final String fiatSymbol;
   final void Function(TxDetails tx) onTapTx;
 
   const _ActivitySliver({
     required this.wallet,
     required this.i18n,
     required this.fiatRate,
-    required this.fiatSymbol,
     required this.onTapTx,
   });
 
@@ -397,7 +389,6 @@ class _ActivitySliver extends StatelessWidget {
             showCoinIcon: false,
             labels: TxActivityLabels(received: i18n.coinHomeReceived, sent: i18n.coinHomeSent),
             fiatRate: fiatRate,
-            fiatSymbol: fiatSymbol,
             showDivider: next is TxDetails,
             onTap: () => onTapTx(tx),
           );

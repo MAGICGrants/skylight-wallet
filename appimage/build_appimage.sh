@@ -111,8 +111,8 @@ chmod +x AppDir/AppRun
 # Expected SHA256 hash - update this when updating appimagetool
 # Verify from: https://github.com/probonopd/go-appimage/releases
 # Run: sha256sum appimagetool-x86_64.AppImage
-EXPECTED_SHA256="376998aba63bb3a35a02ea3196f77268f8543a35a3b6b7db0dc2181365119b62"
-APPIMAGETOOL_FILENAME="appimagetool-947-x86_64.AppImage"
+EXPECTED_SHA256="7c974f525d5bcde2712dd080e0b079a6c3802113a337f0ab142522dcefbf452d"
+APPIMAGETOOL_FILENAME="appimagetool-951-x86_64.AppImage"
 
 # Download appimagetool from go-appimage if not present
 if [ ! -f "$APPIMAGETOOL_FILENAME" ]; then
@@ -149,7 +149,7 @@ export VERSION
 export ARCH=x86_64
 ./squashfs-root/AppRun AppDir
 
-GENERATED_APPIMAGE=$(ls -1 Skylight_Wallet-${VERSION}-*.AppImage 2>/dev/null | head -n1)
+GENERATED_APPIMAGE=$(ls -1 ./*-"${VERSION}"-*.AppImage 2>/dev/null | grep -iv appimagetool | head -n1)
 DESIRED_NAME="skylight-wallet-${FILE_VERSION}-x86_64.AppImage"
 
 if [ -n "$GENERATED_APPIMAGE" ]; then

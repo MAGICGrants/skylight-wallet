@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/screens/desktop/connection_view.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -12,7 +14,19 @@ class ConnectionSetupScreen extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
 
     void onSaved() {
-      Navigator.pushNamed(context, '/fiat_api_setup');
+      Navigator.pushNamed(context, '/create_wallet');
+    }
+
+    if (isDesktop) {
+      return DesktopConnectionView(
+        title: i18n.lwsSetupTitle,
+        description: i18n.lwsSetupDescription,
+        noteServer: i18n.onboardingConnectionNoteServer,
+        noteChangeable: i18n.onboardingConnectionNoteChangeable,
+        saveButtonLabel: i18n.lwsSetupContinueButton,
+        onSaved: onSaved,
+        onBack: () => Navigator.pop(context),
+      );
     }
 
     return Scaffold(
@@ -29,7 +43,7 @@ class ConnectionSetupScreen extends StatelessWidget {
                   const SizedBox(height: BrandSpacing.sm),
                   BrandScreenHeader(
                     onBack: () => Navigator.of(context).pop(),
-                    center: const StepDots(count: 5, index: 1),
+                    center: const StepDots(count: 6, index: 2),
                   ),
                   const SizedBox(height: BrandSpacing.lg),
                   Text(i18n.lwsSetupTitle, style: BrandText.title),

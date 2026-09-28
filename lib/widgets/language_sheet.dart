@@ -11,9 +11,9 @@ const languageNames = {'en': ('English', 'English'), 'pt': ('Português', 'Portu
 /// Opens the language picker — reachable from Settings and the welcome screen
 /// (welcome has no route to Settings, so a reader who can't read it can switch
 /// here before anything else).
-void showLanguageSheet(BuildContext context) {
+Future<void> showLanguageSheet(BuildContext context) {
   final language = context.read<LanguageModel>();
-  showLanguagePickerSheet(
+  return showLanguagePickerSheet(
     context,
     // Resolved per build from the sheet's own context rather than captured
     // here: picking a language re-localizes the app while this sheet is still

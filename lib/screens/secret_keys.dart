@@ -6,8 +6,23 @@ import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
+/// Desktop: secret keys as a centered modal (opened from Settings); mobile keeps
+/// the full-screen route.
+Future<void> showSecretKeysSheet(BuildContext context) {
+  return showBrandSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxSheetHeight(ctx)),
+      child: const SecretKeysScreen(asModal: true),
+    ),
+  );
+}
+
 class SecretKeysScreen extends StatefulWidget {
-  const SecretKeysScreen({super.key});
+  final bool asModal;
+
+  const SecretKeysScreen({super.key, this.asModal = false});
 
   @override
   State<SecretKeysScreen> createState() => _SecretKeysScreenState();
@@ -67,6 +82,11 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
     final data = _data;
 
     if (data == null) {
+      if (widget.asModal) {
+        // Bounded height so the modal stays compact while loading, then grows to
+        // fit the keys once they're read (an unbounded Center balloons the card).
+        return const SizedBox(height: 160, child: Center(child: CircularProgressIndicator()));
+      }
       return Scaffold(
         backgroundColor: BrandColors.paper,
         body: const SafeArea(child: Center(child: CircularProgressIndicator())),
@@ -81,7 +101,8 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
       warning: i18n.secretKeysWarning,
       revealLabel: i18n.generateSeedReveal,
       onCopy: _copy,
-      onBack: () => Navigator.pop(context),
+      asModal: widget.asModal,
+      onBack: widget.asModal ? null : () => Navigator.pop(context),
       fields: [
         if (data.bip39 != null)
           KeyRevealField(

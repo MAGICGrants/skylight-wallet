@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +17,7 @@ import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:wallet_domain/wallet_domain.dart' show TxDetails;
+import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
 /// The balance hero's big number style, mirroring Spice's `coin_home.dart`.
 TextStyle get _balanceStyle => TextStyle(
@@ -95,8 +98,19 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
       if (args != null && args['showTxSuccessToast'] == true) {
         _showTxSuccessToast();
       }
+
+      // Opening the app after a send is when a store review is asked for;
+      // StoreReview decides whether one is due, once per launch.
+      unawaited(StoreReview.requestIfDue(stillAppropriate: _stillOnHome));
     });
   }
+
+  // Still the screen in front, with the app in the foreground: the review
+  // dialog must not land on a send or receive the user has already opened.
+  bool _stillOnHome() =>
+      mounted &&
+      (ModalRoute.of(context)?.isCurrent ?? false) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
   void _showTxDetails(TxDetails txDetails) {
     showTxDetailsDialog(context, txDetails);

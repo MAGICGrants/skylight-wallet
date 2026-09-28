@@ -9,6 +9,19 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The Google Play build, and only it, links Play's in-app review library. The
+// F-Droid recipe and the GitHub APKs run `flutter build apk` without this
+// property, so they carry no Play code at all: F-Droid's reproducible build has
+// to match the published APK byte for byte, so a runtime check alone could not
+// keep the library out. The release workflow passes -PplayStore=true to
+// `flutter build appbundle` alone.
+//
+// Everything Play-specific sits in play-store.gradle and src/play/, which
+// the F-Droid recipe deletes before building (rm:), so its scanner never meets
+// a Play library -- and the APK it rebuilds is unchanged, since neither is used
+// without the property.
+val playStoreBuild = (findProperty("playStore") as String?) == "true"
+
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -33,6 +46,13 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
+    // One StoreReview or the other: Play's review flow, or a no-op.
+    sourceSets {
+        getByName("main") {
+            java.srcDir(if (playStoreBuild) "src/play/kotlin" else "src/foss/kotlin")
+        }
     }
 
     defaultConfig {
@@ -88,6 +108,10 @@ android.applicationVariants.configureEach {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+if (playStoreBuild) {
+    apply(from = "play-store.gradle")
 }
 
 flutter {

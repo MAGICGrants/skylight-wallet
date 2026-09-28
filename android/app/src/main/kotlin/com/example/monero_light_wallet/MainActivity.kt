@@ -13,6 +13,11 @@ class MainActivity : FlutterFragmentActivity() {
     // App-neutral name shared with wallet-core's SecureClipboard (D10).
     private val secureClipboardChannel = "org.magicgrants.wallet/secure_clipboard"
 
+    // App-neutral name shared with wallet-core's StoreReview. Which StoreReview
+    // this resolves to -- Play's review flow or a no-op -- is chosen at build
+    // time; see build.gradle.kts.
+    private val storeReviewChannel = "org.magicgrants.wallet/store_review"
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, secureClipboardChannel)
@@ -28,6 +33,14 @@ class MainActivity : FlutterFragmentActivity() {
                     "systemConfirmsCopy" -> {
                         result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                     }
+                    else -> result.notImplemented()
+                }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, storeReviewChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "isAvailable" -> result.success(StoreReview.isAvailable(this))
+                    "requestReview" -> StoreReview.request(this) { result.success(it) }
                     else -> result.notImplemented()
                 }
             }

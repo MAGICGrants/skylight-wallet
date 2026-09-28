@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart' show baseUnitsToDecimalString, decimalToBaseUnits;
+import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
 import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -537,6 +540,10 @@ class _SendScreenState extends State<SendScreen> {
       onConfirm: () => _commitTx(tx, destinationAddress),
     );
 
+    if (committed == true) {
+      // The send went through: ask for a store review on a later launch.
+      unawaited(StoreReview.markEligible());
+    }
     if (committed == true && mounted) {
       Navigator.pushNamed(context, '/wallet_home', arguments: {'showTxSuccessToast': true});
     }

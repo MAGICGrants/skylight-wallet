@@ -1,0 +1,8 @@
+// Google Play build only: applied from build.gradle.kts under -PplayStore=true,
+// alongside the StoreReview in src/play/. The F-Droid recipe removes both.
+//
+// Groovy rather than Kotlin script: Android Lint fails on a second .gradle.kts
+// in the module ("Cannot find a KaModule for the VirtualFile"), applied or not.
+dependencies {
+    implementation 'com.google.android.play:review:2.0.2'
+}

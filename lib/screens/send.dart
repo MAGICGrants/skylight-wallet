@@ -739,7 +739,7 @@ class _SendScreenState extends State<SendScreen> {
         _dField(i18n.sendToLabel, _dToCard(i18n)),
         if (_destinationAddressError.isNotEmpty) _dError(_destinationAddressError),
         const SizedBox(height: 16),
-        _dField(i18n.amount, _dAmountCard(i18n, quote, available)),
+        _dField(i18n.amount, _dAmountCard(i18n, available)),
         if (_amountError.isNotEmpty) _dError(_amountError),
       ],
     );
@@ -917,99 +917,19 @@ class _SendScreenState extends State<SendScreen> {
 
   Widget _dAmountCard(
     AppLocalizations i18n,
-    FiatQuote? quote,
     double available,
   ) {
     return _dCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _amount.field,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(
-                    fontFamily: 'Ubuntu Mono',
-                    fontSize: 28,
-                    height: 1,
-                    fontWeight: FontWeight.w700,
-                    color: BrandColors.ink,
-                  ),
-                  decoration: InputDecoration.collapsed(
-                    hintText: '0',
-                    hintStyle: TextStyle(
-                      fontFamily: 'Ubuntu Mono',
-                      fontSize: 28,
-                      height: 1,
-                      fontWeight: FontWeight.w700,
-                      color: BrandColors.inkDisabled,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'XMR',
-                style: TextStyle(
-                  fontFamily: 'Ubuntu Mono',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: BrandColors.ink,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Material(
-                color: BrandColors.surfaceTinted,
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  mouseCursor: WidgetStateMouseCursor.clickable,
-                  onTap: _setBalanceAsSendAmount,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                    child: Text(
-                      i18n.sendMaxButton,
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu Mono',
-                        fontSize: 10.5,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        color: BrandColors.primaryDeep,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 13),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (quote != null)
-                Text(
-                  '≈ ${formatFiat((double.tryParse(_amount.coinText) ?? 0) * quote.rate, quote.currency)}',
-                  style: TextStyle(
-                    fontFamily: 'Ubuntu Mono',
-                    fontSize: 12.5,
-                    color: BrandColors.inkMuted,
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
-              Text(
-                '${_amountText(available)} ${i18n.sendAvailableSuffix}',
-                style: TextStyle(
-                  fontFamily: 'Ubuntu Mono',
-                  fontSize: 12.5,
-                  color: BrandColors.inkMuted,
-                ),
-              ),
-            ],
-          ),
-        ],
+      child: ListenableBuilder(
+        listenable: _amount,
+        builder: (_, _) => SendAmountCard(
+          amount: _amount,
+          maxLabel: i18n.sendMaxButton,
+          switchUnitLabel: i18n.sendSwitchUnit,
+          onMax: _setBalanceAsSendAmount,
+          availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
+          onAvailableTap: _setBalanceAsSendAmount,
+        ),
       ),
     );
   }

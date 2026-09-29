@@ -1731,6 +1731,12 @@ abstract class AppLocalizations {
   /// **'Monero transactions are irreversible. Double-check the address and amount before sending.'**
   String get sendIrreversibleNote;
 
+  /// No description provided for @sendSwitchUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch amount unit'**
+  String get sendSwitchUnit;
+
   /// No description provided for @sendFailedToGetFeesError.
   ///
   /// In en, this message translates to:

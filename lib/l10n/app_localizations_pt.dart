@@ -884,6 +884,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.';
 
   @override
+  String get sendSwitchUnit => 'Alternar unidade do valor';
+
+  @override
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
 
   @override

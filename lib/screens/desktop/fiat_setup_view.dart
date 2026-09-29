@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:wallet_fiat/wallet_fiat.dart';
 
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -9,7 +10,7 @@ class DesktopFiatSetupView extends StatelessWidget {
   final FiatSetupLabels labels;
   final String noteRatesOnly;
   final String noteTor;
-  final List<FiatCurrencyOption> currencies;
+  final List<FiatCurrency> currencies;
   final int modeIndex;
   final String currency;
   final bool offerTorOnly;
@@ -23,7 +24,7 @@ class DesktopFiatSetupView extends StatelessWidget {
     required this.labels,
     required this.noteRatesOnly,
     required this.noteTor,
-    required this.currencies,
+    this.currencies = FiatCurrency.all,
     required this.modeIndex,
     required this.currency,
     required this.offerTorOnly,

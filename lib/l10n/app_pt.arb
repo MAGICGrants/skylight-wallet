@@ -315,6 +315,7 @@
   "sendPickContactTitle": "Enviar para um contato",
   "sendAvailableSuffix": "disponível",
   "sendIrreversibleNote": "Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.",
+  "sendSwitchUnit": "Alternar unidade do valor",
   "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
   "torSettingsTitle": "Configurações do Tor",
   "torSettingsModeBuiltIn": "Tor Integrado",

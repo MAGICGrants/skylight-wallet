@@ -883,6 +883,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Monero transactions are irreversible. Double-check the address and amount before sending.';
 
   @override
+  String get sendSwitchUnit => 'Switch amount unit';
+
+  @override
   String get sendFailedToGetFeesError => 'Failed to get fees.';
 
   @override

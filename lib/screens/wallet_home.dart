@@ -251,7 +251,10 @@ class _BalanceHero extends StatelessWidget {
           // Fiat leads when available; otherwise the coin amount is the hero,
           // with a skeleton while the rate is still loading.
           if (showFiat)
-            BalanceText.split(formatFiat(unlockedBalanceFiat!, fiatRate.fiatCurrency), style: _balanceStyle)
+            BalanceText.split(
+              formatFiat(unlockedBalanceFiat!, fiatRate.fiatCurrency),
+              style: _balanceStyle,
+            )
           else if (!fiatRate.isDisabled && !fiatRate.hasFailed)
             Skeletonizer(child: Text('0.0000', style: _balanceStyle))
           else

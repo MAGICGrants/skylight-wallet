@@ -615,10 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (widget.asModal) return _modalBody(i18n, groups, versionFooter);
 
     final tiles = <Widget>[
-      for (var i = 0; i < groups.length; i++) ...[
-        if (i > 0) const SizedBox(height: 18),
-        groups[i],
-      ],
+      for (var i = 0; i < groups.length; i++) ...[if (i > 0) const SizedBox(height: 18), groups[i]],
       const SizedBox(height: 16),
       versionFooter,
     ];

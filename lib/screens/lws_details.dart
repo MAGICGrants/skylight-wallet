@@ -53,11 +53,8 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
       warning: i18n.lwsKeysWarning,
     );
 
-    void goHome() => Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/wallet_home',
-      (Route<dynamic> route) => false,
-    );
+    void goHome() =>
+        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
 
     // Desktop: an unnumbered onboarding step — the two-pane chrome carries the
     // title/description/warning, the content slot shows just the value cards.

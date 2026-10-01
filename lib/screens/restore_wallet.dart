@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:polyseed/polyseed.dart';
+import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
+import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -33,6 +36,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
   bool _scanChosen = false;
   bool _heightManuallySet = false; // date picked / QR height
   String _seedTypeId = 'polyseed'; // the view's default (first seed type)
+  bool _committing = false; // mobile: restoring the wallet directly (no password step)
 
   bool _validWord(String w) => _wordSet.contains(w);
 
@@ -119,16 +123,59 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     final restoreHeight = _restoreHeight;
 
-    Navigator.pushNamed(
-      context,
-      '/create_wallet_password',
-      arguments: CreateWalletPasswordArgs(
-        commit: (ctx) async {
-          await restoreWallet(ctx, mnemonic: mnemonic, restoreHeight: restoreHeight);
-          return restoreHeight;
-        },
-      ),
-    );
+    // Desktop adds a password step; mobile has no password screen (the device
+    // app lock guards it), so it restores the wallet directly.
+    if (isDesktop) {
+      Navigator.pushNamed(
+        context,
+        '/create_wallet_password',
+        arguments: CreateWalletPasswordArgs(
+          commit: (ctx) async {
+            await restoreWallet(ctx, mnemonic: mnemonic, restoreHeight: restoreHeight);
+            return restoreHeight;
+          },
+        ),
+      );
+      return;
+    }
+    _restoreOnMobile(mnemonic, restoreHeight);
+  }
+
+  Future<void> _restoreOnMobile(String mnemonic, int restoreHeight) async {
+    if (_committing) return;
+    final i18n = AppLocalizations.of(context)!;
+    setState(() => _committing = true);
+    try {
+      await restoreWallet(context, mnemonic: mnemonic, restoreHeight: restoreHeight);
+    } on Exception catch (error) {
+      if (!mounted) return;
+      setState(() => _committing = false);
+      final errorMsg = error.toString().replaceFirst('Exception: ', '');
+      showBrandToast(
+        context,
+        errorMsg == 'Invalid mnemonic.' ? i18n.restoreWalletInvalidMnemonic : i18n.unknownError,
+      );
+      return;
+    } catch (error) {
+      if (!mounted) return;
+      log(LogLevel.error, error.toString());
+      setState(() => _committing = false);
+      showBrandToast(context, i18n.unknownError);
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _committing = false);
+    Provider.of<FiatRateModel>(context, listen: false).startService();
+    if (appWalletOf(context).isNodeMode) {
+      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);
+    } else {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/lws_details',
+        (route) => false,
+        arguments: restoreHeight,
+      );
+    }
   }
 
   @override
@@ -150,6 +197,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
 
     final view = RestoreWalletView(
       controller: _restoreWalletController,
+      restoring: _committing,
       embedded: isDesktop,
       stepCount: isDesktop ? null : 6,
       stepIndex: isDesktop ? null : 4,

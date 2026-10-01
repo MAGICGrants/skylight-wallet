@@ -61,39 +61,44 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
         return SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(hpad, isDesktopModal ? 0 : 8, hpad, isDesktopModal ? 0 : 12),
+            padding: EdgeInsets.fromLTRB(
+              hpad,
+              isDesktopModal ? 0 : 8,
+              hpad,
+              isDesktopModal ? 0 : 12,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SheetHandle(),
-              Row(
-                children: [
-                  SheetIcon(
-                    icon: Icons.delete_outline,
-                    bg: BrandColors.errorBg,
-                    color: BrandColors.error,
-                  ),
-                  const SizedBox(width: 11),
-                  Text(i18n.addressBookDeleteContact, style: BrandText.sheetTitle),
-                ],
-              ),
-              const SizedBox(height: 7),
-              Text(
-                i18n.addressBookDeleteContactConfirmation(contact.name),
-                style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
-              ),
-              const SizedBox(height: 18),
-              BrandButton(label: i18n.cancel, onPressed: () => Navigator.pop(sheetContext)),
-              const SizedBox(height: 4),
-              BrandButton.ghost(
-                label: i18n.addressBookDelete,
-                color: BrandColors.error,
-                onPressed: () {
-                  Provider.of<ContactModel>(context, listen: false).deleteContact(contact.id);
-                  Navigator.pop(sheetContext);
-                },
-              ),
+                Row(
+                  children: [
+                    SheetIcon(
+                      icon: Icons.delete_outline,
+                      bg: BrandColors.errorBg,
+                      color: BrandColors.error,
+                    ),
+                    const SizedBox(width: 11),
+                    Text(i18n.addressBookDeleteContact, style: BrandText.sheetTitle),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  i18n.addressBookDeleteContactConfirmation(contact.name),
+                  style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+                ),
+                const SizedBox(height: 18),
+                BrandButton(label: i18n.cancel, onPressed: () => Navigator.pop(sheetContext)),
+                const SizedBox(height: 4),
+                BrandButton.ghost(
+                  label: i18n.addressBookDelete,
+                  color: BrandColors.error,
+                  onPressed: () {
+                    Provider.of<ContactModel>(context, listen: false).deleteContact(contact.id);
+                    Navigator.pop(sheetContext);
+                  },
+                ),
               ],
             ),
           ),
@@ -798,11 +803,7 @@ class _ContactSheetState extends State<_ContactSheet> {
             Expanded(
               child: Text(
                 shortenMiddle(address, head: 12, tail: 12),
-                style: TextStyle(
-                  fontFamily: 'Ubuntu Mono',
-                  fontSize: 12.5,
-                  color: BrandColors.ink,
-                ),
+                style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12.5, color: BrandColors.ink),
               ),
             ),
             const SizedBox(width: 11),

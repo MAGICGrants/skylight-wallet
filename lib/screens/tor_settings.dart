@@ -61,9 +61,7 @@ class TorSettingsScreen extends StatelessWidget {
       noTor: i18n.torSettingsModeDisabled,
       noTorDesc: i18n.torChoiceNoTorDesc,
       socksPortLabel: i18n.torSettingsSocksPortLabel,
-      orbotLabel: Platform.isIOS
-          ? i18n.torSettingsUseOrbotLabelIos
-          : i18n.torSettingsUseOrbotLabel,
+      orbotLabel: Platform.isIOS ? i18n.torSettingsUseOrbotLabelIos : i18n.torSettingsUseOrbotLabel,
       testButton: i18n.torSettingsTestConnectionButton,
       connected: i18n.torChoiceConnected,
       testFailed: i18n.torChoiceTestFailed,

@@ -63,6 +63,7 @@ class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
   bool _isLoadingFees = false;
   final _destinationAddressController = TextEditingController(text: '');
+
   /// The amount, typed in XMR or fiat. Read what is spent from
   /// `_amount.baseUnits` / `_amount.coinText`, never from its field.
   late final AmountEntryController _amount;
@@ -775,7 +776,11 @@ class _SendScreenState extends State<SendScreen> {
           ),
         ),
         const SizedBox(height: 18),
-        BrandButton(label: i18n.sendSendButton, loading: _isLoading, onPressed: canSend ? _send : null),
+        BrandButton(
+          label: i18n.sendSendButton,
+          loading: _isLoading,
+          onPressed: canSend ? _send : null,
+        ),
         const SizedBox(height: 9),
         BrandButton.ghost(label: i18n.cancel, onPressed: () => Navigator.pop(context)),
         const SizedBox(height: 16),
@@ -915,10 +920,7 @@ class _SendScreenState extends State<SendScreen> {
     );
   }
 
-  Widget _dAmountCard(
-    AppLocalizations i18n,
-    double available,
-  ) {
+  Widget _dAmountCard(AppLocalizations i18n, double available) {
     return _dCard(
       child: ListenableBuilder(
         listenable: _amount,

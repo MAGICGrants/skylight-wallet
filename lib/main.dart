@@ -190,7 +190,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
     final builder = _routes[settings.name];
     if (builder == null) return null;
-    if (_noTransitionRoutes.contains(settings.name)) {
+    // Desktop: no transition anywhere. Mobile: only between the nav-bar screens;
+    // every other push/pop keeps its normal animation.
+    if (isDesktop || _noTransitionRoutes.contains(settings.name)) {
       return _NoTransitionPageRoute(builder: builder, settings: settings);
     }
     return MaterialPageRoute(builder: builder, settings: settings);

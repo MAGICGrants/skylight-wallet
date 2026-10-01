@@ -250,17 +250,38 @@ class _BalanceHero extends StatelessWidget {
         children: [
           // Fiat leads when available; otherwise the coin amount is the hero,
           // with a skeleton while the rate is still loading.
-          if (showFiat)
-            BalanceText.split(
-              formatFiat(unlockedBalanceFiat!, fiatRate.fiatCurrency),
-              style: _balanceStyle,
-            )
-          else if (!fiatRate.isDisabled && !fiatRate.hasFailed)
-            Skeletonizer(child: Text('0.0000', style: _balanceStyle))
-          else
-            Text(coinText, style: _balanceStyle),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: showFiat
+                    ? BalanceText.split(
+                        formatFiat(unlockedBalanceFiat!, fiatRate.fiatCurrency),
+                        style: _balanceStyle,
+                      )
+                    : (!fiatRate.isDisabled && !fiatRate.hasFailed)
+                    ? Skeletonizer(child: Text('0.0000', style: _balanceStyle))
+                    : (fiatRate.hasFailed && !fiatRate.isDisabled)
+                    ? Text('--', style: _balanceStyle)
+                    : Text(coinText, style: _balanceStyle),
+              ),
+              if (fiatRate.hasFailed && !fiatRate.isDisabled) ...[
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Tooltip(
+                    message: i18n.homeFiatApiError,
+                    child: Icon(Icons.warning_rounded, size: 18, color: BrandColors.warning),
+                  ),
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 10),
-          if (showFiat) Text(coinText, style: _balanceSubStyle),
+          // When the rate is unavailable the fiat hero is '--', so keep the coin
+          // amount visible as the sub-line.
+          if (showFiat || (fiatRate.hasFailed && !fiatRate.isDisabled))
+            Text(coinText, style: _balanceSubStyle),
           // Funds that have arrived but aren't spendable yet — Monero locks a
           // receipt for ten blocks, so the unlocked balance above omits it.
           if (lockedBalance > 0)
@@ -269,23 +290,6 @@ class _BalanceHero extends StatelessWidget {
               child: Text(
                 '${i18n.pending}: +${_amountText(lockedBalance)} XMR',
                 style: _balanceSubStyle,
-              ),
-            ),
-          if (fiatRate.hasFailed && !fiatRate.isDisabled)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_rounded, size: 15, color: BrandColors.error),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      i18n.homeFiatApiError,
-                      overflow: TextOverflow.ellipsis,
-                      style: BrandText.caption.copyWith(color: BrandColors.error),
-                    ),
-                  ),
-                ],
               ),
             ),
           _ConnectionRow(wallet: wallet, disconnected: disconnected),
@@ -507,40 +511,46 @@ class DesktopHomeView extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (showFiat)
-                            BalanceText.split(
-                              formatFiat(v.unlockedBalanceFiat!, fiatRate.fiatCurrency),
-                              style: _bigBalance,
-                            )
-                          else if (!fiatRate.isDisabled && !fiatRate.hasFailed)
-                            Skeletonizer(child: Text('0.0000', style: _bigBalance))
-                          else
-                            Text(coinText, style: _bigBalance),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Flexible(
+                                child: showFiat
+                                    ? BalanceText.split(
+                                        formatFiat(v.unlockedBalanceFiat!, fiatRate.fiatCurrency),
+                                        style: _bigBalance,
+                                      )
+                                    : (!fiatRate.isDisabled && !fiatRate.hasFailed)
+                                    ? Skeletonizer(child: Text('0.0000', style: _bigBalance))
+                                    : (fiatRate.hasFailed && !fiatRate.isDisabled)
+                                    ? Text('--', style: _bigBalance)
+                                    : Text(coinText, style: _bigBalance),
+                              ),
+                              if (fiatRate.hasFailed && !fiatRate.isDisabled) ...[
+                                const SizedBox(width: 8),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Tooltip(
+                                    message: i18n.homeFiatApiError,
+                                    child: Icon(
+                                      Icons.warning_rounded,
+                                      size: 18,
+                                      color: BrandColors.warning,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                           const SizedBox(height: 12),
-                          if (showFiat) Text(coinText, style: _balanceSubStyle),
+                          if (showFiat || (fiatRate.hasFailed && !fiatRate.isDisabled))
+                            Text(coinText, style: _balanceSubStyle),
                           if (v.lockedBalance > 0)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
                                 '${i18n.pending}: +${_amountText(v.lockedBalance)} XMR',
                                 style: _balanceSubStyle,
-                              ),
-                            ),
-                          if (fiatRate.hasFailed && !fiatRate.isDisabled)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.warning_rounded, size: 15, color: BrandColors.error),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      i18n.homeFiatApiError,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: BrandText.caption.copyWith(color: BrandColors.error),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           if (configured) ...[

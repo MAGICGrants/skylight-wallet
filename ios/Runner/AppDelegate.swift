@@ -44,7 +44,7 @@ import workmanager_apple
 
     let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureClipboard")
     if let messenger = registrar?.messenger() {
-      // App-neutral name shared with wallet-core's SecureClipboard (D10).
+      // App-neutral name shared with wallet-core's SecureClipboard.
       let channel = FlutterMethodChannel(
         name: "org.magicgrants.wallet/secure_clipboard",
         binaryMessenger: messenger

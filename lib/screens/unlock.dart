@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -25,6 +26,17 @@ class _UnlockScreenState extends State<UnlockScreen> {
   String? _error;
   String? _biometricLabel; // resolved per device on iOS (Face ID vs Touch ID)
   bool _started = false;
+  String _version = ''; // desktop footer status bar
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) {
+        setState(() => _version = 'Skylight Wallet v${info.version} · build ${info.buildNumber}');
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -114,6 +126,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
         unlockButton: i18n.unlockButton,
       ),
       isDesktop: _isDesktop,
+      version: _version.isEmpty ? null : _version,
       passwordController: _passwordController,
       obscure: _obscure,
       onToggleObscure: () => setState(() => _obscure = !_obscure),

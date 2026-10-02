@@ -1,17 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart' show baseUnitsToDecimalString, decimalToBaseUnits;
+import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
-import 'package:skylight_wallet/consts.dart' as consts;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/wallet_types.dart';
+import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -59,7 +63,10 @@ class _SendScreenState extends State<SendScreen> {
   bool _isLoading = false;
   bool _isLoadingFees = false;
   final _destinationAddressController = TextEditingController(text: '');
-  final _amountController = TextEditingController(text: '');
+
+  /// The amount, typed in XMR or fiat. Read what is spent from
+  /// `_amount.baseUnits` / `_amount.coinText`, never from its field.
+  late final AmountEntryController _amount;
   bool _isSweepAll = false;
   Contact? _selectedContact;
   List<int?>? _fees; // estimated fee (piconero) per priority; null = estimate failed
@@ -84,9 +91,9 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void dispose() {
     _destinationAddressController.removeListener(_onAddressChanged);
-    _amountController.removeListener(_onAmountChanged);
+    _amount.removeListener(_onAmountChanged);
     _destinationAddressController.dispose();
-    _amountController.dispose();
+    _amount.dispose();
     super.dispose();
   }
 
@@ -100,9 +107,14 @@ class _SendScreenState extends State<SendScreen> {
     if (_didInit) return;
     _didInit = true;
 
+    _amount = AmountEntryController(
+      quotes: Provider.of<FiatRateModel>(context, listen: false),
+      coinSymbol: 'XMR',
+      coinDecimals: _xmrDecimals,
+    );
     _loadFormFromArgs();
     _destinationAddressController.addListener(_onAddressChanged);
-    _amountController.addListener(_onAmountChanged);
+    _amount.addListener(_onAmountChanged);
     // Validate any prefilled values (contact/QR args) so the button reflects them.
     _revalidate();
   }
@@ -112,7 +124,8 @@ class _SendScreenState extends State<SendScreen> {
 
     if (args != null) {
       _destinationAddressController.text = args.destinationAddress;
-      _amountController.text = args.amount ?? '';
+      final amount = args.amount;
+      if (amount != null && amount.isNotEmpty) _amount.setCoinText(amount);
       // Same field the in-send picker sets, so the contact card renders here too.
       _selectedContact = args.contact;
     }
@@ -160,7 +173,8 @@ class _SendScreenState extends State<SendScreen> {
 
     _destinationAddressController.text = address;
     if (amount != null) {
-      _amountController.text = _asExactAmount(amount);
+      // A payment request is denominated in XMR, so entry switches to XMR.
+      _amount.setCoinText(_asExactAmount(amount));
     }
   }
 
@@ -285,10 +299,9 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<bool> _validateForm({bool setErrors = true}) async {
-    final amount = double.tryParse(_amountController.text) ?? 0;
     final unresolvedDestinationAddress = _destinationAddressController.text;
 
-    if (amount == 0) {
+    if (_amount.baseUnits == BigInt.zero) {
       return false;
     }
 
@@ -315,7 +328,7 @@ class _SendScreenState extends State<SendScreen> {
       return false;
     }
 
-    if (_amountUnits() > (wallet.unlockedBalanceBaseUnits ?? BigInt.zero)) {
+    if (_amount.baseUnits > (wallet.unlockedBalanceBaseUnits ?? BigInt.zero)) {
       if (setErrors) {
         setState(() {
           _amountError = i18n.sendInsufficientBalanceError;
@@ -328,7 +341,7 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _calculateFees() async {
-    final feeFetchKey = '${_destinationAddressController.text}-${_amountController.text}';
+    final feeFetchKey = '${_destinationAddressController.text}-${_amount.coinText}';
 
     if (feeFetchKey == _lastFeeFetchKey) {
       return;
@@ -349,7 +362,7 @@ class _SendScreenState extends State<SendScreen> {
     });
 
     final destinationAddress = await _resolveDestinationAddress();
-    final amountText = _amountController.text;
+    final amountText = _amount.coinText;
 
     try {
       // Estimate the fee per priority natively (no full tx build).
@@ -444,7 +457,7 @@ class _SendScreenState extends State<SendScreen> {
       // screen are estimates, not tx objects, so always construct here).
       final tx = await wallet.createTx(
         destinationAddress,
-        _amountController.text,
+        _amount.coinText,
         _isSweepAll,
         priority: _selectedPriority + 1,
       );
@@ -465,7 +478,7 @@ class _SendScreenState extends State<SendScreen> {
       if (error.toString().contains('Unlocked funds too low')) {
         // Display-only: picks which of two error messages to show, so the
         // imprecision of a double cannot reach an amount anyone spends.
-        final approxAmount = double.tryParse(_amountController.text) ?? 0;
+        final approxAmount = double.tryParse(_amount.coinText) ?? 0;
         if (wallet.unlockedBalance! > approxAmount) {
           setState(() {
             _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
@@ -497,11 +510,9 @@ class _SendScreenState extends State<SendScreen> {
     String? destinationOpenAliasName,
   }) async {
     final i18n = AppLocalizations.of(context)!;
-    final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-    final fiatSymbol = fiatRate.fiatCode == 'EUR' ? '€' : '\$';
-    final xmrRate = fiatRate.rateFor('XMR');
-    final amountFiat = xmrRate is double ? tx.amount * xmrRate : null;
-    final feeFiat = xmrRate is double ? tx.fee * xmrRate : null;
+    final quote = Provider.of<FiatRateModel>(context, listen: false).quoteFor('XMR');
+    final amountFiat = quote != null ? tx.amount * quote.rate : null;
+    final feeFiat = quote != null ? tx.fee * quote.rate : null;
 
     // Monero fee is same-currency, so compare directly. Warn when it's ≥10% of
     // the amount (mirrors Spice's confirm-send high-fee guard).
@@ -521,9 +532,9 @@ class _SendScreenState extends State<SendScreen> {
       ),
       coinSymbol: 'XMR',
       amountText: '${tx.amount.toStringAsFixed(12)} XMR',
-      amountFiat: amountFiat != null ? formatFiat(amountFiat, fiatSymbol) : null,
+      amountFiat: amountFiat != null ? formatFiat(amountFiat, quote!.currency) : null,
       feeText: '${tx.fee.toStringAsFixed(12)} XMR',
-      feeFiat: feeFiat != null ? formatFiat(feeFiat, fiatSymbol) : null,
+      feeFiat: feeFiat != null ? formatFiat(feeFiat, quote!.currency) : null,
       address: destinationAddress,
       openAlias: destinationOpenAlias,
       openAliasName: destinationOpenAliasName,
@@ -535,6 +546,10 @@ class _SendScreenState extends State<SendScreen> {
       onConfirm: () => _commitTx(tx, destinationAddress),
     );
 
+    if (committed == true) {
+      // The send went through: ask for a store review on a later launch.
+      unawaited(StoreReview.markEligible());
+    }
     if (committed == true && mounted) {
       Navigator.pushNamed(context, '/wallet_home', arguments: {'showTxSuccessToast': true});
     }
@@ -573,7 +588,11 @@ class _SendScreenState extends State<SendScreen> {
     // intact. Sweep-all normally makes the amount moot, but editing the field
     // clears that flag and the number becomes the real amount.
     final units = wallet.unlockedBalanceBaseUnits;
-    _amountController.text = units == null ? '' : baseUnitsToDecimalString(units, _xmrDecimals);
+    if (units == null) {
+      _amount.clear();
+    } else {
+      _amount.setMax(units);
+    }
 
     setState(() {
       _isSweepAll = true;
@@ -602,20 +621,11 @@ class _SendScreenState extends State<SendScreen> {
     await _revalidate();
   }
 
-  /// The typed amount in piconero, or zero when the field is not a number.
-  BigInt _amountUnits() {
-    try {
-      return decimalToBaseUnits(_amountController.text, _xmrDecimals);
-    } on FormatException {
-      return BigInt.zero;
-    }
-  }
-
   Future<void> _onAmountChanged() async {
     final wallet = appWalletOf(context);
     // Base units for the same reason as in `_validateForm`: `==` between two
     // differently-rounded doubles decided whether this is a sweep.
-    final isFullBalance = _amountUnits() == wallet.unlockedBalanceBaseUnits;
+    final isFullBalance = _amount.baseUnits == wallet.unlockedBalanceBaseUnits;
 
     if (isFullBalance && !_isSweepAll) {
       setState(() {
@@ -639,14 +649,16 @@ class _SendScreenState extends State<SendScreen> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context, listen: true);
-    final fiatRate = context.watch<FiatRateModel>();
-    final fiatSymbol = consts.currencySymbols[fiatRate.fiatCode] ?? '\$';
-    final coinRate = fiatRate.rateFor('XMR');
-
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    final amountFiat = coinRate != null ? amount * coinRate : 0.0;
+    final quote = context.watch<FiatRateModel>().quoteFor('XMR');
     final available = wallet.unlockedBalance ?? 0;
     final xmr = xmrWallet(context);
+
+    if (isDesktop) {
+      return DesktopShell(
+        active: DesktopNav.home,
+        child: _desktopBody(context, i18n, quote, available),
+      );
+    }
 
     return SendView(
       labels: SendLabels(
@@ -663,6 +675,7 @@ class _SendScreenState extends State<SendScreen> {
         maxButton: i18n.sendMaxButton,
         addressHint: i18n.address,
         priorityLabels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
+        switchUnit: i18n.sendSwitchUnit,
       ),
       onBack: () => Navigator.of(context).pop(),
       addressController: _destinationAddressController,
@@ -676,11 +689,9 @@ class _SendScreenState extends State<SendScreen> {
           ? _shortenMiddle(_destinationAddressController.text, head: 8, tail: 10)
           : null,
       onClearContact: _clearSelectedContact,
-      amountController: _amountController,
+      amount: _amount,
       amountError: _amountError,
       onMax: _setBalanceAsSendAmount,
-      coinSymbol: 'XMR',
-      amountFiatText: '≈ ${formatFiat(amountFiat, fiatSymbol)}',
       availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
       availableLeading: xmr != null
           ? CoinMark(coinSymbol: xmr.coinSymbol, iconAsset: xmr.iconAsset, size: 16)
@@ -688,14 +699,274 @@ class _SendScreenState extends State<SendScreen> {
       onAvailableTap: _setBalanceAsSendAmount,
       selectedPriority: _selectedPriority,
       onSelectPriority: _setPriority,
-      feeValue: _feeValue(fiatSymbol, coinRate),
+      feeValue: _feeValue(quote),
       onCancel: () => Navigator.pop(context),
       onSend: (_formValid && _openAliasResolving == 0 && !_isLoading) ? _send : null,
       sendLoading: _isLoading,
     );
   }
 
-  Widget _feeValue(String fiatSymbol, double? coinRate) {
+  // ----- Desktop two-column form (Monero-only: no from-card / asset picker) -----
+
+  Widget _desktopBody(
+    BuildContext context,
+    AppLocalizations i18n,
+    FiatQuote? quote,
+    double available,
+  ) {
+    final canSend = _formValid && _openAliasResolving == 0 && !_isLoading;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(44, 30, 44, 36),
+      children: [
+        DesktopBackLink(label: i18n.navigationBarWallet, onTap: () => Navigator.pop(context)),
+        const SizedBox(height: 16),
+        Text(i18n.sendTitle, style: desktopTitleStyle),
+        const SizedBox(height: 24),
+        _sendForm(context, i18n, quote, available, canSend),
+      ],
+    );
+  }
+
+  Widget _sendForm(
+    BuildContext context,
+    AppLocalizations i18n,
+    FiatQuote? quote,
+    double available,
+    bool canSend,
+  ) {
+    final formColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _dField(i18n.sendToLabel, _dToCard(i18n)),
+        if (_destinationAddressError.isNotEmpty) _dError(_destinationAddressError),
+        const SizedBox(height: 16),
+        _dField(i18n.amount, _dAmountCard(i18n, available)),
+        if (_amountError.isNotEmpty) _dError(_amountError),
+      ],
+    );
+    final sideColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _dField(
+          i18n.sendPriorityHeading,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              BrandSegmented(
+                labels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
+                selectedIndex: _selectedPriority,
+                onSelect: _setPriority,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    i18n.sendNetworkFee,
+                    style: TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontSize: 12.5,
+                      color: BrandColors.inkMuted,
+                    ),
+                  ),
+                  _feeValue(quote),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        BrandButton(
+          label: i18n.sendSendButton,
+          loading: _isLoading,
+          onPressed: canSend ? _send : null,
+        ),
+        const SizedBox(height: 9),
+        BrandButton.ghost(label: i18n.cancel, onPressed: () => Navigator.pop(context)),
+        const SizedBox(height: 16),
+        Text(
+          i18n.sendIrreversibleNote,
+          style: TextStyle(
+            fontFamily: 'Ubuntu',
+            fontSize: 12,
+            height: 1.6,
+            color: BrandColors.inkMuted,
+          ),
+        ),
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Two columns only when the form + fixed side column both fit; below
+        // that, stack them into a single column.
+        const twoColMinWidth = 640.0;
+        if (constraints.maxWidth < twoColMinWidth) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [formColumn, const SizedBox(height: 24), sideColumn],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: formColumn),
+            const SizedBox(width: 28),
+            SizedBox(width: 316, child: sideColumn),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _dField(String caption, Widget child) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(caption.toUpperCase(), style: BrandText.section),
+      ),
+      const SizedBox(height: 8),
+      child,
+    ],
+  );
+
+  Widget _dError(String text) => Padding(
+    padding: const EdgeInsets.only(top: 8, left: 2),
+    child: Text(text, style: BrandText.caption.copyWith(color: BrandColors.error)),
+  );
+
+  Widget _dCard({required Widget child}) => Container(
+    decoration: BoxDecoration(
+      color: BrandColors.card,
+      border: Border.all(color: BrandColors.border),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    child: child,
+  );
+
+  Widget _dToCard(AppLocalizations i18n) {
+    final contact = _selectedContact;
+    return _dCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (contact != null)
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contact.name,
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: BrandColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _shortenMiddle(_destinationAddressController.text, head: 10, tail: 12),
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu Mono',
+                          fontSize: 12,
+                          color: BrandColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, size: 18, color: BrandColors.inkMuted),
+                  onPressed: _clearSelectedContact,
+                ),
+              ],
+            )
+          else
+            TextField(
+              controller: _destinationAddressController,
+              minLines: 1,
+              maxLines: 2,
+              style: TextStyle(
+                fontFamily: 'Ubuntu Mono',
+                fontSize: 13.5,
+                height: 1.6,
+                color: BrandColors.ink,
+              ),
+              decoration: InputDecoration.collapsed(
+                hintText: i18n.address,
+                hintStyle: TextStyle(
+                  fontFamily: 'Ubuntu Mono',
+                  fontSize: 13.5,
+                  height: 1.6,
+                  color: BrandColors.inkFaint,
+                ),
+              ),
+            ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _dPill(Icons.content_paste, i18n.sendPasteButton, _pasteAddressFromClipboard),
+              const SizedBox(width: 8),
+              _dPill(Icons.people_outline, i18n.sendContactsButton, _showContactPicker),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dAmountCard(AppLocalizations i18n, double available) {
+    return _dCard(
+      child: ListenableBuilder(
+        listenable: _amount,
+        builder: (_, _) => SendAmountCard(
+          amount: _amount,
+          maxLabel: i18n.sendMaxButton,
+          switchUnitLabel: i18n.sendSwitchUnit,
+          onMax: _setBalanceAsSendAmount,
+          availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
+          onAvailableTap: _setBalanceAsSendAmount,
+        ),
+      ),
+    );
+  }
+
+  Widget _dPill(IconData icon, String label, VoidCallback onTap) => Material(
+    color: BrandColors.surfaceSunken,
+    borderRadius: BorderRadius.circular(11),
+    child: InkWell(
+      mouseCursor: WidgetStateMouseCursor.clickable,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(11),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: BrandColors.primaryDeep),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontSize: 12.5,
+                height: 1,
+                fontWeight: FontWeight.w500,
+                color: BrandColors.primaryDeep,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _feeValue(FiatQuote? quote) {
     final feePiconero = (_fees != null && _fees!.length > _selectedPriority)
         ? _fees![_selectedPriority]
         : null;
@@ -713,7 +984,7 @@ class _SendScreenState extends State<SendScreen> {
       );
     }
     final fee = doubleAmountFromInt(feePiconero);
-    final feeFiat = coinRate != null ? ' · ${formatFiat(fee * coinRate, fiatSymbol)}' : '';
+    final feeFiat = quote != null ? ' · ${formatFiat(fee * quote.rate, quote.currency)}' : '';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

@@ -48,7 +48,13 @@ static void my_application_activate(GApplication* application) {
   }
 
   gtk_window_set_default_size(window, 1280, 720);
-  
+
+  // Minimum window size so the two-pane layouts and sidebar stay usable.
+  GdkGeometry min_size;
+  min_size.min_width = 900;
+  min_size.min_height = 640;
+  gtk_window_set_geometry_hints(window, nullptr, &min_size, GDK_HINT_MIN_SIZE);
+
   // Set window icon - construct path relative to executable
   g_autofree gchar* exe_path = g_file_read_link("/proc/self/exe", nullptr);
   if (exe_path != nullptr) {

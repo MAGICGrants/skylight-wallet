@@ -117,6 +117,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
   /// No description provided for @unknownError.
   ///
   /// In en, this message translates to:
@@ -171,12 +177,6 @@ abstract class AppLocalizations {
   /// **'This field cannot be empty.'**
   String get fieldEmptyError;
 
-  /// No description provided for @welcomeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome!'**
-  String get welcomeTitle;
-
   /// No description provided for @welcomeDescription.
   ///
   /// In en, this message translates to:
@@ -213,24 +213,6 @@ abstract class AppLocalizations {
   /// **'Privacy Policy'**
   String get welcomePrivacyLink;
 
-  /// No description provided for @restoreWarningTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore Warning'**
-  String get restoreWarningTitle;
-
-  /// No description provided for @restoreWarningDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure? The server that you connect to will be able to see your past and future Monero transaction history.'**
-  String get restoreWarningDescription;
-
-  /// No description provided for @restoreWarningContinueButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get restoreWarningContinueButton;
-
   /// No description provided for @lwsSetupTitle.
   ///
   /// In en, this message translates to:
@@ -252,7 +234,7 @@ abstract class AppLocalizations {
   /// No description provided for @lwsSetupProxyPortHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. 4444 for I2P'**
+  /// **'4444 for I2P'**
   String get lwsSetupProxyPortHint;
 
   /// No description provided for @lwsSetupUseTorLabel.
@@ -368,30 +350,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reached directly'**
   String get connectionReachedDirect;
-
-  /// No description provided for @connectionIndicatorHttps.
-  ///
-  /// In en, this message translates to:
-  /// **'HTTPS'**
-  String get connectionIndicatorHttps;
-
-  /// No description provided for @connectionIndicatorLocal.
-  ///
-  /// In en, this message translates to:
-  /// **'Local'**
-  String get connectionIndicatorLocal;
-
-  /// No description provided for @connectionIndicatorTorInternal.
-  ///
-  /// In en, this message translates to:
-  /// **'Internal Tor'**
-  String get connectionIndicatorTorInternal;
-
-  /// No description provided for @connectionIndicatorTorExternal.
-  ///
-  /// In en, this message translates to:
-  /// **'Using Port {port}'**
-  String connectionIndicatorTorExternal(String port);
 
   /// No description provided for @settingsConnectionSettingsLabel.
   ///
@@ -603,12 +561,6 @@ abstract class AppLocalizations {
   /// **'Seed Phrase'**
   String get generateSeedTitleCovered;
 
-  /// No description provided for @generateSeedDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'This is your polyseed. Write it down and keep it in a safe place.'**
-  String get generateSeedDescription;
-
   /// No description provided for @generateSeedSubtitleCovered.
   ///
   /// In en, this message translates to:
@@ -639,11 +591,131 @@ abstract class AppLocalizations {
   /// **'I have written down all the words and stored them somewhere only I can reach.'**
   String get generateSeedConfirm;
 
-  /// No description provided for @generateSeedContinueButton.
+  /// No description provided for @generateSeedBirthdayLabel.
   ///
   /// In en, this message translates to:
-  /// **'I Wrote It Down'**
-  String get generateSeedContinueButton;
+  /// **'Wallet birthday'**
+  String get generateSeedBirthdayLabel;
+
+  /// No description provided for @generateSeedBirthdayReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Where a future restore starts scanning'**
+  String get generateSeedBirthdayReason;
+
+  /// No description provided for @onboardingTorNotePrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor hides your address from the node you query — slower, and worth it.'**
+  String get onboardingTorNotePrivacy;
+
+  /// No description provided for @onboardingTorNoteChangeable.
+  ///
+  /// In en, this message translates to:
+  /// **'Changeable later under Settings → Connections.'**
+  String get onboardingTorNoteChangeable;
+
+  /// No description provided for @onboardingPriceNoteRatesOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The price service is asked for rates only — never for addresses or amounts.'**
+  String get onboardingPriceNoteRatesOnly;
+
+  /// No description provided for @onboardingPriceNoteTor.
+  ///
+  /// In en, this message translates to:
+  /// **'Routed over Tor by default, separately from chain traffic.'**
+  String get onboardingPriceNoteTor;
+
+  /// No description provided for @onboardingConnectionNoteServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Point Skylight at a light-wallet server (LWS), or connect to your own Monero node.'**
+  String get onboardingConnectionNoteServer;
+
+  /// No description provided for @onboardingConnectionNoteChangeable.
+  ///
+  /// In en, this message translates to:
+  /// **'Changeable later under Settings → Connection.'**
+  String get onboardingConnectionNoteChangeable;
+
+  /// No description provided for @onboardingWalletNoteGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'A new wallet’s seed is generated here, offline, and shown to you once.'**
+  String get onboardingWalletNoteGenerated;
+
+  /// No description provided for @onboardingWalletNoteRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring asks roughly when the seed first held funds, to skip years of scanning.'**
+  String get onboardingWalletNoteRestore;
+
+  /// No description provided for @onboardingWalletCreateBullet1.
+  ///
+  /// In en, this message translates to:
+  /// **'A Monero seed phrase, shown once'**
+  String get onboardingWalletCreateBullet1;
+
+  /// No description provided for @onboardingWalletCreateBullet2.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts empty, syncs from today'**
+  String get onboardingWalletCreateBullet2;
+
+  /// No description provided for @onboardingWalletCreateBullet3.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes about two minutes'**
+  String get onboardingWalletCreateBullet3;
+
+  /// No description provided for @onboardingWalletRestoreBullet1.
+  ///
+  /// In en, this message translates to:
+  /// **'A Polyseed, BIP39 or legacy Monero seed'**
+  String get onboardingWalletRestoreBullet1;
+
+  /// No description provided for @onboardingWalletRestoreBullet2.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional scan-from date'**
+  String get onboardingWalletRestoreBullet2;
+
+  /// No description provided for @onboardingWalletRestoreBullet3.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovers your existing balance and history'**
+  String get onboardingWalletRestoreBullet3;
+
+  /// No description provided for @onboardingSeedNotePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Skylight Wallet asks for your password before ever showing them again.'**
+  String get onboardingSeedNotePassword;
+
+  /// No description provided for @onboardingPasswordNoteLaunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked for at every launch, and before the seed is ever shown.'**
+  String get onboardingPasswordNoteLaunch;
+
+  /// No description provided for @onboardingPasswordNoteNotCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a cloud account. Losing it means restoring from your seed phrase.'**
+  String get onboardingPasswordNoteNotCloud;
+
+  /// No description provided for @onboardingPasswordStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get onboardingPasswordStrong;
+
+  /// No description provided for @onboardingPasswordMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Both entries match'**
+  String get onboardingPasswordMatch;
 
   /// No description provided for @lwsDetailsTitle.
   ///
@@ -686,24 +758,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Input your Monero seed below. We will check common formats.'**
   String get restoreWalletDescription;
-
-  /// No description provided for @restoreWalletSeedLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Seed'**
-  String get restoreWalletSeedLabel;
-
-  /// No description provided for @restoreWalletRestoreHeightLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore Height (optional)'**
-  String get restoreWalletRestoreHeightLabel;
-
-  /// No description provided for @restoreWalletRestoreDateLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore Date (optional)'**
-  String get restoreWalletRestoreDateLabel;
 
   /// No description provided for @restoreWalletScanFrom.
   ///
@@ -873,18 +927,6 @@ abstract class AppLocalizations {
   /// **'Unlock Wallet'**
   String get unlockTitle;
 
-  /// No description provided for @unlockDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your wallet password to unlock'**
-  String get unlockDescription;
-
-  /// No description provided for @unlockPasswordLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Password'**
-  String get unlockPasswordLabel;
-
   /// No description provided for @unlockPasswordHint.
   ///
   /// In en, this message translates to:
@@ -897,23 +939,35 @@ abstract class AppLocalizations {
   /// **'Incorrect password. Please try again.'**
   String get unlockIncorrectPasswordError;
 
-  /// No description provided for @homeConnecting.
-  ///
-  /// In en, this message translates to:
-  /// **'Connecting'**
-  String get homeConnecting;
-
   /// No description provided for @homeSyncing.
   ///
   /// In en, this message translates to:
   /// **'Syncing'**
   String get homeSyncing;
 
-  /// No description provided for @homeHeight.
+  /// No description provided for @homeSynced.
   ///
   /// In en, this message translates to:
-  /// **'Height'**
-  String get homeHeight;
+  /// **'Synced'**
+  String get homeSynced;
+
+  /// No description provided for @homeTorConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor · connected'**
+  String get homeTorConnected;
+
+  /// No description provided for @homeTorConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor · connecting'**
+  String get homeTorConnecting;
+
+  /// No description provided for @homeTorOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor · off'**
+  String get homeTorOff;
 
   /// No description provided for @homeReceive.
   ///
@@ -926,36 +980,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send'**
   String get homeSend;
-
-  /// No description provided for @homeBalanceLocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Locked'**
-  String get homeBalanceLocked;
-
-  /// No description provided for @homeTransactionsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Transactions'**
-  String get homeTransactionsTitle;
-
-  /// No description provided for @homeOutgoingTxSemanticLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Outgoing Transaction'**
-  String get homeOutgoingTxSemanticLabel;
-
-  /// No description provided for @homeIncomingTxSemanticLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Incoming Transaction'**
-  String get homeIncomingTxSemanticLabel;
-
-  /// No description provided for @homeTransactionConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirmed'**
-  String get homeTransactionConfirmed;
 
   /// No description provided for @homeNoTransactions.
   ///
@@ -1005,24 +1029,6 @@ abstract class AppLocalizations {
   /// **'Warning: Unless you know what you\'re doing, please use subaddresses for better privacy.'**
   String get receivePrimaryAddressWarn;
 
-  /// No description provided for @receiveShareButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get receiveShareButton;
-
-  /// No description provided for @receiveShowSubaddressButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Show Subaddress'**
-  String get receiveShowSubaddressButton;
-
-  /// No description provided for @receiveShowPrimaryAddressButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Show Primary Address'**
-  String get receiveShowPrimaryAddressButton;
-
   /// No description provided for @receiveServerNoSubaddressesWarn.
   ///
   /// In en, this message translates to:
@@ -1053,6 +1059,24 @@ abstract class AppLocalizations {
   /// **'Copy address'**
   String get receiveCopyAddress;
 
+  /// No description provided for @receiveQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this code to send Monero to this wallet.'**
+  String get receiveQrHint;
+
+  /// No description provided for @receiveEnlargeQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to enlarge and brighten'**
+  String get receiveEnlargeQr;
+
+  /// No description provided for @receiveShrinkQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to shrink'**
+  String get receiveShrinkQr;
+
   /// No description provided for @receiveShareError.
   ///
   /// In en, this message translates to:
@@ -1064,12 +1088,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your {coin} address'**
   String receiveAddressHeading(String coin);
-
-  /// No description provided for @receiveBlockchainSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'{coin} blockchain'**
-  String receiveBlockchainSubtitle(String coin);
 
   /// No description provided for @sendTitle.
   ///
@@ -1310,12 +1328,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Secret Restore Keys'**
   String get settingsSecretKeysLabel;
-
-  /// No description provided for @settingsSecretKeysButton.
-  ///
-  /// In en, this message translates to:
-  /// **'View'**
-  String get settingsSecretKeysButton;
 
   /// No description provided for @settingsViewLwsKeysDialogText.
   ///
@@ -1599,12 +1611,6 @@ abstract class AppLocalizations {
   /// **'No Contacts Found'**
   String get addressBookNoSearchResults;
 
-  /// No description provided for @addressBookCopyAddress.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy Address'**
-  String get addressBookCopyAddress;
-
   /// No description provided for @addressBookEdit.
   ///
   /// In en, this message translates to:
@@ -1622,12 +1628,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name'**
   String get addressBookNameHint;
-
-  /// No description provided for @addressBookAddressHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Monero address'**
-  String get addressBookAddressHint;
 
   /// No description provided for @addressBookAddDescription.
   ///
@@ -1653,18 +1653,6 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get addressBookSave;
 
-  /// No description provided for @sendSelectedContact.
-  ///
-  /// In en, this message translates to:
-  /// **'Selected Contact'**
-  String get sendSelectedContact;
-
-  /// No description provided for @sendClearSelectedContact.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Selected Contact'**
-  String get sendClearSelectedContact;
-
   /// No description provided for @sendPriorityLow.
   ///
   /// In en, this message translates to:
@@ -1682,24 +1670,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'High'**
   String get sendPriorityHigh;
-
-  /// No description provided for @sendPriorityLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Priority'**
-  String get sendPriorityLabel;
-
-  /// No description provided for @sendTransactionPriority.
-  ///
-  /// In en, this message translates to:
-  /// **'Transaction Priority'**
-  String get sendTransactionPriority;
-
-  /// No description provided for @sendFeeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Fee'**
-  String get sendFeeLabel;
 
   /// No description provided for @sendContactsButton.
   ///
@@ -1755,47 +1725,29 @@ abstract class AppLocalizations {
   /// **'available'**
   String get sendAvailableSuffix;
 
+  /// No description provided for @sendIrreversibleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Monero transactions are irreversible. Double-check the address and amount before sending.'**
+  String get sendIrreversibleNote;
+
+  /// No description provided for @sendSwitchUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch amount unit'**
+  String get sendSwitchUnit;
+
   /// No description provided for @sendFailedToGetFeesError.
   ///
   /// In en, this message translates to:
   /// **'Failed to get fees.'**
   String get sendFailedToGetFeesError;
 
-  /// No description provided for @torInfoTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor Built-in'**
-  String get torInfoTitle;
-
-  /// No description provided for @torInfoDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Skylight Wallet automatically uses built-in Tor to protect your internet connections.'**
-  String get torInfoDescription;
-
-  /// No description provided for @torInfoContinueButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get torInfoContinueButton;
-
-  /// No description provided for @torInfoConfigureButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure'**
-  String get torInfoConfigureButton;
-
   /// No description provided for @torSettingsTitle.
   ///
   /// In en, this message translates to:
   /// **'Tor Settings'**
   String get torSettingsTitle;
-
-  /// No description provided for @torSettingsModeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor Mode'**
-  String get torSettingsModeLabel;
 
   /// No description provided for @torSettingsModeBuiltIn.
   ///
@@ -1863,12 +1815,6 @@ abstract class AppLocalizations {
   /// **'SOCKS Port'**
   String get torSettingsSocksPortLabel;
 
-  /// No description provided for @torSettingsSocksPortHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. 9050'**
-  String get torSettingsSocksPortHint;
-
   /// No description provided for @torSettingsUseOrbotLabel.
   ///
   /// In en, this message translates to:
@@ -1916,18 +1862,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tor Settings'**
   String get settingsTorSettingsLabel;
-
-  /// No description provided for @lwsSetupUsingInternalTor.
-  ///
-  /// In en, this message translates to:
-  /// **'Using Internal Tor'**
-  String get lwsSetupUsingInternalTor;
-
-  /// No description provided for @lwsSetupUsingExternalTor.
-  ///
-  /// In en, this message translates to:
-  /// **'Using External Tor Proxy at {address}'**
-  String lwsSetupUsingExternalTor(String address);
 
   /// No description provided for @lwsSetupTorDisabledError.
   ///

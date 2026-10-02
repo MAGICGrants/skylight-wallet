@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get back => 'Back';
+
+  @override
   String get unknownError => 'Unknown error.';
 
   @override
@@ -48,9 +51,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldEmptyError => 'This field cannot be empty.';
 
   @override
-  String get welcomeTitle => 'Welcome!';
-
-  @override
   String get welcomeDescription =>
       'Skylight Wallet is one of the simplest Monero wallets. We will help you set up a wallet and connect to a server.';
 
@@ -70,16 +70,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomePrivacyLink => 'Privacy Policy';
 
   @override
-  String get restoreWarningTitle => 'Restore Warning';
-
-  @override
-  String get restoreWarningDescription =>
-      'Are you sure? The server that you connect to will be able to see your past and future Monero transaction history.';
-
-  @override
-  String get restoreWarningContinueButton => 'Continue';
-
-  @override
   String get lwsSetupTitle => 'Connection Setup';
 
   @override
@@ -90,7 +80,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lwsSetupProxyPortLabel => 'HTTP Proxy Port (Optional)';
 
   @override
-  String get lwsSetupProxyPortHint => 'e.g. 4444 for I2P';
+  String get lwsSetupProxyPortHint => '4444 for I2P';
 
   @override
   String get lwsSetupUseTorLabel => 'Use Tor';
@@ -150,20 +140,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionReachedDirect => 'Reached directly';
-
-  @override
-  String get connectionIndicatorHttps => 'HTTPS';
-
-  @override
-  String get connectionIndicatorLocal => 'Local';
-
-  @override
-  String get connectionIndicatorTorInternal => 'Internal Tor';
-
-  @override
-  String connectionIndicatorTorExternal(String port) {
-    return 'Using Port $port';
-  }
 
   @override
   String get settingsConnectionSettingsLabel => 'Connection Settings';
@@ -278,10 +254,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generateSeedTitleCovered => 'Seed Phrase';
 
   @override
-  String get generateSeedDescription =>
-      'This is your polyseed. Write it down and keep it in a safe place.';
-
-  @override
   String get generateSeedSubtitleCovered =>
       'These words, in this order, are your wallet. Write them down and keep them in a physical safe. If you lose these words or if you share them with anyone else, you will lose your money permanently. Careful planning now avoids a potential disaster later.';
 
@@ -300,7 +272,75 @@ class AppLocalizationsEn extends AppLocalizations {
       'I have written down all the words and stored them somewhere only I can reach.';
 
   @override
-  String get generateSeedContinueButton => 'I Wrote It Down';
+  String get generateSeedBirthdayLabel => 'Wallet birthday';
+
+  @override
+  String get generateSeedBirthdayReason => 'Where a future restore starts scanning';
+
+  @override
+  String get onboardingTorNotePrivacy =>
+      'Tor hides your address from the node you query — slower, and worth it.';
+
+  @override
+  String get onboardingTorNoteChangeable => 'Changeable later under Settings → Connections.';
+
+  @override
+  String get onboardingPriceNoteRatesOnly =>
+      'The price service is asked for rates only — never for addresses or amounts.';
+
+  @override
+  String get onboardingPriceNoteTor => 'Routed over Tor by default, separately from chain traffic.';
+
+  @override
+  String get onboardingConnectionNoteServer =>
+      'Point Skylight at a light-wallet server (LWS), or connect to your own Monero node.';
+
+  @override
+  String get onboardingConnectionNoteChangeable => 'Changeable later under Settings → Connection.';
+
+  @override
+  String get onboardingWalletNoteGenerated =>
+      'A new wallet’s seed is generated here, offline, and shown to you once.';
+
+  @override
+  String get onboardingWalletNoteRestore =>
+      'Restoring asks roughly when the seed first held funds, to skip years of scanning.';
+
+  @override
+  String get onboardingWalletCreateBullet1 => 'A Monero seed phrase, shown once';
+
+  @override
+  String get onboardingWalletCreateBullet2 => 'Starts empty, syncs from today';
+
+  @override
+  String get onboardingWalletCreateBullet3 => 'Takes about two minutes';
+
+  @override
+  String get onboardingWalletRestoreBullet1 => 'A Polyseed, BIP39 or legacy Monero seed';
+
+  @override
+  String get onboardingWalletRestoreBullet2 => 'Optional scan-from date';
+
+  @override
+  String get onboardingWalletRestoreBullet3 => 'Recovers your existing balance and history';
+
+  @override
+  String get onboardingSeedNotePassword =>
+      'Skylight Wallet asks for your password before ever showing them again.';
+
+  @override
+  String get onboardingPasswordNoteLaunch =>
+      'Asked for at every launch, and before the seed is ever shown.';
+
+  @override
+  String get onboardingPasswordNoteNotCloud =>
+      'Not a cloud account. Losing it means restoring from your seed phrase.';
+
+  @override
+  String get onboardingPasswordStrong => 'Strong';
+
+  @override
+  String get onboardingPasswordMatch => 'Both entries match';
 
   @override
   String get lwsDetailsTitle => 'Wallet Details';
@@ -324,15 +364,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get restoreWalletDescription =>
       'Input your Monero seed below. We will check common formats.';
-
-  @override
-  String get restoreWalletSeedLabel => 'Seed';
-
-  @override
-  String get restoreWalletRestoreHeightLabel => 'Restore Height (optional)';
-
-  @override
-  String get restoreWalletRestoreDateLabel => 'Restore Date (optional)';
 
   @override
   String get restoreWalletScanFrom => 'Scan from';
@@ -426,46 +457,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlockTitle => 'Unlock Wallet';
 
   @override
-  String get unlockDescription => 'Enter your wallet password to unlock';
-
-  @override
-  String get unlockPasswordLabel => 'Password';
-
-  @override
   String get unlockPasswordHint => 'Enter your password';
 
   @override
   String get unlockIncorrectPasswordError => 'Incorrect password. Please try again.';
 
   @override
-  String get homeConnecting => 'Connecting';
-
-  @override
   String get homeSyncing => 'Syncing';
 
   @override
-  String get homeHeight => 'Height';
+  String get homeSynced => 'Synced';
+
+  @override
+  String get homeTorConnected => 'Tor · connected';
+
+  @override
+  String get homeTorConnecting => 'Tor · connecting';
+
+  @override
+  String get homeTorOff => 'Tor · off';
 
   @override
   String get homeReceive => 'Receive';
 
   @override
   String get homeSend => 'Send';
-
-  @override
-  String get homeBalanceLocked => 'Locked';
-
-  @override
-  String get homeTransactionsTitle => 'Transactions';
-
-  @override
-  String get homeOutgoingTxSemanticLabel => 'Outgoing Transaction';
-
-  @override
-  String get homeIncomingTxSemanticLabel => 'Incoming Transaction';
-
-  @override
-  String get homeTransactionConfirmed => 'Confirmed';
 
   @override
   String get homeNoTransactions => 'No Transactions';
@@ -493,15 +509,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Warning: Unless you know what you\'re doing, please use subaddresses for better privacy.';
 
   @override
-  String get receiveShareButton => 'Share';
-
-  @override
-  String get receiveShowSubaddressButton => 'Show Subaddress';
-
-  @override
-  String get receiveShowPrimaryAddressButton => 'Show Primary Address';
-
-  @override
   String get receiveServerNoSubaddressesWarn =>
       'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.';
 
@@ -519,16 +526,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get receiveCopyAddress => 'Copy address';
 
   @override
+  String get receiveQrHint => 'Scan this code to send Monero to this wallet.';
+
+  @override
+  String get receiveEnlargeQr => 'Tap to enlarge and brighten';
+
+  @override
+  String get receiveShrinkQr => 'Tap to shrink';
+
+  @override
   String get receiveShareError => 'Could not open the share sheet';
 
   @override
   String receiveAddressHeading(String coin) {
     return 'Your $coin address';
-  }
-
-  @override
-  String receiveBlockchainSubtitle(String coin) {
-    return '$coin blockchain';
   }
 
   @override
@@ -656,9 +667,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSecretKeysLabel => 'Secret Restore Keys';
-
-  @override
-  String get settingsSecretKeysButton => 'View';
 
   @override
   String get settingsViewLwsKeysDialogText =>
@@ -814,9 +822,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressBookNoSearchResults => 'No Contacts Found';
 
   @override
-  String get addressBookCopyAddress => 'Copy Address';
-
-  @override
   String get addressBookEdit => 'Edit';
 
   @override
@@ -824,9 +829,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addressBookNameHint => 'Name';
-
-  @override
-  String get addressBookAddressHint => 'Monero address';
 
   @override
   String get addressBookAddDescription => 'A name and a Monero address to pay them on.';
@@ -841,12 +843,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addressBookSave => 'Save';
 
   @override
-  String get sendSelectedContact => 'Selected Contact';
-
-  @override
-  String get sendClearSelectedContact => 'Clear Selected Contact';
-
-  @override
   String get sendPriorityLow => 'Low';
 
   @override
@@ -854,15 +850,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendPriorityHigh => 'High';
-
-  @override
-  String get sendPriorityLabel => 'Priority';
-
-  @override
-  String get sendTransactionPriority => 'Transaction Priority';
-
-  @override
-  String get sendFeeLabel => 'Fee';
 
   @override
   String get sendContactsButton => 'Contacts';
@@ -892,26 +879,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendAvailableSuffix => 'available';
 
   @override
+  String get sendIrreversibleNote =>
+      'Monero transactions are irreversible. Double-check the address and amount before sending.';
+
+  @override
+  String get sendSwitchUnit => 'Switch amount unit';
+
+  @override
   String get sendFailedToGetFeesError => 'Failed to get fees.';
 
   @override
-  String get torInfoTitle => 'Tor Built-in';
-
-  @override
-  String get torInfoDescription =>
-      'Skylight Wallet automatically uses built-in Tor to protect your internet connections.';
-
-  @override
-  String get torInfoContinueButton => 'Continue';
-
-  @override
-  String get torInfoConfigureButton => 'Configure';
-
-  @override
   String get torSettingsTitle => 'Tor Settings';
-
-  @override
-  String get torSettingsModeLabel => 'Tor Mode';
 
   @override
   String get torSettingsModeBuiltIn => 'Built-in Tor';
@@ -948,9 +926,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get torSettingsSocksPortLabel => 'SOCKS Port';
 
   @override
-  String get torSettingsSocksPortHint => 'e.g. 9050';
-
-  @override
   String get torSettingsUseOrbotLabel => 'Use Orbot/InviZible';
 
   @override
@@ -974,14 +949,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsTorSettingsLabel => 'Tor Settings';
-
-  @override
-  String get lwsSetupUsingInternalTor => 'Using Internal Tor';
-
-  @override
-  String lwsSetupUsingExternalTor(String address) {
-    return 'Using External Tor Proxy at $address';
-  }
 
   @override
   String get lwsSetupTorDisabledError => 'Tor is disabled. Please go back and enable it.';

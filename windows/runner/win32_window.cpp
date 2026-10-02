@@ -216,6 +216,17 @@ Win32Window::MessageHandler(HWND hwnd,
     case WM_DWMCOLORIZATIONCOLORCHANGED:
       UpdateTheme(hwnd);
       return 0;
+
+    case WM_GETMINMAXINFO: {
+      // Minimum window size (DPI-scaled) so the two-pane layouts and sidebar
+      // stay usable.
+      auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
+      UINT dpi = GetDpiForWindow(hwnd);
+      double scale = dpi > 0 ? dpi / 96.0 : 1.0;
+      info->ptMinTrackSize.x = static_cast<LONG>(900 * scale);
+      info->ptMinTrackSize.y = static_cast<LONG>(640 * scale);
+      return 0;
+    }
   }
 
   return DefWindowProc(window_handle_, message, wparam, lparam);

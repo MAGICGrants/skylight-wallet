@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -57,6 +58,9 @@ void main() async {
 
       installWalletCore();
       BrandColors.install(skylightPalette);
+      // Selected onboarding option cards stay white — only the accent border
+      // marks the selection (no tinted fill).
+      OnboardingRadioCard.selectedFill = () => BrandColors.card;
 
       // Catch Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
@@ -186,7 +190,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
     final builder = _routes[settings.name];
     if (builder == null) return null;
-    if (_noTransitionRoutes.contains(settings.name)) {
+    // Desktop: no transition anywhere. Mobile: only between the nav-bar screens;
+    // every other push/pop keeps its normal animation.
+    if (isDesktop || _noTransitionRoutes.contains(settings.name)) {
       return _NoTransitionPageRoute(builder: builder, settings: settings);
     }
     return MaterialPageRoute(builder: builder, settings: settings);
@@ -330,7 +336,14 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                     });
                   }
                   _lastBrightness = brightness;
-                  return child ?? const SizedBox.shrink();
+                  // Brand-tone skeletons (the default grey clashes with the
+                  // navy/orange scheme); tokens resolve to the current theme.
+                  return SkeletonizerConfig(
+                    data: SkeletonizerConfigData(
+                      effect: SoldColorEffect(color: BrandColors.surfaceMuted),
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  );
                 },
                 initialRoute: initialRoute,
                 locale: Locale.fromSubtags(languageCode: languageProvider.language),

@@ -6,8 +6,23 @@ import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
+/// Desktop: LWS keys as a centered modal (opened from Settings); mobile keeps
+/// the full-screen route.
+Future<void> showLwsKeysSheet(BuildContext context) {
+  return showBrandSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxSheetHeight(ctx)),
+      child: const LwsKeysScreen(asModal: true),
+    ),
+  );
+}
+
 class LwsKeysScreen extends StatefulWidget {
-  const LwsKeysScreen({super.key});
+  final bool asModal;
+
+  const LwsKeysScreen({super.key, this.asModal = false});
 
   @override
   State<LwsKeysScreen> createState() => _LwsKeysScreenState();
@@ -60,7 +75,8 @@ class _LwsKeysScreenState extends State<LwsKeysScreen> with SecureScreenMixin {
       secretViewKey: _secretViewKey,
       restoreHeight: _restoreHeight.toString(),
       onCopy: _copy,
-      onBack: () => Navigator.pop(context),
+      asModal: widget.asModal,
+      onBack: widget.asModal ? null : () => Navigator.pop(context),
     );
   }
 }

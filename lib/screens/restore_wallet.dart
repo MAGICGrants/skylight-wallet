@@ -1,21 +1,22 @@
-import 'dart:io';
-
 import 'package:bip39/bip39.dart' as bip39;
 // ignore: implementation_imports — the BIP39 English wordlist for per-word checks.
 import 'package:bip39/src/wordlists/english.dart' show WORDLIST;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:polyseed/polyseed.dart';
+import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
-import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/util/logging.dart';
+import 'package:skylight_wallet/util/platform.dart';
+import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
-import 'package:wallet_domain/wallet_domain.dart' show parseRestoreQr;
+import 'package:wallet_domain/wallet_domain.dart' show SeedSource, parseRestoreQr;
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});
@@ -34,8 +35,8 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
   int _restoreHeight = 0;
   bool _scanChosen = false;
   bool _heightManuallySet = false; // date picked / QR height
-  bool _isLoading = false;
   String _seedTypeId = 'polyseed'; // the view's default (first seed type)
+  bool _committing = false; // mobile: restoring the wallet directly (no password step)
 
   bool _validWord(String w) => _wordSet.contains(w);
 
@@ -105,10 +106,16 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     });
   }
 
-  Future<void> _restore(String mnemonic, String seedTypeId) async {
-    if (_isLoading) return;
-
+  /// Password-last flow: validate the seed, then carry it (with its restore
+  /// height) to the password step, which sets the password and writes the wallet.
+  void _restore(String mnemonic, String seedTypeId) {
     final i18n = AppLocalizations.of(context)!;
+
+    // Reject an unrecognized seed before advancing to the password step.
+    if (SeedSource.detect(mnemonic) == null) {
+      showBrandToast(context, i18n.restoreWalletInvalidMnemonic);
+      return;
+    }
 
     // Polyseed with no user-chosen restore point: derive height from its birthday.
     if (seedTypeId == 'polyseed' && !_heightManuallySet) {
@@ -116,52 +123,64 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     final restoreHeight = _restoreHeight;
 
-    setState(() => _isLoading = true);
+    // Desktop adds a password step; mobile has no password screen (the device
+    // app lock guards it), so it restores the wallet directly.
+    if (isDesktop) {
+      Navigator.pushNamed(
+        context,
+        '/create_wallet_password',
+        arguments: CreateWalletPasswordArgs(
+          commit: (ctx) async {
+            await restoreWallet(ctx, mnemonic: mnemonic, restoreHeight: restoreHeight);
+            return restoreHeight;
+          },
+        ),
+      );
+      return;
+    }
+    _restoreOnMobile(mnemonic, restoreHeight);
+  }
 
+  Future<void> _restoreOnMobile(String mnemonic, int restoreHeight) async {
+    if (_committing) return;
+    final i18n = AppLocalizations.of(context)!;
+    setState(() => _committing = true);
     try {
       await restoreWallet(context, mnemonic: mnemonic, restoreHeight: restoreHeight);
     } on Exception catch (error) {
+      if (!mounted) return;
+      setState(() => _committing = false);
       final errorMsg = error.toString().replaceFirst('Exception: ', '');
-      setState(() => _isLoading = false);
-
-      if (mounted) {
-        final message = errorMsg == 'Invalid mnemonic.'
-            ? i18n.restoreWalletInvalidMnemonic
-            : i18n.unknownError;
-        showBrandToast(context, message);
-      }
+      showBrandToast(
+        context,
+        errorMsg == 'Invalid mnemonic.' ? i18n.restoreWalletInvalidMnemonic : i18n.unknownError,
+      );
       return;
     } catch (error) {
+      if (!mounted) return;
       log(LogLevel.error, error.toString());
-      setState(() => _isLoading = false);
-      if (mounted) {
-        showBrandToast(context, i18n.unknownError);
-      }
+      setState(() => _committing = false);
+      showBrandToast(context, i18n.unknownError);
       return;
     }
-
-    setState(() => _isLoading = false);
-
-    if (mounted) {
-      Provider.of<FiatRateModel>(context, listen: false).startService();
-      // Wallet Details is LWS whitelisting info; a full node needs none of it.
-      if (appWalletOf(context).isNodeMode) {
-        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (Route<dynamic> route) => false);
-      } else {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/lws_details',
-          (Route<dynamic> route) => false,
-          arguments: restoreHeight,
-        );
-      }
+    if (!mounted) return;
+    setState(() => _committing = false);
+    Provider.of<FiatRateModel>(context, listen: false).startService();
+    if (appWalletOf(context).isNodeMode) {
+      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);
+    } else {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/lws_details',
+        (route) => false,
+        arguments: restoreHeight,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
-    final isMobile = Platform.isAndroid || Platform.isIOS;
 
     final String scanValue;
     final TextStyle scanStyle;
@@ -176,9 +195,12 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
       scanStyle = BrandText.body;
     }
 
-    return RestoreWalletView(
+    final view = RestoreWalletView(
       controller: _restoreWalletController,
-      restoring: _isLoading,
+      restoring: _committing,
+      embedded: isDesktop,
+      stepCount: isDesktop ? null : 6,
+      stepIndex: isDesktop ? null : 4,
       onScan: isMobile ? _scanQrCode : null,
       onSeedTypeChanged: (id) => setState(() {
         _seedTypeId = id;
@@ -220,6 +242,26 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
         value: scanValue,
         valueStyle: scanStyle,
         onTap: _openScanFrom,
+      ),
+    );
+
+    if (!isDesktop) return view;
+
+    // Desktop: the shared onboarding shell supplies the header, step dots and
+    // Continue; the controller drives its enabled state and triggers restore.
+    return ValueListenableBuilder<bool>(
+      valueListenable: _restoreWalletController.canRestore,
+      builder: (context, valid, _) => DesktopOnboardingScaffold(
+        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+        title: i18n.restoreWalletTitle,
+        description: i18n.restoreWalletDescription,
+        step: 5,
+        totalSteps: 6,
+        continueLabel: i18n.restoreWalletRestoreButton,
+        continueEnabled: valid,
+        onBack: () => Navigator.pop(context),
+        onContinue: _restoreWalletController.restore,
+        content: view,
       ),
     );
   }

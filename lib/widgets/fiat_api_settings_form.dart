@@ -52,7 +52,7 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
     // no longer overrides it.
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatAutoDisabledByTor);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _currency);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
+    await FiatRateModel.clearPersistedRates();
     await widget.onSaved();
   }
 

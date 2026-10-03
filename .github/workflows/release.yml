@@ -190,7 +190,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && bash scripts/pin-rust-toolchain.sh && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
+            bash -c "flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
           cp -v deb/skylight-wallet-*.deb dist/
@@ -222,7 +222,7 @@ jobs:
           flutter-version: ${{ needs.version.outputs.flutter_version }}
 
       - name: Install dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Install Inno Setup
         run: choco install innosetup -y
@@ -332,7 +332,7 @@ jobs:
 
       - name: Build IPA
         run: |
-          flutter pub get
+          flutter pub get --enforce-lockfile
           flutter build ipa --dart-define=DEMO_MODE=true --release --export-options-plist=ios/ExportOptions.plist
 
       - name: Prepare artifact

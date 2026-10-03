@@ -93,7 +93,7 @@ Architecture: amd64
 Installed-Size: $INSTALLED_SIZE
 Maintainer: MAGIC Grants
 Description: A light Monero wallet.
-Homepage: https://github.com/skylight-wallet/skylight-wallet
+Homepage: https://github.com/MAGICGrants/skylight-wallet
 EOF
 
 # Copy the Flutter bundle to lib directory
@@ -105,7 +105,9 @@ echo "Creating launcher script..."
 cat > "$PACKAGE_DIR/usr/bin/skylight-wallet" << 'EOF'
 #!/bin/bash
 INSTALL_DIR="/usr/lib/skylight-wallet"
-export LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH"
+# The caller's path is appended only when set: an empty entry would make the
+# loader search the current directory for libraries.
+export LD_LIBRARY_PATH="$INSTALL_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 exec "$INSTALL_DIR/skylight_wallet" "$@"
 EOF
 chmod 755 "$PACKAGE_DIR/usr/bin/skylight-wallet"

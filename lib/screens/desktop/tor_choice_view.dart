@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:skylight_wallet/screens/desktop/onboarding_steps.dart';
 import 'package:skylight_wallet/widgets/tor_settings_form.dart'
     show TorPortField, TorTestChip, TorTestStatus;
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -69,7 +70,7 @@ class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
       title: l.title,
       description: l.subtitle,
       step: 1,
-      totalSteps: 6,
+      totalSteps: desktopOnboardingSteps,
       continueLabel: l.continueText,
       continueEnabled: _canContinue,
       onBack: widget.onBack,

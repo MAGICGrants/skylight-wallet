@@ -7,6 +7,8 @@ import workmanager_apple
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var secureClipboardChannel: FlutterMethodChannel?
   private var storeReviewChannel: FlutterMethodChannel?
+  private var hostPlatformChannel: FlutterMethodChannel?
+  private var sceneConnectObserver: NSObjectProtocol?
 
   override func application(
     _ application: UIApplication,
@@ -35,6 +37,19 @@ import workmanager_apple
     // Longer run, only while charging and idle. This is the one that can afford
     // a Tor bootstrap before syncing.
     WorkmanagerPlugin.registerBGProcessingTask(withIdentifier: "\(bundleId).processing")
+
+    // On a Mac this build shows the desktop layout, which needs the same
+    // minimum window as the macOS build (MainFlutterWindow.swift).
+    if ProcessInfo.processInfo.isiOSAppOnMac {
+      sceneConnectObserver = NotificationCenter.default.addObserver(
+        forName: UIScene.willConnectNotification,
+        object: nil,
+        queue: .main
+      ) { note in
+        (note.object as? UIWindowScene)?.sizeRestrictions?.minimumSize =
+          CGSize(width: 900, height: 640)
+      }
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
@@ -91,6 +106,25 @@ import workmanager_apple
         }
       }
       storeReviewChannel = channel
+    }
+
+    let hostRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "HostPlatform")
+    if let messenger = hostRegistrar?.messenger() {
+      // App-neutral name shared with wallet-core's HostPlatform. The App Store
+      // offers this build on Apple silicon Macs, where Dart still reports iOS.
+      let channel = FlutterMethodChannel(
+        name: "org.magicgrants.wallet/host_platform",
+        binaryMessenger: messenger
+      )
+      channel.setMethodCallHandler { call, reply in
+        switch call.method {
+        case "isIosAppOnMac":
+          reply(ProcessInfo.processInfo.isiOSAppOnMac)
+        default:
+          reply(FlutterMethodNotImplemented)
+        }
+      }
+      hostPlatformChannel = channel
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:wallet_domain/wallet_domain.dart' show SeedSource;
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
+import 'package:skylight_wallet/screens/desktop/onboarding_steps.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
@@ -35,13 +36,14 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
     _seed = generated.seed.mnemonic.split(' ');
   }
 
-  /// Desktop adds a password step (password-last flow). Mobile has no password
-  /// screen — it's guarded by the device app lock — so it commits the wallet
-  /// directly from here.
+  /// A desktop OS adds a password step (password-last flow). Mobile has no
+  /// password screen — it's guarded by the device app lock — so it commits the
+  /// wallet directly from here. That includes the iOS build on a Mac, which
+  /// shows the desktop layout but keeps the mobile wallet password.
   void _continue() {
     final generated = _generated;
     if (generated == null) return;
-    if (isDesktop) {
+    if (isDesktopOS) {
       Navigator.pushNamed(
         context,
         '/create_wallet_password',
@@ -97,7 +99,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
       return DesktopGenerateSeedView(
         logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
         step: 5,
-        totalSteps: 6,
+        totalSteps: desktopOnboardingSteps,
         title: i18n.generateSeedTitle,
         description: i18n.generateSeedSubtitleRevealed,
         seedWords: _seed ?? const [],
@@ -109,9 +111,10 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
               ).format(_generated!.restoreDate)
             : null,
         confirmLabel: i18n.generateSeedConfirm,
-        passwordNote: i18n.onboardingSeedNotePassword,
+        passwordNote: isDesktopOS ? i18n.onboardingSeedNotePassword : null,
         revealLabel: i18n.generateSeedReveal,
         continueText: i18n.continueText,
+        loading: _committing,
         onContinue: _continue,
         onBack: () => Navigator.pop(context),
       );

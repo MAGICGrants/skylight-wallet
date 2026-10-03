@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:skylight_wallet/screens/desktop/onboarding_steps.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -50,7 +51,7 @@ class _DesktopConnectionViewState extends State<DesktopConnectionView> {
         title: widget.title,
         description: widget.description,
         step: 3,
-        totalSteps: 6,
+        totalSteps: desktopOnboardingSteps,
         continueLabel: widget.saveButtonLabel,
         continueEnabled: canSave,
         onBack: widget.onBack,

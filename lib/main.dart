@@ -44,7 +44,6 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/cacert.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 
 final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
@@ -82,7 +81,6 @@ void main() async {
       }
 
       if (Platform.isAndroid) {
-        copyCacertToAppDocumentsDir();
         registerPeriodicTasks();
         startForegroundSyncIfEnabled();
         NotificationService().init();

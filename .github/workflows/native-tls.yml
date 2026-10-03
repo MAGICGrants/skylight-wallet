@@ -1,0 +1,167 @@
+# TLS against the monero_c library this app ships, on every platform it ships
+# for: LWS and node, direct and through a SOCKS proxy, and the wallet's own
+# connect path with the CA bundle. The checks live in wallet-core
+# (`package:wallet_monero/testing.dart`) and run here as an integration test,
+# inside the real app on each platform, so they see the committed binaries and
+# the app's own asset bundle.
+#
+# Every server, proxy and certificate is local to the runner; nothing is
+# contacted over the network.
+name: Native TLS
+
+on:
+  pull_request:
+    paths:
+      - 'android/app/src/main/jniLibs/**'
+      - 'ios/Frameworks/**'
+      - 'linux/*.so'
+      - 'windows/*.dll'
+      - 'pubspec.lock'
+      - 'integration_test/**'
+      - '.github/workflows/native-tls.yml'
+  workflow_dispatch:
+
+env:
+  TEST: integration_test/native_tls_test.dart
+
+jobs:
+  flutter-version:
+    name: Flutter version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - id: read
+        run: echo "version=$(grep -E '^\s+flutter:\s+' pubspec.yaml | head -1 | sed 's/.*flutter:\s*//')" >> "$GITHUB_OUTPUT"
+
+  android:
+    name: Android (emulator)
+    runs-on: ubuntu-latest
+    needs: flutter-version
+    steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # The emulator needs hardware acceleration.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Use JDK 21, as the release builder does
+        run: echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ needs.flutter-version.outputs.version }}
+
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          toolchain: stable
+          targets: x86_64-linux-android
+
+      - run: flutter pub get --enforce-lockfile
+
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: flutter test ${{ env.TEST }} -d emulator-5554
+
+  ios:
+    name: iOS (simulator)
+    runs-on: macos-26
+    needs: flutter-version
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ needs.flutter-version.outputs.version }}
+
+      - name: Install CocoaPods
+        run: |
+          brew untap aws/tap 2>/dev/null || true   # runner pre-taps it; newer brew nags about untrusted taps
+          brew install cocoapods
+
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          toolchain: stable
+          targets: aarch64-apple-ios-sim
+
+      - run: flutter pub get --enforce-lockfile
+
+      - name: Boot a simulator
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          for runtime in sorted(devices, reverse=True):
+              if "iOS" in runtime:
+                  for device in devices[runtime]:
+                      if device["name"].startswith("iPhone"):
+                          print(device["udid"])
+                          sys.exit()
+          sys.exit("no iPhone simulator available")
+          ')
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          echo "SIMULATOR=$UDID" >> "$GITHUB_ENV"
+
+      - run: flutter test ${{ env.TEST }} -d "$SIMULATOR"
+
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # The image the Linux release is built in, plus a virtual display.
+      - name: Pull builder image
+        run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
+
+      - name: Native TLS checks
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            bash -c "apt-get update && apt-get install -y --no-install-recommends xvfb xauth && flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && xvfb-run -a flutter test $TEST -d linux"
+
+  windows:
+    name: Windows
+    runs-on: windows-2022
+    needs: flutter-version
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ needs.flutter-version.outputs.version }}
+
+      # webcrypto builds BoringSSL, whose Windows assembly needs NASM.
+      - name: Install NASM
+        run: |
+          choco install nasm -y
+          echo "C:\Program Files\NASM" >> $env:GITHUB_PATH
+
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+
+      - run: flutter pub get --enforce-lockfile
+
+      - run: flutter test ${{ env.TEST }} -d windows

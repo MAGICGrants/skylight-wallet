@@ -138,6 +138,10 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # integration_test/native_tls_test.dart: TLS against the shipped native
+  # library, on a device or desktop.
+  integration_test:
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -160,7 +164,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/
-    - assets/cacert.pem
     - assets/app_icon.ico
     - assets/launcher_icon.png
     - assets/logo.svg

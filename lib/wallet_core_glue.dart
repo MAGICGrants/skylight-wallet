@@ -222,11 +222,12 @@ Future<bool> armAppLockRelock(BuildContext context) =>
     Provider.of<WalletManager>(context, listen: false).armAppLockRelock();
 
 /// Opens an already-existing wallet (used by the welcome safety-net). Returns
-/// false when there is none. Mobile only — desktop unlocks with a password.
+/// false when there is none. Opens only on mobile: on a desktop OS the wallet
+/// waits for the typed password, and the caller shows the unlock screen.
 Future<bool> openExistingWallet(BuildContext context) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
   if (!await manager.hasAnyExistingWallet()) return false;
-  manager.openWalletFilesAndSync();
+  if (_isMobile) manager.openWalletFilesAndSync();
   return true;
 }
 
@@ -234,7 +235,10 @@ Future<bool> openExistingWallet(BuildContext context) async {
 /// wrong password (the unlock screen shows the error).
 Future<void> unlockWithPassword(BuildContext context, String password) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
-  await manager.openAll(password: password);
+  if (!await manager.unlockWithTypedPassword(password)) {
+    throw Exception('Incorrect wallet password.');
+  }
+  await manager.openAll();
   manager.syncInBackground();
 }
 

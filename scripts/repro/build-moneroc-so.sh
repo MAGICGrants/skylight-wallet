@@ -68,7 +68,9 @@ docker run --rm \
     git clone --quiet https://github.com/magicgrants/monero_c.git "$work"
     cd "$work"
     git checkout --quiet "$REF"
-    git submodule update --init --recursive --force --quiet
+    # Only the submodules a Monero build uses; the others are for other coins,
+    # and fetching them fails the build whenever one of their hosts is down.
+    git submodule update --init --recursive --force --quiet -- monero lwsf
     # Pin timestamps BEFORE patching. apply_patches.sh runs `git am`, whose commit
     # SHA depends on the committer date; Monero bakes that short-hash into its
     # version string (0.18.4.0-<hash>). Fix the date so the hash is deterministic.

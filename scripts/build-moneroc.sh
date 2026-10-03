@@ -27,7 +27,9 @@ git config --global user.email 'info@magicgrants.org'
 rm -rf /tmp/monero_c
 git clone "$SRC" /tmp/monero_c
 git -C /tmp/monero_c checkout "$COMMIT"
-git -C /tmp/monero_c submodule update --init --recursive --force
+# Only the submodules a Monero build uses; the others are for other coins,
+# and fetching them fails the build whenever one of their hosts is down.
+git -C /tmp/monero_c submodule update --init --recursive --force -- monero lwsf
 
 cd /tmp/monero_c
 # Pin the git-am committer date (baked into Monero's version string) + __DATE__/__TIME__.

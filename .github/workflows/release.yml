@@ -182,12 +182,15 @@ jobs:
 
       - name: Build Linux packages
         run: |
+          # cargokit builds the Rust plugins with `rustup run stable`, and the
+          # image only has the rust-toolchain.toml version, so pin cargokit to it
+          # (as the Android job does) instead of downloading stable mid-build.
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "flutter pub get && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
+            bash -c "flutter pub get && bash scripts/pin-rust-toolchain.sh && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
           cp -v deb/skylight-wallet-*.deb dist/
@@ -223,6 +226,12 @@ jobs:
 
       - name: Install Inno Setup
         run: choco install innosetup -y
+
+      # webcrypto builds BoringSSL, whose Windows assembly needs NASM.
+      - name: Install NASM
+        run: |
+          choco install nasm -y
+          echo "C:\Program Files\NASM" >> $env:GITHUB_PATH
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable

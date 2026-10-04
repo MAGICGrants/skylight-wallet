@@ -38,6 +38,7 @@ jobs:
 
   android:
     name: Android (emulator)
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     needs: flutter-version
     steps:
@@ -80,6 +81,7 @@ jobs:
 
   ios:
     name: iOS (simulator)
+    timeout-minutes: 45
     runs-on: macos-26
     needs: flutter-version
     steps:
@@ -123,6 +125,7 @@ jobs:
 
   linux:
     name: Linux
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -131,16 +134,31 @@ jobs:
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
 
+      # The display server is started directly rather than through xvfb-run,
+      # which waits for a ready signal from it and can wait forever in a
+      # container.
       - name: Native TLS checks
         run: |
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
+            -e TEST \
+            -e DEBIAN_FRONTEND=noninteractive \
             ghcr.io/magicgrants/skylight-wallet-builder:latest \
-            bash -c "apt-get update && apt-get install -y --no-install-recommends xvfb xauth && flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && xvfb-run -a flutter test $TEST -d linux"
+            bash -euo pipefail -c '
+              apt-get update
+              apt-get install -y --no-install-recommends xvfb
+              flutter pub get --enforce-lockfile
+              bash scripts/pin-rust-toolchain.sh
+              Xvfb :99 -screen 0 1280x1024x24 -nolisten tcp -ac &
+              for _ in $(seq 50); do [ -S /tmp/.X11-unix/X99 ] && break; sleep 0.2; done
+              [ -S /tmp/.X11-unix/X99 ] || { echo "Xvfb did not start" >&2; exit 1; }
+              DISPLAY=:99 flutter test "$TEST" -d linux
+            '
 
   windows:
     name: Windows
+    timeout-minutes: 45
     runs-on: windows-2022
     needs: flutter-version
     steps:

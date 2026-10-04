@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.1.0+412
+version: 2.1.0+413
 
 environment:
   sdk: 3.11.5
@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: 3ca8418f5888883e1bb6e3a6a919260e71a49647
+      ref: e31cbe2cc595fa9d640b35ffb45dc3afa91ec7b0
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
@@ -65,37 +65,37 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_openalias
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 3584c83fc791dfb498dd6a31afb16ebb48b25bf6
+      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
       path: packages/wallet_ui
 
   bip39:
@@ -138,6 +138,10 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # integration_test/native_tls_test.dart: TLS against the shipped native
+  # library, on a device or desktop.
+  integration_test:
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -160,7 +164,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/
-    - assets/cacert.pem
     - assets/app_icon.ico
     - assets/launcher_icon.png
     - assets/logo.svg

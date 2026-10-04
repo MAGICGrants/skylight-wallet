@@ -82,7 +82,9 @@ for ARCH in "${ARCHS[@]}"; do
       cd "$work"
       git fetch --quiet origin "$REF" || true
       git checkout --quiet "$REF"
-      git submodule update --init --recursive --force
+      # Only the submodules a Monero build uses; the others are for other coins,
+      # and fetching them fails the build whenever one of their hosts is down.
+      git submodule update --init --recursive --force -- monero lwsf
 
       # Deterministic version hash (git am committer date) as in the repro build.
       export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"

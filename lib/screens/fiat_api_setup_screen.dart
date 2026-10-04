@@ -33,7 +33,7 @@ class _FiatApiSetupScreenState extends State<FiatApiSetupScreen> {
     // A manual choice is definitive; don't let a later Tor re-enable override it.
     await SharedPreferencesService.remove(SharedPreferencesKeys.fiatAutoDisabledByTor);
     await SharedPreferencesService.set<String>(SharedPreferencesKeys.fiatCurrency, _fiatCurrency);
-    await SharedPreferencesService.remove(SharedPreferencesKeys.fiatRate);
+    await FiatRateModel.clearPersistedRates();
 
     if (!mounted) return;
     Navigator.pushNamed(context, '/connection_setup');

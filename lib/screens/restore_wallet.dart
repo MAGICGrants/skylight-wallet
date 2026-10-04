@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
+import 'package:skylight_wallet/screens/desktop/onboarding_steps.dart';
 import 'package:skylight_wallet/util/get_height_by_date.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
@@ -123,9 +124,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     final restoreHeight = _restoreHeight;
 
-    // Desktop adds a password step; mobile has no password screen (the device
-    // app lock guards it), so it restores the wallet directly.
-    if (isDesktop) {
+    // A desktop OS adds a password step; mobile has no password screen (the
+    // device app lock guards it), so it restores the wallet directly. That
+    // includes the iOS build on a Mac, in the desktop layout.
+    if (isDesktopOS) {
       Navigator.pushNamed(
         context,
         '/create_wallet_password',
@@ -256,9 +258,10 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
         title: i18n.restoreWalletTitle,
         description: i18n.restoreWalletDescription,
         step: 5,
-        totalSteps: 6,
+        totalSteps: desktopOnboardingSteps,
         continueLabel: i18n.restoreWalletRestoreButton,
         continueEnabled: valid,
+        loading: _committing,
         onBack: () => Navigator.pop(context),
         onContinue: _restoreWalletController.restore,
         content: view,

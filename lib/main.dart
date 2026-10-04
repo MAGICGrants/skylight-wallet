@@ -44,17 +44,17 @@ import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
-import 'package:skylight_wallet/util/cacert.dart';
+import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
-
-final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
-final isMobile = Platform.isAndroid || Platform.isIOS;
+import 'package:wallet_infra/wallet_infra.dart' show HostPlatform;
 
 void main() async {
   // Catch all uncaught async errors
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      // Before the first frame: the layout reads it synchronously.
+      await HostPlatform.init();
 
       installWalletCore();
       BrandColors.install(skylightPalette);
@@ -82,7 +82,6 @@ void main() async {
       }
 
       if (Platform.isAndroid) {
-        copyCacertToAppDocumentsDir();
         registerPeriodicTasks();
         startForegroundSyncIfEnabled();
         NotificationService().init();
@@ -284,8 +283,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
               final appLockEnabled =
                   sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
 
+              // A desktop OS asks for the typed password at every launch.
               final initialRoute = walletExists
-                  ? appLockEnabled || isDesktop
+                  ? appLockEnabled || isDesktopOS
                         ? '/unlock'
                         : '/wallet_home'
                   : '/welcome';
@@ -305,7 +305,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 // Desktop has no background isolate to announce incoming txs, so
                 // the foreground announces on tx-history growth. Mobile announces
                 // from its background isolates.
-                if (isDesktop) {
+                if (isDesktopOS) {
                   _announceWallet = appWalletOf(context, listen: false)
                     ..addListener(_announceNewTxsOnGrowth);
                 }

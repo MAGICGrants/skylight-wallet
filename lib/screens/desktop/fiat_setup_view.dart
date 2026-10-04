@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:wallet_fiat/wallet_fiat.dart';
 
+import 'package:skylight_wallet/screens/desktop/onboarding_steps.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// Desktop Step 2 of 6 — price-display choice (Tor-Only / Clearnet / Disabled)
@@ -43,7 +44,7 @@ class DesktopFiatSetupView extends StatelessWidget {
       title: labels.title,
       description: labels.subtitle,
       step: 2,
-      totalSteps: 6,
+      totalSteps: desktopOnboardingSteps,
       continueLabel: labels.continueText,
       onBack: onBack,
       onContinue: onContinue,

@@ -25,7 +25,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Future<void> _pushHomeIfWalletExists() async {
     if (await openExistingWallet(context) && mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);
+      // A desktop OS opens nothing until the user types the password.
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        isDesktopOS ? '/unlock' : '/wallet_home',
+        (route) => false,
+      );
     }
   }
 

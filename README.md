@@ -2,14 +2,26 @@
 
 ![Skylight Wallet feature graphic](assets/feature_graphic.png)
 
-A modern, open-source, and self-custody Monero light-wallet built with Flutter.
+A modern, open-source, and self-custody Monero light-wallet built with Flutter by [MAGIC Grants](https://magicgrants.org).
+
+**Website:** [skylight.magicgrants.org](https://skylight.magicgrants.org)
+
+Looking for Bitcoin, Ethereum, and Dai too? [Spice Wallet](https://github.com/MAGICGrants/spice-wallet) is MAGIC Grants' multicoin wallet, built on the same wallet engine.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Flutter](https://img.shields.io/badge/Flutter-3.8.1+-02569B.svg?logo=flutter)
 
 ## Install
 
-[<img src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store badge" width="25%"/>](https://apps.apple.com/us/app/skylight-wallet-for-monero/id6759176050) [<img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play badge" width="25%"/>](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
+<div align="center">
+
+[<img height="42" src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">](https://apps.apple.com/us/app/skylight-wallet-for-monero/id6759176050)
+[<img height="42" src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg" alt="Get it on Google Play">](https://play.google.com/store/apps/details?id=org.magicgrants.skylight)
+[<img height="42" src="assets/GetItOnF-Droid_Badge_English.svg" alt="Get it on F-Droid">](https://f-droid.org/en/packages/org.magicgrants.skylight/)
+
+</div>
+
+Android APKs are also available from the [latest release](https://github.com/MAGICGrants/skylight-wallet/releases/latest).
 
 ### Desktop
 
@@ -166,7 +178,7 @@ flutter install
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
-**Note**: Other platforms (iOS, Linux, macOS, Windows, Web) are not currently supported but may be added in future releases.
+**Note**: These steps cover building for Android. Skylight Wallet is also available for iOS, macOS, Linux, and Windows.
 
 ## Localization
 

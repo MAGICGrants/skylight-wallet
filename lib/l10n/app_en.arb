@@ -317,6 +317,7 @@
   "sendIrreversibleNote": "Monero transactions are irreversible. Double-check the address and amount before sending.",
   "sendSwitchUnit": "Switch amount unit",
   "sendFailedToGetFeesError": "Failed to get fees.",
+  "sendNoConnectionError": "Couldn't reach the server. Check your connection and try again.",
   "torSettingsTitle": "Tor Settings",
   "torSettingsModeBuiltIn": "Built-in Tor",
   "torSettingsModeExternal": "External Tor",

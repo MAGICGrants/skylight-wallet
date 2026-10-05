@@ -1743,6 +1743,12 @@ abstract class AppLocalizations {
   /// **'Failed to get fees.'**
   String get sendFailedToGetFeesError;
 
+  /// No description provided for @sendNoConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server. Check your connection and try again.'**
+  String get sendNoConnectionError;
+
   /// No description provided for @torSettingsTitle.
   ///
   /// In en, this message translates to:

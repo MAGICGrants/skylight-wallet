@@ -889,6 +889,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendFailedToGetFeesError => 'Failed to get fees.';
 
   @override
+  String get sendNoConnectionError =>
+      'Couldn\'t reach the server. Check your connection and try again.';
+
+  @override
   String get torSettingsTitle => 'Tor Settings';
 
   @override

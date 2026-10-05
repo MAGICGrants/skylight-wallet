@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:wallet_domain/wallet_domain.dart' show baseUnitsToDecimalString, decimalToBaseUnits;
+import 'package:wallet_domain/wallet_domain.dart'
+    show baseUnitsToDecimalString, decimalToBaseUnits, BroadcastFailure, BroadcastOutcome;
+import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -519,6 +521,9 @@ class _SendScreenState extends State<SendScreen> {
     final feeRatio = tx.amount > 0 ? tx.fee / tx.amount : null;
     final showHighFeeWarning = feeRatio != null && feeRatio > 0.10;
 
+    var unresolved = false;
+    var connectionFailed = false;
+
     final committed = await showConfirmSendSheet(
       context: context,
       labels: ConfirmSendLabels(
@@ -543,9 +548,25 @@ class _SendScreenState extends State<SendScreen> {
       highFeeWarning: showHighFeeWarning ? i18n.confirmSendHighFeeWarning(_highFeeToken) : null,
       highFeeToken: _highFeeToken,
       highFeePercent: showHighFeeWarning ? '${(feeRatio * 100).round()}%' : null,
-      onConfirm: () => _commitTx(tx, destinationAddress),
+      onConfirm: () => _commitTx(
+        tx,
+        destinationAddress,
+        onUnresolved: () => unresolved = true,
+        onConnectionFailed: () => connectionFailed = true,
+      ),
     );
 
+    // Nothing sent: toast already shown, stay on the form.
+    if (connectionFailed) return;
+
+    if (unresolved) {
+      // Recorded as unresolved: warn rather than claim success, then route home.
+      if (mounted) await _showUnresolvedSendSheet();
+      if (mounted) {
+        Navigator.pushNamed(context, '/wallet_home', arguments: {'showTxSuccessToast': false});
+      }
+      return;
+    }
     if (committed == true) {
       // The send went through: ask for a store review on a later launch.
       unawaited(StoreReview.markEligible());
@@ -555,14 +576,71 @@ class _SendScreenState extends State<SendScreen> {
     }
   }
 
-  /// Commits the transaction; surfaces its own errors as snackbars (matching the
-  /// retired confirm screen) and rethrows so the sheet stays open on failure.
-  Future<void> _commitTx(AppPendingTx tx, String destinationAddress) async {
+  /// Warns that a send was never confirmed (may or may not be in the network).
+  Future<void> _showUnresolvedSendSheet() {
+    final i18n = AppLocalizations.of(context)!;
+    return showBrandSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: isDesktopModal ? EdgeInsets.zero : const EdgeInsets.fromLTRB(22, 8, 22, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SheetHandle(),
+              Row(
+                children: [
+                  SheetIcon(
+                    icon: Icons.warning_rounded,
+                    bg: BrandColors.warningBg,
+                    color: BrandColors.warning,
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(child: Text(i18n.warning, style: BrandText.sheetTitle)),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                i18n.txDetailsUnknownStatus,
+                style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+              ),
+              const SizedBox(height: 18),
+              BrandButton(label: i18n.close, onPressed: () => Navigator.pop(sheetContext)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Commits the tx. Surfaces errors as toasts; rethrows to keep the sheet open,
+  /// except unknown ([onUnresolved]) and not-sent ([onConnectionFailed]) which
+  /// close it.
+  Future<void> _commitTx(
+    AppPendingTx tx,
+    String destinationAddress, {
+    required void Function() onUnresolved,
+    required void Function() onConnectionFailed,
+  }) async {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context);
 
     try {
       await wallet.commitTx(tx, destinationAddress);
+    } on BroadcastFailure catch (failure) {
+      if (failure.outcome == BroadcastOutcome.unknown) {
+        onUnresolved();
+        return;
+      }
+      if (mounted) showBrandToast(context, i18n.unknownError);
+      rethrow;
+    } on RequestNotSentException {
+      // Nothing was sent: show a connectivity error and close the sheet.
+      if (mounted) showBrandToast(context, i18n.sendNoConnectionError);
+      onConnectionFailed();
+      return;
     } on FormatException catch (error) {
       var errorMsg = error.toString().replaceFirst('FormatException: ', '');
       if (error.toString().contains('HTTP error code 500')) {

@@ -890,6 +890,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendFailedToGetFeesError => 'Não foi possível carregar taxas.';
 
   @override
+  String get sendNoConnectionError =>
+      'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
+
+  @override
   String get torSettingsTitle => 'Configurações do Tor';
 
   @override

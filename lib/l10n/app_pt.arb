@@ -317,6 +317,7 @@
   "sendIrreversibleNote": "Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.",
   "sendSwitchUnit": "Alternar unidade do valor",
   "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
+  "sendNoConnectionError": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
   "torSettingsTitle": "Configurações do Tor",
   "torSettingsModeBuiltIn": "Tor Integrado",
   "torSettingsModeExternal": "Tor Externo",

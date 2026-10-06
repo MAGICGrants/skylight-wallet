@@ -18,14 +18,6 @@ class MainActivity : FlutterFragmentActivity() {
     // time; see build.gradle.kts.
     private val storeReviewChannel = "org.magicgrants.wallet/store_review"
 
-    // MainActivity is exported, so any app (or adb) can start it with an intent
-    // that names a route, via the "route" extra or a data URI, and reach screens
-    // past App Lock. The app takes no links, so ignore both: it always starts at
-    // its own initial route, and a new intent never pushes one.
-    override fun getInitialRoute(): String? = null
-
-    override fun shouldHandleDeeplinking(): Boolean = false
-
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, secureClipboardChannel)

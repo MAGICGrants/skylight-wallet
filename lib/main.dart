@@ -176,8 +176,10 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/unlock': (context) => UnlockScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
-    '/lws_keys': (context) => LwsKeysScreen(),
-    '/secret_keys': (context) => SecretKeysScreen(),
+    '/lws_keys': (context) =>
+        ReauthGate(reason: AppLocalizations.of(context)!.settingsAppLockUnlockReason, child: LwsKeysScreen()),
+    '/secret_keys': (context) =>
+        ReauthGate(reason: AppLocalizations.of(context)!.revealSeedAuthReason, child: SecretKeysScreen()),
     '/send': (context) => SendScreen(),
     '/scan_qr': (context) => ScanQrScreen(),
     '/receive': (context) => ReceiveScreen(),
@@ -346,6 +348,11 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                   );
                 },
                 initialRoute: initialRoute,
+                // Always boot through the resolved initial route; a cold-start deep
+                // link (the launch intent's `route` extra) arrives here and is
+                // dropped — the app exposes no deep-link destination, and letting one
+                // become the initial route would race boot/unlock and skip the lock.
+                onGenerateInitialRoutes: (_) => [_onGenerateRoute(RouteSettings(name: initialRoute))!],
                 locale: Locale.fromSubtags(languageCode: languageProvider.language),
                 onGenerateRoute: _onGenerateRoute,
               );

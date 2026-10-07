@@ -46,6 +46,7 @@ import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:wallet_domain/wallet_domain.dart' show WalletManager, parsePaymentUri;
 import 'package:wallet_infra/wallet_infra.dart' show HostPlatform;
 
 void main() async {
@@ -152,7 +153,13 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final _CurrentRouteObserver _routeObserver = _CurrentRouteObserver();
   bool _relockPending = false;
+  bool _walletExists = false;
   Brightness? _lastBrightness;
+
+  // A payment deep link (monero:) awaiting replay. Held until the app is past the
+  // lock, then opened on the send form — see _onRouteChanged.
+  String? _pendingPaymentUri;
+  static const _paymentUriSchemes = {'monero'};
 
   static void _markSubtreeDirty(Element element) {
     element.markNeedsBuild();
@@ -203,13 +210,75 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _routeObserver.current.addListener(_onRouteChanged);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _routeObserver.current.removeListener(_onRouteChanged);
     _announceWallet?.removeListener(_announceNewTxsOnGrowth);
     super.dispose();
+  }
+
+  // A deep link that arrives while the app is running (warm start). Payment links
+  // open the send form; anything else is left to the default handling.
+  @override
+  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+    if (_handleDeepLink(routeInformation.uri.toString())) return true;
+    return super.didPushRouteInformation(routeInformation);
+  }
+
+  bool _isPaymentUri(String raw) {
+    final scheme = Uri.tryParse(raw.trim())?.scheme.toLowerCase();
+    return scheme != null && _paymentUriSchemes.contains(scheme);
+  }
+
+  // Open a payment link now if the app is past the lock, else hold it for replay.
+  bool _handleDeepLink(String raw) {
+    if (!_isPaymentUri(raw)) return false;
+    final current = _routeObserver.currentName;
+    if (!_walletExists || current == null || current == '/unlock') {
+      _pendingPaymentUri = raw;
+    } else {
+      _openPaymentUri(raw);
+    }
+    return true;
+  }
+
+  // Replay a held payment link the first time the app reaches home — after boot
+  // (no lock) or after unlock. The send form still reviews and authenticates the
+  // spend; the link only prefills it.
+  void _onRouteChanged() {
+    final raw = _pendingPaymentUri;
+    if (raw == null || _routeObserver.currentName != '/wallet_home') return;
+    _pendingPaymentUri = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openPaymentUri(raw));
+  }
+
+  void _openPaymentUri(String raw) {
+    if (!mounted) return;
+    final manager = Provider.of<WalletManager>(context, listen: false);
+    final request = parsePaymentUri(raw, manager.allWallets);
+    if (request == null) return;
+    final wallet = manager.getWallet(request.coinSymbol);
+    // A coin with no connection set up can't send; warn instead of opening a form
+    // that can't complete. The toast + l10n need a context below the MaterialApp,
+    // so they go through the navigator's overlay rather than this (root) context.
+    if (wallet == null || wallet.connectionAddress.isEmpty) {
+      final overlay = _navigatorKey.currentState?.overlay;
+      if (overlay == null) return;
+      final name = wallet?.blockchainName ?? request.coinSymbol;
+      showBrandToastOnOverlay(
+        overlay,
+        AppLocalizations.of(overlay.context)!.deepLinkCoinNotConfigured(name),
+      );
+      return;
+    }
+    _navigatorKey.currentState?.pushNamed(
+      '/send',
+      arguments: SendScreenArgs(destinationAddress: request.address, amount: request.amount),
+    );
   }
 
   @override
@@ -294,6 +363,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
               if (!_startedServices) {
                 _startedServices = true;
+                _walletExists = walletExists;
                 TorSettingsService.sharedInstance.loadSettings();
                 TorService.sharedInstance.start();
 
@@ -349,10 +419,13 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 },
                 initialRoute: initialRoute,
                 // Always boot through the resolved initial route; a cold-start deep
-                // link (the launch intent's `route` extra) arrives here and is
-                // dropped — the app exposes no deep-link destination, and letting one
-                // become the initial route would race boot/unlock and skip the lock.
-                onGenerateInitialRoutes: (_) => [_onGenerateRoute(RouteSettings(name: initialRoute))!],
+                // link arrives here, so capture a payment link for replay past the
+                // lock and never let it become the initial route (which would race
+                // boot/unlock and skip the lock). The `route` extra is ignored.
+                onGenerateInitialRoutes: (deepLink) {
+                  if (_isPaymentUri(deepLink)) _pendingPaymentUri = deepLink;
+                  return [_onGenerateRoute(RouteSettings(name: initialRoute))!];
+                },
                 locale: Locale.fromSubtags(languageCode: languageProvider.language),
                 onGenerateRoute: _onGenerateRoute,
               );
@@ -396,17 +469,19 @@ class _NoTransitionPageRoute<T> extends MaterialPageRoute<T> {
 /// Tracks the name of the route currently on top, so the re-lock does not stack
 /// a second `/unlock` on one that is already showing.
 class _CurrentRouteObserver extends NavigatorObserver {
-  String? currentName;
+  final ValueNotifier<String?> current = ValueNotifier<String?>(null);
+
+  String? get currentName => current.value;
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
-      currentName = route.settings.name;
+      current.value = route.settings.name;
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
-      currentName = previousRoute?.settings.name;
+      current.value = previousRoute?.settings.name;
 
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
-      currentName = newRoute?.settings.name;
+      current.value = newRoute?.settings.name;
 }

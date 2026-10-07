@@ -1,5 +1,14 @@
 {
   "@@locale": "en",
+  "scanQrUnexpectedCode": "That QR isn't a valid address or payment code.",
+  "deepLinkCoinNotConfigured": "Please configure your {chain} connection first.",
+  "@deepLinkCoinNotConfigured": {
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
   "continueText": "Continue",
   "cancel": "Cancel",
   "done": "Done",

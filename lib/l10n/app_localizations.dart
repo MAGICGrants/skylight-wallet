@@ -93,6 +93,18 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('pt')];
 
+  /// No description provided for @scanQrUnexpectedCode.
+  ///
+  /// In en, this message translates to:
+  /// **'That QR isn\'t a valid address or payment code.'**
+  String get scanQrUnexpectedCode;
+
+  /// No description provided for @deepLinkCoinNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Please configure your {chain} connection first.'**
+  String deepLinkCoinNotConfigured(String chain);
+
   /// No description provided for @continueText.
   ///
   /// In en, this message translates to:

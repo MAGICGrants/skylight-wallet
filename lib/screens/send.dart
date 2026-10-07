@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart'
-    show baseUnitsToDecimalString, decimalToBaseUnits, BroadcastFailure, BroadcastOutcome;
+    show baseUnitsToDecimalString, decimalToBaseUnits, parsePaymentUri, BroadcastFailure, BroadcastOutcome;
 import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
@@ -15,6 +15,7 @@ import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/wallet_types.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
+import 'package:skylight_wallet/screens/scan_qr.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
@@ -143,38 +144,31 @@ class _SendScreenState extends State<SendScreen> {
 
   Future<void> _scanQrCode() async {
     final wallet = appWalletOf(context);
+    final cw = xmrWallet(context);
     final i18n = AppLocalizations.of(context)!;
 
-    final result = await Navigator.pushNamed(context, '/scan_qr');
+    // The scanner only returns a code it claims — a standard monero: payment URI
+    // or a bare address — and keeps scanning on anything else, so an unexpected QR
+    // never pops back to this form.
+    bool accept(String text) =>
+        (cw != null && parsePaymentUri(text, [cw]) != null) || wallet.isAddressValid(text);
+
+    final result = await Navigator.pushNamed(
+      context,
+      '/scan_qr',
+      arguments: ScanQrArgs(accept: accept, invalidMessage: i18n.scanQrUnexpectedCode),
+    );
 
     if (result == null || result is! String) return;
 
-    String address = '';
-    String? amount;
-    final uri = Uri.tryParse(result);
+    // Accepted, so it parses as a monero: payment URI or is a bare address.
+    final request = cw == null ? null : parsePaymentUri(result, [cw]);
+    final address = request?.address ?? result;
+    final amount = request?.amount;
 
-    if (uri != null && uri.scheme == 'monero') {
-      if (!wallet.isAddressValid(uri.path)) {
-        if (mounted) {
-          showBrandToast(context, i18n.sendInvalidAddressError);
-        }
-        return;
-      }
-
-      address = uri.path;
-
-      amount = uri.queryParameters['tx_amount'];
-    } else if (wallet.isAddressValid(result)) {
-      address = result;
-    } else {
-      if (mounted) {
-        showBrandToast(context, i18n.sendInvalidAddressError);
-      }
-      return;
-    }
-
+    if (!mounted) return;
     _destinationAddressController.text = address;
-    if (amount != null) {
+    if (amount != null && amount.isNotEmpty) {
       // A payment request is denominated in XMR, so entry switches to XMR.
       _amount.setCoinText(_asExactAmount(amount));
     }

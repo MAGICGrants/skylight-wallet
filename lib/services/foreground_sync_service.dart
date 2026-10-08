@@ -10,6 +10,7 @@ export 'package:wallet_background/wallet_background.dart'
         startForegroundSync,
         stopForegroundSync,
         startForegroundSyncIfEnabled,
+        restartForegroundSyncIfRunning,
         isWalletFullySynced,
         stopSyncAndDeleteWallets;
 

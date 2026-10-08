@@ -82,9 +82,21 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- YubiKey 5Ci over Lightning (YubiKit's External Accessory protocol). -->
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.yubico.ylp</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera to scan QR codes for connection and wallet addresses.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID to unlock your wallet without typing your password.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>Skylight uses NFC to talk to your security key.</string>
+	<!-- Smart card applications the NFC reader may select: FIDO2/U2F only. -->
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A0000006472F0001</string>
+	</array>
 </dict>
 </plist>

@@ -18,6 +18,9 @@ class MainActivity : FlutterFragmentActivity() {
     // time; see build.gradle.kts.
     private val storeReviewChannel = "org.magicgrants.wallet/store_review"
 
+    // FIDO2 security keys over USB and NFC (FHSE wallet-file protection).
+    private var securityKeyChannel: SecurityKeyChannel? = null
+
     // MainActivity is exported, so any app (or adb) can start it with an intent
     // that names a route, via the "route" extra or a data URI, and reach screens
     // past App Lock. The app takes no links, so ignore both: it always starts at
@@ -52,6 +55,14 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+        securityKeyChannel?.dispose()
+        securityKeyChannel = SecurityKeyChannel(this, flutterEngine.dartExecutor.binaryMessenger)
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        securityKeyChannel?.dispose()
+        securityKeyChannel = null
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     // Copies [text] flagged as sensitive so keyboards/clipboard UIs don't show a

@@ -28,8 +28,18 @@ import 'package:wallet_domain/wallet_domain.dart'
         RestorePoint,
         TxDetails,
         baseUnitsToDecimalString;
+import 'package:wallet_fhse/wallet_fhse.dart'
+    show
+        FhseSetup,
+        FhseVault,
+        FhseWalletGuard,
+        KeyVerification,
+        SecurityKeyAuthenticator,
+        SecurityKeyRecord;
 import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
 import 'package:wallet_openalias/wallet_openalias.dart' show resolveOpenAlias;
+
+import 'package:skylight_wallet/services/security_key_service.dart';
 
 const _moneroDecimals = 12;
 
@@ -46,6 +56,12 @@ void installWalletCore() {
 
   WalletAppConfig.install(WalletAppConfig.skylight);
   CryptoWallet.aliasResolver = resolveOpenAlias;
+
+  // On mobile the wallet password is FHSE's root, derived from the seed, and
+  // security keys can later take it out of the keystore (Settings > Advanced
+  // security). Installed in every isolate, so background runs know when the
+  // password is behind keys and check in with the view key instead.
+  if (_isMobile) WalletManager.passwordGuard = const FhseWalletGuard();
 
   wcore.NotificationService.windowsAppName = 'Skylight Wallet';
   wcore.NotificationService.windowsAppUserModelId = 'org.magicgrants.skylight';
@@ -258,3 +274,107 @@ Future<void> deleteWallet(BuildContext context) async {
 void applyConnectionChange(BuildContext context) {
   unawaited(Provider.of<WalletManager>(context, listen: false).applyConnectionChange('XMR'));
 }
+
+// ----- Security keys (FHSE) -----
+
+/// What Settings > Advanced security shows.
+class SecurityKeysState {
+  const SecurityKeysState({required this.available, required this.engaged, required this.keys});
+
+  /// The wallet was created on a build whose password is FHSE's root, on a
+  /// platform with a way to reach a key.
+  final bool available;
+
+  /// Keys are set up: the keystore no longer holds the wallet password.
+  final bool engaged;
+  final List<SecurityKeyRecord> keys;
+}
+
+Future<SecurityKeysState> securityKeysState() async {
+  final available = SecurityKeyService.isSupportedPlatform && await FhseVault.isAvailable();
+  final engaged = await FhseVault.isEngaged();
+  return SecurityKeysState(
+    available: available,
+    engaged: engaged,
+    keys: engaged ? await FhseVault.keys() : const [],
+  );
+}
+
+/// True when the wallet cannot open until a security key releases its
+/// password: keys are on and the password is not in memory.
+Future<bool> walletNeedsSecurityKey(BuildContext context) => securityKeyCheck(context)();
+
+/// [walletNeedsSecurityKey], bound now and asked later: for callers that only
+/// know whether to ask after an async gap.
+Future<bool> Function() securityKeyCheck(BuildContext context) {
+  final manager = Provider.of<WalletManager>(context, listen: false);
+  return () async => !manager.hasPassword && await manager.isPasswordGuarded();
+}
+
+/// True when keys are on and the wallet is open: what "Fully lock after" can
+/// close.
+Future<bool> walletIsUnlockedBehindSecurityKey(BuildContext context) async {
+  final manager = Provider.of<WalletManager>(context, listen: false);
+  return manager.hasPassword && await manager.isPasswordGuarded();
+}
+
+/// Opens the wallet with a security key, verified by its PIN or fingerprint,
+/// then syncs.
+Future<void> unlockWithSecurityKey(
+  BuildContext context,
+  KeyVerification verification,
+  SecurityKeyAuthenticator key,
+) async {
+  final manager = Provider.of<WalletManager>(context, listen: false);
+  final password = await FhseVault.unlock(authenticator: key, verification: verification);
+  await manager.unlockWithGuardedPassword(password);
+  manager.openWalletFilesAndSync();
+}
+
+/// Opens the wallet with its recovery phrase when every key is lost. Throws
+/// FhseVaultException when the phrase is not this wallet's, or is a 25-word
+/// one whose FHSE seed was random.
+Future<void> unlockWithRecoveryPhrase(BuildContext context, String mnemonic) async {
+  final manager = Provider.of<WalletManager>(context, listen: false);
+  final seed = SeedSource.detect(mnemonic);
+  if (seed == null) throw Exception('Invalid mnemonic.');
+  final password = await FhseVault.recoverWithSeed(seed);
+  await manager.unlockWithGuardedPassword(password);
+  manager.openWalletFilesAndSync();
+}
+
+/// Closes the wallet and forgets its password and FHSE's unlocked copy: what
+/// "Fully lock after" does once the time is up.
+Future<void> fullyLockWallet(BuildContext context) async {
+  await Provider.of<WalletManager>(context, listen: false).fullyLock();
+  FhseVault.endSession();
+}
+
+/// Starts setting keys up from nothing (first time, or again to remove one).
+Future<FhseSetup> beginSecurityKeySetup(BuildContext context) {
+  final password = Provider.of<WalletManager>(context, listen: false).passwordForGuard;
+  if (password == null) throw StateError('The wallet must be unlocked to set up security keys');
+  return FhseVault.beginSetup(walletPassword: password);
+}
+
+/// Writes the keys set up in [setup] and takes the password out of the keystore.
+Future<void> finishSecurityKeySetup(BuildContext context, FhseSetup setup) =>
+    FhseWalletGuard.engage(setup, Provider.of<WalletManager>(context, listen: false));
+
+/// Adds one key to keys that are already on, without tapping an existing one.
+Future<SecurityKeyRecord> addSecurityKey({
+  required SecurityKeyAuthenticator key,
+  required KeyVerification verification,
+  required String name,
+}) => FhseVault.addKey(authenticator: key, verification: verification, name: name);
+
+/// The keys registered for this wallet, with their names and serial numbers.
+Future<List<SecurityKeyRecord>> registeredSecurityKeys() => FhseVault.keys();
+
+/// Renames a key that is already on.
+Future<void> renameSecurityKey(SecurityKeyRecord record, String name) =>
+    FhseVault.renameKey(record.id, name);
+
+/// Turns security keys off: the password goes back into the keystore.
+Future<void> turnOffSecurityKeys(BuildContext context) =>
+    FhseWalletGuard.release(Provider.of<WalletManager>(context, listen: false));

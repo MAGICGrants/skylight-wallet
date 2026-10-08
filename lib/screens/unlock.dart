@@ -80,7 +80,12 @@ class _UnlockScreenState extends State<UnlockScreen> {
     // Auto-prompted with a password field right there: stay silent on a decline
     // (the user chose to type instead), report only a real error.
     if (result == BiometricAuthResult.authenticated) {
-      if (mounted) Navigator.pushReplacementNamed(context, '/wallet_home');
+      if (!mounted) return;
+      // With security keys on and the wallet closed, a key comes next.
+      final needsKey = await walletNeedsSecurityKey(context);
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, needsKey ? '/security_key_unlock' : '/wallet_home');
+      }
     } else if (result == BiometricAuthResult.error) {
       if (mounted) {
         showBrandToast(context, i18n.unlockUnableToAuthError);

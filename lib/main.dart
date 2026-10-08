@@ -36,6 +36,9 @@ import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
 import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
+import 'package:skylight_wallet/screens/advanced_security.dart';
+import 'package:skylight_wallet/screens/security_key_setup.dart';
+import 'package:skylight_wallet/screens/security_key_unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/theme/palette.dart';
@@ -154,6 +157,15 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   bool _relockPending = false;
   Brightness? _lastBrightness;
 
+  // "Fully lock after", with security keys on: when the app went to the
+  // background, the timer that closes the wallet if it stays there, and
+  // whether that already happened. The timer only fires while the process
+  // gets CPU (often on Android, rarely on a suspended iOS app), so the elapsed
+  // time is also checked on resume, before anything is shown.
+  DateTime? _backgroundedAt;
+  Timer? _fullLockTimer;
+  bool _fullyLocked = false;
+
   static void _markSubtreeDirty(Element element) {
     element.markNeedsBuild();
     element.visitChildren(_markSubtreeDirty);
@@ -174,6 +186,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/lws_details': (context) => LwsDetailsScreen(),
     '/restore_wallet': (context) => RestoreWalletScreen(),
     '/unlock': (context) => UnlockScreen(),
+    '/security_key_unlock': (context) => const SecurityKeyUnlockScreen(),
+    '/advanced_security': (context) => const AdvancedSecurityScreen(),
+    '/security_key_setup': (context) => const SecurityKeySetupScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
     '/lws_keys': (context) => LwsKeysScreen(),
@@ -205,6 +220,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _fullLockTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _announceWallet?.removeListener(_announceNewTxsOnGrowth);
     super.dispose();
@@ -219,6 +235,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
       // this, resuming walked straight back into an unlocked wallet with the
       // password still in memory, and the seed was reachable from there.
       unawaited(_maybeArmRelock());
+      unawaited(_armFullLock());
 
       // Leaving the app marks everything on screen as seen so a background
       // isolate won't re-notify a tx the user just watched arrive. Desktop has
@@ -226,7 +243,33 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
       // announce. Marks only synced history (hash-based), so an unsynced
       // receipt is still announced later.
       unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
-    } else if (state == AppLifecycleState.resumed && _relockPending) {
+    } else if (state == AppLifecycleState.resumed) {
+      unawaited(_onResumed());
+    }
+  }
+
+  Future<void> _onResumed() async {
+    _fullLockTimer?.cancel();
+    _fullLockTimer = null;
+    final backgroundedAt = _backgroundedAt;
+    _backgroundedAt = null;
+
+    // Past "Fully lock after": the wallet is closed and its password gone, so
+    // the stack is replaced by the lock screens rather than covered by them.
+    if (_fullyLocked || (backgroundedAt != null && await _fullLockDue(backgroundedAt))) {
+      await _fullyLock();
+      _fullyLocked = false;
+      _relockPending = false;
+      final appLock =
+          await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        appLock ? '/unlock' : '/security_key_unlock',
+        (route) => false,
+      );
+      return;
+    }
+
+    if (_relockPending) {
       _relockPending = false;
       // Pushed ON TOP of the current stack rather than replacing it, so
       // unlocking pops straight back to the screen the user left. Skipped when
@@ -235,6 +278,30 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
         _navigatorKey.currentState?.pushNamed('/unlock');
       }
     }
+  }
+
+  Future<int> _fullLockMinutes() async =>
+      await SharedPreferencesService.get<int>(SharedPreferencesKeys.fullLockAfterMinutes) ??
+      fullLockDefaultMinutes;
+
+  Future<bool> _fullLockDue(DateTime backgroundedAt) async =>
+      DateTime.now().difference(backgroundedAt) >= Duration(minutes: await _fullLockMinutes());
+
+  /// On background, with security keys on and the wallet open: note the time
+  /// and set the timer that closes the wallet if the app stays away.
+  Future<void> _armFullLock() async {
+    if (!await walletIsUnlockedBehindSecurityKey(context)) return;
+    _backgroundedAt = DateTime.now();
+    final minutes = await _fullLockMinutes();
+    _fullLockTimer?.cancel();
+    _fullLockTimer = Timer(Duration(minutes: minutes), () => unawaited(_fullyLock()));
+  }
+
+  Future<void> _fullyLock() async {
+    if (!mounted || !await walletIsUnlockedBehindSecurityKey(context)) return;
+    if (!mounted) return;
+    await fullyLockWallet(context);
+    _fullyLocked = true;
   }
 
   /// On background: with App Lock on and a wallet present, drop the in-memory
@@ -260,7 +327,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   Future<List<Object>> _runStartup() {
     // Wallet existence drives the initial route; done quickly without a full load.
     final walletExists = startupWalletManager(context);
-    return Future.wait([SharedPreferences.getInstance(), walletExists]);
+    final checkKey = securityKeyCheck(context);
+    final needsKey = walletExists.then((exists) => exists && isMobile ? checkKey() : false);
+    return Future.wait([SharedPreferences.getInstance(), walletExists, needsKey]);
   }
 
   @override
@@ -277,16 +346,20 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
             if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
               final sharedPreferences = snapshot.data![0] as SharedPreferences;
               final walletExists = snapshot.data![1] as bool;
+              final needsSecurityKey = snapshot.data![2] as bool;
 
               final theme = sharedPreferences.getString(SharedPreferencesKeys.theme) ?? 'system';
 
               final appLockEnabled =
                   sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
 
-              // A desktop OS asks for the typed password at every launch.
+              // A desktop OS asks for the typed password at every launch. With
+              // security keys on, a key comes next (after App Lock when on).
               final initialRoute = walletExists
                   ? appLockEnabled || isDesktopOS
                         ? '/unlock'
+                        : needsSecurityKey
+                        ? '/security_key_unlock'
                         : '/wallet_home'
                   : '/welcome';
 

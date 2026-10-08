@@ -8,6 +8,7 @@ import workmanager_apple
   private var secureClipboardChannel: FlutterMethodChannel?
   private var storeReviewChannel: FlutterMethodChannel?
   private var hostPlatformChannel: FlutterMethodChannel?
+  private var securityKeyChannel: SecurityKeyChannel?
   private var sceneConnectObserver: NSObjectProtocol?
 
   override func application(
@@ -125,6 +126,12 @@ import workmanager_apple
         }
       }
       hostPlatformChannel = channel
+    }
+
+    let securityKeyRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecurityKey")
+    if let messenger = securityKeyRegistrar?.messenger() {
+      // FIDO2 security keys (YubiKit) for FHSE wallet-file encryption.
+      securityKeyChannel = SecurityKeyChannel(messenger: messenger)
     }
   }
 

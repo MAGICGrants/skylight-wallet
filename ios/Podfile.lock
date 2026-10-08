@@ -1,13 +1,20 @@
 PODS:
+  - camera_avfoundation (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
+  - flutter_foreground_task (0.0.1):
+    - Flutter
   - flutter_local_notifications (0.0.1):
     - Flutter
   - flutter_secure_storage (6.0.0):
     - Flutter
-  - local_auth_darwin (0.0.1):
+  - flutter_zxing (0.0.1):
     - Flutter
-    - FlutterMacOS
-  - mobile_scanner (7.0.0):
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - integration_test (0.0.1):
+    - Flutter
+  - local_auth_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
   - package_info_plus (0.4.5):
@@ -19,6 +26,10 @@ PODS:
     - Flutter
   - screen_brightness_ios (0.1.0):
     - Flutter
+  - screen_protector (1.5.1):
+    - Flutter
+    - ScreenProtectorKit (= 1.5.1)
+  - ScreenProtectorKit (1.5.1)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -26,35 +37,62 @@ PODS:
     - FlutterMacOS
   - tor_ffi_plugin (0.0.1):
     - Flutter
+  - wallet_fhse (0.1.0):
+    - Flutter
+  - wallet_openalias (0.0.1):
+    - Flutter
+  - webcrypto (0.1.1):
+    - Flutter
+    - FlutterMacOS
   - workmanager_apple (0.0.1):
     - Flutter
 
 DEPENDENCIES:
+  - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - Flutter (from `Flutter`)
+  - flutter_foreground_task (from `.symlinks/plugins/flutter_foreground_task/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
+  - flutter_zxing (from `.symlinks/plugins/flutter_zxing/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
-  - mobile_scanner (from `.symlinks/plugins/mobile_scanner/darwin`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - screen_brightness_ios (from `.symlinks/plugins/screen_brightness_ios/ios`)
+  - screen_protector (from `.symlinks/plugins/screen_protector/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - tor_ffi_plugin (from `.symlinks/plugins/tor_ffi_plugin/ios`)
+  - wallet_fhse (from `.symlinks/plugins/wallet_fhse/ios`)
+  - wallet_openalias (from `.symlinks/plugins/wallet_openalias/ios`)
+  - webcrypto (from `.symlinks/plugins/webcrypto/darwin`)
   - workmanager_apple (from `.symlinks/plugins/workmanager_apple/ios`)
 
+SPEC REPOS:
+  trunk:
+    - ScreenProtectorKit
+
 EXTERNAL SOURCES:
+  camera_avfoundation:
+    :path: ".symlinks/plugins/camera_avfoundation/ios"
   Flutter:
     :path: Flutter
+  flutter_foreground_task:
+    :path: ".symlinks/plugins/flutter_foreground_task/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
+  flutter_zxing:
+    :path: ".symlinks/plugins/flutter_zxing/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
   local_auth_darwin:
     :path: ".symlinks/plugins/local_auth_darwin/darwin"
-  mobile_scanner:
-    :path: ".symlinks/plugins/mobile_scanner/darwin"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
@@ -63,30 +101,47 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   screen_brightness_ios:
     :path: ".symlinks/plugins/screen_brightness_ios/ios"
+  screen_protector:
+    :path: ".symlinks/plugins/screen_protector/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   tor_ffi_plugin:
     :path: ".symlinks/plugins/tor_ffi_plugin/ios"
+  wallet_fhse:
+    :path: ".symlinks/plugins/wallet_fhse/ios"
+  wallet_openalias:
+    :path: ".symlinks/plugins/wallet_openalias/ios"
+  webcrypto:
+    :path: ".symlinks/plugins/webcrypto/darwin"
   workmanager_apple:
     :path: ".symlinks/plugins/workmanager_apple/ios"
 
 SPEC CHECKSUMS:
+  camera_avfoundation: 769d252259fa21e39ada7399c9dc9c0921af8165
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
-  flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
-  local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
-  mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
-  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
-  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
-  screen_brightness_ios: 9953fd7da5bd480f1a93990daeec2eb42d4f3b52
-  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  tor_ffi_plugin: 2a4dd758515e5124dce8323f950f6bb135e611b5
-  workmanager_apple: 904529ae31e97fc5be632cf628507652294a0778
+  flutter_foreground_task: 21ef182ab0a29a3005cc72cd70e5f45cb7f7f817
+  flutter_local_notifications: ff50f8405aaa0ccdc7dcfb9022ca192e8ad9688f
+  flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
+  flutter_zxing: 1383f56e9cb3d5fba8d6bb653e4fbed2149f7c75
+  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
+  integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
+  local_auth_darwin: 63c73d6d28cc3e239be2b6aa460ea6e317cd5100
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
+  path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  screen_brightness_ios: 6a6f7794b67f07c4f1e24f6374b2d8ad367ffb39
+  screen_protector: 585e4a9744efa35ec4ba9a6877b22e46b8d48987
+  ScreenProtectorKit: 6ceb3e0808341a9bc15d175bff40dfdd4b32da71
+  share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+  tor_ffi_plugin: d80e291b649379c8176e1be739e49be007d4ef93
+  wallet_fhse: 097ff3864e5d32222f9049f248224fc3edbdbf51
+  wallet_openalias: 2e0f3f89a53cd7c1094400eab675463390059dc6
+  webcrypto: aa788ff6b0a956e5d6e613b35b99c13e220ca2d0
+  workmanager_apple: 7bac258335c310689a641e2d66e88d4845d372e9
 
-PODFILE CHECKSUM: 3d68f7cb47d5f2fb7765407f663653c9b51100f3
+PODFILE CHECKSUM: 1857a7cdb7dfafe45f2b0e9a9af44644190f7506
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

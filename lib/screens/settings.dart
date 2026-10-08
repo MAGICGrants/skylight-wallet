@@ -19,6 +19,7 @@ import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
+import 'package:skylight_wallet/services/security_key_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/widgets/language_sheet.dart';
@@ -54,6 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
   var _appLockEnabled = false;
   var _verboseLoggingEnabled = false;
+  SecurityKeysState? _securityKeys;
   FiatApiMode _fiatMode = FiatApiMode.torOnly;
   // Toggles animate only after the stored values have loaded, so they don't
   // slide from off→on when the screen first appears.
@@ -89,6 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         false;
 
     final fiatMode = await FiatRateModel.loadFiatApiMode();
+    await _loadSecurityKeys();
 
     if (!mounted) return;
     setState(() {
@@ -145,6 +148,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     await SharedPreferencesService.set<bool>(SharedPreferencesKeys.appLockEnabled, value);
+  }
+
+  Future<void> _loadSecurityKeys() async {
+    if (!SecurityKeyService.isSupportedPlatform) return;
+    final state = await securityKeysState();
+    if (mounted) setState(() => _securityKeys = state);
+  }
+
+  Future<void> _openAdvancedSecurity() async {
+    await Navigator.pushNamed(context, '/advanced_security');
+    await _loadSecurityKeys();
+  }
+
+  String _securityKeysValue(AppLocalizations i18n) {
+    final state = _securityKeys;
+    if (state == null || !state.engaged) return i18n.advancedSecurityOff;
+    return i18n.advancedSecurityKeyCount(state.keys.length);
   }
 
   void _setVerboseLoggingEnabled(bool value) async {
@@ -517,6 +537,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _appLockEnabled,
               onChanged: _setAppLockEnabled,
               animate: _animateToggles,
+            ),
+          if (SecurityKeyService.isSupportedPlatform)
+            SettingsNavTile(
+              title: i18n.advancedSecurityLabel,
+              value: _securityKeysValue(i18n),
+              onTap: _openAdvancedSecurity,
             ),
           SettingsLinkTile(
             title: i18n.settingsConnectionSettingsLabel,

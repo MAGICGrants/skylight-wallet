@@ -13,6 +13,9 @@
 		6FF8B85D2F19277F00206EFD /* MoneroWallet.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */; };
 		6FF8B85E2F19277F00206EFD /* MoneroWallet.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		FF73651470A3258C9BE6BA6E /* SecurityKeyOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */; };
+		513EAD7ECFC95D4EACD7524B /* SecurityKeyChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */; };
+		F4266FC460FC211C6FD972E7 /* YubiKit in Frameworks */ = {isa = PBXBuildFile; productRef = 786BC24A685CA9C36E047769 /* YubiKit */; };
 		79D78220F5B529E1F8AAEC80 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5801F2E4C06C47481468529E /* Pods_Runner.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -58,6 +61,9 @@
 		6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MoneroWallet.xcframework; path = Frameworks/MoneroWallet.xcframework; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityKeyOperations.swift; sourceTree = "<group>"; };
+		CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityKeyChannel.swift; sourceTree = "<group>"; };
+		C20E80BCEA94B1C535960DE5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -86,6 +92,7 @@
 			files = (
 				6FF8B85D2F19277F00206EFD /* MoneroWallet.xcframework in Frameworks */,
 				79D78220F5B529E1F8AAEC80 /* Pods_Runner.framework in Frameworks */,
+				F4266FC460FC211C6FD972E7 /* YubiKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -160,7 +167,10 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */,
+				285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				C20E80BCEA94B1C535960DE5 /* Runner.entitlements */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -220,6 +230,9 @@
 			dependencies = (
 			);
 			name = Runner;
+			packageProductDependencies = (
+				786BC24A685CA9C36E047769 /* YubiKit */,
+			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
@@ -253,6 +266,9 @@
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
+			packageReferences = (
+				6F53B4424E23BB8F384171A1 /* XCRemoteSwiftPackageReference "yubikit-swift" */,
+			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -427,6 +443,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				513EAD7ECFC95D4EACD7524B /* SecurityKeyChannel.swift in Sources */,
+				FF73651470A3258C9BE6BA6E /* SecurityKeyOperations.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -504,7 +522,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
@@ -519,6 +537,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = Y62MZZFR2Y;
@@ -642,7 +661,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -693,7 +712,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
@@ -710,6 +729,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = Y62MZZFR2Y;
@@ -741,6 +761,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = Y62MZZFR2Y;
@@ -799,6 +820,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6F53B4424E23BB8F384171A1 /* XCRemoteSwiftPackageReference "yubikit-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Yubico/yubikit-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 1.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		786BC24A685CA9C36E047769 /* YubiKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6F53B4424E23BB8F384171A1 /* XCRemoteSwiftPackageReference "yubikit-swift" */;
+			productName = YubiKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;
 }

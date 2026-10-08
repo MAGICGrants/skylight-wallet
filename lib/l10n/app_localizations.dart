@@ -291,6 +291,12 @@ abstract class AppLocalizations {
   /// **'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.'**
   String get connectionRemoteIpNotAllowed;
 
+  /// No description provided for @connectionLocalOverTorNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'A local address can\'t be reached through Tor. Turn Tor off, or use the server\'s onion address.'**
+  String get connectionLocalOverTorNotAllowed;
+
   /// No description provided for @connectionProtocolHttps.
   ///
   /// In en, this message translates to:

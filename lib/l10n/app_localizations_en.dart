@@ -113,6 +113,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.';
 
   @override
+  String get connectionLocalOverTorNotAllowed =>
+      'A local address can\'t be reached through Tor. Turn Tor off, or use the server\'s onion address.';
+
+  @override
   String get connectionProtocolHttps => 'Removing protocol. Using HTTPS for domains.';
 
   @override

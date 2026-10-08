@@ -349,6 +349,14 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       return;
     }
 
+    if (_useTor && addressIsLocal(daemonAddress)) {
+      setState(() {
+        _hasTested = false;
+        _errorMessage = i18n.connectionLocalOverTorNotAllowed;
+      });
+      return;
+    }
+
     if (_useTor && TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
       showBrandToast(context, i18n.lwsSetupTorDisabledError);
       return;
@@ -410,6 +418,11 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     if (isRemoteIp(daemonAddress)) {
       setState(() => _errorMessage = i18n.connectionRemoteIpNotAllowed);
+      return;
+    }
+
+    if (_useTor && addressIsLocal(daemonAddress)) {
+      setState(() => _errorMessage = i18n.connectionLocalOverTorNotAllowed);
       return;
     }
 

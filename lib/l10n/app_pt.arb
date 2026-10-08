@@ -40,6 +40,7 @@
   "connectionTypeLws": "Servidor Light Wallet",
   "connectionTypeNode": "Nó Monero",
   "connectionRemoteIpNotAllowed": "Conexões com endereços IP remotos não são permitidas. Use um nome de domínio ou um endereço IP local.",
+  "connectionLocalOverTorNotAllowed": "Um endereço local não pode ser acessado via Tor. Desative o Tor ou use o endereço onion do servidor.",
   "connectionProtocolHttps": "Removendo protocolo. Usando HTTPS para domínios.",
   "connectionProtocolHttp": "Removendo protocolo. Usando HTTP para endereços locais.",
   "connectionTestStop": "Parar",

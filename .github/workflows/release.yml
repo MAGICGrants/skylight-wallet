@@ -129,6 +129,34 @@ jobs:
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
 
+      - name: Verify builder image provenance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          IMAGE=ghcr.io/magicgrants/skylight-wallet-builder
+          DIGEST=$(docker inspect --format='{{range .RepoDigests}}{{println .}}{{end}}' "$IMAGE:latest" | grep "^$IMAGE@" | head -n1 | cut -d@ -f2)
+          test -n "$DIGEST"
+          echo "Builder image: $IMAGE@$DIGEST"
+          # The signing build must only ever run inside an image the image
+          # workflow published from main, so a :latest moved by a dispatch from
+          # any other ref is rejected before a single secret is written.
+          gh attestation verify "oci://$IMAGE@$DIGEST" \
+            --repo MAGICGrants/skylight-wallet \
+            --cert-identity-regex '^https://github\.com/(?i:MAGICGrants)/skylight-wallet/\.github/workflows/build-builder-image\.yml@refs/heads/main$'
+          echo "BUILDER_IMAGE=$IMAGE@$DIGEST" >> "$GITHUB_ENV"
+
+      - name: Assert builder Flutter version matches pubspec
+        run: |
+          set -euo pipefail
+          EXPECTED='${{ needs.version.outputs.flutter_version }}'
+          ACTUAL=$(docker run --rm "$BUILDER_IMAGE" flutter --version --machine 2>/dev/null | jq -r '.frameworkVersion')
+          echo "builder Flutter: $ACTUAL / pubspec: $EXPECTED"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Builder Flutter $ACTUAL does not match pubspec $EXPECTED"
+            exit 1
+          fi
+
       - name: Set up Android signing
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/keystore.jks
@@ -149,7 +177,7 @@ jobs:
             -v "$PWD:/tmp/skylight" \
             -w /tmp/skylight \
             -e SOURCE_DATE_EPOCH \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            "$BUILDER_IMAGE" \
             bash -c "cp -a /opt/cargo /tmp/skylight-cargo && export CARGO_HOME=/tmp/skylight-cargo && export PUB_CACHE=/tmp/skylight/.pub-cache && flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release -PplayStore=true"
 
           mkdir -p dist
@@ -180,6 +208,34 @@ jobs:
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
 
+      - name: Verify builder image provenance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          IMAGE=ghcr.io/magicgrants/skylight-wallet-builder
+          DIGEST=$(docker inspect --format='{{range .RepoDigests}}{{println .}}{{end}}' "$IMAGE:latest" | grep "^$IMAGE@" | head -n1 | cut -d@ -f2)
+          test -n "$DIGEST"
+          echo "Builder image: $IMAGE@$DIGEST"
+          # The signing build must only ever run inside an image the image
+          # workflow published from main, so a :latest moved by a dispatch from
+          # any other ref is rejected before a single secret is written.
+          gh attestation verify "oci://$IMAGE@$DIGEST" \
+            --repo MAGICGrants/skylight-wallet \
+            --cert-identity-regex '^https://github\.com/(?i:MAGICGrants)/skylight-wallet/\.github/workflows/build-builder-image\.yml@refs/heads/main$'
+          echo "BUILDER_IMAGE=$IMAGE@$DIGEST" >> "$GITHUB_ENV"
+
+      - name: Assert builder Flutter version matches pubspec
+        run: |
+          set -euo pipefail
+          EXPECTED='${{ needs.version.outputs.flutter_version }}'
+          ACTUAL=$(docker run --rm "$BUILDER_IMAGE" flutter --version --machine 2>/dev/null | jq -r '.frameworkVersion')
+          echo "builder Flutter: $ACTUAL / pubspec: $EXPECTED"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Builder Flutter $ACTUAL does not match pubspec $EXPECTED"
+            exit 1
+          fi
+
       - name: Build Linux packages
         run: |
           # cargokit builds the Rust plugins with `rustup run stable`, and the
@@ -189,7 +245,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            "$BUILDER_IMAGE" \
             bash -c "flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist

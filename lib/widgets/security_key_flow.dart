@@ -768,7 +768,7 @@ Future<bool> showAddSecurityKeySheet(
           isDesktopModal ? 0 : 22,
           isDesktopModal ? 0 : 10,
           isDesktopModal ? 0 : 22,
-          16 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          16, // showBrandSheet owns the keyboard inset
         ),
         child: SingleChildScrollView(
           child: Column(

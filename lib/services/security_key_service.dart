@@ -281,9 +281,12 @@ class SecurityKeyService implements SecurityKeyAuthenticator {
         message: 'malformed key response',
       );
     }
+    // Copies: the engine hands channel replies over as unmodifiable views, and
+    // KeyAssertion.wipe() overwrites hmacSecret in place. (The reply buffer
+    // itself cannot be overwritten; it is freed with the message.)
     return KeyAssertion(
-      credentialId: credentialId,
-      hmacSecret: hmacSecret,
+      credentialId: Uint8List.fromList(credentialId),
+      hmacSecret: Uint8List.fromList(hmacSecret),
       serial: result['serial'] as int?,
     );
   }

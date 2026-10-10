@@ -62,7 +62,7 @@ class _AdvancedSecurityScreenState extends State<AdvancedSecurityScreen> {
     // to add to; the keys are set up again instead.
     if (!FhseVault.hasSession) return _setUp(again: true);
     final count = _state?.keys.length ?? 0;
-    final added = await showAddSecurityKeySheet(
+    await showAddSecurityKeySheet(
       context,
       number: count + 1,
       enroll: (verification, key, name) =>
@@ -70,7 +70,9 @@ class _AdvancedSecurityScreenState extends State<AdvancedSecurityScreen> {
       rename: renameSecurityKey,
       registeredKeys: registeredSecurityKeys,
     );
-    if (added) await _load();
+    // Reload even when the sheet reports nothing added: the key is added
+    // before the name step, so a sheet dismissed there still added it.
+    if (mounted) await _load();
   }
 
   Future<void> _removeKey() async {

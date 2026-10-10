@@ -231,6 +231,7 @@ class SecurityKeyOperations(
                 if (statusClosed || (state == lastState && transport == lastTransport)) return
                 lastState = state
                 lastTransport = transport
+                Log.i(TAG, "status: $state (${transport ?: "-"})")
                 onStatus(state, transport)
             }
         }
@@ -250,12 +251,50 @@ class SecurityKeyOperations(
          * CTAPHID keepalive (about every 100 ms), over NFC when the status changes.
          */
         private inner class KeepAliveState : CommandState() {
-            override fun onKeepAliveStatus(status: Byte) {
-                when (status) {
-                    CommandState.STATUS_PROCESSING -> report(STATE_PROCESSING)
-                    CommandState.STATUS_UPNEEDED -> reportUserNeeded()
-                }
+            override fun onKeepAliveStatus(status: Byte) = onKeepAlive(status, "yubikit")
+        }
+
+        private var keepAlives = 0 // worker thread only
+        private var lastKeepAlive: Byte = -1 // worker thread only
+
+        /**
+         * A keepalive status, from yubikit's CommandState or, over USB, read off
+         * the CTAPHID packet by [KeepAliveTap]: yubikit 3.1.0 and 3.2.1 pass the
+         * high byte of the packet's length (always 0) instead of the status.
+         */
+        internal fun onKeepAlive(status: Byte, source: String) {
+            // Demo-build diagnostics: the first keepalive of each kind, then every 40th.
+            // yubikit's (wrong) zeros are logged once, not interleaved with the real ones.
+            keepAlives++
+            if ((source != "yubikit" || keepAlives == 1) && (status != lastKeepAlive || keepAlives % 40 == 0)) {
+                Log.i(TAG, "keepalive status=$status from $source (#$keepAlives)")
+                lastKeepAlive = status
             }
+            when (status) {
+                CommandState.STATUS_PROCESSING -> report(STATE_PROCESSING)
+                CommandState.STATUS_UPNEEDED -> reportUserNeeded()
+            }
+        }
+    }
+
+    /**
+     * Passes the FIDO HID connection through and reports the status byte of
+     * each CTAPHID_KEEPALIVE initialization packet (CID 4 bytes, CMD, BCNTH,
+     * BCNTL, status) to [op]. Continuation packets carry a sequence number
+     * below 0x80 where the command byte would be, so they never match.
+     */
+    private class KeepAliveTap(private val inner: FidoConnection, private val op: Operation) : FidoConnection {
+        override fun send(packet: ByteArray) = inner.send(packet)
+
+        override fun receive(packet: ByteArray) {
+            inner.receive(packet)
+            if (packet.size > 7 && packet[4] == CTAPHID_KEEPALIVE) op.onKeepAlive(packet[7], "usb")
+        }
+
+        override fun close() = inner.close()
+
+        companion object {
+            private const val CTAPHID_KEEPALIVE = 0xBB.toByte()
         }
     }
 
@@ -363,7 +402,9 @@ class SecurityKeyOperations(
 
     private fun stopDiscovery(op: Operation) {
         if (discoveryOwner !== op) return // a newer operation owns discovery now
+        val started = SystemClock.elapsedRealtime()
         stopUsbDiscovery()
+        Log.i(TAG, "USB discovery stopped in ${SystemClock.elapsedRealtime() - started} ms")
         val nfcDevice = op.nfcDevice
         if (nfcDevice == null) {
             discoveryOwner = null
@@ -762,12 +803,15 @@ class SecurityKeyOperations(
      * keys that answer CTAP1_ERR_INVALID_COMMAND give false.
      */
     private fun requestTouch(op: Operation, ctap: Ctap2Session): Boolean {
+        Log.i(TAG, "touch: versions=${ctap.cachedInfo.versions} selection=${supportsSelection(ctap.cachedInfo)}")
         if (!supportsSelection(ctap.cachedInfo)) return requestTouchCtap20(op, ctap)
         op.throwIfCancelled()
         op.report(STATE_TOUCH_NEEDED)
         try {
             ctap.selection(op.commandState)
+            Log.i(TAG, "touch: selection returned")
         } catch (e: CtapException) {
+            Log.i(TAG, "touch: selection failed ${e.errorName}")
             if (e.ctapError != CtapException.ERR_INVALID_COMMAND) throw mapCtapException(e)
             Log.d(TAG, "authenticatorSelection not supported; no touch requested")
             op.report(STATE_PROCESSING)
@@ -810,7 +854,9 @@ class SecurityKeyOperations(
                 op.commandState,
             )
             // Success: a key that made a (non-discoverable) credential anyway, after a touch.
+            Log.i(TAG, "touch: ctap2.0 makeCredential returned")
         } catch (e: CtapException) {
+            Log.i(TAG, "touch: ctap2.0 makeCredential answered ${e.errorName}")
             when (e.ctapError) {
                 // Touched. Some CTAP 2.0 keys answer PIN_AUTH_INVALID; libfido2 counts it too.
                 CtapException.ERR_PIN_INVALID,
@@ -1009,10 +1055,11 @@ class SecurityKeyOperations(
             op.report(STATE_WAITING_FOR_KEY)
             while (true) {
                 val device = awaitDevice(op, deadline)
+                Log.i(TAG, "device offered: ${device.javaClass.simpleName}")
                 op.transport = transportOf(device)
                 op.report(STATE_KEY_CONNECTED)
                 val session = try {
-                    openSession(device)
+                    openSession(device, op)
                 } catch (e: Exception) {
                     op.throwIfCancelled()
                     if (device is NfcYubiKeyDevice &&
@@ -1027,6 +1074,11 @@ class SecurityKeyOperations(
                     throw e
                 }
                 if (device is NfcYubiKeyDevice) op.nfcDevice = device
+                Log.i(
+                    TAG,
+                    "session open: fw=${session.ctap.version} versions=${session.ctap.cachedInfo.versions} " +
+                        "serial=${if (session.serial != null) "read" else "none"}",
+                )
                 op.report(STATE_PROCESSING)
                 try {
                     op.throwIfCancelled()
@@ -1034,7 +1086,9 @@ class SecurityKeyOperations(
                     if (expectSerial != null && serial != null && serial.toLong() != expectSerial) {
                         throw SecurityKeyException(DIFFERENT_KEY, "This is not the expected security key")
                     }
-                    return block(session)
+                    val value = block(session)
+                    Log.i(TAG, "operation finished on the key")
+                    return value
                 } finally {
                     closeQuietly(session.ctap) // also closes the connection
                 }
@@ -1044,7 +1098,11 @@ class SecurityKeyOperations(
             if (op.cancelled && mapped.code in setOf(TRANSPORT, UNKNOWN, TIMEOUT)) {
                 throw SecurityKeyException(CANCELLED, "The operation was cancelled", cause = e)
             }
-            Log.d(TAG, "Security key operation failed: ${mapped.code}")
+            // Demo-build diagnostics: the failure and its cause chain, never secrets.
+            val ctap = generateSequence<Throwable>(e) { it.cause }.filterIsInstance<CtapException>().firstOrNull()
+            val chain = generateSequence<Throwable>(e) { it.cause }.take(4)
+                .joinToString(" <- ") { "${it.javaClass.simpleName}(${it.message?.take(80) ?: ""})" }
+            Log.w(TAG, "Security key operation failed: ${mapped.code}; ${ctap?.errorName ?: "-"}; $chain")
             throw mapped
         }
     }
@@ -1073,14 +1131,14 @@ class SecurityKeyOperations(
      * Opens the key's connection, reads its serial number ([readSerial]) and
      * then opens the CTAP2 session on the same connection.
      */
-    private fun openSession(device: YubiKeyDevice): KeySession =
+    private fun openSession(device: YubiKeyDevice, op: Operation): KeySession =
         when (device) {
             // USB: CTAPHID over the key's FIDO HID interface.
             is UsbYubiKeyDevice -> {
                 if (!device.supportsConnection(FidoConnection::class.java)) {
                     throw SecurityKeyException(UNSUPPORTED, "This security key has FIDO disabled over USB")
                 }
-                var connection = openFidoConnection(device)
+                var connection = openFidoConnection(device, op)
                 var serial: Int? = null
                 try {
                     serial = readSerial { ManagementSession(connection) }
@@ -1088,7 +1146,7 @@ class SecurityKeyOperations(
                     // The CTAPHID exchange broke off and may have left packets
                     // behind: CTAP2 starts on a fresh connection.
                     closeQuietly(connection)
-                    connection = openFidoConnection(device)
+                    connection = openFidoConnection(device, op)
                 }
                 try {
                     KeySession(startCtap2 { Ctap2Session(connection) }, USB, serial)
@@ -1117,9 +1175,9 @@ class SecurityKeyOperations(
             else -> throw SecurityKeyException(UNSUPPORTED, "Unsupported security key transport")
         }
 
-    private fun openFidoConnection(device: UsbYubiKeyDevice): FidoConnection =
+    private fun openFidoConnection(device: UsbYubiKeyDevice, op: Operation): FidoConnection =
         try {
-            device.openConnection(FidoConnection::class.java)
+            KeepAliveTap(device.openConnection(FidoConnection::class.java), op)
         } catch (e: IllegalStateException) {
             // USB permission revoked, or the key was unplugged.
             throw SecurityKeyException(TRANSPORT, "Could not open the security key", cause = e)

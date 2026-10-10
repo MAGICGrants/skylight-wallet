@@ -65,45 +65,44 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_openalias
-  # FHSE (security keys) proof of concept. Not in the pinned wallet-core commit
-  # yet: re-pin all wallet-core refs to the implement-fhse-concept commit once
-  # it is pushed. Until then pubspec_overrides.yaml resolves it locally.
+  # FHSE (security keys) proof of concept, from wallet-core's
+  # implement-fhse-concept branch.
   wallet_fhse:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_fhse
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 548255131912abcfd4b43e273bc4722c160c8ccf
+      ref: 21156ac98dff60739c0faf7fab8f252541db6351
       path: packages/wallet_ui
 
   bip39:

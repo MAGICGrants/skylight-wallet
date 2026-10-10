@@ -136,7 +136,7 @@ class _RecoveryPhraseSheetState extends State<_RecoveryPhraseSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(22, 10, 22, 16 + MediaQuery.of(context).viewInsets.bottom),
+        padding: const EdgeInsets.fromLTRB(22, 10, 22, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

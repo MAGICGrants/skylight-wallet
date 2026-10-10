@@ -3,6 +3,7 @@ package org.magicgrants.skylight
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -219,7 +220,9 @@ class SecurityKeyChannel(activity: Activity, messenger: BinaryMessenger) :
                     request.wipe()
                     operations.endOperation(op) // no status events after this
                 }
+                Log.i("SecurityKey", "${call.method}: worker done (${error?.code ?: "ok"}); posting result")
                 mainHandler.post {
+                    Log.i("SecurityKey", "${call.method}: result delivered to Dart")
                     inFlight = false
                     status.open = false // statuses still queued behind this are dropped
                     val failure = error

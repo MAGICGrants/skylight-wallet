@@ -59,7 +59,7 @@ class _SecurityKeySetupScreenState extends State<SecurityKeySetupScreen> {
   Future<void> _addKey() async {
     final setup = _setup;
     if (setup == null) return;
-    final added = await showAddSecurityKeySheet(
+    await showAddSecurityKeySheet(
       context,
       number: setup.keys.length + 1,
       enroll: (verification, key, name) =>
@@ -67,7 +67,9 @@ class _SecurityKeySetupScreenState extends State<SecurityKeySetupScreen> {
       rename: (record, name) async => setup.rename(record.id, name),
       registeredKeys: () async => setup.keys,
     );
-    if (added && mounted) setState(() {});
+    // Refresh even when the sheet reports nothing added: the key is added
+    // before the name step, so a sheet dismissed there still added it.
+    if (mounted) setState(() {});
   }
 
   Future<void> _finish() async {

@@ -9,7 +9,8 @@ import Foundation
 /// as `status` calls on this channel. All state here is touched on the main
 /// thread only, which is where Flutter delivers method calls.
 final class SecurityKeyChannel: @unchecked Sendable {
-  static let name = "org.magicgrants.skylight/security_key"
+  /// wallet_fhse's SecurityKeyService.channelName; the Android half is that plugin's.
+  static let name = "org.magicgrants.wallet_fhse/security_key"
 
   private static let defaultPrompt = "Hold your security key near the top of your iPhone."
 

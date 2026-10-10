@@ -36,9 +36,6 @@ import 'package:skylight_wallet/screens/address_book.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
 import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
-import 'package:skylight_wallet/screens/advanced_security.dart';
-import 'package:skylight_wallet/screens/security_key_setup.dart';
-import 'package:skylight_wallet/screens/security_key_unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/theme/palette.dart';
@@ -49,6 +46,7 @@ import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:wallet_fhse/security_keys_ui.dart';
 import 'package:wallet_infra/wallet_infra.dart' show HostPlatform;
 
 void main() async {
@@ -60,6 +58,7 @@ void main() async {
       await HostPlatform.init();
 
       installWalletCore();
+      installSecurityKeysUi();
       BrandColors.install(skylightPalette);
       // Selected onboarding option cards stay white — only the accent border
       // marks the selection (no tinted fill).
@@ -157,14 +156,8 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   bool _relockPending = false;
   Brightness? _lastBrightness;
 
-  // "Fully lock after", with security keys on: when the app went to the
-  // background, the timer that closes the wallet if it stays there, and
-  // whether that already happened. The timer only fires while the process
-  // gets CPU (often on Android, rarely on a suspended iOS app), so the elapsed
-  // time is also checked on resume, before anything is shown.
-  DateTime? _backgroundedAt;
-  Timer? _fullLockTimer;
-  bool _fullyLocked = false;
+  // "Fully lock after", with security keys on.
+  final _fullLock = SecurityKeyFullLock();
 
   static void _markSubtreeDirty(Element element) {
     element.markNeedsBuild();
@@ -188,7 +181,6 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/unlock': (context) => UnlockScreen(),
     '/security_key_unlock': (context) => const SecurityKeyUnlockScreen(),
     '/advanced_security': (context) => const AdvancedSecurityScreen(),
-    '/security_key_setup': (context) => const SecurityKeySetupScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
     '/lws_keys': (context) => LwsKeysScreen(),
@@ -220,7 +212,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _fullLockTimer?.cancel();
+    _fullLock.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _announceWallet?.removeListener(_announceNewTxsOnGrowth);
     super.dispose();
@@ -235,7 +227,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
       // this, resuming walked straight back into an unlocked wallet with the
       // password still in memory, and the seed was reachable from there.
       unawaited(_maybeArmRelock());
-      unawaited(_armFullLock());
+      unawaited(_fullLock.onBackground(context));
 
       // Leaving the app marks everything on screen as seen so a background
       // isolate won't re-notify a tx the user just watched arrive. Desktop has
@@ -249,16 +241,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   }
 
   Future<void> _onResumed() async {
-    _fullLockTimer?.cancel();
-    _fullLockTimer = null;
-    final backgroundedAt = _backgroundedAt;
-    _backgroundedAt = null;
-
     // Past "Fully lock after": the wallet is closed and its password gone, so
     // the stack is replaced by the lock screens rather than covered by them.
-    if (_fullyLocked || (backgroundedAt != null && await _fullLockDue(backgroundedAt))) {
-      await _fullyLock();
-      _fullyLocked = false;
+    if (await _fullLock.onResume(context)) {
       _relockPending = false;
       final appLock =
           await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
@@ -278,30 +263,6 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
         _navigatorKey.currentState?.pushNamed('/unlock');
       }
     }
-  }
-
-  Future<int> _fullLockMinutes() async =>
-      await SharedPreferencesService.get<int>(SharedPreferencesKeys.fullLockAfterMinutes) ??
-      fullLockDefaultMinutes;
-
-  Future<bool> _fullLockDue(DateTime backgroundedAt) async =>
-      DateTime.now().difference(backgroundedAt) >= Duration(minutes: await _fullLockMinutes());
-
-  /// On background, with security keys on and the wallet open: note the time
-  /// and set the timer that closes the wallet if the app stays away.
-  Future<void> _armFullLock() async {
-    if (!await walletIsUnlockedBehindSecurityKey(context)) return;
-    _backgroundedAt = DateTime.now();
-    final minutes = await _fullLockMinutes();
-    _fullLockTimer?.cancel();
-    _fullLockTimer = Timer(Duration(minutes: minutes), () => unawaited(_fullyLock()));
-  }
-
-  Future<void> _fullyLock() async {
-    if (!mounted || !await walletIsUnlockedBehindSecurityKey(context)) return;
-    if (!mounted) return;
-    await fullyLockWallet(context);
-    _fullyLocked = true;
   }
 
   /// On background: with App Lock on and a wallet present, drop the in-memory
@@ -388,7 +349,10 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 navigatorKey: _navigatorKey,
                 navigatorObservers: [_routeObserver],
                 title: 'Skylight Monero Wallet',
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                localizationsDelegates: const [
+                  ...AppLocalizations.localizationsDelegates,
+                  FhseLocalizations.delegate,
+                ],
                 supportedLocales: AppLocalizations.supportedLocales,
                 theme: brandLightTheme(),
                 darkTheme: brandDarkTheme(),

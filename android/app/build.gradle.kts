@@ -108,17 +108,6 @@ android.applicationVariants.configureEach {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-
-    // FIDO2 security keys (FHSE wallet-file protection; SecurityKeyOperations.kt):
-    // Yubico's yubikit-android, Apache-2.0, from Maven Central. No Google Play
-    // Services or other proprietary code, so the F-Droid build stays clean.
-    // `android` is USB/NFC discovery and transports; `fido` is the CTAP2 layer;
-    // `management` reads the key's serial number (to tell registered keys apart).
-    // Held at 3.1.0: 3.2.x's AAR requires compileSdk 37, above what Flutter and
-    // AGP 8.12 use here (36).
-    implementation("com.yubico.yubikit:android:3.1.0")
-    implementation("com.yubico.yubikit:fido:3.1.0")
-    implementation("com.yubico.yubikit:management:3.1.0")
 }
 
 if (playStoreBuild) {

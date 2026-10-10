@@ -17,9 +17,11 @@ import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:wallet_fhse/security_keys_ui.dart'
+    show FhseLocalizations, SecurityKeysState, securityKeysState;
+import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
-import 'package:skylight_wallet/services/security_key_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/widgets/language_sheet.dart';
@@ -161,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _loadSecurityKeys();
   }
 
-  String _securityKeysValue(AppLocalizations i18n) {
+  String _securityKeysValue(FhseLocalizations i18n) {
     final state = _securityKeys;
     if (state == null || !state.engaged) return i18n.advancedSecurityOff;
     return i18n.advancedSecurityKeyCount(state.keys.length);
@@ -540,8 +542,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           if (SecurityKeyService.isSupportedPlatform)
             SettingsNavTile(
-              title: i18n.advancedSecurityLabel,
-              value: _securityKeysValue(i18n),
+              title: FhseLocalizations.of(context).advancedSecurityLabel,
+              value: _securityKeysValue(FhseLocalizations.of(context)),
               onTap: _openAdvancedSecurity,
             ),
           SettingsLinkTile(

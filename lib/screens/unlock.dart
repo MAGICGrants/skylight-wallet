@@ -8,6 +8,7 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/floating_bob.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
+import 'package:wallet_fhse/security_keys_ui.dart' show walletNeedsSecurityKey;
 import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
 
 class UnlockScreen extends StatefulWidget {

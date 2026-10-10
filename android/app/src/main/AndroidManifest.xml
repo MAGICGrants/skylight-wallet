@@ -10,11 +10,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- FIDO2 security keys (FHSE): NFC keys and USB-C/OTG keys, both optional
-         so devices without NFC or USB host can still install the app. -->
-    <uses-permission android:name="android.permission.NFC"/>
-    <uses-feature android:name="android.hardware.nfc" android:required="false"/>
-    <uses-feature android:name="android.hardware.usb.host" android:required="false"/>
 
     <application
         android:label="Skylight Wallet"

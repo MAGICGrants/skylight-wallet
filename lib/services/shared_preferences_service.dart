@@ -35,12 +35,4 @@ class SharedPreferencesKeys {
   static const String walletRestoreHeight = 'walletRestoreHeight';
   static const String unusedSubaddressIndex = 'unusedSubaddressIndex';
   static const String unusedSubaddressIndexIsSupported = 'unusedSubaddressIndexIsSupported';
-
-  /// Minutes in the background after which, with security keys on, the wallet
-  /// is closed and its password forgotten. See [fullLockMinuteOptions].
-  static const String fullLockAfterMinutes = 'fullLockAfterMinutes';
 }
-
-/// The "Fully lock after" choices, in minutes, and the default.
-const fullLockMinuteOptions = [10, 30, 60, 1440];
-const fullLockDefaultMinutes = 30;

@@ -17,7 +17,7 @@ import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 
 import 'package:wallet_infra/wallet_infra.dart' as wcore;
-import 'package:wallet_background/wallet_background.dart' show BackgroundSync;
+import 'package:wallet_background/wallet_background.dart' show BackgroundSync, NotificationIcon;
 import 'package:wallet_fiat/wallet_fiat.dart' show FiatRates;
 import 'package:wallet_domain/wallet_domain.dart'
     show
@@ -50,6 +50,8 @@ void installWalletCore() {
   wcore.NotificationService.windowsAppName = 'Skylight Wallet';
   wcore.NotificationService.windowsAppUserModelId = 'org.magicgrants.skylight';
   wcore.NotificationService.windowsGuid = '6dcf17a9-fb5f-4f47-b0b9-6d655e90adbf';
+  // Same status-bar mark as the continuous-sync foreground-service notification.
+  wcore.NotificationService.androidSmallIcon = 'ic_stat_skylight';
 
   BackgroundSync.install(
     coins: () => [MoneroWallet()],
@@ -58,6 +60,10 @@ void installWalletCore() {
     ensureTorConnected: _ensureTorConnected,
     iosBundleId: 'org.magicgrants.skylightwallet',
     foregroundTitle: 'Skylight Wallet',
+    foregroundIcon: const NotificationIcon(
+      metaDataName: 'org.magicgrants.skylightwallet.notification_icon',
+      backgroundColor: Color(0xFFF5681C),
+    ),
   );
 
   FiatRates.install(getTorProxy: TorSettingsService.sharedInstance.getProxy);

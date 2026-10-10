@@ -411,18 +411,7 @@ class _ActivitySliver extends StatelessWidget {
       );
     }
 
-    // Flatten into day-header strings interleaved with tx entries (matches Spice).
-    final rows = <Object>[];
-    DateTime? lastDay;
-    for (final tx in txs) {
-      final d = DateTime.fromMillisecondsSinceEpoch(tx.timestamp * 1000);
-      final day = DateTime(d.year, d.month, d.day);
-      if (day != lastDay) {
-        rows.add(DateFormat('d MMMM').format(day).toUpperCase());
-        lastDay = day;
-      }
-      rows.add(tx);
-    }
+    final rows = withDayHeaders(txs, (tx) => tx.timestamp);
 
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),

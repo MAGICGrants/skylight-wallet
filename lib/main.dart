@@ -46,6 +46,7 @@ import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:wallet_backup_platform/backup_ui.dart';
 import 'package:wallet_fhse/security_keys_ui.dart';
 import 'package:wallet_infra/wallet_infra.dart' show HostPlatform;
 
@@ -59,6 +60,7 @@ void main() async {
 
       installWalletCore();
       installSecurityKeysUi();
+      installMetadataBackup();
       BrandColors.install(skylightPalette);
       // Selected onboarding option cards stay white — only the accent border
       // marks the selection (no tinted fill).
@@ -181,6 +183,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/unlock': (context) => UnlockScreen(),
     '/security_key_unlock': (context) => const SecurityKeyUnlockScreen(),
     '/advanced_security': (context) => const AdvancedSecurityScreen(),
+    '/metadata_backup': (context) => const MetadataBackupScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
     '/lws_keys': (context) => LwsKeysScreen(),
@@ -352,6 +355,7 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 localizationsDelegates: const [
                   ...AppLocalizations.localizationsDelegates,
                   FhseLocalizations.delegate,
+                  BackupLocalizations.delegate,
                 ],
                 supportedLocales: AppLocalizations.supportedLocales,
                 theme: brandLightTheme(),

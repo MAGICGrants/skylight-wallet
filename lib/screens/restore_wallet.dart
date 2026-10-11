@@ -18,6 +18,7 @@ import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:wallet_domain/wallet_domain.dart' show SeedSource, parseRestoreQr;
+import 'package:wallet_backup_platform/backup_ui.dart' show scheduleBackupRestorePrompt;
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});
@@ -134,6 +135,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
         arguments: CreateWalletPasswordArgs(
           commit: (ctx) async {
             await restoreWallet(ctx, mnemonic: mnemonic, restoreHeight: restoreHeight);
+            if (ctx.mounted) scheduleBackupRestorePrompt(ctx);
             return restoreHeight;
           },
         ),
@@ -167,6 +169,8 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     if (!mounted) return;
     setState(() => _committing = false);
+    // Reports what the metadata backup brought back, or offers a backup file.
+    scheduleBackupRestorePrompt(context);
     Provider.of<FiatRateModel>(context, listen: false).startService();
     if (appWalletOf(context).isNodeMode) {
       Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);

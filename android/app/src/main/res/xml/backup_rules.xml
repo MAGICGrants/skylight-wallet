@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 and earlier: the same single folder as data_extraction_rules.xml.
+-->
+<full-backup-content>
+    <include domain="root" path="app_flutter/metadata_backup/" />
+</full-backup-content>

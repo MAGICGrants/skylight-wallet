@@ -98,5 +98,18 @@
 	<array>
 		<string>A0000006472F0001</string>
 	</array>
+	<!-- Metadata backup: the iCloud container, hidden from the Files app. -->
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.org.magicgrants.skylightwallet</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<false/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Skylight</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>None</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

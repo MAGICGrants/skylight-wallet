@@ -89,6 +89,18 @@ dependencies:
       url: https://github.com/MAGICGrants/wallet-core
       ref: 70d564c962612485aa1477696dede4e2132bde8b
       path: packages/wallet_fhse
+  # Metadata backup (payment destinations, tx keys, address book), from
+  # wallet-core's metadata-backup branch.
+  wallet_backup:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 70d564c962612485aa1477696dede4e2132bde8b
+      path: packages/wallet_backup
+  wallet_backup_platform:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 70d564c962612485aa1477696dede4e2132bde8b
+      path: packages/wallet_backup_platform
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core

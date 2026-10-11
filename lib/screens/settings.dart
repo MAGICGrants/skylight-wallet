@@ -17,6 +17,7 @@ import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
+import 'package:wallet_backup_platform/backup_ui.dart' show BackupLocalizations;
 import 'package:wallet_fhse/security_keys_ui.dart'
     show FhseLocalizations, SecurityKeysState, securityKeysState;
 import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
@@ -546,6 +547,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _securityKeysValue(FhseLocalizations.of(context)),
               onTap: _openAdvancedSecurity,
             ),
+          SettingsNavTile(
+            title: BackupLocalizations.of(context).backupTitle,
+            onTap: () => Navigator.pushNamed(context, '/metadata_backup'),
+          ),
           SettingsLinkTile(
             title: i18n.settingsConnectionSettingsLabel,
             subtitle: connectionSubtitle,

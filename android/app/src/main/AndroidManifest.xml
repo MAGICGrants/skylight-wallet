@@ -15,7 +15,9 @@
         android:label="Skylight Wallet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:allowBackup="false">
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

@@ -29,6 +29,8 @@ import 'package:wallet_domain/wallet_domain.dart'
         RestorePoint,
         TxDetails,
         baseUnitsToDecimalString;
+import 'package:wallet_backup_platform/wallet_backup_platform.dart'
+    show MetadataBackupConfig, MetadataBackupSetup;
 import 'package:wallet_fhse/security_keys_ui.dart' show SecurityKeysUi, SecurityKeysUiConfig;
 import 'package:wallet_fhse/wallet_fhse.dart' show FhseWalletGuard;
 import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
@@ -279,6 +281,22 @@ void installSecurityKeysUi() {
       walletManagerOf: (context) => Provider.of<WalletManager>(context, listen: false),
       homeRoute: '/wallet_home',
       logo: (_) => SvgPicture.asset('assets/logo_nobg.svg', width: 44, height: 44),
+    ),
+  );
+}
+
+// ----- Metadata backup -----
+
+/// The metadata backup (wallet_backup): who each payment went to, its
+/// transaction key, and the address book, encrypted with the seed and saved to
+/// iCloud on iOS and Android's Auto Backup on Android. UI isolate only, so a
+/// background run never writes a backup file. 25-word seeds have none.
+void installMetadataBackup() {
+  MetadataBackupSetup.install(
+    const MetadataBackupConfig(
+      appName: 'Skylight',
+      iCloudContainer: 'iCloud.org.magicgrants.skylightwallet',
+      exportFileStem: 'skylight-backup',
     ),
   );
 }

@@ -244,16 +244,16 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   }
 
   Future<void> _onResumed() async {
-    // Past "Fully lock after": the wallet is closed and its password gone, so
-    // the stack is replaced by the lock screens rather than covered by them.
-    if (await _fullLock.onResume(context)) {
+    // Past "Fully lock after" (or locked by its timer while away): decided at
+    // once, and the lock screens replace the stack *before* the wallets close,
+    // which takes a while, so the screen being left is never usable with the
+    // password still in memory. App Lock comes first when it is on; the relock
+    // armed on the way out says whether it is.
+    if (_fullLock.takeDueOnResume()) {
+      final lockRoute = _relockPending ? '/unlock' : '/security_key_unlock';
       _relockPending = false;
-      final appLock =
-          await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
-      _navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        appLock ? '/unlock' : '/security_key_unlock',
-        (route) => false,
-      );
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil(lockRoute, (route) => false);
+      await _fullLock.lock(context);
       return;
     }
 

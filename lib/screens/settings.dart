@@ -19,7 +19,7 @@ import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:wallet_backup_platform/backup_ui.dart' show BackupLocalizations;
 import 'package:wallet_fhse/security_keys_ui.dart'
-    show FhseLocalizations, SecurityKeysState, securityKeysState;
+    show DesktopAutoLockTile, FhseLocalizations, SecurityKeysState, securityKeysState;
 import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
 import 'package:skylight_wallet/periodic_tasks.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -258,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
 
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (usesDeviceLock) {
       final result = await BiometricAuth.authenticateIfAppLockEnabled(
         reason: i18n.revealSeedAuthReason,
       );
@@ -511,7 +511,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final i18n = AppLocalizations.of(context)!;
     final language = context.watch<LanguageModel>();
     final theme = context.watch<ThemeModel>();
-    final isMobile = Platform.isAndroid || Platform.isIOS;
     final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
     final showNotifyToggle = Platform.isAndroid || (Platform.isIOS && !wallet.isNodeMode);
@@ -534,13 +533,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: languageNames[language.language]?.$1 ?? language.language.toUpperCase(),
             onTap: () => showLanguageSheet(context),
           ),
-          if (isMobile)
+          if (usesDeviceLock)
             SettingsToggleTile(
               title: i18n.settingsAppLockLabel,
               value: _appLockEnabled,
               onChanged: _setAppLockEnabled,
               animate: _animateToggles,
             ),
+          if (isDesktopOS) const DesktopAutoLockTile(),
           if (SecurityKeyService.isSupportedPlatform)
             SettingsNavTile(
               title: FhseLocalizations.of(context).advancedSecurityLabel,

@@ -1,4 +1,4 @@
-platform :osx, '10.15'
+platform :osx, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -38,5 +38,14 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    # Xcode 27 refuses macOS deployment targets below 12.0, and several plugin
+    # podspecs still ask for 10.13 to 10.15. Raise them to the app's own minimum
+    # (13.0, for YubiKit).
+    target.build_configurations.each do |config|
+      current = config.build_settings['MACOSX_DEPLOYMENT_TARGET']
+      if current && Gem::Version.new(current) < Gem::Version.new('13.0')
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '13.0'
+      end
+    end
   end
 end

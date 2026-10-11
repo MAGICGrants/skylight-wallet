@@ -1,4 +1,8 @@
+#if os(iOS)
 @preconcurrency import Flutter
+#else
+@preconcurrency import FlutterMacOS
+#endif
 import Foundation
 
 /// Method channel for FIDO2 security keys (FHSE wallet-file encryption).
@@ -8,11 +12,17 @@ import Foundation
 /// replies on the main thread. While a request runs, its progress goes to Dart
 /// as `status` calls on this channel. All state here is touched on the main
 /// thread only, which is where Flutter delivers method calls.
+///
+/// One file for iOS and macOS, identical in both apps and both platforms.
 final class SecurityKeyChannel: @unchecked Sendable {
   /// wallet_fhse's SecurityKeyService.channelName; the Android half is that plugin's.
   static let name = "org.magicgrants.wallet_fhse/security_key"
 
+  #if os(iOS)
   private static let defaultPrompt = "Hold your security key near the top of your iPhone."
+  #else
+  private static let defaultPrompt = "Plug your security key into this Mac."
+  #endif
 
   private let channel: FlutterMethodChannel
   private let operations = SecurityKeyOperations()

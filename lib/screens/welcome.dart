@@ -25,10 +25,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Future<void> _pushHomeIfWalletExists() async {
     if (await openExistingWallet(context) && mounted) {
-      // A desktop OS opens nothing until the user types the password.
+      // Linux and Windows open nothing until the user types the password.
       Navigator.pushNamedAndRemoveUntil(
         context,
-        isDesktopOS ? '/unlock' : '/wallet_home',
+        typesWalletPassword ? '/unlock' : '/wallet_home',
         (route) => false,
       );
     }

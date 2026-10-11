@@ -1,7 +1,9 @@
+#if os(iOS)
 import CoreNFC
-import CryptoKit
 import CryptoTokenKit
 import ExternalAccessory
+#endif
+import CryptoKit
 import Foundation
 import YubiKit
 
@@ -21,6 +23,10 @@ import YubiKit
 // application on the same connection. That tells the UI which registered key
 // is connected, and lets a request refuse a different key before a PIN or UV
 // token request reaches it (credProtect 3 hides credentials until then).
+//
+// One file for iOS and macOS, identical in both apps and both platforms: only
+// the connection to the key differs (the KeyLink section at the end). iOS
+// reaches keys over NFC, USB-C (smart card) and Lightning; macOS over USB HID.
 //
 // This file has no Flutter types; SecurityKeyChannel.swift maps it to the
 // method channel. Nothing here logs PINs, salts, user ids, credential ids,
@@ -237,7 +243,10 @@ actor SecurityKeyOperations {
   // MARK: Capabilities
 
   nonisolated static func capabilities() -> SecurityKeyCapabilities {
-    #if targetEnvironment(simulator)
+    #if os(macOS)
+    // USB only: a Mac reaches keys over USB HID, and has no NFC reader to use.
+    return SecurityKeyCapabilities(nfc: false, usb: true)
+    #elseif targetEnvironment(simulator)
     return SecurityKeyCapabilities(nfc: false, usb: false)
     #else
     // USB-C keys use CryptoTokenKit (needs the smart card entitlement);
@@ -512,11 +521,15 @@ actor SecurityKeyOperations {
       do {
         session = try await CTAP2.Session.makeSession(connection: link.connection)
       } catch CTAP2.SessionError.featureNotSupported {
+        #if os(iOS)
         // FIDO over USB CCID needs YubiKey firmware 5.8 or later.
         throw SecurityKeyError.unsupported(
           link.transport == .usb
             ? "This security key cannot use FIDO2 over USB-C on this device (that needs firmware 5.8 or later). Unplug it and hold it to the phone to use NFC instead."
             : "This security key does not offer FIDO2 over this connection.")
+        #else
+        throw SecurityKeyError.unsupported("This security key does not offer FIDO2 over USB.")
+        #endif
       }
       report(.processing)
       // Once the key has done the work, a late cancel no longer undoes it.
@@ -650,7 +663,7 @@ actor SecurityKeyOperations {
   /// session selects the FIDO applet again, so a failed or partial
   /// Management exchange cannot leave CTAP2 talking to the wrong applet.
   /// Never logged.
-  private static func readSerial(_ connection: any SmartCardConnection) async -> Int? {
+  private static func readSerial(_ connection: KeyLink.Connection) async -> Int? {
     guard let management = try? await Management.Session.makeSession(connection: connection),
       let info = try? await management.getDeviceInfo(),
       info.serialNumber != 0
@@ -887,6 +900,8 @@ actor SecurityKeyOperations {
       return map(session: error, builtInUV: builtInUV)
     case let error as SmartCardConnectionError:
       return map(connection: error)
+    case let error as FIDOConnectionError:
+      return map(fido: error)
     case is CancellationError:
       return .cancelled
     default:
@@ -964,7 +979,11 @@ actor SecurityKeyOperations {
     case .unsupported:
       return .unsupported("This device cannot reach a security key this way.")
     case .setupFailed(_, let underlying?), .transmitFailed(_, let underlying?):
+      #if os(iOS)
       if let nfcError = underlying as? NFCReaderError { return map(nfc: nfcError) }
+      #else
+      _ = underlying
+      #endif
       return SecurityKeyError(.transport, "Lost the connection to the security key.")
     default:
       return SecurityKeyError(
@@ -972,6 +991,20 @@ actor SecurityKeyOperations {
     }
   }
 
+  /// USB HID (macOS).
+  private static func map(fido error: FIDOConnectionError) -> SecurityKeyError {
+    switch error {
+    case .busy:
+      return SecurityKeyError(.busy, "The security key is busy with another request.")
+    case .unsupported:
+      return .unsupported("This device cannot reach a security key this way.")
+    default:
+      return SecurityKeyError(
+        .transport, "Lost the connection to the security key. Check it is plugged in and try again.")
+    }
+  }
+
+  #if os(iOS)
   private static func map(nfc error: NFCReaderError) -> SecurityKeyError {
     switch error.code {
     case .readerSessionInvalidationErrorUserCanceled, .readerTransceiveErrorSessionInvalidated:
@@ -987,13 +1020,16 @@ actor SecurityKeyOperations {
         .transport, "Lost the connection to the security key. Hold it still and try again.")
     }
   }
+  #endif
 }
 
 // MARK: - Connections
 
+#if os(iOS)
 /// An open connection to a key and how it is attached.
 private struct KeyLink: Sendable {
-  let connection: any SmartCardConnection
+  typealias Connection = any SmartCardConnection
+  let connection: Connection
   let transport: SecurityKeyTransport
 
   /// Updates the NFC sheet; wired keys have no system UI.
@@ -1099,9 +1135,48 @@ private struct KeyLink: Sendable {
     }
   }
 }
+#elseif os(macOS)
+/// An open connection to a key: on a Mac, YubiKit's FIDO connection over USB
+/// HID, which every FIDO2 YubiKey offers (the smart card route needs firmware
+/// 5.8 or later for FIDO2). The serial number is read over it too.
+private struct KeyLink: Sendable {
+  typealias Connection = HIDFIDOConnection
+  let connection: Connection
+  let transport: SecurityKeyTransport
+
+  /// Wired keys have no system sheet to update.
+  func setStatus(_ message: String) async {}
+
+  func closeSucceeded(_ message: String) async {
+    await connection.close(error: nil)
+  }
+
+  func closeFailed(_ error: SecurityKeyError) async {
+    await connection.close(error: error)
+  }
+
+  func closeQuietly() async {
+    await connection.close(error: nil)
+  }
+
+  /// Waits for a key to be plugged in. Cancelling the calling task stops the
+  /// wait. A failed attempt (no key yet, or one pulled out mid-connect) counts
+  /// as no key yet.
+  static func waitForKey(prompt: String) async throws -> KeyLink {
+    while true {
+      try Task.checkCancellation()
+      if let connection = try? await HIDFIDOConnection() {
+        return KeyLink(connection: connection, transport: .usb)
+      }
+      try await Task.sleep(for: .milliseconds(500))
+    }
+  }
+}
+#endif
 
 // MARK: - Device and buffer helpers
 
+#if os(iOS)
 private enum DeviceModel {
   /// iPhones before the iPhone 15 family have a Lightning port (iPhone15,2
   /// and iPhone15,3 are the iPhone 14 Pro models). iPads fall back to the
@@ -1118,6 +1193,7 @@ private enum DeviceModel {
     return numbers[0] < 15 || (numbers[0] == 15 && numbers[1] <= 3)
   }
 }
+#endif
 
 extension Data {
   /// Overwrites this buffer with zeros (best effort: copies made elsewhere,

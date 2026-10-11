@@ -5,10 +5,11 @@ import 'package:local_auth/local_auth.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/util/platform.dart' show typesWalletPassword;
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/floating_bob.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
-import 'package:wallet_fhse/security_keys_ui.dart' show walletNeedsSecurityKey;
+import 'package:wallet_fhse/security_keys_ui.dart' show reopenAfterAppLock, walletNeedsSecurityKey;
 import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
 
 class UnlockScreen extends StatefulWidget {
@@ -19,7 +20,9 @@ class UnlockScreen extends StatefulWidget {
 }
 
 class _UnlockScreenState extends State<UnlockScreen> {
-  static bool get _isDesktop => Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+  // The typed password at every launch (Linux, Windows); App Lock's device
+  // prompt elsewhere, macOS included (Touch ID or the Mac's password).
+  static bool get _isDesktop => typesWalletPassword;
 
   final TextEditingController _passwordController = TextEditingController();
   bool _obscure = true;
@@ -84,6 +87,10 @@ class _UnlockScreenState extends State<UnlockScreen> {
       if (!mounted) return;
       // With security keys on and the wallet closed, a key comes next.
       final needsKey = await walletNeedsSecurityKey(context);
+      if (!mounted) return;
+      // Otherwise the keystore password comes back (a relock dropped it) and,
+      // after a full lock, the wallet opens again.
+      if (!needsKey) await reopenAfterAppLock(context);
       if (mounted) {
         Navigator.pushReplacementNamed(context, needsKey ? '/security_key_unlock' : '/wallet_home');
       }

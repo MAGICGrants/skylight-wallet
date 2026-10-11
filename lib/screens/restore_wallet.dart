@@ -125,10 +125,11 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     final restoreHeight = _restoreHeight;
 
-    // A desktop OS adds a password step; mobile has no password screen (the
-    // device app lock guards it), so it restores the wallet directly. That
-    // includes the iOS build on a Mac, in the desktop layout.
-    if (isDesktopOS) {
+    // Linux and Windows add a password step; elsewhere there is no password
+    // screen (the device's App Lock guards a generated one), so it restores the
+    // wallet directly. That includes macOS and the iOS build on a Mac, in the
+    // desktop layout.
+    if (typesWalletPassword) {
       Navigator.pushNamed(
         context,
         '/create_wallet_password',

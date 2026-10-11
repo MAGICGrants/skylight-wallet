@@ -52,11 +52,14 @@ void installWalletCore() {
   WalletAppConfig.install(WalletAppConfig.skylight);
   CryptoWallet.aliasResolver = resolveOpenAlias;
 
-  // On mobile the wallet password is FHSE's root, derived from the seed, and
-  // security keys can later take it out of the keystore (Settings > Advanced
-  // security). Installed in every isolate, so background runs know when the
-  // password is behind keys and check in with the view key instead.
-  if (_isMobile) WalletManager.passwordGuard = const FhseWalletGuard();
+  // Where the wallet password is generated (mobile and macOS) it is FHSE's
+  // root, derived from the seed, and security keys can later take it out of
+  // the keystore (Settings > Advanced security). Installed in every isolate, so
+  // background runs know when the password is behind keys and check in with
+  // the view key instead.
+  if (wcore.WalletSecrets.holdsWalletPassword) {
+    WalletManager.passwordGuard = const FhseWalletGuard();
+  }
 
   wcore.NotificationService.windowsAppName = 'Skylight Wallet';
   wcore.NotificationService.windowsAppUserModelId = 'org.magicgrants.skylight';
@@ -143,9 +146,14 @@ Future<bool> startupWalletManager(BuildContext context) =>
 
 Future<bool> _loadExistingWalletManager(WalletManager manager) async {
   if (await manager.hasAnyExistingWallet()) {
-    if (_isMobile) {
+    if (wcore.WalletSecrets.holdsWalletPassword) {
       await manager.loadCachedDisplayState();
-      manager.openWalletFilesAndSync();
+      // Behind App Lock nothing is decrypted before the user gets past it: the
+      // unlock screen opens the wallet (reopenAfterAppLock). Linux and Windows
+      // wait for the typed password the same way.
+      final appLock =
+          await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
+      if (!appLock) manager.openWalletFilesAndSync();
     }
     return true;
   }
@@ -233,12 +241,13 @@ Future<bool> armAppLockRelock(BuildContext context) =>
     Provider.of<WalletManager>(context, listen: false).armAppLockRelock();
 
 /// Opens an already-existing wallet (used by the welcome safety-net). Returns
-/// false when there is none. Opens only on mobile: on a desktop OS the wallet
-/// waits for the typed password, and the caller shows the unlock screen.
+/// false when there is none. Opens only where the password is generated
+/// (mobile, macOS): on Linux and Windows the wallet waits for the typed
+/// password, and the caller shows the unlock screen.
 Future<bool> openExistingWallet(BuildContext context) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
   if (!await manager.hasAnyExistingWallet()) return false;
-  if (_isMobile) manager.openWalletFilesAndSync();
+  if (wcore.WalletSecrets.holdsWalletPassword) manager.openWalletFilesAndSync();
   return true;
 }
 

@@ -107,13 +107,21 @@ final class SecurityKeySecret: @unchecked Sendable {
   let credentialId: Data
   /// Serial number of the key that did the work, when it would say.
   let serial: Int?
+  /// The getAssertion's authenticator data and, for an enrollment, the
+  /// makeCredential's, as the key sent them. Dart checks every platform's
+  /// reply the same way (wallet_fhse's key_reply.dart); the checks here stay
+  /// as a first line.
+  let authenticatorData: Data
+  /// Set once, by `enroll`, before the secret is handed on.
+  var creationAuthenticatorData: Data?
   private var hmacSecret: Data
   private let lock = NSLock()
 
-  init(credentialId: Data, serial: Int?, hmacSecret: Data) {
+  init(credentialId: Data, serial: Int?, hmacSecret: Data, authenticatorData: Data) {
     self.credentialId = credentialId
     self.serial = serial
     self.hmacSecret = hmacSecret
+    self.authenticatorData = authenticatorData
   }
 
   /// Gives `body` the output; copy out what is needed, do not keep it.
@@ -413,9 +421,11 @@ actor SecurityKeyOperations {
       try checkCancelled()
 
       // f. getAssertion with one hmac-secret salt.
-      return try await assertHmacSecret(
+      let secret = try await assertHmacSecret(
         session, rpId: rpId, salt: salt, allowList: [credentialId], token: assertToken,
         serial: serial)
+      secret.creationAuthenticatorData = created.authenticatorData.rawData
+      return secret
     }
   }
 
@@ -809,7 +819,9 @@ actor SecurityKeyOperations {
     } else {
       throw SecurityKeyError.unknown("The security key did not say which credential it used.")
     }
-    return SecurityKeySecret(credentialId: credentialId, serial: serial, hmacSecret: secrets.first)
+    return SecurityKeySecret(
+      credentialId: credentialId, serial: serial, hmacSecret: secrets.first,
+      authenticatorData: response.authenticatorData.rawData)
   }
 
   // MARK: Helpers

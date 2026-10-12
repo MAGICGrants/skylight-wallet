@@ -113,9 +113,13 @@ class _UnlockScreenState extends State<UnlockScreen> {
     });
 
     try {
-      await unlockWithPassword(context, _passwordController.text);
+      final needsKey = await unlockWithPassword(context, _passwordController.text);
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          needsKey ? '/security_key_unlock' : '/wallet_home',
+          (route) => false,
+        );
       }
     } catch (_) {
       if (mounted) {

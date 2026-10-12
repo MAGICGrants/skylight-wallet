@@ -249,6 +249,10 @@ final class SecurityKeyChannel: @unchecked Sendable {
         "credentialId": FlutterStandardTypedData(bytes: secret.credentialId),
         "hmacSecret": FlutterStandardTypedData(bytes: output as Data),
         "serial": secret.serial.map { NSNumber(value: $0) } ?? NSNull(),
+        "authenticatorData": FlutterStandardTypedData(bytes: secret.authenticatorData),
+        "creationAuthenticatorData": secret.creationAuthenticatorData.map {
+          FlutterStandardTypedData(bytes: $0)
+        } ?? NSNull(),
       ] as [String: Any]
     }
   }

@@ -32,7 +32,7 @@ import 'package:wallet_domain/wallet_domain.dart'
 import 'package:wallet_backup_platform/wallet_backup_platform.dart'
     show MetadataBackupConfig, MetadataBackupSetup;
 import 'package:wallet_fhse/security_keys_ui.dart' show SecurityKeysUi, SecurityKeysUiConfig;
-import 'package:wallet_fhse/wallet_fhse.dart' show FhseWalletGuard;
+import 'package:wallet_fhse/wallet_fhse.dart' show FhseNative, FhseWalletGuard;
 import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
 import 'package:wallet_openalias/wallet_openalias.dart' show resolveOpenAlias;
 
@@ -56,8 +56,11 @@ void installWalletCore() {
   // root, derived from the seed, and security keys can later take it out of
   // the keystore (Settings > Advanced security). Installed in every isolate, so
   // background runs know when the password is behind keys and check in with
-  // the view key instead.
-  if (wcore.WalletSecrets.holdsWalletPassword) {
+  // the view key instead. Where the user types it (Linux, Windows), a new
+  // wallet gets the same root and the typed password unlocks it, together with
+  // a key once keys are on; only where FHSE's library loads, so a computer
+  // without it keeps the typed password as the wallet password.
+  if (wcore.WalletSecrets.holdsWalletPassword || FhseNative.isAvailable) {
     WalletManager.passwordGuard = const FhseWalletGuard();
   }
 
@@ -253,13 +256,18 @@ Future<bool> openExistingWallet(BuildContext context) async {
 
 /// Opens the wallet with a desktop-entered password, then syncs. Throws on a
 /// wrong password (the unlock screen shows the error).
-Future<void> unlockWithPassword(BuildContext context, String password) async {
+///
+/// Returns true when security keys are on: the password was right, and a key
+/// comes next, so the caller shows the security-key unlock instead.
+Future<bool> unlockWithPassword(BuildContext context, String password) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
   if (!await manager.unlockWithTypedPassword(password)) {
     throw Exception('Incorrect wallet password.');
   }
+  if (!manager.hasPassword) return true;
   await manager.openAll();
   manager.syncInBackground();
+  return false;
 }
 
 /// Deletes the wallet and everything derived from it.

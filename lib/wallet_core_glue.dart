@@ -231,7 +231,7 @@ Future<int> commitGeneratedWallet(
   required DateTime restoreDate,
 }) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
-  await manager.restoreAll(seed: seed, from: RestorePoint.date(restoreDate));
+  await manager.restoreAll(seed: seed, from: RestorePoint.date(restoreDate), freshSeed: true);
   manager.syncInBackground();
   return manager.getWallet('XMR')!.getRestoreHeight();
 }

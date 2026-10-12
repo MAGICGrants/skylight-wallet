@@ -157,21 +157,12 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Android signing
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/keystore.jks
-          cat > android/key.properties << EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=/tmp/skylight/android/keystore.jks
-          EOF
-
-      - name: Build APKs and AAB
+      - name: Build unsigned APKs and AAB
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           # Deterministic timestamp for reproducible builds
           export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          # No key.properties: gradle debug-signs; the real key is applied in the signing pass.
           # Fixed build path for reproducibility
           docker run --rm \
             -v "$PWD:/tmp/skylight" \
@@ -185,6 +176,40 @@ jobs:
           cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
           cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/skylight-wallet-${VERSION}-x86_64.apk"
           cp -v build/app/outputs/bundle/release/app-release.aab "dist/skylight-wallet-${VERSION}.aab"
+
+      - name: Sign APKs and AAB
+        env:
+          KS_PASS: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+          # Network-free signing pass: key never shares a process with the build.
+          # APKs get the app key; the AAB the Play upload key (debug JAR sig stripped first).
+          docker run --rm \
+            -v "$PWD/dist:/work" \
+            -v "$RUNNER_TEMP/keystore.jks:/keystore.jks:ro" \
+            -w /work \
+            -e KS_PASS -e KEY_PASS -e KEY_ALIAS \
+            "$BUILDER_IMAGE" \
+            bash -c '
+              set -euo pipefail
+              apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+              zipalign=$(ls -d "$ANDROID_HOME"/build-tools/*/zipalign | sort -V | tail -n1)
+              for apk in *.apk; do
+                "$zipalign" -p -f 4 "$apk" "$apk.aligned"
+                mv "$apk.aligned" "$apk"
+                "$apksigner" sign --ks /keystore.jks --ks-pass env:KS_PASS --key-pass env:KEY_PASS --ks-key-alias "$KEY_ALIAS" "$apk"
+                "$apksigner" verify --verbose "$apk"
+              done
+              for aab in *.aab; do
+                zip -d "$aab" "META-INF/*.RSA" "META-INF/*.SF" "META-INF/*.DSA" "META-INF/*.EC" >/dev/null 2>&1 || true
+                jarsigner -keystore /keystore.jks -storepass "$KS_PASS" -keypass "$KEY_PASS" -sigalg SHA256withRSA -digestalg SHA-256 "$aab" "$KEY_ALIAS"
+                jarsigner -keystore /keystore.jks -storepass "$KS_PASS" -verify "$aab"
+              done
+            '
+          rm -f "$RUNNER_TEMP/keystore.jks"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

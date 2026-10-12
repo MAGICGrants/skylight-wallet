@@ -11,13 +11,24 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Native memory hardening, for the C and C++ in this process (the
+         Flutter engine, Monero, Tor, FHSE). memtagMode: Arm MTE in sync mode,
+         which stops a use-after-free or overflow at the faulting access; it
+         takes effect only on devices with MTE turned on (Pixel 8 and later).
+         nativeHeapZeroInitialized: native allocations start zeroed, so one
+         cannot leak what the memory held before. gwpAsanMode: sampled
+         allocations sit between guard pages on every launch, and a hit
+         ends the process. Older Android versions ignore what they lack. -->
     <application
         android:label="Skylight Wallet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
-        android:dataExtractionRules="@xml/data_extraction_rules">
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:memtagMode="sync"
+        android:nativeHeapZeroInitialized="true"
+        android:gwpAsanMode="always">
         
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

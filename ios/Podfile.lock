@@ -1,6 +1,8 @@
 PODS:
   - camera_avfoundation (0.0.1):
     - Flutter
+  - file_selector_ios (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - flutter_foreground_task (0.0.1):
     - Flutter
@@ -37,6 +39,8 @@ PODS:
     - FlutterMacOS
   - tor_ffi_plugin (0.0.1):
     - Flutter
+  - wallet_backup_platform (0.1.0):
+    - Flutter
   - wallet_fhse (0.1.0):
     - Flutter
   - wallet_openalias (0.0.1):
@@ -49,6 +53,7 @@ PODS:
 
 DEPENDENCIES:
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
+  - file_selector_ios (from `.symlinks/plugins/file_selector_ios/ios`)
   - Flutter (from `Flutter`)
   - flutter_foreground_task (from `.symlinks/plugins/flutter_foreground_task/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
@@ -65,6 +70,7 @@ DEPENDENCIES:
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - tor_ffi_plugin (from `.symlinks/plugins/tor_ffi_plugin/ios`)
+  - wallet_backup_platform (from `.symlinks/plugins/wallet_backup_platform/ios`)
   - wallet_fhse (from `.symlinks/plugins/wallet_fhse/ios`)
   - wallet_openalias (from `.symlinks/plugins/wallet_openalias/ios`)
   - webcrypto (from `.symlinks/plugins/webcrypto/darwin`)
@@ -77,6 +83,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   camera_avfoundation:
     :path: ".symlinks/plugins/camera_avfoundation/ios"
+  file_selector_ios:
+    :path: ".symlinks/plugins/file_selector_ios/ios"
   Flutter:
     :path: Flutter
   flutter_foreground_task:
@@ -109,6 +117,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   tor_ffi_plugin:
     :path: ".symlinks/plugins/tor_ffi_plugin/ios"
+  wallet_backup_platform:
+    :path: ".symlinks/plugins/wallet_backup_platform/ios"
   wallet_fhse:
     :path: ".symlinks/plugins/wallet_fhse/ios"
   wallet_openalias:
@@ -120,6 +130,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   camera_avfoundation: 769d252259fa21e39ada7399c9dc9c0921af8165
+  file_selector_ios: 80c12e90ad3f2045ed6819d03742f1a4c5ec3f93
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_foreground_task: 21ef182ab0a29a3005cc72cd70e5f45cb7f7f817
   flutter_local_notifications: ff50f8405aaa0ccdc7dcfb9022ca192e8ad9688f
@@ -137,11 +148,12 @@ SPEC CHECKSUMS:
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   tor_ffi_plugin: d80e291b649379c8176e1be739e49be007d4ef93
+  wallet_backup_platform: 4bfb79de0bf9f9a5e399263dece05e91d2e7e243
   wallet_fhse: 097ff3864e5d32222f9049f248224fc3edbdbf51
   wallet_openalias: 2e0f3f89a53cd7c1094400eab675463390059dc6
   webcrypto: aa788ff6b0a956e5d6e613b35b99c13e220ca2d0
   workmanager_apple: 7bac258335c310689a641e2d66e88d4845d372e9
 
-PODFILE CHECKSUM: 1857a7cdb7dfafe45f2b0e9a9af44644190f7506
+PODFILE CHECKSUM: c06e3c8e7c4932e16a323b42f1db40d2022e55fc
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.17.0

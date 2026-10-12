@@ -34,6 +34,37 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Profile" "Release")
 endif()
 
+# Memory hardening for the runner and for the plugins built with
+# APPLY_STANDARD_SETTINGS: zeroed stack variables, stack canaries, stack clash
+# probes, and hardware control-flow protection (CET on x86-64, BTI and PAC on
+# arm64). Each flag only where the compiler accepts it, checked with -Werror
+# as the build uses it: a flag the compiler takes but ignores for this target
+# only warns, and would then fail the build.
+include(CheckCXXCompilerFlag)
+set(HARDENING_FLAGS "")
+set(CMAKE_REQUIRED_FLAGS "-Werror")
+foreach(flag
+    -ftrivial-auto-var-init=zero
+    -fstack-protector-strong
+    -fstack-clash-protection
+    -fcf-protection=full
+    -mbranch-protection=standard)
+  string(MAKE_C_IDENTIFIER "HAVE${flag}" have_flag)
+  check_cxx_compiler_flag(${flag} ${have_flag})
+  if(${have_flag})
+    list(APPEND HARDENING_FLAGS ${flag})
+  endif()
+endforeach()
+unset(CMAKE_REQUIRED_FLAGS)
+
+# A position-independent executable, so ASLR moves the runner too.
+if(POLICY CMP0083)
+  cmake_policy(SET CMP0083 NEW)
+  include(CheckPIESupported)
+  check_pie_supported()
+endif()
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by
@@ -45,6 +76,22 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
   target_compile_options(${TARGET} PRIVATE -Wno-deprecated)
+  # The hardening above; glibc's bounds-checked string and memory functions
+  # (FORTIFY, which needs optimisation, so not in debug builds), replacing
+  # any level the distribution's compiler sets; libstdc++'s bounds checks;
+  # and at link time, a read-only GOT and no executable stack. FORTIFY also
+  # marks functions such as write() warn-unused-result; that stays a warning,
+  # so a plugin that ignores one still builds.
+  if(HARDENING_FLAGS)
+    target_compile_options(${TARGET} PRIVATE ${HARDENING_FLAGS})
+  endif()
+  target_compile_options(${TARGET} PRIVATE
+    "$<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE>"
+    "$<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>"
+    "$<$<NOT:$<CONFIG:Debug>>:-Wno-error=unused-result>")
+  target_compile_definitions(${TARGET} PRIVATE _GLIBCXX_ASSERTIONS)
+  target_link_options(${TARGET} PRIVATE
+    "-Wl,-z,relro" "-Wl,-z,now" "-Wl,-z,noexecstack")
 endfunction()
 
 # Flutter library and tool build rules.

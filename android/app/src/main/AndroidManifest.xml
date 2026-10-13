@@ -21,6 +21,10 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="incoming_transactions"/>
 
+        <meta-data
+            android:name="org.magicgrants.skylightwallet.notification_icon"
+            android:resource="@drawable/ic_stat_skylight"/>
+
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">

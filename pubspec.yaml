@@ -65,37 +65,37 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_openalias
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 28eceed05227d3cd8100c890cbdc50e3ac6116fd
+      ref: c69fffd03898046070fc800c1325525eab7d624f
       path: packages/wallet_ui
 
   bip39:

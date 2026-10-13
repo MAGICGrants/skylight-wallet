@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:wallet_domain/wallet_domain.dart' show baseUnitsToDecimalString, decimalToBaseUnits;
+import 'package:wallet_domain/wallet_domain.dart'
+    show
+        baseUnitsToDecimalString,
+        decimalToBaseUnits,
+        parsePaymentUri,
+        BroadcastFailure,
+        BroadcastOutcome;
+import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -13,6 +20,7 @@ import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/wallet_types.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
+import 'package:skylight_wallet/screens/scan_qr.dart';
 import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
@@ -141,38 +149,31 @@ class _SendScreenState extends State<SendScreen> {
 
   Future<void> _scanQrCode() async {
     final wallet = appWalletOf(context);
+    final cw = xmrWallet(context);
     final i18n = AppLocalizations.of(context)!;
 
-    final result = await Navigator.pushNamed(context, '/scan_qr');
+    // The scanner only returns a code it claims — a standard monero: payment URI
+    // or a bare address — and keeps scanning on anything else, so an unexpected QR
+    // never pops back to this form.
+    bool accept(String text) =>
+        (cw != null && parsePaymentUri(text, [cw]) != null) || wallet.isAddressValid(text);
+
+    final result = await Navigator.pushNamed(
+      context,
+      '/scan_qr',
+      arguments: ScanQrArgs(accept: accept, invalidMessage: i18n.scanQrUnexpectedCode),
+    );
 
     if (result == null || result is! String) return;
 
-    String address = '';
-    String? amount;
-    final uri = Uri.tryParse(result);
+    // Accepted, so it parses as a monero: payment URI or is a bare address.
+    final request = cw == null ? null : parsePaymentUri(result, [cw]);
+    final address = request?.address ?? result;
+    final amount = request?.amount;
 
-    if (uri != null && uri.scheme == 'monero') {
-      if (!wallet.isAddressValid(uri.path)) {
-        if (mounted) {
-          showBrandToast(context, i18n.sendInvalidAddressError);
-        }
-        return;
-      }
-
-      address = uri.path;
-
-      amount = uri.queryParameters['tx_amount'];
-    } else if (wallet.isAddressValid(result)) {
-      address = result;
-    } else {
-      if (mounted) {
-        showBrandToast(context, i18n.sendInvalidAddressError);
-      }
-      return;
-    }
-
+    if (!mounted) return;
     _destinationAddressController.text = address;
-    if (amount != null) {
+    if (amount != null && amount.isNotEmpty) {
       // A payment request is denominated in XMR, so entry switches to XMR.
       _amount.setCoinText(_asExactAmount(amount));
     }
@@ -519,6 +520,9 @@ class _SendScreenState extends State<SendScreen> {
     final feeRatio = tx.amount > 0 ? tx.fee / tx.amount : null;
     final showHighFeeWarning = feeRatio != null && feeRatio > 0.10;
 
+    var unresolved = false;
+    var connectionFailed = false;
+
     final committed = await showConfirmSendSheet(
       context: context,
       labels: ConfirmSendLabels(
@@ -543,9 +547,25 @@ class _SendScreenState extends State<SendScreen> {
       highFeeWarning: showHighFeeWarning ? i18n.confirmSendHighFeeWarning(_highFeeToken) : null,
       highFeeToken: _highFeeToken,
       highFeePercent: showHighFeeWarning ? '${(feeRatio * 100).round()}%' : null,
-      onConfirm: () => _commitTx(tx, destinationAddress),
+      onConfirm: () => _commitTx(
+        tx,
+        destinationAddress,
+        onUnresolved: () => unresolved = true,
+        onConnectionFailed: () => connectionFailed = true,
+      ),
     );
 
+    // Nothing sent: toast already shown, stay on the form.
+    if (connectionFailed) return;
+
+    if (unresolved) {
+      // Recorded as unresolved: warn rather than claim success, then route home.
+      if (mounted) await _showUnresolvedSendSheet();
+      if (mounted) {
+        Navigator.pushNamed(context, '/wallet_home', arguments: {'showTxSuccessToast': false});
+      }
+      return;
+    }
     if (committed == true) {
       // The send went through: ask for a store review on a later launch.
       unawaited(StoreReview.markEligible());
@@ -555,14 +575,71 @@ class _SendScreenState extends State<SendScreen> {
     }
   }
 
-  /// Commits the transaction; surfaces its own errors as snackbars (matching the
-  /// retired confirm screen) and rethrows so the sheet stays open on failure.
-  Future<void> _commitTx(AppPendingTx tx, String destinationAddress) async {
+  /// Warns that a send was never confirmed (may or may not be in the network).
+  Future<void> _showUnresolvedSendSheet() {
+    final i18n = AppLocalizations.of(context)!;
+    return showBrandSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: isDesktopModal ? EdgeInsets.zero : const EdgeInsets.fromLTRB(22, 8, 22, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SheetHandle(),
+              Row(
+                children: [
+                  SheetIcon(
+                    icon: Icons.warning_rounded,
+                    bg: BrandColors.warningBg,
+                    color: BrandColors.warning,
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(child: Text(i18n.warning, style: BrandText.sheetTitle)),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                i18n.txDetailsUnknownStatus,
+                style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+              ),
+              const SizedBox(height: 18),
+              BrandButton(label: i18n.close, onPressed: () => Navigator.pop(sheetContext)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Commits the tx. Surfaces errors as toasts; rethrows to keep the sheet open,
+  /// except unknown ([onUnresolved]) and not-sent ([onConnectionFailed]) which
+  /// close it.
+  Future<void> _commitTx(
+    AppPendingTx tx,
+    String destinationAddress, {
+    required void Function() onUnresolved,
+    required void Function() onConnectionFailed,
+  }) async {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context);
 
     try {
       await wallet.commitTx(tx, destinationAddress);
+    } on BroadcastFailure catch (failure) {
+      if (failure.outcome == BroadcastOutcome.unknown) {
+        onUnresolved();
+        return;
+      }
+      if (mounted) showBrandToast(context, i18n.unknownError);
+      rethrow;
+    } on RequestNotSentException {
+      // Nothing was sent: show a connectivity error and close the sheet.
+      if (mounted) showBrandToast(context, i18n.sendNoConnectionError);
+      onConnectionFailed();
+      return;
     } on FormatException catch (error) {
       var errorMsg = error.toString().replaceFirst('FormatException: ', '');
       if (error.toString().contains('HTTP error code 500')) {

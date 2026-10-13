@@ -24,12 +24,19 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TOOLCHAIN="${1:-$(sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$ROOT/rust-toolchain.toml" | head -1)}"
 
 n=0
+locked=0
 while IFS= read -r f; do
   if grep -q "?? 'stable'" "$f"; then
     sed -i "s/?? 'stable'/?? '$TOOLCHAIN'/" "$f"
     n=$((n + 1))
   fi
+  # Force cargo to honor each plugin's committed Cargo.lock — fail rather than
+  # resolve new dependency versions at build time. Idempotent.
+  if grep -q '\.\.\.extraArgs,' "$f" && ! grep -q "'--locked'" "$f"; then
+    sed -i "s/\.\.\.extraArgs,/...extraArgs, '--locked',/" "$f"
+    locked=$((locked + 1))
+  fi
 done < <(find "$CACHE" "$ROOT/plugins" -path '*/cargokit/build_tool/lib/src/builder.dart' 2>/dev/null | sort -u)
 
-echo "pin-rust-toolchain: set cargokit toolchain to $TOOLCHAIN in $n file(s) (PUB_CACHE=$CACHE, repo=$ROOT)"
+echo "pin-rust-toolchain: set cargokit toolchain to $TOOLCHAIN in $n file(s), added --locked in $locked file(s) (PUB_CACHE=$CACHE, repo=$ROOT)"
 [ "$n" -gt 0 ] || echo "  (warning: no cargokit builder.dart found/patched — verify PUB_CACHE + that the string still exists)"

@@ -1,5 +1,14 @@
 {
   "@@locale": "pt",
+  "scanQrUnexpectedCode": "Esse QR não é um endereço ou código de pagamento válido.",
+  "deepLinkCoinNotConfigured": "Por favor, configure sua conexão {chain} primeiro.",
+  "@deepLinkCoinNotConfigured": {
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      }
+    }
+  },
   "continueText": "Continuar",
   "cancel": "Cancelar",
   "done": "Concluir",
@@ -31,6 +40,7 @@
   "connectionTypeLws": "Servidor Light Wallet",
   "connectionTypeNode": "Nó Monero",
   "connectionRemoteIpNotAllowed": "Conexões com endereços IP remotos não são permitidas. Use um nome de domínio ou um endereço IP local.",
+  "connectionLocalOverTorNotAllowed": "Um endereço local não pode ser acessado via Tor. Desative o Tor ou use o endereço onion do servidor.",
   "connectionProtocolHttps": "Removendo protocolo. Usando HTTPS para domínios.",
   "connectionProtocolHttp": "Removendo protocolo. Usando HTTP para endereços locais.",
   "connectionTestStop": "Parar",
@@ -317,6 +327,7 @@
   "sendIrreversibleNote": "Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.",
   "sendSwitchUnit": "Alternar unidade do valor",
   "sendFailedToGetFeesError": "Não foi possível carregar taxas.",
+  "sendNoConnectionError": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
   "torSettingsTitle": "Configurações do Tor",
   "torSettingsModeBuiltIn": "Tor Integrado",
   "torSettingsModeExternal": "Tor Externo",

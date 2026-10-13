@@ -10,7 +10,7 @@ import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
 import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
 import 'package:skylight_wallet/services/foreground_sync_service.dart'
-    show foregroundSyncCallback, stopSyncAndDeleteWallets;
+    show foregroundSyncCallback, stopSyncAndDeleteWallets, restartForegroundSyncIfRunning;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
@@ -256,5 +256,7 @@ Future<void> deleteWallet(BuildContext context) async {
 
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
 void applyConnectionChange(BuildContext context) {
-  unawaited(Provider.of<WalletManager>(context, listen: false).applyConnectionChange('XMR'));
+  final manager = Provider.of<WalletManager>(context, listen: false);
+  // Restart the foreground service too, so its isolate re-reads the new server.
+  unawaited(manager.applyConnectionChange('XMR').then((_) => restartForegroundSyncIfRunning()));
 }

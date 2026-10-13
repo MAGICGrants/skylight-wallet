@@ -54,6 +54,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Monero payment links: the send form opens prefilled, past App Lock. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="monero"/>
+            </intent-filter>
         </activity>
         <!-- flutter_foreground_task background-sync service. Do not rename. -->
         <service

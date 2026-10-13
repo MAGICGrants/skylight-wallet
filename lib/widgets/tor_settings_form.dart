@@ -135,7 +135,11 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
     });
 
     try {
-      final port = int.tryParse(_socksPortController.text) ?? 9050;
+      final port = int.tryParse(_socksPortController.text.trim());
+      if (port == null || port < 1 || port > 65535) {
+        setState(() => _connectionSuccess = false);
+        return;
+      }
       final proxyInfo = (host: InternetAddress.loopbackIPv4, port: port);
 
       final response = await makeSocksHttpRequest(

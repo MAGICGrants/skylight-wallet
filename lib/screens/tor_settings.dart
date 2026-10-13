@@ -18,8 +18,10 @@ class TorSettingsScreen extends StatelessWidget {
   static const _modes = [TorMode.builtIn, TorMode.external, TorMode.disabled];
 
   Future<bool> _test(String port) async {
+    final parsed = int.tryParse(port.trim());
+    if (parsed == null || parsed < 1 || parsed > 65535) return false;
     try {
-      final proxy = (host: InternetAddress.loopbackIPv4, port: int.tryParse(port) ?? 9050);
+      final proxy = (host: InternetAddress.loopbackIPv4, port: parsed);
       final response = await makeSocksHttpRequest(
         'GET',
         'https://check.torproject.org/api/ip',

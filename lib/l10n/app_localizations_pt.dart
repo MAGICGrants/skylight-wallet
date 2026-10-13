@@ -488,7 +488,19 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeTorConnecting => 'Tor · conectando';
 
   @override
+  String get homeTorDisconnected => 'Tor · desconectado';
+
+  @override
   String get homeTorOff => 'Tor · desligado';
+
+  @override
+  String get homeTorExternalConnected => 'Tor externo · conectado';
+
+  @override
+  String get homeTorExternalConnecting => 'Tor externo · conectando';
+
+  @override
+  String get homeTorExternalDisconnected => 'Tor externo · desconectado';
 
   @override
   String get homeReceive => 'Receber';

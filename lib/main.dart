@@ -368,8 +368,15 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
               if (!_startedServices) {
                 _startedServices = true;
                 _walletExists = walletExists;
-                TorSettingsService.sharedInstance.loadSettings();
-                TorService.sharedInstance.start();
+                // Only the built-in Tor is ours to start; external/disabled must
+                // not spin up an embedded Tor, whose status would then misreport
+                // the external proxy.
+                unawaited(() async {
+                  await TorSettingsService.sharedInstance.loadSettings();
+                  if (TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
+                    await TorService.sharedInstance.start();
+                  }
+                }());
 
                 // Attach the manager once so the (multicoin) fiat model knows to
                 // fetch XMR; every startService() afterwards can stay argless.

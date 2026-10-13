@@ -9,6 +9,14 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get scanQrUnexpectedCode => 'That QR isn\'t a valid address or payment code.';
+
+  @override
+  String deepLinkCoinNotConfigured(String chain) {
+    return 'Please configure your $chain connection first.';
+  }
+
+  @override
   String get continueText => 'Continue';
 
   @override
@@ -103,6 +111,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connectionRemoteIpNotAllowed =>
       'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.';
+
+  @override
+  String get connectionLocalOverTorNotAllowed =>
+      'A local address can\'t be reached through Tor. Turn Tor off, or use the server\'s onion address.';
 
   @override
   String get connectionProtocolHttps => 'Removing protocol. Using HTTPS for domains.';
@@ -475,7 +487,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTorConnecting => 'Tor · connecting';
 
   @override
+  String get homeTorDisconnected => 'Tor · disconnected';
+
+  @override
   String get homeTorOff => 'Tor · off';
+
+  @override
+  String get homeTorExternalConnected => 'External Tor · connected';
+
+  @override
+  String get homeTorExternalConnecting => 'External Tor · connecting';
+
+  @override
+  String get homeTorExternalDisconnected => 'External Tor · disconnected';
 
   @override
   String get homeReceive => 'Receive';
@@ -887,6 +911,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendFailedToGetFeesError => 'Failed to get fees.';
+
+  @override
+  String get sendNoConnectionError =>
+      'Couldn\'t reach the server. Check your connection and try again.';
 
   @override
   String get torSettingsTitle => 'Tor Settings';

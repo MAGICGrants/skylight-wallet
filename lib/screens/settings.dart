@@ -235,19 +235,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
 
-    if (Platform.isAndroid || Platform.isIOS) {
-      final result = await BiometricAuth.authenticateIfAppLockEnabled(
-        reason: i18n.revealSeedAuthReason,
-      );
-      if (result != BiometricAuthResult.authenticated) {
-        if (mounted) {
-          showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
-        }
-        return;
-      }
-      if (!mounted) return;
-    }
-
     final ok = await showConfirmSheet(
       context: context,
       icon: Icons.warning_amber_rounded,

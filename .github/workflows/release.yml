@@ -106,11 +106,30 @@ jobs:
           echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> $GITHUB_OUTPUT
           echo "Using Flutter version: ${FLUTTER_VERSION}"
 
+  verify-native:
+    name: Verify monero_c binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Binaries match the pinned monero_c commit
+        run: |
+          set -euo pipefail
+          EXPECTED=$(awk '/^  monero:/{f=1} f&&/resolved-ref:/{gsub(/"/,"",$2);print $2;exit}' pubspec.lock)
+          [ -n "$EXPECTED" ] || { echo "::error::no monero resolved-ref in pubspec.lock"; exit 1; }
+          MANIFEST=$(sed -n 's/^# monero_c //p' monero_c.sha256)
+          if [ "$EXPECTED" != "$MANIFEST" ]; then
+            echo "::error::monero_c.sha256 pins $MANIFEST but pubspec.lock pins $EXPECTED"
+            exit 1
+          fi
+          sha256sum -c monero_c.sha256
+
   build-android:
     name: Android
     runs-on: ubuntu-latest
     environment: Release
-    needs: version
+    needs: [version, verify-native]
     steps:
       - name: Free up disk space
         run: |
@@ -129,27 +148,46 @@ jobs:
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
 
-      - name: Set up Android signing
+      - name: Verify builder image provenance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/keystore.jks
-          cat > android/key.properties << EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=/tmp/skylight/android/keystore.jks
-          EOF
+          set -euo pipefail
+          IMAGE=ghcr.io/magicgrants/skylight-wallet-builder
+          DIGEST=$(docker inspect --format='{{range .RepoDigests}}{{println .}}{{end}}' "$IMAGE:latest" | grep "^$IMAGE@" | head -n1 | cut -d@ -f2)
+          test -n "$DIGEST"
+          echo "Builder image: $IMAGE@$DIGEST"
+          # The signing build must only ever run inside an image the image
+          # workflow published from main, so a :latest moved by a dispatch from
+          # any other ref is rejected before a single secret is written.
+          gh attestation verify "oci://$IMAGE@$DIGEST" \
+            --repo MAGICGrants/skylight-wallet \
+            --cert-identity-regex '^https://github\.com/(?i:MAGICGrants)/skylight-wallet/\.github/workflows/build-builder-image\.yml@refs/heads/main$'
+          echo "BUILDER_IMAGE=$IMAGE@$DIGEST" >> "$GITHUB_ENV"
 
-      - name: Build APKs and AAB
+      - name: Assert builder Flutter version matches pubspec
+        run: |
+          set -euo pipefail
+          EXPECTED='${{ needs.version.outputs.flutter_version }}'
+          ACTUAL=$(docker run --rm "$BUILDER_IMAGE" flutter --version --machine 2>/dev/null | jq -r '.frameworkVersion')
+          echo "builder Flutter: $ACTUAL / pubspec: $EXPECTED"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Builder Flutter $ACTUAL does not match pubspec $EXPECTED"
+            exit 1
+          fi
+
+      - name: Build unsigned APKs and AAB
         run: |
           VERSION='${{ needs.version.outputs.version }}'
           # Deterministic timestamp for reproducible builds
           export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          # No key.properties: gradle debug-signs; the real key is applied in the signing pass.
           # Fixed build path for reproducibility
           docker run --rm \
             -v "$PWD:/tmp/skylight" \
             -w /tmp/skylight \
             -e SOURCE_DATE_EPOCH \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            "$BUILDER_IMAGE" \
             bash -c "cp -a /opt/cargo /tmp/skylight-cargo && export CARGO_HOME=/tmp/skylight-cargo && export PUB_CACHE=/tmp/skylight/.pub-cache && flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release -PplayStore=true"
 
           mkdir -p dist
@@ -157,6 +195,40 @@ jobs:
           cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
           cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/skylight-wallet-${VERSION}-x86_64.apk"
           cp -v build/app/outputs/bundle/release/app-release.aab "dist/skylight-wallet-${VERSION}.aab"
+
+      - name: Sign APKs and AAB
+        env:
+          KS_PASS: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+          # Network-free signing pass: key never shares a process with the build.
+          # APKs get the app key; the AAB the Play upload key (debug JAR sig stripped first).
+          docker run --rm \
+            -v "$PWD/dist:/work" \
+            -v "$RUNNER_TEMP/keystore.jks:/keystore.jks:ro" \
+            -w /work \
+            -e KS_PASS -e KEY_PASS -e KEY_ALIAS \
+            "$BUILDER_IMAGE" \
+            bash -c '
+              set -euo pipefail
+              apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+              zipalign=$(ls -d "$ANDROID_HOME"/build-tools/*/zipalign | sort -V | tail -n1)
+              for apk in *.apk; do
+                "$zipalign" -p -f 4 "$apk" "$apk.aligned"
+                mv "$apk.aligned" "$apk"
+                "$apksigner" sign --ks /keystore.jks --ks-pass env:KS_PASS --key-pass env:KEY_PASS --ks-key-alias "$KEY_ALIAS" "$apk"
+                "$apksigner" verify --verbose "$apk"
+              done
+              for aab in *.aab; do
+                zip -d "$aab" "META-INF/*.RSA" "META-INF/*.SF" "META-INF/*.DSA" "META-INF/*.EC" >/dev/null 2>&1 || true
+                jarsigner -keystore /keystore.jks -storepass "$KS_PASS" -keypass "$KEY_PASS" -sigalg SHA256withRSA -digestalg SHA-256 "$aab" "$KEY_ALIAS"
+                jarsigner -keystore /keystore.jks -storepass "$KS_PASS" -verify "$aab"
+              done
+            '
+          rm -f "$RUNNER_TEMP/keystore.jks"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -170,7 +242,7 @@ jobs:
     name: Linux (x86_64)
     runs-on: ubuntu-latest
     environment: Release
-    needs: version
+    needs: [version, verify-native]
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -179,6 +251,34 @@ jobs:
 
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
+
+      - name: Verify builder image provenance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          IMAGE=ghcr.io/magicgrants/skylight-wallet-builder
+          DIGEST=$(docker inspect --format='{{range .RepoDigests}}{{println .}}{{end}}' "$IMAGE:latest" | grep "^$IMAGE@" | head -n1 | cut -d@ -f2)
+          test -n "$DIGEST"
+          echo "Builder image: $IMAGE@$DIGEST"
+          # The signing build must only ever run inside an image the image
+          # workflow published from main, so a :latest moved by a dispatch from
+          # any other ref is rejected before a single secret is written.
+          gh attestation verify "oci://$IMAGE@$DIGEST" \
+            --repo MAGICGrants/skylight-wallet \
+            --cert-identity-regex '^https://github\.com/(?i:MAGICGrants)/skylight-wallet/\.github/workflows/build-builder-image\.yml@refs/heads/main$'
+          echo "BUILDER_IMAGE=$IMAGE@$DIGEST" >> "$GITHUB_ENV"
+
+      - name: Assert builder Flutter version matches pubspec
+        run: |
+          set -euo pipefail
+          EXPECTED='${{ needs.version.outputs.flutter_version }}'
+          ACTUAL=$(docker run --rm "$BUILDER_IMAGE" flutter --version --machine 2>/dev/null | jq -r '.frameworkVersion')
+          echo "builder Flutter: $ACTUAL / pubspec: $EXPECTED"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Builder Flutter $ACTUAL does not match pubspec $EXPECTED"
+            exit 1
+          fi
 
       - name: Build Linux packages
         run: |
@@ -189,7 +289,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/workspace" \
             -w /workspace \
-            ghcr.io/magicgrants/skylight-wallet-builder:latest \
+            "$BUILDER_IMAGE" \
             bash -c "flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build linux --release && ./deb/build_deb.sh --version ${VERSION} && ./appimage/build_appimage.sh --version ${VERSION}"
 
           mkdir -p dist
@@ -208,7 +308,7 @@ jobs:
     name: Windows (x64)
     runs-on: windows-2022
     environment: Release
-    needs: version
+    needs: [version, verify-native]
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -257,7 +357,7 @@ jobs:
     name: iOS
     runs-on: macos-26
     environment: Release
-    needs: version
+    needs: [version, verify-native]
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

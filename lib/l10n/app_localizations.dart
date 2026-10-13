@@ -93,6 +93,18 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('pt')];
 
+  /// No description provided for @scanQrUnexpectedCode.
+  ///
+  /// In en, this message translates to:
+  /// **'That QR isn\'t a valid address or payment code.'**
+  String get scanQrUnexpectedCode;
+
+  /// No description provided for @deepLinkCoinNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Please configure your {chain} connection first.'**
+  String deepLinkCoinNotConfigured(String chain);
+
   /// No description provided for @continueText.
   ///
   /// In en, this message translates to:
@@ -278,6 +290,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connections to remote IP addresses aren\'t allowed. Use a domain name or a local IP address.'**
   String get connectionRemoteIpNotAllowed;
+
+  /// No description provided for @connectionLocalOverTorNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'A local address can\'t be reached through Tor. Turn Tor off, or use the server\'s onion address.'**
+  String get connectionLocalOverTorNotAllowed;
 
   /// No description provided for @connectionProtocolHttps.
   ///
@@ -963,11 +981,35 @@ abstract class AppLocalizations {
   /// **'Tor · connecting'**
   String get homeTorConnecting;
 
+  /// No description provided for @homeTorDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor · disconnected'**
+  String get homeTorDisconnected;
+
   /// No description provided for @homeTorOff.
   ///
   /// In en, this message translates to:
   /// **'Tor · off'**
   String get homeTorOff;
+
+  /// No description provided for @homeTorExternalConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'External Tor · connected'**
+  String get homeTorExternalConnected;
+
+  /// No description provided for @homeTorExternalConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'External Tor · connecting'**
+  String get homeTorExternalConnecting;
+
+  /// No description provided for @homeTorExternalDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'External Tor · disconnected'**
+  String get homeTorExternalDisconnected;
 
   /// No description provided for @homeReceive.
   ///
@@ -1742,6 +1784,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to get fees.'**
   String get sendFailedToGetFeesError;
+
+  /// No description provided for @sendNoConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server. Check your connection and try again.'**
+  String get sendNoConnectionError;
 
   /// No description provided for @torSettingsTitle.
   ///

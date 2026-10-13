@@ -19,6 +19,7 @@ jobs:
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    environment: Builder
     permissions:
       contents: read
       packages: write
@@ -60,7 +61,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,prefix=
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         id: build

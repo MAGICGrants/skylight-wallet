@@ -681,8 +681,8 @@ packages:
     dependency: "direct main"
     description:
       path: "impls/monero.dart"
-      ref: e31cbe2cc595fa9d640b35ffb45dc3afa91ec7b0
-      resolved-ref: e31cbe2cc595fa9d640b35ffb45dc3afa91ec7b0
+      ref: "0f01328816eb671ff9e4f79a3c0c15990006fb12"
+      resolved-ref: "0f01328816eb671ff9e4f79a3c0c15990006fb12"
       url: "https://github.com/magicgrants/monero_c"
     source: git
     version: "0.0.0"
@@ -1264,8 +1264,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_background"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1273,8 +1273,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_domain"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1282,8 +1282,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_fiat"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1291,8 +1291,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_infra"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1300,8 +1300,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_monero"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1309,8 +1309,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_openalias"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1318,8 +1318,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_ui"
-      ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
-      resolved-ref: "548255131912abcfd4b43e273bc4722c160c8ccf"
+      ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
+      resolved-ref: a3d4ada80e42b457eab96809a35ea59ca9a9b7aa
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"

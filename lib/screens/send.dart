@@ -5,7 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart'
-    show baseUnitsToDecimalString, decimalToBaseUnits, parsePaymentUri, BroadcastFailure, BroadcastOutcome;
+    show
+        baseUnitsToDecimalString,
+        decimalToBaseUnits,
+        parsePaymentUri,
+        BroadcastFailure,
+        BroadcastOutcome;
 import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 

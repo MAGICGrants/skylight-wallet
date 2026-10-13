@@ -183,10 +183,14 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/unlock': (context) => UnlockScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
-    '/lws_keys': (context) =>
-        ReauthGate(reason: AppLocalizations.of(context)!.settingsAppLockUnlockReason, child: LwsKeysScreen()),
-    '/secret_keys': (context) =>
-        ReauthGate(reason: AppLocalizations.of(context)!.revealSeedAuthReason, child: SecretKeysScreen()),
+    '/lws_keys': (context) => ReauthGate(
+      reason: AppLocalizations.of(context)!.settingsAppLockUnlockReason,
+      child: LwsKeysScreen(),
+    ),
+    '/secret_keys': (context) => ReauthGate(
+      reason: AppLocalizations.of(context)!.revealSeedAuthReason,
+      child: SecretKeysScreen(),
+    ),
     '/send': (context) => SendScreen(),
     '/scan_qr': (context) => ScanQrScreen(),
     '/receive': (context) => ReceiveScreen(),

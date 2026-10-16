@@ -233,10 +233,15 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     });
 
     if (hadProtocol) {
-      showBrandToast(
-        context,
-        addressUsesSsl(value) ? i18n.connectionProtocolHttps : i18n.connectionProtocolHttp,
-      );
+      final String protocolMessage;
+      if (onionAddressRegex.hasMatch(value)) {
+        protocolMessage = i18n.connectionProtocolHttpOnion;
+      } else if (addressUsesSsl(value)) {
+        protocolMessage = i18n.connectionProtocolHttps;
+      } else {
+        protocolMessage = i18n.connectionProtocolHttp;
+      }
+      showBrandToast(context, protocolMessage);
     }
   }
 

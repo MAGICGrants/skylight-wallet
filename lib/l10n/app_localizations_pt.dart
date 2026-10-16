@@ -127,6 +127,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionProtocolHttp => 'Removendo protocolo. Usando HTTP para endereços locais.';
 
   @override
+  String get connectionProtocolHttpOnion =>
+      'Removendo protocolo. Endereços onion usam HTTP via Tor.';
+
+  @override
   String get connectionTestStop => 'Parar';
 
   @override

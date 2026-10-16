@@ -44,6 +44,7 @@
   "connectionTorDisabledWarning": "O Tor está desativado, então esta conexão não funciona mais. Reconfigure-a.",
   "connectionProtocolHttps": "Removendo protocolo. Usando HTTPS para domínios.",
   "connectionProtocolHttp": "Removendo protocolo. Usando HTTP para endereços locais.",
+  "connectionProtocolHttpOnion": "Removendo protocolo. Endereços onion usam HTTP via Tor.",
   "connectionTestStop": "Parar",
   "connectionTestingTitle": "Testando conexão",
   "connectionTestingDetail": "Verificando se o servidor responde.",

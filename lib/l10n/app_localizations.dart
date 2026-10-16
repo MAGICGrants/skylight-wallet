@@ -315,6 +315,12 @@ abstract class AppLocalizations {
   /// **'Removing protocol. Using HTTP for local addresses.'**
   String get connectionProtocolHttp;
 
+  /// No description provided for @connectionProtocolHttpOnion.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing protocol. Onion addresses use HTTP over Tor.'**
+  String get connectionProtocolHttpOnion;
+
   /// No description provided for @connectionTestStop.
   ///
   /// In en, this message translates to:

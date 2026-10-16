@@ -44,6 +44,7 @@
   "connectionTorDisabledWarning": "Tor is disabled, so this connection no longer works. Please reconfigure it.",
   "connectionProtocolHttps": "Removing protocol. Using HTTPS for domains.",
   "connectionProtocolHttp": "Removing protocol. Using HTTP for local addresses.",
+  "connectionProtocolHttpOnion": "Removing protocol. Onion addresses use HTTP over Tor.",
   "connectionTestStop": "Stop",
   "connectionTestingTitle": "Testing connection",
   "connectionTestingDetail": "Checking whether the server answers.",

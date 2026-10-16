@@ -368,12 +368,20 @@ class _SendScreenState extends State<SendScreen> {
     final amountText = _amount.coinText;
 
     try {
-      // Estimate the fee per priority natively (no full tx build).
-      final fees = await Future.wait([
-        wallet.estimateFee(destinationAddress, amountText, priority: 1),
-        wallet.estimateFee(destinationAddress, amountText, priority: 2),
-        wallet.estimateFee(destinationAddress, amountText, priority: 3),
-      ]);
+      // Sequential: estimateFee builds the tx when no estimate comes back (a
+      // sweep, or some states), and the builds share one wallet2.
+      final fees = <int?>[];
+      for (var priority = 1; priority <= 3; priority++) {
+        if (currentRequest != _feeCalculationCounter) return;
+        fees.add(
+          await wallet.estimateFee(
+            destinationAddress,
+            amountText,
+            priority: priority,
+            isSweepAll: _isSweepAll,
+          ),
+        );
+      }
 
       // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {

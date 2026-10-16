@@ -214,13 +214,25 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   bool isAddressValid(String address) => _wallet.isAddressValid(address);
 
   @override
-  Future<int?> estimateFee(String destinationAddress, String amount, {int priority = 0}) async {
-    final fee = await _wallet.estimateFee(
-      destinationAddress,
-      domain.decimalToBaseUnits(amount, _moneroDecimals),
-      priority: priority,
-    );
-    return fee?.toInt();
+  Future<int?> estimateFee(
+    String destinationAddress,
+    String amount, {
+    int priority = 0,
+    bool isSweepAll = false,
+  }) async {
+    final amountBaseUnits = domain.decimalToBaseUnits(amount, _moneroDecimals);
+    if (!isSweepAll) {
+      final fee = await _wallet.estimateFee(destinationAddress, amountBaseUnits, priority: priority);
+      if (fee != null) return fee.toInt();
+    }
+    // A sweep can't be estimated; build the tx (also the fallback when no
+    // estimate comes back).
+    try {
+      final tx = await _wallet.createTx(destinationAddress, amountBaseUnits, isSweepAll, priority: priority);
+      return tx.feeBaseUnits.toInt();
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

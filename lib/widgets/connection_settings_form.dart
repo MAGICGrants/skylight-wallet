@@ -87,6 +87,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _initialBackgroundSync = false;
   bool _initialForegroundSync = false;
 
+  // The saved connection's raw Tor flag (before masking by the global Tor mode).
+  // Used to warn when a Tor connection was silently turned off by disabling Tor.
+  bool _savedConnectionUsedTor = false;
+
   bool get _isNode => _connectionType == 'node';
 
   /// Background/continuous sync only helps a full-node connection (the slow
@@ -166,6 +170,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
       _useTor = useTor;
+      _savedConnectionUsedTor = conn.useTor;
       _connectionType = type;
       _initialAddress = cleanConnectionAddress(conn.address);
       _initialProxyPort = conn.proxyPort;
@@ -306,6 +311,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _addressController.text = conn.address;
       _customProxyPortController.text = conn.proxyPort;
       _useTor = useTor;
+      _savedConnectionUsedTor = conn.useTor;
       _hasTested = false;
       _connectionSuccess = false;
       _errorMessage = null;
@@ -518,6 +524,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       onAddressChanged: _onAddressChange,
       onScan: (Platform.isAndroid || Platform.isIOS) ? _scanQrCode : null,
       errorMessage: _errorMessage,
+      // The saved connection used Tor, which is now disabled: prompt to reconfigure.
+      warning: (_savedConnectionUsedTor && torMode == TorMode.disabled)
+          ? i18n.connectionTorDisabledWarning
+          : null,
       proxyController: _customProxyPortController,
       onProxyChanged: _onProxyPortChange,
       proxyEnabled: !_useTor,

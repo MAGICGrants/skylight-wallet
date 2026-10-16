@@ -41,6 +41,7 @@
   "connectionTypeNode": "Monero Node",
   "connectionRemoteIpNotAllowed": "Connections to remote IP addresses aren't allowed. Use a domain name or a local IP address.",
   "connectionLocalOverTorNotAllowed": "A local address can't be reached through Tor. Turn Tor off, or use the server's onion address.",
+  "connectionOnionNeedsTor": "An onion address can only be reached through Tor. Turn Tor on to use it.",
   "connectionTorDisabledWarning": "Tor is disabled, so this connection no longer works. Please reconfigure it.",
   "connectionProtocolHttps": "Removing protocol. Using HTTPS for domains.",
   "connectionProtocolHttp": "Removing protocol. Using HTTP for local addresses.",

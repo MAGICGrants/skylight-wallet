@@ -70,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadPackageInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
+    if (!mounted) return;
     setState(() {
       _appVersion = packageInfo.version;
       _buildNumber = packageInfo.buildNumber;
@@ -140,6 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
 
+    if (!mounted) return;
     setState(() {
       _appLockEnabled = value;
     });

@@ -163,6 +163,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   Future<void> _loadPersistedConnection() async {
     final wallet = appWalletOf(context);
     final conn = await wallet.getPersistedConnection();
+    if (!mounted) return;
 
     final useTor = conn.useTor && TorSettingsService.sharedInstance.torMode != TorMode.disabled;
     final type = connectionTypeOptions.contains(conn.connectionType) ? conn.connectionType : 'lws';
@@ -189,6 +190,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final i18n = AppLocalizations.of(context)!;
 
     final result = await Navigator.pushNamed(context, '/scan_qr');
+    if (!mounted) return;
 
     if (result != null && result is String) {
       final scannedAddress = cleanConnectionAddress(result);

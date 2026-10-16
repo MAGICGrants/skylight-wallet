@@ -312,7 +312,9 @@ class _SendScreenState extends State<SendScreen> {
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
       // OpenAlias: cached + deduped; the counter gates the send button while
       // a lookup is in flight.
-      if (await _resolveDomain(unresolvedDestinationAddress) == null) {
+      final resolved = await _resolveDomain(unresolvedDestinationAddress);
+      if (!mounted) return false;
+      if (resolved == null) {
         if (setErrors) {
           setState(() {
             _destinationAddressError = i18n.sendOpenAliasResolveError;
@@ -420,6 +422,7 @@ class _SendScreenState extends State<SendScreen> {
     });
 
     final isValid = await _validateForm();
+    if (!mounted) return;
 
     if (!isValid) {
       setState(() {
@@ -437,6 +440,7 @@ class _SendScreenState extends State<SendScreen> {
     // it, so this comes back from the cache rather than hitting Tor again.
     if (domainRegex.hasMatch(destinationAddressUnresolved)) {
       final resolved = await _resolveDomain(destinationAddressUnresolved);
+      if (!mounted) return;
 
       if (resolved == null) {
         setState(() {
@@ -476,6 +480,7 @@ class _SendScreenState extends State<SendScreen> {
         );
       }
     } catch (error) {
+      if (!mounted) return;
       if (error.toString().contains('Unlocked funds too low')) {
         // Display-only: picks which of two error messages to show, so the
         // imprecision of a double cannot reach an amount anyone spends.
@@ -496,6 +501,7 @@ class _SendScreenState extends State<SendScreen> {
       }
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
     });

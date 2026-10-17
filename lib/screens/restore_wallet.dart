@@ -96,6 +96,7 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
         locale: Localizations.localeOf(context).toString(),
       ),
     );
+    if (!mounted) return;
     if (result == null) return;
 
     setState(() {

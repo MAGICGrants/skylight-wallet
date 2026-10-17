@@ -297,6 +297,18 @@ abstract class AppLocalizations {
   /// **'A local address can\'t be reached through Tor. Turn Tor off, or use the server\'s onion address.'**
   String get connectionLocalOverTorNotAllowed;
 
+  /// No description provided for @connectionOnionNeedsTor.
+  ///
+  /// In en, this message translates to:
+  /// **'An onion address can only be reached through Tor. Turn Tor on to use it.'**
+  String get connectionOnionNeedsTor;
+
+  /// No description provided for @connectionTorDisabledWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Tor is disabled, so this connection no longer works. Please reconfigure it.'**
+  String get connectionTorDisabledWarning;
+
   /// No description provided for @connectionProtocolHttps.
   ///
   /// In en, this message translates to:
@@ -308,6 +320,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Removing protocol. Using HTTP for local addresses.'**
   String get connectionProtocolHttp;
+
+  /// No description provided for @connectionProtocolHttpOnion.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing protocol. Onion addresses use HTTP over Tor.'**
+  String get connectionProtocolHttpOnion;
 
   /// No description provided for @connectionTestStop.
   ///

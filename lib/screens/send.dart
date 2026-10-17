@@ -312,7 +312,9 @@ class _SendScreenState extends State<SendScreen> {
     if (domainRegex.hasMatch(unresolvedDestinationAddress)) {
       // OpenAlias: cached + deduped; the counter gates the send button while
       // a lookup is in flight.
-      if (await _resolveDomain(unresolvedDestinationAddress) == null) {
+      final resolved = await _resolveDomain(unresolvedDestinationAddress);
+      if (!mounted) return false;
+      if (resolved == null) {
         if (setErrors) {
           setState(() {
             _destinationAddressError = i18n.sendOpenAliasResolveError;
@@ -366,12 +368,20 @@ class _SendScreenState extends State<SendScreen> {
     final amountText = _amount.coinText;
 
     try {
-      // Estimate the fee per priority natively (no full tx build).
-      final fees = await Future.wait([
-        wallet.estimateFee(destinationAddress, amountText, priority: 1),
-        wallet.estimateFee(destinationAddress, amountText, priority: 2),
-        wallet.estimateFee(destinationAddress, amountText, priority: 3),
-      ]);
+      // Sequential: estimateFee builds the tx when no estimate comes back (a
+      // sweep, or some states), and the builds share one wallet2.
+      final fees = <int?>[];
+      for (var priority = 1; priority <= 3; priority++) {
+        if (currentRequest != _feeCalculationCounter) return;
+        fees.add(
+          await wallet.estimateFee(
+            destinationAddress,
+            amountText,
+            priority: priority,
+            isSweepAll: _isSweepAll,
+          ),
+        );
+      }
 
       // Only update state if this is still the latest request
       if (currentRequest == _feeCalculationCounter && mounted) {
@@ -420,6 +430,7 @@ class _SendScreenState extends State<SendScreen> {
     });
 
     final isValid = await _validateForm();
+    if (!mounted) return;
 
     if (!isValid) {
       setState(() {
@@ -437,6 +448,7 @@ class _SendScreenState extends State<SendScreen> {
     // it, so this comes back from the cache rather than hitting Tor again.
     if (domainRegex.hasMatch(destinationAddressUnresolved)) {
       final resolved = await _resolveDomain(destinationAddressUnresolved);
+      if (!mounted) return;
 
       if (resolved == null) {
         setState(() {
@@ -476,6 +488,7 @@ class _SendScreenState extends State<SendScreen> {
         );
       }
     } catch (error) {
+      if (!mounted) return;
       if (error.toString().contains('Unlocked funds too low')) {
         // Display-only: picks which of two error messages to show, so the
         // imprecision of a double cannot reach an amount anyone spends.
@@ -496,6 +509,7 @@ class _SendScreenState extends State<SendScreen> {
       }
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
     });

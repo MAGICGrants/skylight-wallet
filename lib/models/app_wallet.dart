@@ -121,7 +121,12 @@ abstract interface class AppWallet implements Listenable {
   /// can't estimate it (typically insufficient balance for that priority).
   /// [amount] is exact decimal text, never a double. A spend amount that has
   /// been through a double is no longer the amount the user asked for.
-  Future<int?> estimateFee(String destinationAddress, String amount, {int priority});
+  Future<int?> estimateFee(
+    String destinationAddress,
+    String amount, {
+    int priority,
+    bool isSweepAll,
+  });
   Future<AppPendingTx> createTx(
     String destinationAddress,
     String amount,

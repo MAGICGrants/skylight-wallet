@@ -117,10 +117,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'A local address can\'t be reached through Tor. Turn Tor off, or use the server\'s onion address.';
 
   @override
+  String get connectionOnionNeedsTor =>
+      'An onion address can only be reached through Tor. Turn Tor on to use it.';
+
+  @override
+  String get connectionTorDisabledWarning =>
+      'Tor is disabled, so this connection no longer works. Please reconfigure it.';
+
+  @override
   String get connectionProtocolHttps => 'Removing protocol. Using HTTPS for domains.';
 
   @override
   String get connectionProtocolHttp => 'Removing protocol. Using HTTP for local addresses.';
+
+  @override
+  String get connectionProtocolHttpOnion => 'Removing protocol. Onion addresses use HTTP over Tor.';
 
   @override
   String get connectionTestStop => 'Stop';

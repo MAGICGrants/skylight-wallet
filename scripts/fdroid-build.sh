@@ -50,7 +50,11 @@ cp "/tmp/monero_c/monero_libwallet2_api_c/build/$ARCH/libwallet2_api_c.so" \
    "/tmp/skylight/android/app/src/main/jniLibs/$ABI/libmonero_libwallet2_api_c.so"
 rm -rf /tmp/monero_c
 cd /tmp/skylight
-export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+# Keep fdroid's inherited SOURCE_DATE_EPOCH; /tmp/skylight has no .git so git log
+# here would blank it, making OpenSSL bake the wall-clock time (non-reproducible).
+: "${SOURCE_DATE_EPOCH:=$(git -C "$REPO" log -1 --format=%ct 2>/dev/null)}"
+[ -n "$SOURCE_DATE_EPOCH" ] || { echo "SOURCE_DATE_EPOCH empty; refusing non-reproducible build" >&2; exit 1; }
+export SOURCE_DATE_EPOCH
 RUST_TOOLCHAIN=$(sed -n 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' rust-toolchain.toml | head -1)
 rustup default "$RUST_TOOLCHAIN"
 rustup target add "$RUST"

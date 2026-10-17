@@ -222,13 +222,22 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   }) async {
     final amountBaseUnits = domain.decimalToBaseUnits(amount, _moneroDecimals);
     if (!isSweepAll) {
-      final fee = await _wallet.estimateFee(destinationAddress, amountBaseUnits, priority: priority);
+      final fee = await _wallet.estimateFee(
+        destinationAddress,
+        amountBaseUnits,
+        priority: priority,
+      );
       if (fee != null) return fee.toInt();
     }
     // A sweep can't be estimated; build the tx (also the fallback when no
     // estimate comes back).
     try {
-      final tx = await _wallet.createTx(destinationAddress, amountBaseUnits, isSweepAll, priority: priority);
+      final tx = await _wallet.createTx(
+        destinationAddress,
+        amountBaseUnits,
+        isSweepAll,
+        priority: priority,
+      );
       return tx.feeBaseUnits.toInt();
     } catch (_) {
       return null;

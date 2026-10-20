@@ -19,8 +19,8 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 2.1.0+413
 
 environment:
-  sdk: 3.11.5
-  flutter: 3.41.7
+  sdk: 3.13.5
+  flutter: 3.47.7
 
 flutter_launcher_icons:
   android: true
@@ -49,7 +49,7 @@ dependencies:
   tor_ffi_plugin:
     git:
       url: https://github.com/cypherstack/tor
-      ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
+      ref: e30ed0d386a40ee4a999aeaf57aafd32921d601e
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -126,7 +126,7 @@ dependencies:
   dart_date: 1.5.3
   qr_flutter: 4.1.0
   share_plus: 11.1.0
-  intl: 0.20.2
+  intl: 0.20.3
   shared_preferences: 2.5.3
   http: 1.6.0
   workmanager: 0.9.0+3

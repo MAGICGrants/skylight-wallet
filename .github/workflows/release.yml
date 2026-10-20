@@ -282,9 +282,11 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          # cargokit builds the Rust plugins with `rustup run stable`, and the
+          # cargokit builds wallet_openalias with `rustup run stable`, and the
           # image only has the rust-toolchain.toml version, so pin cargokit to it
           # (as the Android job does) instead of downloading stable mid-build.
+          # tor_ffi_plugin's build hook uses its own pinned toolchain, which
+          # rustup downloads on first use.
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \

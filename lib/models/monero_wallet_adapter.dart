@@ -22,8 +22,7 @@ bool _deriveSsl(String address) =>
 /// converting wallet-core types (BigInt amounts, TxDetails, connection details)
 /// to skylight's. Re-fires the wrapped wallet's notifications.
 class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
-  MoneroWalletAdapter(this._wallet, {StoredSeedReader? readStoredSeed})
-    : _readStoredSeed = readStoredSeed {
+  MoneroWalletAdapter(this._wallet, {this._readStoredSeed}) {
     _wallet.addListener(notifyListeners);
   }
 

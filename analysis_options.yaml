@@ -13,6 +13,13 @@ analyzer:
   # Vendored/submodule code skylight consumes via pub-cache, not linted here.
   exclude:
     - monero_c/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the

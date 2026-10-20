@@ -85,8 +85,8 @@ A successful verification prints `Good signature from "MAGIC Grants <info@magicg
 
 Before you begin, ensure you have the following installed:
 
-- **Flutter SDK** (3.41.7, the version pinned in `pubspec.yaml`) - [Installation guide](https://docs.flutter.dev/get-started/install)
-- **Dart SDK** (3.11.5) - Comes with Flutter
+- **Flutter SDK** (3.47.7, the version pinned in `pubspec.yaml`) - [Installation guide](https://docs.flutter.dev/get-started/install)
+- **Dart SDK** (3.13.5) - Comes with Flutter
 - **Android Studio** - For Android development
 - **Android SDK** - API level 24+ (Android 7.0 or higher)
 - **Java JDK** - Version 17

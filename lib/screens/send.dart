@@ -280,7 +280,7 @@ class _SendScreenState extends State<SendScreen> {
       // Someone may have resolved this exact alias while we were settling.
       if (domain == _resolveCacheInput) return _resolveCacheOutput;
       if (_resolveInFlight != null && domain == _resolveInFlightInput) {
-        return _resolveInFlight!;
+        return await _resolveInFlight!;
       }
 
       // Only a real lookup is published as in-flight, so joining one always

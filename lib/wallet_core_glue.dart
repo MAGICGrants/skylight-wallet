@@ -158,8 +158,9 @@ Future<bool> startupWalletManager(BuildContext context) =>
 Future<bool> _loadExistingWalletManager(WalletManager manager) async {
   if (await manager.hasAnyExistingWallet()) {
     // App Lock is always on, so nothing is decrypted before the user gets past
-    // it: the unlock screen opens the wallet (reopenAfterAppLock). Linux and
-    // Windows wait for the typed password the same way.
+    // it: the unlock screen opens the wallet (wallet_fhse's
+    // unlockAppLockWithDevice). Linux and Windows wait for the typed password
+    // the same way (unlockAppLockWithPassword).
     if (wcore.WalletSecrets.holdsWalletPassword) await manager.loadCachedDisplayState();
     return true;
   }
@@ -253,31 +254,6 @@ Future<void> Function() syncSettingsApplier(BuildContext context) =>
 Future<String?> existingWalletRoute(BuildContext context) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
   return await manager.hasAnyExistingWallet() ? '/unlock' : null;
-}
-
-/// App Lock on Linux and Windows after a time without use: the wallet stayed
-/// open, so the password is only checked again ([WalletManager.checkTypedPassword]).
-/// Null when the wallet is not open: [unlockWithPassword] opens it.
-Future<bool?> recheckPasswordIfOpen(BuildContext context, String password) async {
-  final manager = Provider.of<WalletManager>(context, listen: false);
-  if (!manager.hasPassword) return null;
-  return manager.checkTypedPassword(password);
-}
-
-/// Opens the wallet with a desktop-entered password, then syncs. Throws on a
-/// wrong password (the unlock screen shows the error).
-///
-/// Returns true when security keys are on: the password was right, and a key
-/// comes next, so the caller shows the security-key unlock instead.
-Future<bool> unlockWithPassword(BuildContext context, String password) async {
-  final manager = Provider.of<WalletManager>(context, listen: false);
-  if (!await manager.unlockWithTypedPassword(password)) {
-    throw Exception('Incorrect wallet password.');
-  }
-  if (!manager.hasPassword) return true;
-  await manager.openAll();
-  manager.syncInBackground();
-  return false;
 }
 
 /// Deletes the wallet and everything derived from it.

@@ -6,19 +6,15 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/util/platform.dart' show typesWalletPassword;
-import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/floating_bob.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
-import 'package:wallet_domain/wallet_domain.dart' show AppSession;
 import 'package:wallet_fhse/security_keys_ui.dart'
     show
+        AppLockUnlock,
         FhseLocalizations,
-        reopenAfterAppLock,
         showAppLockRecoveryPhrase,
-        waitForFullLock,
-        walletNeedsSecurityKey;
-import 'package:wallet_infra/wallet_infra.dart'
-    show BiometricAuth, BiometricAuthResult, BoundToAnotherPcException;
+        unlockAppLockWithDevice,
+        unlockAppLockWithPassword;
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key, this.onUnlocked, this.onKeyNeeded});
@@ -100,58 +96,14 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
   Future<void> _promptUnlock() async {
     final i18n = AppLocalizations.of(context)!;
-    // Always asks (App Lock is always on); a device with no lock at all has
-    // nothing to ask and passes, and Settings warns about it.
-    final result = await BiometricAuth.confirmOwner(reason: i18n.unlockReason);
-
-    // Auto-prompted: stay silent on a decline (the button asks again), report
-    // only a real error, and offer the recovery phrase for it.
-    if (result == BiometricAuthResult.authenticated) {
-      // A full lock still closing the wallets decides what comes next.
-      await waitForFullLock();
-      if (!mounted) return;
-      // With security keys on and the wallet closed, a key comes next.
-      final needsKey = await walletNeedsSecurityKey(context);
-      if (!mounted) return;
-      // Otherwise the keystore password comes back (a relock dropped it) and,
-      // after a full lock, the wallet opens again. Without one it stays shut.
-      if (!needsKey && !await reopenAfterAppLock(context)) {
-        if (mounted) {
-          setState(() => _offerRecoveryPhrase = true);
-          showBrandToast(context, i18n.unlockUnableToAuthError);
-        }
-        return;
-      }
-      if (mounted) _unlocked(needsKey: needsKey);
-    } else if (result == BiometricAuthResult.error) {
-      if (mounted) {
-        setState(() => _offerRecoveryPhrase = true);
-        showBrandToast(context, i18n.unlockUnableToAuthError);
-      }
-    }
+    final outcome = await unlockAppLockWithDevice(context, reason: i18n.unlockReason);
+    if (mounted) _show(outcome);
   }
 
   /// The device could not confirm its owner: the recovery phrase opens the
   /// wallet instead (and stands in for a security key, when keys are on).
   Future<void> _useRecoveryPhrase() async {
-    if (await showAppLockRecoveryPhrase(context) && mounted) _unlocked(needsKey: false);
-  }
-
-  /// Past App Lock. A key comes next when keys are on and the wallet is
-  /// closed; otherwise this was the last lock ([AppSession]). A relock covers
-  /// the screen the user left, and the app uncovers it; at a launch or after
-  /// a full lock this is the base route, and home comes next.
-  void _unlocked({required bool needsKey}) {
-    if (needsKey) {
-      final onKeyNeeded = widget.onKeyNeeded;
-      if (onKeyNeeded != null) return onKeyNeeded();
-      Navigator.of(context).pushNamedAndRemoveUntil('/security_key_unlock', (route) => false);
-      return;
-    }
-    AppSession.markUnlocked();
-    final onUnlocked = widget.onUnlocked;
-    if (onUnlocked != null) return onUnlocked();
-    Navigator.of(context).pushReplacementNamed('/wallet_home');
+    if (await showAppLockRecoveryPhrase(context) && mounted) _show(AppLockUnlock.unlocked);
   }
 
   Future<void> _unlockWithPassword() async {
@@ -164,42 +116,42 @@ class _UnlockScreenState extends State<UnlockScreen> {
       _isLoading = true;
       _error = null;
     });
+    final outcome = await unlockAppLockWithPassword(context, _passwordController.text);
+    if (!mounted) return;
+    _passwordController.clear();
+    setState(() => _isLoading = false);
+    _show(outcome);
+  }
 
-    try {
-      // App Lock after a time without use: the wallet stayed open, so the
-      // password is only checked again and the screen left comes back.
-      final rechecked = await recheckPasswordIfOpen(context, _passwordController.text);
-      if (rechecked != null) {
-        if (!rechecked) throw Exception('Incorrect wallet password.');
-        if (mounted) {
-          _passwordController.clear();
-          _unlocked(needsKey: false);
+  /// Shows what App Lock's unlock decided (wallet_fhse's [AppLockUnlock]):
+  /// where to go, or what to say.
+  void _show(AppLockUnlock outcome) {
+    final i18n = AppLocalizations.of(context)!;
+    switch (outcome) {
+      case AppLockUnlock.unlocked:
+        // A relock covers the screen the user left, and the app uncovers it.
+        // At a launch or after a full lock this is the base route: home next.
+        final onUnlocked = widget.onUnlocked;
+        if (onUnlocked != null) return onUnlocked();
+        Navigator.of(context).pushNamedAndRemoveUntil('/wallet_home', (route) => false);
+      case AppLockUnlock.needsKey:
+        final onKeyNeeded = widget.onKeyNeeded;
+        if (onKeyNeeded != null) return onKeyNeeded();
+        Navigator.of(context).pushNamedAndRemoveUntil('/security_key_unlock', (route) => false);
+      case AppLockUnlock.declined:
+        // Auto-prompted: stay quiet; the button asks again.
+        break;
+      case AppLockUnlock.failed:
+        if (typesWalletPassword) {
+          setState(() => _error = i18n.unlockUnableToAuthError);
+          return;
         }
-        return;
-      }
-      if (!mounted) return;
-      final needsKey = await unlockWithPassword(context, _passwordController.text);
-      if (mounted) {
-        if (widget.onUnlocked != null) return _unlocked(needsKey: needsKey);
-        // No key to follow: the password was the last lock.
-        if (!needsKey) AppSession.markUnlocked();
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          needsKey ? '/security_key_unlock' : '/wallet_home',
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _passwordController.clear();
-        setState(() {
-          // The files are bound to a PC whose TPM this one cannot use.
-          _error = e is BoundToAnotherPcException
-              ? FhseLocalizations.of(context).unlockBoundToAnotherPc
-              : i18n.unlockIncorrectPasswordError;
-          _isLoading = false;
-        });
-      }
+        setState(() => _offerRecoveryPhrase = true);
+        showBrandToast(context, i18n.unlockUnableToAuthError);
+      case AppLockUnlock.wrongPassword:
+        setState(() => _error = i18n.unlockIncorrectPasswordError);
+      case AppLockUnlock.boundToAnotherPc:
+        setState(() => _error = FhseLocalizations.of(context).unlockBoundToAnotherPc);
     }
   }
 

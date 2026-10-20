@@ -287,8 +287,10 @@ Future<bool> unlockWithPassword(BuildContext context, String password) async {
 /// own isolate, and deleting them while it runs leaves it syncing -- and
 /// rewriting -- a wallet the user just deleted.
 Future<void> deleteWallet(BuildContext context) async {
-  // TODO(wallet-core): pass skylight's own pref keys (contacts, pending tx,
-  // notification state) once the delete path is validated on device.
+  // The address book and the app's settings outlive the wallet; Settings >
+  // Data > Delete Address Book is the address book's own delete.
+  // TODO(wallet-core): pass skylight's own pref keys (pending tx, notification
+  // state) once the delete path is validated on device.
   await stopSyncAndDeleteWallets(Provider.of<WalletManager>(context, listen: false));
 }
 

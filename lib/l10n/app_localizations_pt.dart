@@ -273,13 +273,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get createWalletRestoreExistingButton => 'Restaurar Existente';
 
   @override
-  String get createWalletRestoreExistingDesc => 'Insira uma semente Monero existente';
+  String get createWalletRestoreExistingDesc => 'Insira uma frase de recuperação Monero existente';
 
   @override
   String get createWalletCreateNewButton => 'Criar Nova';
 
   @override
-  String get createWalletCreateNewDesc => 'A Skylight Wallet gera uma nova polyseed';
+  String get createWalletCreateNewDesc =>
+      'A Skylight Wallet gera uma nova frase de recuperação Polyseed';
 
   @override
   String get createWalletPasswordTitle => 'Criar Senha da Carteira';
@@ -304,7 +305,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generateSeedTitle => 'Anote-as, em ordem';
 
   @override
-  String get generateSeedTitleCovered => 'Frase Seed';
+  String get generateSeedTitleCovered => 'Frase de Recuperação';
 
   @override
   String get generateSeedSubtitleCovered =>
@@ -352,14 +353,15 @@ class AppLocalizationsPt extends AppLocalizations {
       'Você pode alterar isso depois nas Configurações.';
 
   @override
-  String get onboardingWalletNoteGenerated => 'A Skylight Wallet gera sua seed neste dispositivo.';
+  String get onboardingWalletNoteGenerated =>
+      'A Skylight Wallet gera sua frase de recuperação neste dispositivo.';
 
   @override
   String get onboardingWalletNoteRestore =>
       'Ao restaurar, uma data para escanear a partir dela torna a sincronização mais rápida.';
 
   @override
-  String get onboardingWalletCreateBullet1 => 'Uma nova polyseed';
+  String get onboardingWalletCreateBullet1 => 'Uma nova frase de recuperação Polyseed';
 
   @override
   String get onboardingWalletCreateBullet2 => 'Sincroniza a partir de hoje';
@@ -368,7 +370,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get onboardingWalletCreateBullet3 => 'Leva cerca de dois minutos';
 
   @override
-  String get onboardingWalletRestoreBullet1 => 'Uma seed Monero Polyseed, BIP39 ou legada';
+  String get onboardingWalletRestoreBullet1 =>
+      'Uma frase de recuperação Monero Polyseed, BIP39 ou legada';
 
   @override
   String get onboardingWalletRestoreBullet2 => 'Data de escaneamento opcional';
@@ -382,11 +385,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get onboardingPasswordNoteLaunch =>
-      'Você precisa desta senha para abrir sua carteira e para ver sua seed.';
+      'Você precisa desta senha para abrir sua carteira e para ver sua frase de recuperação.';
 
   @override
   String get onboardingPasswordNoteNotCloud =>
-      'Esta senha não pode ser recuperada. Se você a perder, restaure sua carteira a partir da sua frase seed.';
+      'Esta senha não pode ser recuperada. Se você a perder, restaure sua carteira a partir da sua frase de recuperação.';
 
   @override
   String get onboardingPasswordStrong => 'Forte';
@@ -415,7 +418,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWalletDescription =>
-      'Insira sua semente Monero abaixo. Verificaremos os formatos comuns.';
+      'Insira sua frase de recuperação Monero abaixo. Verificaremos os formatos comuns.';
 
   @override
   String get restoreWalletScanFrom => 'Escanear a partir de';
@@ -453,10 +456,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletRestoreButton => 'Restaurar';
 
   @override
-  String get restoreWalletInvalidMnemonic => 'Semente inválida.';
+  String get restoreWalletInvalidMnemonic => 'Frase de recuperação inválida.';
 
   @override
-  String get restoreWalletSeedLength => 'Tamanho da semente';
+  String get restoreWalletSeedLength => 'Número de palavras';
 
   @override
   String get restoreWalletPaste => 'Colar';
@@ -482,7 +485,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWalletChecksumError =>
-      'Esta não é uma frase-semente válida — verifique as palavras e sua ordem.';
+      'Esta não é uma frase de recuperação válida — verifique as palavras e sua ordem.';
 
   @override
   String get navigationBarWallet => 'Carteira';
@@ -767,7 +770,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsLwsViewKeysButton => 'Ver';
 
   @override
-  String get revealSeedAuthReason => 'Confirme sua identidade para ver a frase seed';
+  String get revealSeedAuthReason => 'Confirme sua identidade para ver a frase de recuperação';
 
   @override
   String get settingsSecretKeysLabel => 'Chaves Privadas de Restauração';
@@ -791,10 +794,23 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsDeleteWalletDialogText =>
-      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua semente.';
+      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua frase de recuperação. Isso não remove sua lista de contatos nem as configurações do app.';
 
   @override
   String get settingsDeleteWalletDialogDeleteButton => 'Excluir';
+
+  @override
+  String get settingsDeleteAddressBookButton => 'Excluir Lista de Contatos';
+
+  @override
+  String get settingsDeleteAddressBookDialogText =>
+      'Tem certeza que deseja excluir sua lista de contatos? Se o backup automático estiver ligado, ela também será excluída desses backups automáticos.';
+
+  @override
+  String get settingsDeleteAddressBookDialogDeleteButton => 'Excluir';
+
+  @override
+  String get settingsAddressBookDeleted => 'Lista de contatos excluída';
 
   @override
   String get txDetailsTitle => 'Detalhes da transação';
@@ -860,10 +876,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get secretKeysDescription =>
-      'Estas sementes e chaves restauram o controle total da sua carteira. Qualquer pessoa que as veja pode gastar seus fundos.';
+      'Estas frases de recuperação e chaves restauram o controle total da sua carteira. Qualquer pessoa que as veja pode gastar seus fundos.';
 
   @override
-  String get secretKeysMnemonic => 'Semente';
+  String get secretKeysMnemonic => 'Frase de recuperação';
 
   @override
   String get secretKeysPublicSpendKey => 'Chave Pública de Gasto';
@@ -1072,7 +1088,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coinHomeSwapComingSoon => 'Em breve!';
 
   @override
-  String get verifySeedTitle => 'Verificar Frase Seed';
+  String get verifySeedTitle => 'Verificar Frase de Recuperação';
 
   @override
   String get homeIncomingTitle => 'A receber';
@@ -1118,7 +1134,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get homeChecklistVerifySeed => 'Verifique sua frase seed';
+  String get homeChecklistVerifySeed => 'Verifique sua frase de recuperação';
 
   @override
   String get homeChecklistAutoBackup => 'Ative os backups automáticos';
@@ -1134,7 +1150,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String verifySeedSubtitle(int first, int second, int third) {
-    return 'Insira as palavras $first, $second e $third da sua frase seed abaixo.';
+    return 'Insira as palavras $first, $second e $third da sua frase de recuperação abaixo.';
   }
 
   @override
@@ -1151,7 +1167,7 @@ class AppLocalizationsPt extends AppLocalizations {
       other: 'Restam $count tentativas',
       one: 'Resta 1 tentativa',
     );
-    return 'Confira a frase seed que você anotou e insira as três novas palavras pedidas. $_temp0 antes de o app bloquear.';
+    return 'Confira a frase de recuperação que você anotou e insira as três novas palavras pedidas. $_temp0 antes de o app bloquear.';
   }
 
   @override
@@ -1159,10 +1175,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get verifySeedUnavailable =>
-      'Não é possível ler sua frase seed agora. Tente novamente depois de desbloquear a carteira.';
+      'Não é possível ler sua frase de recuperação agora. Tente novamente depois de desbloquear a carteira.';
 
   @override
-  String get verifySeedDone => 'Frase seed verificada';
+  String get verifySeedDone => 'Frase de recuperação verificada';
 
   @override
   String homeIncomingTitleMore(int count) {

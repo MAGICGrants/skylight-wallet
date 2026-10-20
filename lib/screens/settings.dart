@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
@@ -210,6 +211,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
       cancelLabel: i18n.cancel,
       onConfirm: _deleteWallet,
     );
+  }
+
+  void _showDeleteAddressBookDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    showConfirmSheet(
+      context: context,
+      icon: Icons.delete_outline,
+      iconBg: BrandColors.errorBg,
+      iconColor: BrandColors.error,
+      title: i18n.settingsDeleteAddressBookButton,
+      body: i18n.settingsDeleteAddressBookDialogText,
+      confirmLabel: i18n.settingsDeleteAddressBookDialogDeleteButton,
+      cancelLabel: i18n.cancel,
+      onConfirm: _deleteAddressBook,
+    );
+  }
+
+  // Only the address book: deleting the wallet keeps it, and this keeps the
+  // wallet. A backup syncing to iCloud or Android backup records the deletions.
+  Future<void> _deleteAddressBook() async {
+    final i18n = AppLocalizations.of(context)!;
+    await Provider.of<ContactModel>(context, listen: false).deleteAll();
+    if (mounted) showBrandToast(context, i18n.settingsAddressBookDeleted);
   }
 
   Future<void> _showViewLwsKeysDialog() async {
@@ -513,6 +537,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               linkLabel: i18n.settingsExportLogsButton,
               onTap: _exportLogs,
             ),
+          SettingsLinkTile(
+            title: i18n.settingsDeleteAddressBookButton,
+            titleColor: BrandColors.error,
+            onTap: _showDeleteAddressBookDialog,
+          ),
         ],
       ),
       if (showNotifyToggle)

@@ -248,7 +248,6 @@
   "settingsNotifyNewTxsDescription": "Mostrar uma notificação quando você receber uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.",
   "settingsNotifyNewTxsDescriptionIos": "As notificações serão atrasadas para conexões LWS via Tor.",
   "settingsAppLockUnlockReason": "Desbloquear carteira",
-  "settingsAppLockUnableToAuthError": "Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.",
   "settingsLoggingLabel": "Logs de Diagnóstico",
   "settingsLoggingDescription": "Registrar operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.",
   "settingsLoggingDescriptionIos": "Registrar operações da carteira e permitir exportar os logs para um arquivo de texto.",

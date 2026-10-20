@@ -704,10 +704,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsAppLockUnlockReason => 'Desbloquear carteira';
 
   @override
-  String get settingsAppLockUnableToAuthError =>
-      'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
-
-  @override
   String get settingsLoggingLabel => 'Logs de Diagnóstico';
 
   @override

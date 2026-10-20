@@ -254,7 +254,6 @@
   "settingsNotifyNewTxsDescription": "Show a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.",
   "settingsNotifyNewTxsDescriptionIos": "Notifications will be delayed for Tor LWS connections.",
   "settingsAppLockUnlockReason": "Unlock Wallet",
-  "settingsAppLockUnableToAuthError": "Unable to authenticate. Make sure you have device unlock set up.",
   "settingsLoggingLabel": "Diagnostic Logs",
   "settingsLoggingDescription": "Log wallet operations to a text file in the app's data folder for debugging purposes.",
   "settingsLoggingDescriptionIos": "Log wallet operations and allow the logs to be exported to a text file.",

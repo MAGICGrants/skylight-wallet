@@ -215,11 +215,11 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/verify_seed': (context) => const VerifySeedScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
-    '/lws_keys': (context) => ReauthGate(
+    '/lws_keys': (context) => AppLockGate(
       reason: AppLocalizations.of(context)!.settingsAppLockUnlockReason,
       child: LwsKeysScreen(),
     ),
-    '/secret_keys': (context) => ReauthGate(
+    '/secret_keys': (context) => AppLockGate(
       reason: AppLocalizations.of(context)!.revealSeedAuthReason,
       child: SecretKeysScreen(),
     ),

@@ -1365,12 +1365,6 @@ abstract class AppLocalizations {
   /// **'Unlock Wallet'**
   String get settingsAppLockUnlockReason;
 
-  /// No description provided for @settingsAppLockUnableToAuthError.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to authenticate. Make sure you have device unlock set up.'**
-  String get settingsAppLockUnableToAuthError;
-
   /// No description provided for @settingsLoggingLabel.
   ///
   /// In en, this message translates to:

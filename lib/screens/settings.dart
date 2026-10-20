@@ -29,7 +29,6 @@ import 'package:skylight_wallet/widgets/language_sheet.dart';
 import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
-import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
 
 /// Desktop: settings as a wide centered modal (opened from the sidebar); mobile
 /// keeps the full-screen tab.
@@ -257,14 +256,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// Gate the seed behind a device auth even though the app is already
-  /// unlocked. Reaching this screen hands over the seed and secret spend key,
-  /// which is total, irreversible control of the funds; the warning sheet alone
-  /// stops nobody holding the phone.
-  ///
-  /// Only when app lock is on, though -- turning it off is the user saying this
-  /// app does not ask the device who is holding the phone, and a prompt that
-  /// appears anyway reads as the setting being ignored.
+  /// The recovery phrase and secret spend key are total, irreversible control of
+  /// the funds, so the warning alone is not enough: the screen (or desktop
+  /// sheet) needs a passing App Lock, asked again even though the app is
+  /// already unlocked (`/secret_keys` is an AppLockGate route;
+  /// [showSecretKeysSheet] asks itself).
   Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
 
@@ -280,17 +276,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (ok != true || !mounted) return;
     if (isDesktop) {
-      // The sheet is not a route, so the /secret_keys ReauthGate does not cover
-      // it: where App Lock is the device's prompt (macOS, the iOS build on a
-      // Mac) it prompts here; on Linux and Windows it stays behind the unlock.
-      if (usesDeviceLock) {
-        final result = await BiometricAuth.confirmOwner(reason: i18n.revealSeedAuthReason);
-        if (result != BiometricAuthResult.authenticated) {
-          if (mounted) showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
-          return;
-        }
-        if (!mounted) return;
-      }
       await showSecretKeysSheet(context);
     } else {
       await Navigator.pushNamed(context, '/secret_keys');

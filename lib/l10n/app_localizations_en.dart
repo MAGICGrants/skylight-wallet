@@ -700,10 +700,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppLockUnlockReason => 'Unlock Wallet';
 
   @override
-  String get settingsAppLockUnableToAuthError =>
-      'Unable to authenticate. Make sure you have device unlock set up.';
-
-  @override
   String get settingsLoggingLabel => 'Diagnostic Logs';
 
   @override

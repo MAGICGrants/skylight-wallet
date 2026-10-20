@@ -17,6 +17,7 @@ list(APPEND FLUTTER_FFI_PLUGIN_LIST
   flutter_local_notifications_windows
   flutter_zxing
   tor_ffi_plugin
+  wallet_fhse
   wallet_openalias
 )
 

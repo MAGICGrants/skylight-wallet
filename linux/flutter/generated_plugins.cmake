@@ -12,6 +12,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
   flutter_zxing
   tor_ffi_plugin
+  wallet_fhse
   wallet_openalias
 )
 

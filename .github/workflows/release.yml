@@ -416,6 +416,8 @@ jobs:
           <dict>
             <key>method</key>
             <string>app-store</string>
+            <key>iCloudContainerEnvironment</key>
+            <string>Production</string>
             <key>provisioningProfiles</key>
             <dict>
               <key>org.magicgrants.skylightwallet</key>
@@ -434,6 +436,17 @@ jobs:
         run: |
           flutter pub get --enforce-lockfile
           flutter build ipa --dart-define=DEMO_MODE=true --release --export-options-plist=ios/ExportOptions.plist
+
+      - name: Check Swift package pins
+        # YubiKit Swift and swift-log must build from the revisions committed in
+        # Package.resolved. Xcode rewrites the file when it resolves anything
+        # else, so a missing or changed file fails the release.
+        run: |
+          for f in ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+                   ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved; do
+            git ls-files --error-unmatch "$f" > /dev/null
+            git diff --exit-code -- "$f"
+          done
 
       - name: Prepare artifact
         run: |

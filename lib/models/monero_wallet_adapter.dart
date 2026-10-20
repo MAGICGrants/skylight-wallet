@@ -266,8 +266,9 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
 
   @override
   Future<ResolvedOpenAlias?> resolveOpenAlias(String alias) async {
-    // resolveAlias throws when Tor is down or the input is a raw address;
-    // skylight's send flow expects null on any failure.
+    // resolveAlias follows the OpenAlias setting (over Tor, directly, or not
+    // at all) and throws when that lookup cannot happen or the input is a raw
+    // address; skylight's send flow expects null on any failure.
     try {
       final resolved = await _wallet.resolveAlias(alias);
       if (resolved == null) return null;

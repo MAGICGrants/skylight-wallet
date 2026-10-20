@@ -128,8 +128,11 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final fg = _showSyncOptions && _foregroundSyncEnabled;
     // Captured before the await so the notification starts from the live status.
     final synced = fg && appWalletOf(context).isFullySynced;
+    final applySyncSettings = syncSettingsApplier(context);
     await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, bg);
     await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, fg);
+    // Both syncs are view-only: the copy they open exists before they start.
+    await applySyncSettings();
     if (fg) {
       await startForegroundSync(synced: synced);
     } else {

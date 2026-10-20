@@ -10,7 +10,8 @@ import 'package:wallet_domain/wallet_domain.dart'
         decimalToBaseUnits,
         parsePaymentUri,
         BroadcastFailure,
-        BroadcastOutcome;
+        BroadcastOutcome,
+        OpenAliasMode;
 import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
@@ -87,6 +88,9 @@ class _SendScreenState extends State<SendScreen> {
 
   bool _formValid = false; // gates the send button
   int _openAliasResolving = 0; // >0 while OpenAlias resolution is in flight
+  // The user turned OpenAlias lookups off (Settings), so say that rather than
+  // "invalid".
+  bool _openAliasOff = false;
   bool _didInit = false; // one-time setup guard for didChangeDependencies
 
   // Caches the last OpenAlias resolution + dedupes concurrent lookups so
@@ -254,6 +258,8 @@ class _SendScreenState extends State<SendScreen> {
   /// in-flight lookup of the same domain so amount changes / revalidations
   /// don't re-hit the (slow, over-Tor) resolver. Drives `_openAliasResolving`.
   Future<ResolvedOpenAlias?> _resolveDomain(String domain) async {
+    _openAliasOff = await OpenAliasMode.load() == OpenAliasMode.disabled;
+    if (_openAliasOff || !mounted) return null;
     if (domain == _resolveCacheInput) return _resolveCacheOutput;
     if (_resolveInFlight != null && domain == _resolveInFlightInput) {
       return _resolveInFlight!;
@@ -317,7 +323,9 @@ class _SendScreenState extends State<SendScreen> {
       if (resolved == null) {
         if (setErrors) {
           setState(() {
-            _destinationAddressError = i18n.sendOpenAliasResolveError;
+            _destinationAddressError = _openAliasOff
+                ? i18n.sendOpenAliasDisabledError
+                : i18n.sendOpenAliasResolveError;
           });
         }
         return false;
@@ -453,7 +461,9 @@ class _SendScreenState extends State<SendScreen> {
       if (resolved == null) {
         setState(() {
           _isLoading = false;
-          _destinationAddressError = i18n.sendOpenAliasResolveError;
+          _destinationAddressError = _openAliasOff
+              ? i18n.sendOpenAliasDisabledError
+              : i18n.sendOpenAliasResolveError;
         });
         return;
       }

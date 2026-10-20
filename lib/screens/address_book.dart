@@ -177,7 +177,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
 
     return Scaffold(
       backgroundColor: BrandColors.paper,
-      bottomNavigationBar: const WalletNavigationBar(selectedIndex: 1),
+      bottomNavigationBar: const WalletNavigationBar(selectedIndex: 2),
       body: SafeArea(
         bottom: false,
         child: Center(
@@ -631,7 +631,12 @@ class _ContactSheetState extends State<_ContactSheet> {
       if (widget.contact == null) {
         await model.addContact(name, {'XMR': address});
       } else {
-        await model.updateContact(widget.contact!.id, name, {'XMR': address});
+        // Keep the addresses Skylight does not show (a contact shared with
+        // Spice through the backup can hold BTC or ETH ones too).
+        await model.updateContact(widget.contact!.id, name, {
+          ...widget.contact!.addresses,
+          'XMR': address,
+        });
       }
       if (mounted) Navigator.pop(context);
     } catch (_) {

@@ -6,9 +6,8 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
-/// The top-level desktop destinations, mirroring the mobile navigation bar
-/// (Skylight has no separate History screen).
-enum DesktopNav { home, addressBook, settings }
+/// The top-level desktop destinations, mirroring the mobile navigation bar.
+enum DesktopNav { home, history, addressBook, settings }
 
 /// Shared style for a desktop screen's large title (Settings, Contacts, …).
 TextStyle get desktopTitleStyle => TextStyle(
@@ -181,6 +180,8 @@ class _DesktopShellState extends State<DesktopShell> {
               i18n.navigationBarWallet,
               '/wallet_home',
             ),
+            const SizedBox(height: 2),
+            _navItem(DesktopNav.history, Icons.history, i18n.navigationBarHistory, '/history'),
             const SizedBox(height: 2),
             _navItem(
               DesktopNav.addressBook,

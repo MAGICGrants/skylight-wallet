@@ -21,6 +21,11 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<!-- No URL may name a screen: AppDelegate's PaymentLinks forwards payment
+	     links to Dart, which opens the Send form only once the user is past
+	     every lock. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -97,5 +102,28 @@
 	<string>We need access to your camera to scan QR codes for connection and wallet addresses.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID to unlock your wallet without typing your password.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>Skylight uses NFC to talk to your security key.</string>
+	<!-- Smart card applications the NFC reader may select: FIDO2/U2F, and
+	     YubiKey Management for the key's serial number (the check that it is
+	     the key that was set up, before a PIN is sent). -->
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A0000006472F0001</string>
+		<string>A000000527471117</string>
+	</array>
+	<!-- Metadata backup: the iCloud container, hidden from the Files app. -->
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.org.magicgrants.skylightwallet</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<false/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Skylight</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>None</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

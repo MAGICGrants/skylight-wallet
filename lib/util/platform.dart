@@ -8,11 +8,21 @@ bool get isDesktop => isDesktopLayout;
 
 /// True when running natively on a desktop OS (Linux/Windows/macOS).
 ///
-/// What follows the OS rather than the layout keys off this: the wallet
-/// password typed at every launch, and announcing incoming transactions from
-/// the foreground. The iOS build on a Mac is not one of these. It keeps iOS's
-/// keystore-held password, App Lock and background sync.
+/// What follows the OS rather than the layout keys off this: announcing
+/// incoming transactions from the foreground (no background isolate), and
+/// "Lock after" a time without use. The iOS build on a Mac is not one of these.
+/// It keeps iOS's App Lock and background sync.
 final bool isDesktopOS = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+
+/// True where the user types the wallet password at every launch: Linux and
+/// Windows. Elsewhere it is generated at onboarding and kept in the keystore
+/// (wallet_infra's `WalletSecrets.holdsWalletPassword`).
+final bool typesWalletPassword = Platform.isLinux || Platform.isWindows;
+
+/// True where App Lock (the device's own prompt: biometrics or the device
+/// passcode, Touch ID or the Mac's password on macOS) guards that generated
+/// password: Android, iOS and macOS.
+final bool usesDeviceLock = !typesWalletPassword;
 
 /// True on the mobile platforms (Android/iOS), the iOS build on a Mac included.
 final bool isMobile = Platform.isAndroid || Platform.isIOS;

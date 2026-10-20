@@ -144,6 +144,25 @@ flutter run -d <device_id>
 
 Make sure you have an Android emulator running or a physical device connected before running the app.
 
+### Memory safety settings
+
+The release builds turn on the platforms' strictest native-memory checks, for
+the C and C++ in the app (the Flutter engine, Monero, Tor, FHSE):
+
+- **Android** (`android/app/src/main/AndroidManifest.xml`): Arm MTE in sync
+  mode (Pixel 8 and later, when MTE is on), GWP-ASan on every launch, and
+  zeroed heap allocations.
+- **iOS and macOS** (`Runner.entitlements`, `Release.entitlements`): the
+  hardened process with a hardened heap, and Memory Integrity Enforcement
+  (hardware memory tagging on A19 iPhones and M5 Macs) enforced rather than
+  in soft mode.
+
+These stop a use-after-free or overflow at the faulting access. The cost is
+that a latent heap bug in any of that native code, harmless elsewhere, ends
+the app on that hardware, unlock included. A crash there that does not happen
+on other devices points here first: the crash report names a tag mismatch or
+GWP-ASan.
+
 ## Building for Android
 
 ### Debug APK

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
+import 'package:skylight_wallet/periodic_tasks.dart' show applyBackgroundTaskRegistration;
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/util/platform.dart';
@@ -16,6 +17,7 @@ import 'package:skylight_wallet/widgets/home_labels.dart';
 import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
+import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval;
 import 'package:wallet_backup_platform/wallet_backup_platform.dart' show MetadataBackupSetup;
 import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet, SeedStore;
 import 'package:wallet_fhse/security_keys_ui.dart' show securityKeysOn;
@@ -96,6 +98,10 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
     _checklist.refresh();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Here a wallet exists and its connection is applied: the first time
+      // after onboarding, and after every unlock. Updates the tasks in place.
+      unawaited(applyBackgroundTaskRegistration());
+
       final Map<String, dynamic>? args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
@@ -174,6 +180,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
     void swap() => showBrandToast(context, i18n.coinHomeSwapComingSoon);
     final incoming = sections.incoming(coins);
     final chart = sections.chart(coins);
+    // The server still waiting to approve this wallet, said where it matters.
+    final notice = switch (wallet.lwsPendingApproval) {
+      null => null,
+      LwsPendingApproval.account => WarningCallout(i18n.lwsAwaitingApprovalAccount),
+      LwsPendingApproval.restoreHeight => WarningCallout(i18n.lwsAwaitingApprovalRestoreHeight),
+    };
     final checklist = securityChecklistCard(
       checklist: _checklist,
       labels: securityChecklistLabels(i18n),
@@ -196,7 +208,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
             onSend: send,
             onSwap: swap,
           ),
-          wide: [?incoming, chart],
+          wide: [?notice, ?incoming, chart],
           side: checklist,
         ),
       );
@@ -210,6 +222,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
         ),
         title: 'Skylight Wallet',
       ),
+      notice: notice,
       balance: hero(_ConnectionRow(wallet: wallet, disconnected: v.disconnected)),
       actions: HomeActionRow(
         receiveLabel: i18n.homeReceive,

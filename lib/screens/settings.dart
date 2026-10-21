@@ -21,12 +21,13 @@ import 'package:wallet_fhse/security_keys_ui.dart'
     show AppLockTile, DesktopAutoLockTile, FhseLocalizations, SecurityKeysState, securityKeysState;
 import 'package:wallet_domain/wallet_domain.dart' show OpenAliasMode;
 import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
-import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:wallet_infra/wallet_infra.dart' show SyncFrequency, loadSyncFrequency;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/widgets/language_sheet.dart';
 import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
+import 'package:skylight_wallet/widgets/sync_frequency_sheet.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 
@@ -56,6 +57,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
+  var _syncFrequency = SyncFrequency.periodic;
   var _loggingEnabled = false;
   SecurityKeysState? _securityKeys;
   FiatApiMode _fiatMode = FiatApiMode.torOnly;
@@ -92,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final fiatMode = await FiatRateModel.loadFiatApiMode();
     final openAliasMode = await OpenAliasMode.load();
+    final syncFrequency = await loadSyncFrequency();
     await _loadSecurityKeys();
 
     if (!mounted) return;
@@ -100,6 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _loggingEnabled = loggingEnabled;
       _fiatMode = fiatMode;
       _openAliasMode = openAliasMode;
+      _syncFrequency = syncFrequency;
     });
     // Enable animation a frame after the loaded values are painted.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -107,10 +111,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  /// Only whether a background run that finds a payment says so. Whether runs
+  /// happen at all is Sync Frequency's.
   void _setTxNotificationsEnabled(bool value) async {
     final wallet = appWalletOf(context);
-    // The notification check is view-only: its material follows this toggle.
-    final applySyncSettings = syncSettingsApplier(context);
 
     setState(() {
       _newTxNotificationsEnabled = value;
@@ -124,14 +128,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // everything already received.
         await wallet.markExistingTxsAsNotified();
         await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
-        await applySyncSettings();
-        await applyBackgroundTaskRegistration();
       }
     } else {
       await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
-      await applySyncSettings();
-      await applyBackgroundTaskRegistration();
     }
+  }
+
+  void _showSyncFrequency() async {
+    final frequency = await showSyncFrequencySettings(context);
+    if (frequency != null && mounted) setState(() => _syncFrequency = frequency);
   }
 
   Future<void> _loadSecurityKeys() async {
@@ -438,7 +443,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = context.watch<ThemeModel>();
     final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
-    final showNotifyToggle = Platform.isAndroid || (Platform.isIOS && !wallet.isNodeMode);
+    // Sync Frequency and the notifications it feeds: phones only.
+    final showNotifyToggle = Platform.isAndroid || Platform.isIOS;
     final connectionSubtitle = _connectionSubtitle(wallet, i18n);
     final fiatSubtitle = _fiatMode == FiatApiMode.disabled
         ? _fiatModeLabel(i18n)
@@ -533,11 +539,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SettingsGroup(
           label: i18n.settingsSectionBehaviour,
           tiles: [
+            SettingsNavTile(
+              title: i18n.settingsSyncFrequencyLabel,
+              value: syncFrequencyLabels(i18n).nameOf(_syncFrequency),
+              onTap: _showSyncFrequency,
+            ),
             SettingsToggleTile(
               title: i18n.settingsNotifyNewTxsLabel,
-              description: Platform.isIOS
-                  ? i18n.settingsNotifyNewTxsDescriptionIos
-                  : i18n.settingsNotifyNewTxsDescription,
+              description: i18n.settingsNotifyNewTxsDescription,
               value: _newTxNotificationsEnabled,
               onChanged: _setTxNotificationsEnabled,
               animate: _animateToggles,

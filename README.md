@@ -4,7 +4,7 @@
 
 A modern, open-source, and self-custody Monero light-wallet built with Flutter by [MAGIC Grants](https://magicgrants.org).
 
-On Android, the optional Background sync and Continuous sync use your view key only: they see incoming payments, but never hold a key that could spend.
+Periodic sync (on Android and iPhone) and Continuous sync (on Android), set under Sync Frequency, use your view key only: they see incoming payments, but never hold a key that could spend.
 
 **Website:** [skylight.magicgrants.org](https://skylight.magicgrants.org)
 

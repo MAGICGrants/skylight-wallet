@@ -6,7 +6,7 @@ import 'package:skylight_wallet/models/wallet_types.dart'
 
 import 'package:wallet_domain/wallet_domain.dart' as domain;
 import 'package:wallet_infra/wallet_infra.dart' show requiresSecureTransport;
-import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
+import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval, MoneroWallet;
 
 const _moneroDecimals = 12;
 
@@ -58,8 +58,13 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   bool get torRequirementBroken => _wallet.torRequirementBroken;
   @override
+  LwsPendingApproval? get lwsPendingApproval => _wallet.lwsPendingApproval;
+  @override
   String connectionAddressExampleForType(String type) =>
       _wallet.connectionAddressExampleForType(type);
+
+  @override
+  bool connectionAllowsPath(String type) => _wallet.connectionAllowsPath(type);
 
   // Sync
   @override

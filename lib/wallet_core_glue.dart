@@ -9,7 +9,8 @@ import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
-import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
+import 'package:skylight_wallet/periodic_tasks.dart'
+    show applyBackgroundTaskRegistration, backgroundDispatcher;
 import 'package:skylight_wallet/services/foreground_sync_service.dart'
     show foregroundSyncCallback, stopSyncAndDeleteWallets, restartForegroundSyncIfRunning;
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -240,13 +241,6 @@ Future<int> commitGeneratedWallet(
   return manager.getWallet('XMR')!.getRestoreHeight();
 }
 
-/// After a sync or notifications toggle changes: Monero's view-only background
-/// copy and the view-only material every background run uses, set up or
-/// removed now rather than at the next launch ([WalletManager.applySyncSettings]).
-/// Bound before the caller's awaits.
-Future<void> Function() syncSettingsApplier(BuildContext context) =>
-    Provider.of<WalletManager>(context, listen: false).applySyncSettings;
-
 /// Where the welcome safety-net sends an install that already has a wallet,
 /// or null when there is none: through the same locks as a launch, so the
 /// unlock screen (App Lock is always on; the typed password on Linux and
@@ -273,8 +267,15 @@ Future<void> deleteWallet(BuildContext context) async {
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
 void applyConnectionChange(BuildContext context) {
   final manager = Provider.of<WalletManager>(context, listen: false);
-  // Restart the foreground service too, so its isolate re-reads the new server.
-  unawaited(manager.applyConnectionChange('XMR').then((_) => restartForegroundSyncIfRunning()));
+  // Restart the foreground service too, so its isolate re-reads the new server,
+  // and re-register the background tasks, which depend on LWS or node and on
+  // Tor; both only once the wallet has been rebuilt for it.
+  unawaited(
+    manager
+        .applyConnectionChange('XMR')
+        .then((_) => restartForegroundSyncIfRunning())
+        .then((_) => applyBackgroundTaskRegistration()),
+  );
 }
 
 // ----- Security keys (FHSE) -----

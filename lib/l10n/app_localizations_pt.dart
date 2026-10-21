@@ -125,6 +125,18 @@ class AppLocalizationsPt extends AppLocalizations {
       'Um endereço onion só pode ser acessado via Tor. Ative o Tor para usá-lo.';
 
   @override
+  String get connectionPathNotSupported =>
+      'Este servidor é acessado pela raiz, então o endereço não pode incluir um caminho como /wallet. Remova o caminho.';
+
+  @override
+  String get lwsAwaitingApprovalAccount =>
+      'Seu servidor de carteira leve ainda não aprovou esta carteira. Peça ao operador do servidor para aprová-la para ver seu saldo e suas transações.';
+
+  @override
+  String get lwsAwaitingApprovalRestoreHeight =>
+      'Seu servidor de carteira leve ainda não aprovou a verificação a partir da sua altura de restauração, então transações mais antigas podem estar faltando. Peça ao operador do servidor para aprová-la.';
+
+  @override
   String get connectionTorDisabledWarning =>
       'O Tor está desativado, então esta conexão não funciona mais. Reconfigure-a.';
 
@@ -186,20 +198,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsConnectionInLocalNetwork => 'na rede local';
-
-  @override
-  String get settingsBackgroundSyncLabel => 'Sincronização em segundo plano';
-
-  @override
-  String get settingsBackgroundSyncDescription =>
-      'Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app. Usa só a sua chave de visualização: vê os pagamentos recebidos, mas nunca pode gastar. Só roda enquanto carrega e no WiFi.';
-
-  @override
-  String get settingsForegroundSyncLabel => 'Sincronização contínua';
-
-  @override
-  String get settingsForegroundSyncDescription =>
-      'Mantém o Monero sincronizando continuamente enquanto o app roda em segundo plano, com uma notificação persistente. Usa só a sua chave de visualização: vê os pagamentos recebidos depois de confirmados, mas nunca pode gastar. Usa mais bateria.';
 
   @override
   String homeBlocksRemaining(int count) {
@@ -612,7 +610,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receiveServerNoSubaddressesWarn =>
-      'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.';
+      'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte.';
+
+  @override
+  String get receiveSubaddressUnavailableWarn =>
+      'Aviso: Você precisa configurar o Monero para ativar subendereços, que protegem melhor sua privacidade.';
 
   @override
   String get receiveMaxSubaddressesReachedWarn =>
@@ -695,11 +697,41 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsNotifyNewTxsDescription =>
-      'Mostrar uma notificação quando você receber uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.';
+      'Mostrar uma notificação quando você receber uma transação. Aumente a frequência de sincronização para vê-las mais cedo.';
 
   @override
-  String get settingsNotifyNewTxsDescriptionIos =>
-      'As notificações serão atrasadas para conexões LWS via Tor.';
+  String get settingsSyncFrequencyLabel => 'Frequência de sincronização';
+
+  @override
+  String get syncFrequencySheetSubtitle =>
+      'Com que frequência o Monero sincroniza enquanto o app está fechado.';
+
+  @override
+  String get syncFrequencyModeLabel => 'Frequência';
+
+  @override
+  String get syncFrequencyContinuous => 'Contínua';
+
+  @override
+  String get syncFrequencyContinuousDesc =>
+      'Sincroniza o Monero continuamente em segundo plano para que esteja sempre atualizado ao abrir o app. Usa mais bateria e exige uma notificação persistente.';
+
+  @override
+  String get syncFrequencyPeriodic => 'Periódica';
+
+  @override
+  String get syncFrequencyPeriodicDesc =>
+      'Sincroniza o Monero periodicamente em segundo plano para que geralmente esteja atualizado ao abrir o app. Com um nó Monero, só sincroniza enquanto carrega e no WiFi.';
+
+  @override
+  String get syncFrequencyPeriodicDescIos =>
+      'Sincroniza o Monero periodicamente em segundo plano para que geralmente esteja atualizado ao abrir o app. Com um nó Monero, só sincroniza enquanto carrega.';
+
+  @override
+  String get syncFrequencyOff => 'Desligada';
+
+  @override
+  String get syncFrequencyOffDesc => 'Só sincroniza enquanto o app está aberto.';
 
   @override
   String get settingsAppLockUnlockReason => 'Desbloquear carteira';
@@ -1074,9 +1106,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lwsSetupTorDisabledError => 'O Tor está desativado. Por favor, volte e ative-o.';
-
-  @override
-  String get lwsSetupInvalidQrCode => 'Endereço de conexão inválido.';
 
   @override
   String get coinHomeSwap => 'Trocar';

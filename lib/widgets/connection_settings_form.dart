@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
-import 'package:skylight_wallet/services/foreground_sync_service.dart';
-import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
-import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -70,82 +67,14 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   bool _connectionTestIsLoading = false;
   bool _connectionSuccess = false;
   String? _errorMessage;
-  bool _backgroundSyncEnabled = false;
-  bool _foregroundSyncEnabled = false;
   TorConnectionStatus _torStatus = TorService.sharedInstance.status;
   Timer? _torStatusTimer;
   bool _testCancelled = false;
   int? _latencyMs;
 
-  // The as-loaded values, so save can tell what the user actually changed:
-  // enabling sync or editing the connection needs a working test; disabling
-  // sync alone does not.
-  String _initialAddress = '';
-  String _initialProxyPort = '';
-  bool _initialUseTor = false;
-  String _initialConnectionType = 'lws';
-  bool _initialBackgroundSync = false;
-  bool _initialForegroundSync = false;
-
   // The saved connection's raw Tor flag (before masking by the global Tor mode).
   // Used to warn when a Tor connection was silently turned off by disabling Tor.
   bool _savedConnectionUsedTor = false;
-
-  bool get _isNode => _connectionType == 'node';
-
-  /// Background/continuous sync only helps a full-node connection (the slow
-  /// on-device scan); LWS syncs server-side. Android-only.
-  bool get _showSyncOptions => Platform.isAndroid && _isNode;
-
-  Future<void> _loadSyncPrefs() async {
-    final bg =
-        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.backgroundSyncEnabled) ??
-        false;
-    final fg =
-        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.foregroundSyncEnabled) ??
-        false;
-    if (mounted) {
-      setState(() {
-        _backgroundSyncEnabled = bg;
-        _foregroundSyncEnabled = fg;
-        _initialBackgroundSync = bg;
-        _initialForegroundSync = fg;
-      });
-    }
-  }
-
-  // Toggles are pending: they stage the choice and are applied by _saveConnection
-  // (enabling requires saving over a working connection; disabling does not).
-  void _setBackgroundSyncEnabled(bool value) => setState(() => _backgroundSyncEnabled = value);
-
-  void _setForegroundSyncEnabled(bool value) => setState(() => _foregroundSyncEnabled = value);
-
-  /// Persists the pending sync selection and starts/stops the services. LWS
-  /// can't sync on-device, so both are forced off when the saved connection
-  /// isn't an Android node.
-  Future<void> _applySyncSelection() async {
-    final bg = _showSyncOptions && _backgroundSyncEnabled;
-    final fg = _showSyncOptions && _foregroundSyncEnabled;
-    // Captured before the await so the notification starts from the live status.
-    final synced = fg && appWalletOf(context).isFullySynced;
-    final applySyncSettings = syncSettingsApplier(context);
-    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.backgroundSyncEnabled, bg);
-    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.foregroundSyncEnabled, fg);
-    // Both syncs are view-only: the copy they open exists before they start.
-    await applySyncSettings();
-    if (fg) {
-      await startForegroundSync(synced: synced);
-    } else {
-      await stopForegroundSync();
-    }
-    await applyBackgroundTaskRegistration();
-    if (mounted) {
-      setState(() {
-        _backgroundSyncEnabled = bg;
-        _foregroundSyncEnabled = fg;
-      });
-    }
-  }
 
   @override
   void initState() {
@@ -176,41 +105,23 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _useTor = useTor;
       _savedConnectionUsedTor = conn.useTor;
       _connectionType = type;
-      _initialAddress = cleanConnectionAddress(conn.address);
-      _initialProxyPort = conn.proxyPort;
-      _initialUseTor = useTor;
-      _initialConnectionType = type;
     });
 
     if (conn.useTor && TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
       _pollTorStatus();
     }
-
-    if (_showSyncOptions) _loadSyncPrefs();
   }
 
   Future<void> _scanQrCode() async {
-    final i18n = AppLocalizations.of(context)!;
-
     final result = await Navigator.pushNamed(context, '/scan_qr');
     if (!mounted) return;
 
+    // Filled in exactly as if typed: the address rules run at Test and Save,
+    // for a scanned address and a typed one alike.
     if (result != null && result is String) {
       final scannedAddress = cleanConnectionAddress(result);
-      if (isValidConnectionAddress(scannedAddress)) {
-        _addressController.text = scannedAddress;
-        _onAddressChange(scannedAddress);
-      } else {
-        if (mounted) {
-          if (widget.isInDialog) {
-            setState(() {
-              _errorMessage = i18n.lwsSetupInvalidQrCode;
-            });
-          } else {
-            showBrandToast(context, i18n.lwsSetupInvalidQrCode);
-          }
-        }
-      }
+      _addressController.text = scannedAddress;
+      _onAddressChange(scannedAddress);
     }
   }
 
@@ -289,7 +200,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       _hasTested = false;
       _errorMessage = null;
     });
-    if (value == 'node' && Platform.isAndroid) _loadSyncPrefs();
     _loadConnectionForType(value);
   }
 
@@ -301,8 +211,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   /// the node the private view key.
   ///
   /// A mode with nothing saved clears the field rather than inheriting the other
-  /// one's address. `_initial*` is deliberately not updated: switching mode is a
-  /// change, so Save stays gated on a passing test.
+  /// one's address. Switching mode clears the test, so Save waits for a new one.
   Future<void> _loadConnectionForType(String type) async {
     final wallet = appWalletOf(context);
     final conn = await wallet.getPersistedConnectionForType(type);
@@ -328,6 +237,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   String _connectionAddressErrorMessage(AppLocalizations i18n, ConnectionAddressError error) =>
       switch (error) {
         ConnectionAddressError.remoteIp => i18n.connectionRemoteIpNotAllowed,
+        ConnectionAddressError.pathNotSupported => i18n.connectionPathNotSupported,
         ConnectionAddressError.localOverTor => i18n.connectionLocalOverTorNotAllowed,
         ConnectionAddressError.onionNeedsTor => i18n.connectionOnionNeedsTor,
       };
@@ -343,6 +253,10 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final custom = _customProxyPortController.text.trim();
     return custom.isEmpty ? null : custom;
   }
+
+  /// Whether this connection may carry a path after host:port (a server behind
+  /// a reverse proxy at `/wallet`). The wallet decides: a node's client drops it.
+  bool get _allowsPath => appWalletOf(context).connectionAllowsPath(_connectionType);
 
   Future _testConnection() async {
     final i18n = AppLocalizations.of(context)!;
@@ -361,6 +275,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       address: daemonAddress,
       useTor: _useTor,
       hasProxy: _customProxyPortController.text.trim().isNotEmpty,
+      allowPath: _allowsPath,
     );
     if (addrError != null) {
       setState(() {
@@ -433,6 +348,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       address: daemonAddress,
       useTor: _useTor,
       hasProxy: proxyAddress.trim().isNotEmpty,
+      allowPath: _allowsPath,
     );
     if (addrError != null) {
       setState(() => _errorMessage = _connectionAddressErrorMessage(i18n, addrError));
@@ -449,11 +365,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     );
 
     await wallet.persistCurrentConnection();
-
-    // Apply the pending sync selection over the connection just saved (also
-    // rebuilds the background schedule, which on iOS depends on whether the
-    // saved connection is LWS and whether it uses Tor).
-    await _applySyncSelection();
 
     await widget.onBeforeSave?.call();
 
@@ -486,21 +397,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     final addressHint = appWalletOf(context).connectionAddressExampleForType(_connectionType);
 
     final hasWorkingConnection = _hasTested && _connectionSuccess && !_connectionTestIsLoading;
-    final connectionChanged =
-        cleanConnectionAddress(_addressController.text) != _initialAddress ||
-        _useTor != _initialUseTor ||
-        _customProxyPortController.text != _initialProxyPort ||
-        _connectionType != _initialConnectionType;
-    final enablingSync =
-        (_backgroundSyncEnabled && !_initialBackgroundSync) ||
-        (_foregroundSyncEnabled && !_initialForegroundSync);
-    final syncChanged =
-        _backgroundSyncEnabled != _initialBackgroundSync ||
-        _foregroundSyncEnabled != _initialForegroundSync;
-    // Disabling sync alone needs no working connection; enabling it or editing
-    // the connection does.
-    final disablingSyncOnly = syncChanged && !enablingSync && !connectionChanged;
-    final canSave = !_connectionTestIsLoading && (hasWorkingConnection || disablingSyncOnly);
+    final canSave = !_connectionTestIsLoading && hasWorkingConnection;
 
     // Publish save state for an external Continue button (embedded mode).
     final controller = widget.controller;
@@ -546,22 +443,6 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       onToggleTor: () => _setUseTor(!_useTor),
       pillProxyPort: _customProxyPortController.text,
       pillAddress: cleanConnectionAddress(_addressController.text),
-      syncRows: _showSyncOptions
-          ? [
-              ConnectionSyncRow(
-                label: i18n.settingsBackgroundSyncLabel,
-                help: i18n.settingsBackgroundSyncDescription,
-                checked: _backgroundSyncEnabled,
-                onToggle: _setBackgroundSyncEnabled,
-              ),
-              ConnectionSyncRow(
-                label: i18n.settingsForegroundSyncLabel,
-                help: i18n.settingsForegroundSyncDescription,
-                checked: _foregroundSyncEnabled,
-                onToggle: _setForegroundSyncEnabled,
-              ),
-            ]
-          : const [],
       testState: _testState(torMode),
       onTest: _testConnection,
       onStopTest: _stopTest,

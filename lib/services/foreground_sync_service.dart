@@ -13,6 +13,7 @@ export 'package:wallet_background/wallet_background.dart'
         restartForegroundSyncIfRunning,
         isWalletFullySynced,
         stopSyncAndDeleteWallets,
+        applySyncFrequency,
         ForegroundSyncLink;
 
 /// Foreground-service isolate entry: bootstrap this isolate, then hand off to

@@ -360,25 +360,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Ao restaurar, uma data para escanear a partir dela torna a sincronização mais rápida.';
 
   @override
-  String get onboardingWalletCreateBullet1 => 'Uma nova frase de recuperação Polyseed';
-
-  @override
-  String get onboardingWalletCreateBullet2 => 'Sincroniza a partir de hoje';
-
-  @override
-  String get onboardingWalletCreateBullet3 => 'Leva cerca de dois minutos';
-
-  @override
-  String get onboardingWalletRestoreBullet1 =>
-      'Uma frase de recuperação Monero Polyseed, BIP39 ou legada';
-
-  @override
-  String get onboardingWalletRestoreBullet2 => 'Data de escaneamento opcional';
-
-  @override
-  String get onboardingWalletRestoreBullet3 => 'Recupera seu saldo e histórico existentes';
-
-  @override
   String get onboardingSeedNotePassword =>
       'A Skylight Wallet pede sua senha antes de mostrar estas palavras novamente.';
 

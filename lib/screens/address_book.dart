@@ -512,7 +512,11 @@ class _AddressRow extends StatelessWidget {
             onPressed: () => Navigator.pushNamed(
               context,
               '/send',
-              arguments: SendScreenArgs(destinationAddress: _xmrAddress(contact), contact: contact),
+              arguments: SendScreenArgs(
+                destinationAddress: _xmrAddress(contact),
+                contact: contact,
+                backLabel: i18n.addressBookTitle,
+              ),
             ),
           ),
         ],

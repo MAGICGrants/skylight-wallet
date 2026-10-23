@@ -286,9 +286,15 @@ class _AppRootState extends State<_AppRoot>
       );
       return;
     }
+    // Over whatever screen the user was on, so its back link says just "Back".
+    final overlayContext = _navigatorKey.currentState?.overlay?.context;
     _navigatorKey.currentState?.pushNamed(
       '/send',
-      arguments: SendScreenArgs(destinationAddress: request.address, amount: request.amount),
+      arguments: SendScreenArgs(
+        destinationAddress: request.address,
+        amount: request.amount,
+        backLabel: overlayContext == null ? null : AppLocalizations.of(overlayContext)?.back,
+      ),
     );
   }
 

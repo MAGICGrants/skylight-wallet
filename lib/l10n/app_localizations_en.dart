@@ -358,24 +358,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'When restoring, a scan-from date makes syncing faster.';
 
   @override
-  String get onboardingWalletCreateBullet1 => 'A new Polyseed recovery phrase';
-
-  @override
-  String get onboardingWalletCreateBullet2 => 'Syncs from today';
-
-  @override
-  String get onboardingWalletCreateBullet3 => 'Takes about two minutes';
-
-  @override
-  String get onboardingWalletRestoreBullet1 => 'A Polyseed, BIP39 or legacy Monero recovery phrase';
-
-  @override
-  String get onboardingWalletRestoreBullet2 => 'Optional scan-from date';
-
-  @override
-  String get onboardingWalletRestoreBullet3 => 'Recovers your existing balance and history';
-
-  @override
   String get onboardingSeedNotePassword =>
       'Skylight Wallet asks for your password before showing these words again.';
 

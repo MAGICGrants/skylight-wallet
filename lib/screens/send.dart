@@ -38,7 +38,11 @@ class SendScreenArgs {
   /// so Send opens showing the contact card rather than a bare address.
   final Contact? contact;
 
-  SendScreenArgs({required this.destinationAddress, this.amount, this.contact});
+  /// The desktop back link's label: where Back returns to. Null: the wallet
+  /// home ("Wallet"), where Send opens from unless the caller says otherwise.
+  final String? backLabel;
+
+  SendScreenArgs({required this.destinationAddress, this.amount, this.contact, this.backLabel});
 }
 
 class SendScreen extends StatefulWidget {
@@ -78,6 +82,7 @@ class _SendScreenState extends State<SendScreen> {
   late final AmountEntryController _amount;
   bool _isSweepAll = false;
   Contact? _selectedContact;
+  String? _backLabel;
   List<int?>? _fees; // estimated fee (piconero) per priority; null = estimate failed
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0; // Track the latest fee calculation request
@@ -144,6 +149,7 @@ class _SendScreenState extends State<SendScreen> {
       _selectedContact = contact != null && contact.ownsAddress('XMR', args.destinationAddress)
           ? contact
           : null;
+      _backLabel = args.backLabel;
     }
   }
 
@@ -839,7 +845,10 @@ class _SendScreenState extends State<SendScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(44, 30, 44, 36),
       children: [
-        DesktopBackLink(label: i18n.navigationBarWallet, onTap: () => Navigator.pop(context)),
+        DesktopBackLink(
+          label: _backLabel ?? i18n.navigationBarWallet,
+          onTap: () => Navigator.pop(context),
+        ),
         const SizedBox(height: 16),
         Text(i18n.sendTitle, style: desktopTitleStyle),
         const SizedBox(height: 24),

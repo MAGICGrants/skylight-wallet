@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Metadata backup: this app's own iCloud container (wallet_backup_platform). -->
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.org.magicgrants.skylightwallet</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.org.magicgrants.skylightwallet</string>
+	</array>
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>TAG</string>
+	</array>
+	<key>com.apple.security.smartcard</key>
+	<true/>
+	<!-- Enhanced Security (iOS 26 and later; earlier versions ignore these).
+	     All of it except pointer authentication, which needs every binary in
+	     the process built for arm64e, and Flutter's engine is arm64 only.
+	     Version 2 also turns on guard objects around freed memory.
+	     checked-allocations is Memory Integrity Enforcement (hardware memory
+	     tagging, A19 and later), enforced rather than in soft mode, and
+	     enable-pure-data extends tagging to allocations without pointers,
+	     where key material lives. hardened-heap pairs with the typed
+	     allocators set in the Runner target and the Podfile. -->
+	<key>com.apple.security.hardened-process</key>
+	<true/>
+	<key>com.apple.security.hardened-process.enhanced-security-version-string</key>
+	<string>2</string>
+	<key>com.apple.security.hardened-process.platform-restrictions-string</key>
+	<string>2</string>
+	<key>com.apple.security.hardened-process.dyld-ro</key>
+	<true/>
+	<key>com.apple.security.hardened-process.hardened-heap</key>
+	<true/>
+	<key>com.apple.security.hardened-process.checked-allocations</key>
+	<true/>
+	<key>com.apple.security.hardened-process.checked-allocations.enable-pure-data</key>
+	<true/>
+</dict>
+</plist>

@@ -5,10 +5,14 @@ import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
+import 'package:wallet_fhse/security_keys_ui.dart' show passAppLock;
 
-/// Desktop: secret keys as a centered modal (opened from Settings); mobile keeps
-/// the full-screen route.
-Future<void> showSecretKeysSheet(BuildContext context) {
+/// Desktop: secret keys as a centered modal (opened from Settings), once App
+/// Lock passes ([passAppLock]): a sheet is not a route, so the `/secret_keys`
+/// AppLockGate does not cover it. Mobile keeps that route.
+Future<void> showSecretKeysSheet(BuildContext context) async {
+  final reason = AppLocalizations.of(context)!.revealSeedAuthReason;
+  if (!await passAppLock(context, reason: reason) || !context.mounted) return;
   return showBrandSheet<void>(
     context: context,
     isScrollControlled: true,

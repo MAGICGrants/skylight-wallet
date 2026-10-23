@@ -59,16 +59,6 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
         continueText: i18n.continueText,
         noteGenerated: i18n.onboardingWalletNoteGenerated,
         noteRestore: i18n.onboardingWalletNoteRestore,
-        createBullets: [
-          i18n.onboardingWalletCreateBullet1,
-          i18n.onboardingWalletCreateBullet2,
-          i18n.onboardingWalletCreateBullet3,
-        ],
-        restoreBullets: [
-          i18n.onboardingWalletRestoreBullet1,
-          i18n.onboardingWalletRestoreBullet2,
-          i18n.onboardingWalletRestoreBullet3,
-        ],
         onCreateNew: createNew,
         onRestore: _restoreExisting,
         onBack: () => Navigator.pop(context),

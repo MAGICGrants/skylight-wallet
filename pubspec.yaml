@@ -16,11 +16,11 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.1.0+413
+version: 2.2.0+414
 
 environment:
-  sdk: 3.11.5
-  flutter: 3.41.7
+  sdk: 3.13.5
+  flutter: 3.47.7
 
 flutter_launcher_icons:
   android: true
@@ -49,7 +49,7 @@ dependencies:
   tor_ffi_plugin:
     git:
       url: https://github.com/cypherstack/tor
-      ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
+      ref: e30ed0d386a40ee4a999aeaf57aafd32921d601e
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: 0f01328816eb671ff9e4f79a3c0c15990006fb12
+      ref: db99aad58523387d7cbac345afa3ac7247b8873c
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
@@ -65,37 +65,54 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_openalias
+  # FHSE: security keys guarding the wallet password.
+  wallet_fhse:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
+      path: packages/wallet_fhse
+  # Metadata backup: payment destinations, tx keys and the address book.
+  wallet_backup:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
+      path: packages/wallet_backup
+  wallet_backup_platform:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
+      path: packages/wallet_backup_platform
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: 2c2c8a3cbd33e5c28b958c25c0d002158e3a1185
+      ref: 754827cc7b78ced75d93fc5c1740ea0b955e9804
       path: packages/wallet_ui
 
   bip39:
@@ -109,7 +126,7 @@ dependencies:
   dart_date: 1.5.3
   qr_flutter: 4.1.0
   share_plus: 11.1.0
-  intl: 0.20.2
+  intl: 0.20.3
   shared_preferences: 2.5.3
   http: 1.6.0
   workmanager: 0.9.0+3

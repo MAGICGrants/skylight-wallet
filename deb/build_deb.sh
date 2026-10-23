@@ -81,7 +81,8 @@ mkdir -p "$PACKAGE_DIR/usr/bin"
 mkdir -p "$PACKAGE_DIR/usr/share/icons/hicolor/512x512/apps"
 mkdir -p "$PACKAGE_DIR/usr/share/applications"
 
-# Create control file
+# Create control file. libfido2 is what security keys use on Linux (loaded at
+# run time); without it the app runs as before and keys are unavailable.
 echo "Creating control file..."
 INSTALLED_SIZE=$(du -sk ../build/linux/x64/release/bundle | cut -f1)
 cat > "$PACKAGE_DIR/DEBIAN/control" << EOF
@@ -92,6 +93,7 @@ Priority: optional
 Architecture: amd64
 Installed-Size: $INSTALLED_SIZE
 Maintainer: MAGIC Grants
+Recommends: libfido2-1
 Description: A light Monero wallet.
 Homepage: https://github.com/MAGICGrants/skylight-wallet
 EOF

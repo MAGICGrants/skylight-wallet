@@ -91,7 +91,7 @@ docker run --rm \
       export PUB_CACHE="$app/.pub-cache"
       echo "==> [$app] flutter pub get..."
       flutter pub get --enforce-lockfile
-      echo "==> [$app] pinning cargokit toolchain (tor + openalias)..."
+      echo "==> [$app] pinning cargokit toolchain (openalias)..."
       bash scripts/pin-rust-toolchain.sh
       echo "==> [$app] flutter build apk (Rust + Dart AOT; slow, limited output)..."
       flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$PLATFORM"

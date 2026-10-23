@@ -130,6 +130,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.2"
+  code_assets:
+    dependency: transitive
+    description:
+      name: code_assets
+      sha256: bf394f466ba9205f1812a0433b392d6af280f155f56651eda7c18cc32ed493b8
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
   collection:
     dependency: transitive
     description:
@@ -210,6 +218,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
+  file_selector:
+    dependency: transitive
+    description:
+      name: file_selector
+      sha256: bd15e43e9268db636b53eeaca9f56324d1622af30e5c34d6e267649758c84d9a
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
+  file_selector_android:
+    dependency: transitive
+    description:
+      name: file_selector_android
+      sha256: "89243030ea4b3463fb402b44d5eeacc4ccb1c46a88870cb2a5080d693200c1ed"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.2+6"
+  file_selector_ios:
+    dependency: transitive
+    description:
+      name: file_selector_ios
+      sha256: "97269e5307a0ab813b1fa2430bada0a96e0afb74848417f8676f64ba5de0051c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.3+6"
   file_selector_linux:
     dependency: transitive
     description:
@@ -234,6 +266,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.7.0"
+  file_selector_web:
+    dependency: transitive
+    description:
+      name: file_selector_web
+      sha256: "73181fbc5257776d8ecaa6a94ab3c8e920ad143b9132a6d984a9271dfc6928d3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.5"
   file_selector_windows:
     dependency: transitive
     description:
@@ -456,6 +496,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  hooks:
+    dependency: transitive
+    description:
+      name: hooks
+      sha256: eaac480a35ec0814146c2c48d96aaa829e0e44a7662c88ae84c9edf4bc35651f
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
   http:
     dependency: "direct main"
     description:
@@ -553,10 +601,10 @@ packages:
     dependency: "direct main"
     description:
       name: intl
-      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
       url: "https://pub.dev"
     source: hosted
-    version: "0.20.2"
+    version: "0.20.3"
   js:
     dependency: transitive
     description:
@@ -645,14 +693,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.11"
+  logging:
+    dependency: transitive
+    description:
+      name: logging
+      sha256: c8245ada5f1717ed44271ed1c26b8ce85ca3228fd2ffdb75468ab01979309d61
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   matcher:
     dependency: transitive
     description:
       name: matcher
-      sha256: dc0b7dc7651697ea4ff3e69ef44b0407ea32c487a39fff6a4004fa585e901861
+      sha256: "31bd099b47c10cd1aeb55146a2d46ce0277630ecef3f7dae54ad7873f36696cd"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.19"
+    version: "0.12.20"
   material_color_utilities:
     dependency: transitive
     description:
@@ -665,10 +721,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "23f08335362185a5ea2ad3a4e597f1375e78bce8a040df5c600c8d3552ef2394"
+      sha256: "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.17.0"
+    version: "1.19.0"
   mime:
     dependency: transitive
     description:
@@ -681,11 +737,19 @@ packages:
     dependency: "direct main"
     description:
       path: "impls/monero.dart"
-      ref: "0f01328816eb671ff9e4f79a3c0c15990006fb12"
-      resolved-ref: "0f01328816eb671ff9e4f79a3c0c15990006fb12"
+      ref: db99aad58523387d7cbac345afa3ac7247b8873c
+      resolved-ref: db99aad58523387d7cbac345afa3ac7247b8873c
       url: "https://github.com/magicgrants/monero_c"
     source: git
     version: "0.0.0"
+  native_toolchain_rust:
+    dependency: transitive
+    description:
+      name: native_toolchain_rust
+      sha256: "8469a0e32a47a5c84b7fd300de9fd0e8082aac76c37922986324f5082a58350d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.6"
   nested:
     dependency: transitive
     description:
@@ -886,6 +950,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.5+1"
+  pub_semver:
+    dependency: transitive
+    description:
+      name: pub_semver
+      sha256: "261236774e8b1d69cfc6b9eabbc96c40f25e7a2d6b171f3385d4f65d5734fb24"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.1"
   qr:
     dependency: transitive
     description:
@@ -902,6 +974,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
+  record_use:
+    dependency: transitive
+    description:
+      name: record_use
+      sha256: "1cb8564af8d43b464294411db9217f5ec04891c6f22ee2c32d73ae05e88a6bd2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   riverpod:
     dependency: transitive
     description:
@@ -1127,10 +1207,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "8161c84903fd860b26bfdefb7963b3f0b68fee7adea0f59ef805ecca346f0c7a"
+      sha256: "2a122cbe059f8b610d3a5415f42e255b6c17b1f21eee1d960f31080237fb4f11"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.10"
+    version: "0.7.12"
   timeago:
     dependency: "direct main"
     description:
@@ -1147,15 +1227,23 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.10.1"
+  toml:
+    dependency: transitive
+    description:
+      name: toml
+      sha256: "35a35f782228656a2af31e8c73d1353cc4ef3d683fd68af1111b44631879c05e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.18.0"
   tor_ffi_plugin:
     dependency: "direct main"
     description:
       path: "."
-      ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
-      resolved-ref: c2706eeb66174273a4a98113d7a8cd910ba124e6
+      ref: e30ed0d386a40ee4a999aeaf57aafd32921d601e
+      resolved-ref: e30ed0d386a40ee4a999aeaf57aafd32921d601e
       url: "https://github.com/cypherstack/tor"
     source: git
-    version: "0.0.1"
+    version: "0.2.0"
   tuple:
     dependency: transitive
     description:
@@ -1248,10 +1336,10 @@ packages:
     dependency: transitive
     description:
       name: vector_math
-      sha256: d530bd74fea330e6e364cda7a85019c434070188383e1cd8d9777ee586914c5b
+      sha256: "92b9910f66ed1057fd4da7b040ae7c74cafacf885bdc81be496928d5049b032d"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "2.4.3"
   vm_service:
     dependency: transitive
     description:
@@ -1264,8 +1352,26 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_background"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      url: "https://github.com/MAGICGrants/wallet-core"
+    source: git
+    version: "0.1.0"
+  wallet_backup:
+    dependency: "direct main"
+    description:
+      path: "packages/wallet_backup"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      url: "https://github.com/MAGICGrants/wallet-core"
+    source: git
+    version: "0.1.0"
+  wallet_backup_platform:
+    dependency: "direct main"
+    description:
+      path: "packages/wallet_backup_platform"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1273,8 +1379,17 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_domain"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      url: "https://github.com/MAGICGrants/wallet-core"
+    source: git
+    version: "0.1.0"
+  wallet_fhse:
+    dependency: "direct main"
+    description:
+      path: "packages/wallet_fhse"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1282,8 +1397,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_fiat"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1291,8 +1406,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_infra"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1300,8 +1415,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_monero"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1309,8 +1424,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_openalias"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1318,8 +1433,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/wallet_ui"
-      ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
-      resolved-ref: "2c2c8a3cbd33e5c28b958c25c0d002158e3a1185"
+      ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
+      resolved-ref: "754827cc7b78ced75d93fc5c1740ea0b955e9804"
       url: "https://github.com/MAGICGrants/wallet-core"
     source: git
     version: "0.1.0"
@@ -1412,5 +1527,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: "3.11.5"
-  flutter: "3.41.7"
+  dart: "3.13.5"
+  flutter: "3.47.7"

@@ -6,10 +6,9 @@ import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
+import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
-import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
-import 'package:skylight_wallet/widgets/tor_settings_form.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/screens/lws_keys.dart';
@@ -17,14 +16,20 @@ import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
-import 'package:skylight_wallet/periodic_tasks.dart';
+import 'package:wallet_backup_platform/backup_ui.dart' show BackupLocalizations;
+import 'package:wallet_fhse/security_keys_ui.dart'
+    show AppLockTile, DesktopAutoLockTile, FhseLocalizations, SecurityKeysState, securityKeysState;
+import 'package:wallet_domain/wallet_domain.dart' show OpenAliasMode;
+import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
+import 'package:wallet_infra/wallet_infra.dart' show SyncFrequency, loadSyncFrequency;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/widgets/language_sheet.dart';
+import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
+import 'package:skylight_wallet/widgets/sync_frequency_sheet.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
-import 'package:wallet_infra/wallet_infra.dart' show BiometricAuth, BiometricAuthResult;
 
 /// Desktop: settings as a wide centered modal (opened from the sidebar); mobile
 /// keeps the full-screen tab.
@@ -52,9 +57,11 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   var _newTxNotificationsEnabled = false;
-  var _appLockEnabled = false;
-  var _verboseLoggingEnabled = false;
+  var _syncFrequency = SyncFrequency.periodic;
+  var _loggingEnabled = false;
+  SecurityKeysState? _securityKeys;
   FiatApiMode _fiatMode = FiatApiMode.torOnly;
+  OpenAliasMode _openAliasMode = OpenAliasMode.torOnly;
   // Toggles animate only after the stored values have loaded, so they don't
   // slide from off→on when the screen first appears.
   var _animateToggles = false;
@@ -82,21 +89,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await SharedPreferencesService.get<bool>(SharedPreferencesKeys.notificationsEnabled) ??
         false;
 
-    final appLockEnabled =
-        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.appLockEnabled) ?? false;
-
-    final verboseLoggingEnabled =
-        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
-        false;
+    final loggingEnabled =
+        await SharedPreferencesService.get<bool>(SharedPreferencesKeys.loggingEnabled) ?? false;
 
     final fiatMode = await FiatRateModel.loadFiatApiMode();
+    final openAliasMode = await OpenAliasMode.load();
+    final syncFrequency = await loadSyncFrequency();
+    await _loadSecurityKeys();
 
     if (!mounted) return;
     setState(() {
       _newTxNotificationsEnabled = newTxNotificationsEnabled;
-      _appLockEnabled = appLockEnabled;
-      _verboseLoggingEnabled = verboseLoggingEnabled;
+      _loggingEnabled = loggingEnabled;
       _fiatMode = fiatMode;
+      _openAliasMode = openAliasMode;
+      _syncFrequency = syncFrequency;
     });
     // Enable animation a frame after the loaded values are painted.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -104,6 +111,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  /// Only whether a background run that finds a payment says so. Whether runs
+  /// happen at all is Sync Frequency's.
   void _setTxNotificationsEnabled(bool value) async {
     final wallet = appWalletOf(context);
 
@@ -119,42 +128,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // everything already received.
         await wallet.markExistingTxsAsNotified();
         await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, true);
-        await applyBackgroundTaskRegistration();
       }
     } else {
       await SharedPreferencesService.set<bool>(SharedPreferencesKeys.notificationsEnabled, false);
-      await applyBackgroundTaskRegistration();
     }
   }
 
-  void _setAppLockEnabled(bool value) async {
-    final i18n = AppLocalizations.of(context)!;
-
-    if (value) {
-      final result = await BiometricAuth.authenticate(reason: i18n.settingsAppLockUnlockReason);
-      // Enabling app-lock is an explicit opt-in, so decline and error both report.
-      if (result != BiometricAuthResult.authenticated) {
-        if (mounted) {
-          showBrandToast(context, i18n.settingsAppLockUnableToAuthError);
-        }
-        return;
-      }
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _appLockEnabled = value;
-    });
-
-    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.appLockEnabled, value);
+  void _showSyncFrequency() async {
+    final frequency = await showSyncFrequencySettings(context);
+    if (frequency != null && mounted) setState(() => _syncFrequency = frequency);
   }
 
-  void _setVerboseLoggingEnabled(bool value) async {
+  Future<void> _loadSecurityKeys() async {
+    if (!SecurityKeyService.isSupportedPlatform) return;
+    try {
+      final state = await securityKeysState();
+      if (mounted) setState(() => _securityKeys = state);
+    } catch (_) {
+      // Advanced Security says what went wrong; the rest of Settings loads.
+    }
+  }
+
+  Future<void> _openAdvancedSecurity() async {
+    await Navigator.pushNamed(context, '/advanced_security');
+    await _loadSecurityKeys();
+  }
+
+  String _securityKeysValue(FhseLocalizations i18n) {
+    final state = _securityKeys;
+    if (state == null || !state.engaged) return i18n.advancedSecurityOff;
+    if (state.unreadable) return i18n.advancedSecurityNeedsAttention;
+    return i18n.advancedSecurityKeyCount(state.keys.length);
+  }
+
+  void _setLoggingEnabled(bool value) async {
     setState(() {
-      _verboseLoggingEnabled = value;
+      _loggingEnabled = value;
     });
 
-    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.verboseLoggingEnabled, value);
+    await SharedPreferencesService.set<bool>(SharedPreferencesKeys.loggingEnabled, value);
   }
 
   void _exportLogs() async {
@@ -205,6 +217,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showDeleteAddressBookDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    showConfirmSheet(
+      context: context,
+      icon: Icons.delete_outline,
+      iconBg: BrandColors.errorBg,
+      iconColor: BrandColors.error,
+      title: i18n.settingsDeleteAddressBookButton,
+      body: i18n.settingsDeleteAddressBookDialogText,
+      confirmLabel: i18n.settingsDeleteAddressBookDialogDeleteButton,
+      cancelLabel: i18n.cancel,
+      onConfirm: _deleteAddressBook,
+    );
+  }
+
+  // Only the address book: deleting the wallet keeps it, and this keeps the
+  // wallet. A backup syncing to iCloud or Android backup records the deletions.
+  Future<void> _deleteAddressBook() async {
+    final i18n = AppLocalizations.of(context)!;
+    await Provider.of<ContactModel>(context, listen: false).deleteAll();
+    if (mounted) showBrandToast(context, i18n.settingsAddressBookDeleted);
+  }
+
   Future<void> _showViewLwsKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
     final ok = await showConfirmSheet(
@@ -226,14 +261,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// Gate the seed behind a device auth even though the app is already
-  /// unlocked. Reaching this screen hands over the seed and secret spend key,
-  /// which is total, irreversible control of the funds; the warning sheet alone
-  /// stops nobody holding the phone.
-  ///
-  /// Only when app lock is on, though -- turning it off is the user saying this
-  /// app does not ask the device who is holding the phone, and a prompt that
-  /// appears anyway reads as the setting being ignored.
+  /// The recovery phrase and secret spend key are total, irreversible control of
+  /// the funds, so the warning alone is not enough: the screen (or desktop
+  /// sheet) needs a passing App Lock, asked again even though the app is
+  /// already unlocked (`/secret_keys` is an AppLockGate route;
+  /// [showSecretKeysSheet] asks itself).
   Future<void> _showViewSecretKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
 
@@ -262,97 +294,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  double _sheetMaxHeight(BuildContext sheetContext) {
-    final media = MediaQuery.of(sheetContext);
-    return (media.size.height - media.viewInsets.bottom) * 0.86;
-  }
-
-  /// Settings popup chrome, matching Spice's sheets: a handle, an icon + title
-  /// header, then the form scrolling below (the form carries its own save
-  /// button and pops on success).
-  Future<void> _showSettingsSheet({
-    required IconData icon,
-    required String title,
-    required Widget form,
-  }) {
-    return showBrandSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        // Desktop modal: the card owns the edge padding and drops the drag handle.
-        final hpad = isDesktopModal ? 0.0 : 22.0;
-        return SafeArea(
-          top: false,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: _sheetMaxHeight(sheetContext)),
-            child: Padding(
-              padding: EdgeInsets.only(top: isDesktopModal ? 0 : 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SheetHandle(),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(hpad, 0, hpad, 16),
-                    child: Row(
-                      children: [
-                        SheetIcon(
-                          icon: icon,
-                          bg: BrandColors.surfaceTinted,
-                          color: BrandColors.primaryDeep,
-                        ),
-                        const SizedBox(width: 11),
-                        Expanded(child: Text(title, style: BrandText.sheetTitle)),
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(hpad, 0, hpad, isDesktopModal ? 0 : 16),
-                      child: form,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showTorSettings() async {
-    final i18n = AppLocalizations.of(context)!;
-
-    void onSaved() {
-      appWalletOf(context).load();
-      Provider.of<FiatRateModel>(context, listen: false).startService();
-      Navigator.pop(context);
-    }
-
-    await _showSettingsSheet(
-      icon: Icons.public,
-      title: i18n.torSettingsTitle,
-      form: TorSettingsForm(saveButtonLabel: i18n.torSettingsSaveButton, onSaved: onSaved),
-    );
+  Future<void> _showTorSettings() async {
+    await showTorSettingsSheet(context);
     // Disabling Tor can auto-disable a Tor-only fiat mode, so refresh both rows.
     if (mounted) await _refreshFiatMode();
   }
 
-  void _showFiatApiSettings() async {
-    final i18n = AppLocalizations.of(context)!;
-
-    await _showSettingsSheet(
-      icon: Icons.attach_money,
-      title: i18n.settingsFiatApiSettingsLabel,
-      form: FiatApiSettingsForm(
-        saveButtonLabel: i18n.torSettingsSaveButton,
-        onSaved: () async {
-          await Provider.of<FiatRateModel>(context, listen: false).startService();
-          if (mounted) Navigator.pop(context);
-        },
-      ),
-    );
+  Future<void> _showFiatApiSettings() async {
+    await showFiatApiSettingsSheet(context);
     if (mounted) await _refreshFiatMode();
   }
 
@@ -366,7 +315,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Navigator.pop(context);
     }
 
-    await _showSettingsSheet(
+    await showSettingsFormSheet(
+      context,
       icon: Icons.dns,
       title: i18n.settingsConnectionSettingsLabel,
       form: ConnectionSettingsForm(
@@ -379,6 +329,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // reads a singleton — refresh so an edit here shows immediately.
     if (mounted) setState(() {});
   }
+
+  Future<void> _showOpenAliasSettings() async {
+    final changed = await showOpenAliasSheet(context);
+    if (changed == true) {
+      final mode = await OpenAliasMode.load();
+      if (mounted) setState(() => _openAliasMode = mode);
+    }
+  }
+
+  String _openAliasModeLabel(AppLocalizations i18n) => switch (_openAliasMode) {
+    OpenAliasMode.torOnly => i18n.fiatApiSettingsModeTorOnly,
+    OpenAliasMode.clearnet => i18n.fiatApiSettingsModeClearnet,
+    OpenAliasMode.disabled => i18n.fiatApiSettingsModeDisabled,
+  };
 
   Future<void> _refreshFiatMode() async {
     final mode = await FiatRateModel.loadFiatApiMode();
@@ -477,10 +441,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final i18n = AppLocalizations.of(context)!;
     final language = context.watch<LanguageModel>();
     final theme = context.watch<ThemeModel>();
-    final isMobile = Platform.isAndroid || Platform.isIOS;
     final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
-    final showNotifyToggle = Platform.isAndroid || (Platform.isIOS && !wallet.isNodeMode);
+    // Sync Frequency and the notifications it feeds: phones only.
+    final showNotifyToggle = Platform.isAndroid || Platform.isIOS;
     final connectionSubtitle = _connectionSubtitle(wallet, i18n);
     final fiatSubtitle = _fiatMode == FiatApiMode.disabled
         ? _fiatModeLabel(i18n)
@@ -500,24 +464,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: languageNames[language.language]?.$1 ?? language.language.toUpperCase(),
             onTap: () => showLanguageSheet(context),
           ),
-          if (isMobile)
-            SettingsToggleTile(
-              title: i18n.settingsAppLockLabel,
-              value: _appLockEnabled,
-              onChanged: _setAppLockEnabled,
-              animate: _animateToggles,
-            ),
           SettingsLinkTile(
             title: i18n.settingsConnectionSettingsLabel,
             subtitle: connectionSubtitle,
             linkLabel: i18n.settingsLwsViewKeysButton,
             onTap: _showConnectionSettings,
-          ),
-          SettingsLinkTile(
-            title: i18n.settingsTorSettingsLabel,
-            subtitle: _torModeLabel(i18n),
-            linkLabel: i18n.settingsLwsViewKeysButton,
-            onTap: _showTorSettings,
           ),
           SettingsLinkTile(
             title: i18n.settingsFiatApiSettingsLabel,
@@ -528,37 +479,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       SettingsGroup(
-        label: i18n.settingsSectionBehaviour,
+        label: i18n.settingsSectionSecurityPrivacy,
         tiles: [
-          if (showNotifyToggle)
-            SettingsToggleTile(
-              title: i18n.settingsNotifyNewTxsLabel,
-              description: Platform.isIOS
-                  ? i18n.settingsNotifyNewTxsDescriptionIos
-                  : i18n.settingsNotifyNewTxsDescription,
-              value: _newTxNotificationsEnabled,
-              onChanged: _setTxNotificationsEnabled,
-              animate: _animateToggles,
+          // Always on: how long the app may be away before it asks again.
+          const AppLockTile(),
+          if (isDesktopOS) const DesktopAutoLockTile(),
+          if (SecurityKeyService.isSupportedPlatform)
+            SettingsNavTile(
+              title: FhseLocalizations.of(context).advancedSecurityLabel,
+              value: _securityKeysValue(FhseLocalizations.of(context)),
+              onTap: _openAdvancedSecurity,
             ),
+          SettingsLinkTile(
+            title: i18n.settingsTorSettingsLabel,
+            subtitle: _torModeLabel(i18n),
+            linkLabel: i18n.settingsLwsViewKeysButton,
+            onTap: _showTorSettings,
+          ),
+          SettingsLinkTile(
+            title: i18n.settingsOpenAliasSettingsLabel,
+            subtitle: _openAliasModeLabel(i18n),
+            linkLabel: i18n.settingsLwsViewKeysButton,
+            onTap: _showOpenAliasSettings,
+          ),
+        ],
+      ),
+      SettingsGroup(
+        label: i18n.settingsSectionData,
+        tiles: [
+          SettingsNavTile(
+            title: BackupLocalizations.of(context).backupTitle,
+            onTap: () => Navigator.pushNamed(context, '/metadata_backup'),
+          ),
           SettingsToggleTile(
-            title: i18n.settingsVerboseLoggingLabel,
+            title: i18n.settingsLoggingLabel,
             description: Platform.isIOS
-                ? i18n.settingsVerboseLoggingDescriptionIos
-                : i18n.settingsVerboseLoggingDescription,
-            value: _verboseLoggingEnabled,
-            onChanged: _setVerboseLoggingEnabled,
+                ? i18n.settingsLoggingDescriptionIos
+                : i18n.settingsLoggingDescription,
+            value: _loggingEnabled,
+            onChanged: _setLoggingEnabled,
             animate: _animateToggles,
           ),
           // Only meaningful with logs to export, so hide it when
-          // verbose logging is off rather than disabling it.
-          if (Platform.isIOS && _verboseLoggingEnabled)
+          // logging is off rather than disabling it.
+          if (Platform.isIOS && _loggingEnabled)
             SettingsLinkTile(
               title: i18n.settingsExportLogsLabel,
               linkLabel: i18n.settingsExportLogsButton,
               onTap: _exportLogs,
             ),
+          SettingsLinkTile(
+            title: i18n.settingsDeleteAddressBookButton,
+            titleColor: BrandColors.error,
+            onTap: _showDeleteAddressBookDialog,
+          ),
         ],
       ),
+      if (showNotifyToggle)
+        SettingsGroup(
+          label: i18n.settingsSectionBehaviour,
+          tiles: [
+            SettingsNavTile(
+              title: i18n.settingsSyncFrequencyLabel,
+              value: syncFrequencyLabels(i18n).nameOf(_syncFrequency),
+              onTap: _showSyncFrequency,
+            ),
+            SettingsToggleTile(
+              title: i18n.settingsNotifyNewTxsLabel,
+              description: i18n.settingsNotifyNewTxsDescription,
+              value: _newTxNotificationsEnabled,
+              onChanged: _setTxNotificationsEnabled,
+              animate: _animateToggles,
+            ),
+          ],
+        ),
       SettingsGroup(
         label: i18n.settingsSectionWallet,
         tiles: [
@@ -590,6 +584,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: i18n.welcomePrivacyLink,
             onTap: () => Navigator.pushNamed(context, '/privacy_policy', arguments: true),
           ),
+          SettingsNavTile(
+            title: i18n.settingsLicensesLabel,
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'Skylight Wallet',
+              applicationVersion: _appVersion,
+            ),
+          ),
         ],
       ),
     ];
@@ -611,7 +613,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: BrandColors.paper,
-      bottomNavigationBar: const WalletNavigationBar(selectedIndex: 2),
+      bottomNavigationBar: const WalletNavigationBar(selectedIndex: 3),
       body: SafeArea(
         bottom: false,
         child: Center(

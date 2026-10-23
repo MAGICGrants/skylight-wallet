@@ -47,3 +47,7 @@ app.*.map.json
 # Local reproducibility test outputs (.so builds + logs)
 /repro-out/
 pubspec_overrides.yaml
+
+# monero_c for macOS, built locally (scripts/build-moneroc.sh): it embeds the
+# build path, so it is never committed
+/macos/Frameworks/

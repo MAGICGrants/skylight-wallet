@@ -107,20 +107,23 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     // they can name different subaddresses.
     final sub = isDemoMode ? null : wallet.unusedSubaddress;
     final subSupported = wallet.serverSupportsSubaddresses;
-    final canToggle = subSupported == true && !isDemoMode;
+    // The toggle needs a subaddress to toggle to. Until there is one (the
+    // server has not answered yet, or cannot be reached at all) the primary
+    // address is shown: every server scans it. Waiting for the subaddress
+    // instead spun forever with no connection.
+    final canToggle = subSupported == true && sub != null;
 
     String? address;
-    if (subSupported == false || isDemoMode) {
+    if (canToggle && _showSubaddress) {
+      address = sub.address;
+    } else if (primaryAddress.isNotEmpty) {
       address = primaryAddress;
     }
-    if (subSupported == true) {
-      address = _showSubaddress ? sub?.address : primaryAddress;
-    }
 
-    final ready = (subSupported != null || isDemoMode) && address != null;
-    final warning = _warning(i18n, wallet, subSupported);
+    final ready = address != null;
+    final warning = _warning(i18n, wallet, isDemoMode, subSupported, sub);
     final qrHeading = canToggle && _showSubaddress
-        ? (sub != null ? '${i18n.receiveSubaddressTab} #${sub.index}' : i18n.receiveSubaddressTab)
+        ? '${i18n.receiveSubaddressTab} #${sub.index}'
         : i18n.receiveAddressHeading('Monero');
 
     if (isDesktop) {
@@ -173,12 +176,18 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     );
   }
 
-  String? _warning(AppLocalizations i18n, AppWallet wallet, bool? subSupported) {
+  String? _warning(
+    AppLocalizations i18n,
+    AppWallet wallet,
+    bool isDemoMode,
+    bool? subSupported,
+    ({int index, String address})? sub,
+  ) {
+    if (isDemoMode) return null;
     if (subSupported == false) return i18n.receiveServerNoSubaddressesWarn;
-    if (subSupported == true && !_showSubaddress) return i18n.receivePrimaryAddressWarn;
-    if (subSupported == true &&
-        _showSubaddress &&
-        wallet.unusedSubaddressIndexIsSupported == false) {
+    if (sub == null) return i18n.receiveSubaddressUnavailableWarn;
+    if (!_showSubaddress) return i18n.receivePrimaryAddressWarn;
+    if (wallet.unusedSubaddressIndexIsSupported == false) {
       return i18n.receiveMaxSubaddressesReachedWarn;
     }
     return null;

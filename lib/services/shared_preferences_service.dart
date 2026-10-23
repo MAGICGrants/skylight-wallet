@@ -15,11 +15,8 @@ class SharedPreferencesKeys {
   static const String fiatRate = SettingsKeys.fiatRate;
   static const String theme = SettingsKeys.theme;
   static const String notificationsEnabled = SettingsKeys.notificationsEnabled;
-  static const String backgroundSyncEnabled = SettingsKeys.backgroundSyncEnabled;
-  static const String foregroundSyncEnabled = SettingsKeys.foregroundSyncEnabled;
   static const String backgroundSyncIntervalMinutes = SettingsKeys.backgroundSyncIntervalMinutes;
-  static const String appLockEnabled = SettingsKeys.appLockEnabled;
-  static const String verboseLoggingEnabled = SettingsKeys.verboseLoggingEnabled;
+  static const String loggingEnabled = SettingsKeys.loggingEnabled;
   static const String contacts = SettingsKeys.contacts;
   static const String torMode = SettingsKeys.torMode;
   static const String torSocksPort = SettingsKeys.torSocksPort;

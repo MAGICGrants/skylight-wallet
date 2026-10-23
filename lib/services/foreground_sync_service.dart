@@ -12,7 +12,9 @@ export 'package:wallet_background/wallet_background.dart'
         startForegroundSyncIfEnabled,
         restartForegroundSyncIfRunning,
         isWalletFullySynced,
-        stopSyncAndDeleteWallets;
+        stopSyncAndDeleteWallets,
+        applySyncFrequency,
+        ForegroundSyncLink;
 
 /// Foreground-service isolate entry: bootstrap this isolate, then hand off to
 /// the shared handler. Top-level `@pragma` so it survives tree-shaking.

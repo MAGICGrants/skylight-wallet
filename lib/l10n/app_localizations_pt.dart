@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -78,6 +79,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get welcomePrivacyLink => 'Política de Privacidade';
 
   @override
+  String get settingsLicensesLabel => 'Licenças de Código Aberto';
+
+  @override
   String get lwsSetupTitle => 'Configuração da conexão';
 
   @override
@@ -119,6 +123,18 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get connectionOnionNeedsTor =>
       'Um endereço onion só pode ser acessado via Tor. Ative o Tor para usá-lo.';
+
+  @override
+  String get connectionPathNotSupported =>
+      'Este servidor é acessado pela raiz, então o endereço não pode incluir um caminho como /wallet. Remova o caminho.';
+
+  @override
+  String get lwsAwaitingApprovalAccount =>
+      'Seu servidor de carteira leve ainda não aprovou esta carteira. Peça ao operador do servidor para aprová-la para ver seu saldo e suas transações.';
+
+  @override
+  String get lwsAwaitingApprovalRestoreHeight =>
+      'Seu servidor de carteira leve ainda não aprovou a verificação a partir da sua altura de restauração, então transações mais antigas podem estar faltando. Peça ao operador do servidor para aprová-la.';
 
   @override
   String get connectionTorDisabledWarning =>
@@ -184,22 +200,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsConnectionInLocalNetwork => 'na rede local';
 
   @override
-  String get settingsBackgroundSyncLabel => 'Sincronização em segundo plano';
+  String homeBlocksRemaining(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
 
-  @override
-  String get settingsBackgroundSyncDescription =>
-      'Sincroniza o Monero periodicamente em segundo plano para que esteja atualizado ao abrir o app. Só roda enquanto carrega e no WiFi.';
-
-  @override
-  String get settingsForegroundSyncLabel => 'Sincronização contínua';
-
-  @override
-  String get settingsForegroundSyncDescription =>
-      'Mantém o Monero sincronizando continuamente enquanto o app roda em segundo plano, com uma notificação persistente. Usa mais bateria.';
-
-  @override
-  String homeBlocksRemaining(String count) {
-    return '$count blocos restantes';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString blocos restantes',
+      one: '1 bloco restante',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -231,6 +242,23 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fiatModeDisabledDesc => 'Sem preços; saldos exibidos apenas em cripto';
 
   @override
+  String get settingsOpenAliasSettingsLabel => 'Configurações do OpenAlias';
+
+  @override
+  String get openAliasSettingsSheetSubtitle =>
+      'Como nomes como nome@exemplo.com são consultados quando você envia.';
+
+  @override
+  String get openAliasModeTorOnlyDesc => 'Nomes consultados pelo Tor · recomendado';
+
+  @override
+  String get openAliasModeClearnetDesc =>
+      'Não privado, os servidores DNS veem seu endereço IP e o nome';
+
+  @override
+  String get openAliasModeDisabledDesc => 'Sem consultas; envie apenas para endereços';
+
+  @override
   String get fiatApiSettingsDisplayCurrencyLabel => 'Moeda de Exibição';
 
   @override
@@ -244,13 +272,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get createWalletRestoreExistingButton => 'Restaurar Existente';
 
   @override
-  String get createWalletRestoreExistingDesc => 'Insira uma semente Monero existente';
+  String get createWalletRestoreExistingDesc => 'Insira uma frase de recuperação Monero existente';
 
   @override
   String get createWalletCreateNewButton => 'Criar Nova';
 
   @override
-  String get createWalletCreateNewDesc => 'A Skylight Wallet gera uma nova polyseed';
+  String get createWalletCreateNewDesc =>
+      'A Skylight Wallet gera uma nova frase de recuperação Polyseed';
 
   @override
   String get createWalletPasswordTitle => 'Criar Senha da Carteira';
@@ -275,7 +304,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generateSeedTitle => 'Anote-as, em ordem';
 
   @override
-  String get generateSeedTitleCovered => 'Frase Seed';
+  String get generateSeedTitleCovered => 'Frase de Recuperação';
 
   @override
   String get generateSeedSubtitleCovered =>
@@ -302,70 +331,51 @@ class AppLocalizationsPt extends AppLocalizations {
   String get generateSeedBirthdayReason => 'Onde uma futura restauração começa a escanear';
 
   @override
-  String get onboardingTorNotePrivacy =>
-      'O Tor esconde seu endereço do nó que você consulta — mais lento, e vale a pena.';
+  String get onboardingTorNotePrivacy => 'Conexões pelo Tor podem ser mais lentas.';
 
   @override
-  String get onboardingTorNoteChangeable => 'Pode ser alterado depois em Configurações → Conexões.';
+  String get onboardingTorNoteChangeable => 'Você pode alterar isso depois nas Configurações.';
 
   @override
   String get onboardingPriceNoteRatesOnly =>
-      'O serviço de preços recebe apenas pedidos de cotações — nunca endereços ou valores.';
+      'Apenas os preços são solicitados. Seus endereços e saldos não são enviados.';
 
   @override
-  String get onboardingPriceNoteTor => 'Roteado pelo Tor por padrão, separado do tráfego da rede.';
+  String get onboardingPriceNoteTor => 'Os preços são buscados pelo Tor por padrão.';
 
   @override
   String get onboardingConnectionNoteServer =>
-      'Aponte a Skylight para um servidor de carteira leve (LWS), ou conecte-se ao seu próprio nó Monero.';
+      'Use um servidor light-wallet (LWS) ou seu próprio nó Monero.';
 
   @override
   String get onboardingConnectionNoteChangeable =>
-      'Pode ser alterado depois em Configurações → Conexão.';
+      'Você pode alterar isso depois nas Configurações.';
 
   @override
   String get onboardingWalletNoteGenerated =>
-      'A seed de uma nova carteira é gerada aqui, offline, e mostrada a você uma única vez.';
+      'A Skylight Wallet gera sua frase de recuperação neste dispositivo.';
 
   @override
   String get onboardingWalletNoteRestore =>
-      'A restauração pergunta aproximadamente quando a seed teve fundos pela primeira vez, para pular anos de escaneamento.';
-
-  @override
-  String get onboardingWalletCreateBullet1 => 'Uma frase seed Monero, mostrada uma vez';
-
-  @override
-  String get onboardingWalletCreateBullet2 => 'Começa vazia, sincroniza a partir de hoje';
-
-  @override
-  String get onboardingWalletCreateBullet3 => 'Leva cerca de dois minutos';
-
-  @override
-  String get onboardingWalletRestoreBullet1 => 'Uma seed Monero Polyseed, BIP39 ou legada';
-
-  @override
-  String get onboardingWalletRestoreBullet2 => 'Data de escaneamento opcional';
-
-  @override
-  String get onboardingWalletRestoreBullet3 => 'Recupera seu saldo e histórico existentes';
+      'Ao restaurar, uma data para escanear a partir dela torna a sincronização mais rápida.';
 
   @override
   String get onboardingSeedNotePassword =>
-      'A Skylight Wallet pede sua senha antes de mostrá-las novamente.';
+      'A Skylight Wallet pede sua senha antes de mostrar estas palavras novamente.';
 
   @override
   String get onboardingPasswordNoteLaunch =>
-      'Pedida a cada abertura, e antes de a seed ser mostrada.';
+      'Você precisa desta senha para abrir sua carteira e para ver sua frase de recuperação.';
 
   @override
   String get onboardingPasswordNoteNotCloud =>
-      'Não é uma conta na nuvem. Perdê-la significa restaurar a partir da sua frase seed.';
+      'Esta senha não pode ser recuperada. Se você a perder, restaure sua carteira a partir da sua frase de recuperação.';
 
   @override
   String get onboardingPasswordStrong => 'Forte';
 
   @override
-  String get onboardingPasswordMatch => 'As duas entradas coincidem';
+  String get onboardingPasswordMatch => 'As senhas coincidem';
 
   @override
   String get lwsDetailsTitle => 'Detalhes da Carteira';
@@ -388,7 +398,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWalletDescription =>
-      'Insira sua semente Monero abaixo. Verificaremos os formatos comuns.';
+      'Insira sua frase de recuperação Monero abaixo. Verificaremos os formatos comuns.';
 
   @override
   String get restoreWalletScanFrom => 'Escanear a partir de';
@@ -426,10 +436,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get restoreWalletRestoreButton => 'Restaurar';
 
   @override
-  String get restoreWalletInvalidMnemonic => 'Semente inválida.';
+  String get restoreWalletInvalidMnemonic => 'Frase de recuperação inválida.';
 
   @override
-  String get restoreWalletSeedLength => 'Tamanho da semente';
+  String get restoreWalletSeedLength => 'Número de palavras';
 
   @override
   String get restoreWalletPaste => 'Colar';
@@ -455,10 +465,44 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restoreWalletChecksumError =>
-      'Esta não é uma frase-semente válida — verifique as palavras e sua ordem.';
+      'Esta não é uma frase de recuperação válida — verifique as palavras e sua ordem.';
 
   @override
   String get navigationBarWallet => 'Carteira';
+
+  @override
+  String get historyTitle => 'Histórico';
+
+  @override
+  String get historyExportCsv => 'Exportar CSV';
+
+  @override
+  String get historyExported => 'Histórico exportado';
+
+  @override
+  String get historyExportFailed => 'Não foi possível exportar o histórico';
+
+  @override
+  String get navigationBarHistory => 'Histórico';
+
+  @override
+  String get historyFilterType => 'Tipo';
+
+  @override
+  String get historyFilterAddress => 'Endereço';
+
+  @override
+  String get historyFilterAddressAny => 'Qualquer endereço';
+
+  @override
+  String get historyFilterAddressHint =>
+      'Transações recebidas neste endereço ou enviadas para ele.';
+
+  @override
+  String get historyFilterAddressInvalid => 'Não é um endereço Monero';
+
+  @override
+  String get historyFilterReset => 'Redefinir';
 
   @override
   String get navigationBarSettings => 'Configurações';
@@ -547,7 +591,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get receiveServerNoSubaddressesWarn =>
-      'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte. Você está recebendo no seu endereço primário.';
+      'Aviso: Este servidor não suporta subendereços. Para melhor privacidade, considere usar um servidor que os suporte.';
+
+  @override
+  String get receiveSubaddressUnavailableWarn =>
+      'Aviso: Você precisa configurar o Monero para ativar subendereços, que protegem melhor sua privacidade.';
 
   @override
   String get receiveMaxSubaddressesReachedWarn =>
@@ -592,6 +640,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sendOpenAliasResolveError => 'OpenAlias inválido.';
 
   @override
+  String get sendOpenAliasDisabledError => 'O OpenAlias está desligado. Ligue-o nas Configurações.';
+
+  @override
   String get sendInvalidAddressError => 'Endereço inválido.';
 
   @override
@@ -608,6 +659,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsSectionGeneral => 'Geral';
 
   @override
+  String get settingsSectionSecurityPrivacy => 'Segurança e privacidade';
+
+  @override
+  String get settingsSectionData => 'Dados';
+
+  @override
   String get settingsSectionBehaviour => 'Comportamento';
 
   @override
@@ -621,31 +678,54 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsNotifyNewTxsDescription =>
-      'Mostrar uma notificação quando você receber uma transação. Ao conectar-se a um nó Monero, a Sincronização em Segundo Plano também precisa estar ativada.';
+      'Mostrar uma notificação quando você receber uma transação. Aumente a frequência de sincronização para vê-las mais cedo.';
 
   @override
-  String get settingsNotifyNewTxsDescriptionIos =>
-      'As notificações serão atrasadas para conexões LWS via Tor.';
+  String get settingsSyncFrequencyLabel => 'Frequência de sincronização';
 
   @override
-  String get settingsAppLockLabel => 'Desbloqueio com PIN/Biometria';
+  String get syncFrequencySheetSubtitle =>
+      'Com que frequência o Monero sincroniza enquanto o app está fechado.';
+
+  @override
+  String get syncFrequencyModeLabel => 'Frequência';
+
+  @override
+  String get syncFrequencyContinuous => 'Contínua';
+
+  @override
+  String get syncFrequencyContinuousDesc =>
+      'Sincroniza o Monero continuamente em segundo plano para que esteja sempre atualizado ao abrir o app. Usa mais bateria e exige uma notificação persistente.';
+
+  @override
+  String get syncFrequencyPeriodic => 'Periódica';
+
+  @override
+  String get syncFrequencyPeriodicDesc =>
+      'Sincroniza o Monero periodicamente em segundo plano para que geralmente esteja atualizado ao abrir o app. Com um nó Monero, só sincroniza enquanto carrega e no WiFi.';
+
+  @override
+  String get syncFrequencyPeriodicDescIos =>
+      'Sincroniza o Monero periodicamente em segundo plano para que geralmente esteja atualizado ao abrir o app. Com um nó Monero, só sincroniza enquanto carrega.';
+
+  @override
+  String get syncFrequencyOff => 'Desligada';
+
+  @override
+  String get syncFrequencyOffDesc => 'Só sincroniza enquanto o app está aberto.';
 
   @override
   String get settingsAppLockUnlockReason => 'Desbloquear carteira';
 
   @override
-  String get settingsAppLockUnableToAuthError =>
-      'Não foi possível autenticar. Verifique se o desbloqueio de tela está configurado.';
+  String get settingsLoggingLabel => 'Logs de Diagnóstico';
 
   @override
-  String get settingsVerboseLoggingLabel => 'Logs de Diagnóstico';
-
-  @override
-  String get settingsVerboseLoggingDescription =>
+  String get settingsLoggingDescription =>
       'Registrar operações da carteira em um arquivo de texto na pasta de dados do app para fins de depuração.';
 
   @override
-  String get settingsVerboseLoggingDescriptionIos =>
+  String get settingsLoggingDescriptionIos =>
       'Registrar operações da carteira e permitir exportar os logs para um arquivo de texto.';
 
   @override
@@ -700,7 +780,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsLwsViewKeysButton => 'Ver';
 
   @override
-  String get revealSeedAuthReason => 'Confirme sua identidade para ver a frase seed';
+  String get revealSeedAuthReason => 'Confirme sua identidade para ver a frase de recuperação';
 
   @override
   String get settingsSecretKeysLabel => 'Chaves Privadas de Restauração';
@@ -724,10 +804,23 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsDeleteWalletDialogText =>
-      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua semente.';
+      'Tem certeza que deseja excluir sua carteira? Você perderá acesso à seus fundos, a menos que tenha anotado sua frase de recuperação. Isso não remove sua lista de contatos nem as configurações do app.';
 
   @override
   String get settingsDeleteWalletDialogDeleteButton => 'Excluir';
+
+  @override
+  String get settingsDeleteAddressBookButton => 'Excluir Lista de Contatos';
+
+  @override
+  String get settingsDeleteAddressBookDialogText =>
+      'Tem certeza que deseja excluir sua lista de contatos? Se o backup automático estiver ligado, ela também será excluída desses backups automáticos.';
+
+  @override
+  String get settingsDeleteAddressBookDialogDeleteButton => 'Excluir';
+
+  @override
+  String get settingsAddressBookDeleted => 'Lista de contatos excluída';
 
   @override
   String get txDetailsTitle => 'Detalhes da transação';
@@ -793,10 +886,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get secretKeysDescription =>
-      'Estas sementes e chaves restauram o controle total da sua carteira. Qualquer pessoa que as veja pode gastar seus fundos.';
+      'Estas frases de recuperação e chaves restauram o controle total da sua carteira. Qualquer pessoa que as veja pode gastar seus fundos.';
 
   @override
-  String get secretKeysMnemonic => 'Semente';
+  String get secretKeysMnemonic => 'Frase de recuperação';
 
   @override
   String get secretKeysPublicSpendKey => 'Chave Pública de Gasto';
@@ -917,7 +1010,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get sendIrreversibleNote =>
-      'Transações Monero são irreversíveis. Confira o endereço e o valor antes de enviar.';
+      'As transações são irreversíveis, então verifique se o endereço e o valor estão corretos.';
 
   @override
   String get sendSwitchUnit => 'Alternar unidade do valor';
@@ -996,5 +1089,112 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lwsSetupTorDisabledError => 'O Tor está desativado. Por favor, volte e ative-o.';
 
   @override
-  String get lwsSetupInvalidQrCode => 'Endereço de conexão inválido.';
+  String get coinHomeSwap => 'Trocar';
+
+  @override
+  String get coinHomeSwapComingSoon => 'Em breve!';
+
+  @override
+  String get verifySeedTitle => 'Verificar Frase de Recuperação';
+
+  @override
+  String get homeIncomingTitle => 'A receber';
+
+  @override
+  String homeIncomingUnlocksIn(int minutes, int done, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutos',
+      one: '1 minuto',
+    );
+    return 'Desbloqueia em cerca de $_temp0 · $done de $needed';
+  }
+
+  @override
+  String homeIncomingConfirmations(int done, int needed) {
+    return '$done de $needed confirmações';
+  }
+
+  @override
+  String get homeChartTitle => 'Saldo · 90 dias';
+
+  @override
+  String get homeChartToday => 'Hoje';
+
+  @override
+  String get homeChartEachCoin => 'Saldo de cada moeda';
+
+  @override
+  String get homeChartNew => 'Novo';
+
+  @override
+  String get homeChartEmpty =>
+      'Seu saldo ao longo do tempo aparece aqui após sua primeira transação.';
+
+  @override
+  String get homeChecklistTitle => 'Proteja sua carteira';
+
+  @override
+  String homeChecklistProgress(int done, int total) {
+    return '$done de $total';
+  }
+
+  @override
+  String get homeChecklistVerifySeed => 'Verifique sua frase de recuperação';
+
+  @override
+  String get homeChecklistAutoBackup => 'Ative os backups automáticos';
+
+  @override
+  String get homeChecklistTor => 'Conecte-se pelo Tor';
+
+  @override
+  String get homeChecklistPrivateLookups => 'Use o Tor nas consultas de preço e OpenAlias';
+
+  @override
+  String get homeChecklistSecurityKeys => 'Configure uma chave de segurança';
+
+  @override
+  String verifySeedSubtitle(int first, int second, int third) {
+    return 'Insira as palavras $first, $second e $third da sua frase de recuperação abaixo.';
+  }
+
+  @override
+  String get verifySeedButton => 'Verificar';
+
+  @override
+  String get verifySeedWrongTitle => 'Essas palavras não conferem';
+
+  @override
+  String verifySeedWrongBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Restam $count tentativas',
+      one: 'Resta 1 tentativa',
+    );
+    return 'Confira a frase de recuperação que você anotou e insira as três novas palavras pedidas. $_temp0 antes de o app bloquear.';
+  }
+
+  @override
+  String get verifySeedTryAgain => 'Tentar novamente';
+
+  @override
+  String get verifySeedUnavailable =>
+      'Não é possível ler sua frase de recuperação agora. Tente novamente depois de desbloquear a carteira.';
+
+  @override
+  String get verifySeedDone => 'Frase de recuperação verificada';
+
+  @override
+  String homeIncomingTitleMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Outras',
+      one: '1 Outra',
+    );
+    return 'A receber (+$_temp0)';
+  }
 }

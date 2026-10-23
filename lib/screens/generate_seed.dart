@@ -36,14 +36,14 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
     _seed = generated.seed.mnemonic.split(' ');
   }
 
-  /// A desktop OS adds a password step (password-last flow). Mobile has no
-  /// password screen — it's guarded by the device app lock — so it commits the
-  /// wallet directly from here. That includes the iOS build on a Mac, which
-  /// shows the desktop layout but keeps the mobile wallet password.
+  /// Linux and Windows add a password step (password-last flow). Elsewhere there
+  /// is no password screen — a generated password is guarded by the device's
+  /// App Lock — so it commits the wallet directly from here. That includes
+  /// macOS and the iOS build on a Mac, which show the desktop layout.
   void _continue() {
     final generated = _generated;
     if (generated == null) return;
-    if (isDesktopOS) {
+    if (typesWalletPassword) {
       Navigator.pushNamed(
         context,
         '/create_wallet_password',
@@ -111,7 +111,7 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
               ).format(_generated!.restoreDate)
             : null,
         confirmLabel: i18n.generateSeedConfirm,
-        passwordNote: isDesktopOS ? i18n.onboardingSeedNotePassword : null,
+        passwordNote: typesWalletPassword ? i18n.onboardingSeedNotePassword : null,
         revealLabel: i18n.generateSeedReveal,
         continueText: i18n.continueText,
         loading: _committing,

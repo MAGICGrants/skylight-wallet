@@ -8,6 +8,7 @@ import workmanager_apple
   private var secureClipboardChannel: FlutterMethodChannel?
   private var storeReviewChannel: FlutterMethodChannel?
   private var hostPlatformChannel: FlutterMethodChannel?
+  private var secureScreenChannel: FlutterMethodChannel?
   private var securityKeyChannel: SecurityKeyChannel?
   private var paymentLinks: PaymentLinks?
   private var sceneConnectObserver: NSObjectProtocol?
@@ -113,6 +114,27 @@ import workmanager_apple
         }
       }
       storeReviewChannel = channel
+    }
+
+    let secureScreenRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureScreen")
+    if let messenger = secureScreenRegistrar?.messenger() {
+      // App-neutral name shared with wallet-core's SecureScreenMixin. Keeps the
+      // window out of screenshots and recordings while a secret is on screen
+      // (wallet_fhse's apple/SecureScreen.swift).
+      let channel = FlutterMethodChannel(
+        name: "org.magicgrants.wallet/secure_screen",
+        binaryMessenger: messenger
+      )
+      channel.setMethodCallHandler { call, reply in
+        guard call.method == "setSecure" else {
+          reply(FlutterMethodNotImplemented)
+          return
+        }
+        let args = call.arguments as? [String: Any]
+        SecureScreen.shared.setSecure(args?["secure"] as? Bool ?? false)
+        reply(nil)
+      }
+      secureScreenChannel = channel
     }
 
     let hostRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "HostPlatform")

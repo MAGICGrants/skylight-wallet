@@ -6,7 +6,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   flutter_secure_storage_windows
   local_auth_windows
-  permission_handler_windows
   screen_brightness_windows
   share_plus
   url_launcher_windows
@@ -14,9 +13,9 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  fhse_native
   flutter_local_notifications_windows
   flutter_zxing
-  wallet_fhse
   wallet_openalias
 )
 

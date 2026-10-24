@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -21,6 +22,10 @@ class MainActivity : FlutterFragmentActivity() {
     // this resolves to -- Play's review flow or a no-op -- is chosen at build
     // time; see build.gradle.kts.
     private val storeReviewChannel = "org.magicgrants.wallet/store_review"
+
+    // App-neutral name shared with wallet-core's SecureScreenMixin: FLAG_SECURE
+    // (no screenshots, recordings or casting) while a screen shows a secret.
+    private val secureScreenChannel = "org.magicgrants.wallet/secure_screen"
 
     // Payment links (monero:) reach Dart over this channel and nowhere else; Dart
     // holds them until the user is past every lock (wallet_ui's PaymentLinkGate).
@@ -113,6 +118,20 @@ class MainActivity : FlutterFragmentActivity() {
                 when (call.method) {
                     "isAvailable" -> result.success(StoreReview.isAvailable(this))
                     "requestReview" -> StoreReview.request(this) { result.success(it) }
+                    else -> result.notImplemented()
+                }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, secureScreenChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setSecure" -> {
+                        if (call.argument<Boolean>("secure") == true) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }

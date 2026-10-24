@@ -10,8 +10,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  fhse_native
   flutter_zxing
-  wallet_fhse
   wallet_openalias
 )
 

@@ -16,6 +16,7 @@
 		FF73651470A3258C9BE6BA6E /* SecurityKeyOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */; };
 		513EAD7ECFC95D4EACD7524B /* SecurityKeyChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */; };
 		6431CB5BDF16DB08076C4F81 /* PrivacyCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A84F489497BC2189A49B732 /* PrivacyCover.swift */; };
+		40BF308701DD5040BB863C5B /* SecureScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BD308BF063A444AD174FCB /* SecureScreen.swift */; };
 		F4266FC460FC211C6FD972E7 /* YubiKit in Frameworks */ = {isa = PBXBuildFile; productRef = 786BC24A685CA9C36E047769 /* YubiKit */; };
 		79D78220F5B529E1F8AAEC80 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5801F2E4C06C47481468529E /* Pods_Runner.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -65,6 +66,7 @@
 		285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecurityKeyOperations.swift; path = ".symlinks/plugins/wallet_fhse/apple/SecurityKeyOperations.swift"; sourceTree = SOURCE_ROOT; };
 		CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecurityKeyChannel.swift; path = ".symlinks/plugins/wallet_fhse/apple/SecurityKeyChannel.swift"; sourceTree = SOURCE_ROOT; };
 		7A84F489497BC2189A49B732 /* PrivacyCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrivacyCover.swift; path = ".symlinks/plugins/wallet_fhse/apple/PrivacyCover.swift"; sourceTree = SOURCE_ROOT; };
+		18BD308BF063A444AD174FCB /* SecureScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecureScreen.swift; path = ".symlinks/plugins/wallet_fhse/apple/SecureScreen.swift"; sourceTree = SOURCE_ROOT; };
 		C20E80BCEA94B1C535960DE5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */,
 				7A84F489497BC2189A49B732 /* PrivacyCover.swift */,
+				18BD308BF063A444AD174FCB /* SecureScreen.swift */,
 				285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				C20E80BCEA94B1C535960DE5 /* Runner.entitlements */,
@@ -448,6 +451,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				513EAD7ECFC95D4EACD7524B /* SecurityKeyChannel.swift in Sources */,
 				6431CB5BDF16DB08076C4F81 /* PrivacyCover.swift in Sources */,
+				40BF308701DD5040BB863C5B /* SecureScreen.swift in Sources */,
 				FF73651470A3258C9BE6BA6E /* SecurityKeyOperations.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);

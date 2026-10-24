@@ -40,7 +40,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     # The memory hardening Enhanced Security turns on, for the C and C++ the
-    # pods compile (wallet_fhse's libsodium and libcbor, BoringSSL, zxing):
+    # pods compile (fhse_native's libsodium and libcbor, BoringSSL, zxing):
     # zeroed stack variables, the typed allocator that hardened-heap
     # (Runner.entitlements) builds on, and libc++'s fast bounds checks in
     # release builds (debug builds already get its debug mode). Not

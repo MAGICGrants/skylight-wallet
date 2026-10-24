@@ -1,4 +1,6 @@
 PODS:
+  - fhse_native (0.1.0):
+    - FlutterMacOS
   - file_selector_macos (0.0.1):
     - FlutterMacOS
   - flutter_local_notifications (0.0.1):
@@ -23,7 +25,6 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - tor_ffi_plugin (0.0.1)
   - wallet_fhse (0.1.0):
     - FlutterMacOS
   - wallet_openalias (0.0.1)
@@ -32,6 +33,7 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
+  - fhse_native (from `Flutter/ephemeral/.symlinks/plugins/fhse_native/macos`)
   - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - flutter_local_notifications (from `Flutter/ephemeral/.symlinks/plugins/flutter_local_notifications/macos`)
   - flutter_secure_storage_macos (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_macos/macos`)
@@ -43,12 +45,13 @@ DEPENDENCIES:
   - screen_brightness_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_brightness_macos/macos`)
   - share_plus (from `Flutter/ephemeral/.symlinks/plugins/share_plus/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - tor_ffi_plugin (from `Flutter/ephemeral/.symlinks/plugins/tor_ffi_plugin/macos`)
   - wallet_fhse (from `Flutter/ephemeral/.symlinks/plugins/wallet_fhse/macos`)
   - wallet_openalias (from `Flutter/ephemeral/.symlinks/plugins/wallet_openalias/macos`)
   - webcrypto (from `Flutter/ephemeral/.symlinks/plugins/webcrypto/darwin`)
 
 EXTERNAL SOURCES:
+  fhse_native:
+    :path: Flutter/ephemeral/.symlinks/plugins/fhse_native/macos
   file_selector_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   flutter_local_notifications:
@@ -71,8 +74,6 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/share_plus/macos
   shared_preferences_foundation:
     :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
-  tor_ffi_plugin:
-    :path: Flutter/ephemeral/.symlinks/plugins/tor_ffi_plugin/macos
   wallet_fhse:
     :path: Flutter/ephemeral/.symlinks/plugins/wallet_fhse/macos
   wallet_openalias:
@@ -81,6 +82,7 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/webcrypto/darwin
 
 SPEC CHECKSUMS:
+  fhse_native: 00a7384c5fdeeab6d848d23bd3d1b3d9aa1f61bb
   file_selector_macos: 3e56eaea051180007b900eacb006686fd54da150
   flutter_local_notifications: 4ccab5b7a22835214a6672e3f9c5e8ae207dab36
   flutter_secure_storage_macos: c2754d3483d20bb207bb9e5a14f1b8e771abcdb9
@@ -92,11 +94,10 @@ SPEC CHECKSUMS:
   screen_brightness_macos: 2d6d3af2165592d9a55ffcd95b7550970e41ebda
   share_plus: 1fa619de8392a4398bfaf176d441853922614e89
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
-  tor_ffi_plugin: 2566c1ed174688cca560fa0c64b7a799c66f07cb
-  wallet_fhse: 25a1183531ca0be07f3df5b4d79f435a329cb9bf
+  wallet_fhse: 5b8237b85fd9043eb1a8c6d1e91351510b537da6
   wallet_openalias: 7526f78902d0692e377d89af41d17894bb0ad5e0
   webcrypto: aa788ff6b0a956e5d6e613b35b99c13e220ca2d0
 
-PODFILE CHECKSUM: f3a3719d2373eb7ff1e4bb7a363a2bae3b6a45ac
+PODFILE CHECKSUM: 78456d71febeed8e455200ad252d9b61666547a0
 
 COCOAPODS: 1.17.0

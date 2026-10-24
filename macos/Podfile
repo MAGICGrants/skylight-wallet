@@ -43,7 +43,7 @@ post_install do |installer|
     # (13.0, for YubiKit).
     #
     # The memory hardening Enhanced Security turns on, for the C and C++ the
-    # pods compile (wallet_fhse's libsodium and libcbor, BoringSSL): zeroed
+    # pods compile (fhse_native's libsodium and libcbor, BoringSSL): zeroed
     # stack variables, the typed allocator that hardened-heap (the Runner
     # entitlements) builds on, and libc++'s fast bounds checks in release
     # builds (debug builds already get its debug mode). Not

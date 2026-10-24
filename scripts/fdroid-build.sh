@@ -62,6 +62,10 @@ export PUB_CACHE=/tmp/skylight/.pub-cache
 export CARGO_HOME=/tmp/skylight-cargo
 # cargokit requires an NDK package.xml (absent in unzipped NDKs)
 [ -f "$ANDROID_HOME/ndk/$NDK/package.xml" ] || touch "$ANDROID_HOME/ndk/$NDK/package.xml"
+# Flutter's build hooks (Tor) take the NDK from ANDROID_NDK_HOME, else the
+# newest one installed, and Tor's OpenSSL records its path; fdroidserver sets
+# it from the recipe's ndk:, and release.yml sets the same NDK and path.
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$NDK"
 "$FLUTTER/bin/flutter" pub get --offline --enforce-lockfile
 bash scripts/pin-rust-toolchain.sh
 "$FLUTTER/bin/flutter" build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$PLATFORM"

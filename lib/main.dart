@@ -5,8 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
@@ -77,8 +75,6 @@ void main() async {
           FlutterError.dumpErrorToConsole(details);
         }
       };
-
-      timeago.setLocaleMessages('pt', timeago.PtBrMessages());
 
       if (Platform.isLinux) {
         await createAppDir();
@@ -423,14 +419,7 @@ class _AppRootState extends State<_AppRoot>
                       onUnlocked: hideAppLockCover,
                       onKeyNeeded: appLockCoverNeedsKey,
                     ),
-                    // Brand-tone skeletons (the default grey clashes with the
-                    // navy/orange scheme); tokens resolve to the current theme.
-                    child: SkeletonizerConfig(
-                      data: SkeletonizerConfigData(
-                        effect: SoldColorEffect(color: BrandColors.surfaceMuted),
-                      ),
-                      child: child ?? const SizedBox.shrink(),
-                    ),
+                    child: child ?? const SizedBox.shrink(),
                   );
                 },
                 initialRoute: initialRoute,

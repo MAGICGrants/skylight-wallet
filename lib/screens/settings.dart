@@ -233,7 +233,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Only the address book: deleting the wallet keeps it, and this keeps the
-  // wallet. A backup syncing to iCloud or Android backup records the deletions.
+  // wallet. A backup syncing to iCloud, Android backup or a sync folder records
+  // the deletions.
   Future<void> _deleteAddressBook() async {
     final i18n = AppLocalizations.of(context)!;
     await Provider.of<ContactModel>(context, listen: false).deleteAll();

@@ -12,6 +12,8 @@
 	<true/>
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
 	<!-- Enhanced Security (macOS 26 and later; earlier versions ignore these),
 	     as on iOS: all of it except pointer authentication, which needs
 	     every binary in the process built for arm64e, and Flutter's engine

@@ -5,13 +5,13 @@ import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// Brand bottom nav — flat icon+label tabs on the paper ground with a hairline
 /// top border (copied from Spice's design). Skylight's destinations:
-/// Wallet / Contacts / Settings.
+/// Wallet / History / Contacts / Settings.
 class WalletNavigationBar extends StatelessWidget {
   final int selectedIndex;
 
   const WalletNavigationBar({super.key, required this.selectedIndex});
 
-  static const _routes = ['/wallet_home', '/address_book', '/settings'];
+  static const _routes = ['/wallet_home', '/history', '/address_book', '/settings'];
 
   void _select(BuildContext context, int index) {
     if (index == selectedIndex) return;
@@ -23,6 +23,7 @@ class WalletNavigationBar extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
     final items = [
       (Icons.account_balance_wallet_outlined, i18n.navigationBarWallet),
+      (Icons.history, i18n.navigationBarHistory),
       (Icons.people_outline, i18n.addressBookTitle),
       (Icons.tune, i18n.navigationBarSettings),
     ];

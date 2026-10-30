@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12 and later. Backs up the metadata backup's folder and nothing else:
+  its files are already sealed with a key from the seed. A section left out is
+  fully enabled for all app data, which would carry the encrypted seed store and
+  the wallet files along, so every section names the same single folder.
+  The folder is wallet-core's getAppDir() (path_provider's documents directory,
+  app_flutter) + metadata_backup; see wallet_backup_platform's README.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="root" path="app_flutter/metadata_backup/" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="root" path="app_flutter/metadata_backup/" />
+    </device-transfer>
+    <cross-platform-transfer platform="ios">
+        <include domain="root" path="app_flutter/metadata_backup/" />
+    </cross-platform-transfer>
+</data-extraction-rules>

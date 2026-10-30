@@ -7,7 +7,7 @@ import 'package:wallet_background/wallet_background.dart';
 // only the isolate entry point, because a fresh background isolate has none of
 // the app's wallet-core statics and the package can't reach the app's bootstrap.
 export 'package:wallet_background/wallet_background.dart'
-    show PeriodicTasks, registerPeriodicTasks, applyBackgroundTaskRegistration;
+    show PeriodicTasks, registerPeriodicTasks, applyBackgroundTaskRegistration, migrateSyncSettings;
 
 /// WorkManager isolate entry: bootstrap this isolate (`installWalletCore` also
 /// installs the `BackgroundSync` config), then run the shared orchestration.

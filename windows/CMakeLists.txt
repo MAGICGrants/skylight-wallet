@@ -45,6 +45,11 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE /EHsc)
   target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
+  # Control Flow Guard, for the runner and the plugins built with these
+  # settings: an indirect call may only reach a real function entry point.
+  # Not /CETCOMPAT; see HardenProcess in runner/main.cpp.
+  target_compile_options(${TARGET} PRIVATE /guard:cf)
+  target_link_options(${TARGET} PRIVATE /guard:cf)
 endfunction()
 
 # Flutter library and tool build rules.

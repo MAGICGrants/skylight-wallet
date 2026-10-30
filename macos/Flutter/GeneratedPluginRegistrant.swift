@@ -14,6 +14,7 @@ import path_provider_foundation
 import screen_brightness_macos
 import share_plus
 import shared_preferences_foundation
+import wallet_backup_platform
 import webcrypto
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
@@ -26,5 +27,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   ScreenBrightnessMacosPlugin.register(with: registry.registrar(forPlugin: "ScreenBrightnessMacosPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
+  WalletBackupPlatformPlugin.register(with: registry.registrar(forPlugin: "WalletBackupPlatformPlugin"))
   WebcryptoPlugin.register(with: registry.registrar(forPlugin: "WebcryptoPlugin"))
 }

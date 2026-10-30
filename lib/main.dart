@@ -5,8 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
@@ -29,10 +27,12 @@ import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/screens/restore_wallet.dart';
+import 'package:skylight_wallet/screens/verify_seed.dart';
 import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
 import 'package:skylight_wallet/screens/tor_settings.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
+import 'package:skylight_wallet/screens/history.dart';
 import 'package:skylight_wallet/screens/privacy_policy.dart';
 import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
@@ -45,8 +45,11 @@ import 'package:skylight_wallet/services/foreground_sync_service.dart';
 import 'package:skylight_wallet/util/dirs.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
+import 'package:skylight_wallet/route_policy.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
-import 'package:wallet_domain/wallet_domain.dart' show WalletManager, parsePaymentUri;
+import 'package:wallet_backup_platform/backup_ui.dart';
+import 'package:wallet_domain/wallet_domain.dart' show AppSession, WalletManager, parsePaymentUri;
+import 'package:wallet_fhse/security_keys_ui.dart';
 import 'package:wallet_infra/wallet_infra.dart' show HostPlatform;
 
 void main() async {
@@ -58,6 +61,8 @@ void main() async {
       await HostPlatform.init();
 
       installWalletCore();
+      installSecurityKeysUi();
+      installMetadataBackup();
       BrandColors.install(skylightPalette);
       // Selected onboarding option cards stay white — only the accent border
       // marks the selection (no tinted fill).
@@ -71,8 +76,6 @@ void main() async {
         }
       };
 
-      timeago.setLocaleMessages('pt', timeago.PtBrMessages());
-
       if (Platform.isLinux) {
         await createAppDir();
         NotificationService().init();
@@ -82,6 +85,9 @@ void main() async {
         NotificationService().init();
       }
 
+      // Before anything reads Sync Frequency: the tasks, the service, a wallet open.
+      await migrateSyncSettings();
+
       if (Platform.isAndroid) {
         registerPeriodicTasks();
         startForegroundSyncIfEnabled();
@@ -90,8 +96,8 @@ void main() async {
 
       if (Platform.isIOS) {
         await cleanTorDirectoriesOnIOS();
-        // Background sync here is LWS-only and decided by the connection; see
-        // periodic_tasks._applyIosBackgroundTasks.
+        // BGTaskScheduler windows under Sync Frequency; see wallet_background's
+        // README.
         registerPeriodicTasks();
         NotificationService().init();
       }
@@ -135,7 +141,8 @@ class _AppRoot extends StatefulWidget {
   State<_AppRoot> createState() => _AppRootState();
 }
 
-class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
+class _AppRootState extends State<_AppRoot>
+    with WidgetsBindingObserver, AppLockLifecycle<_AppRoot> {
   // Started once, on the first build. Building it inside the builder would
   // re-run it on every theme/language change, opening the wallet again — a
   // second wallet on the same file, with its own sync loop, while the first is
@@ -152,13 +159,13 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   // actual flip we force an in-place rebuild of the navigator subtree.
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final _CurrentRouteObserver _routeObserver = _CurrentRouteObserver();
-  bool _relockPending = false;
-  bool _walletExists = false;
   Brightness? _lastBrightness;
 
-  // A payment deep link (monero:) awaiting replay. Held until the app is past the
-  // lock, then opened on the send form — see _onRouteChanged.
-  String? _pendingPaymentUri;
+  // Every route the platform pushes is dropped; payment links (monero:) come
+  // over PaymentLinkChannel instead and wait in the gate until the user is past
+  // every lock (AppSession) and on a screen behind them.
+  final _routeLinkBlocker = RouteLinkBlocker();
+  late final PaymentLinkGate _paymentLinks;
   static const _paymentUriSchemes = {'monero'};
 
   static void _markSubtreeDirty(Element element) {
@@ -168,9 +175,9 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
   // The bottom-nav destinations. Tapping a nav tab must not animate, so these
   // get a zero-duration route in _onGenerateRoute.
-  static const _noTransitionRoutes = {'/wallet_home', '/address_book', '/settings'};
+  static const _noTransitionRoutes = {'/wallet_home', '/history', '/address_book', '/settings'};
 
-  Map<String, WidgetBuilder> get _routes => {
+  static final Map<String, WidgetBuilder> _routes = {
     '/welcome': (context) => WelcomeScreen(),
     '/tor_settings': (context) => TorSettingsScreen(),
     '/connection_setup': (context) => ConnectionSetupScreen(),
@@ -181,13 +188,18 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/lws_details': (context) => LwsDetailsScreen(),
     '/restore_wallet': (context) => RestoreWalletScreen(),
     '/unlock': (context) => UnlockScreen(),
+    '/security_key_unlock': (context) => const SecurityKeyUnlockScreen(),
+    // Re-authenticates every time it opens: it can turn security keys off.
+    '/advanced_security': (context) => const GuardedAdvancedSecurityScreen(),
+    '/metadata_backup': (context) => const MetadataBackupScreen(),
+    '/verify_seed': (context) => const VerifySeedScreen(),
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
-    '/lws_keys': (context) => ReauthGate(
+    '/lws_keys': (context) => AppLockGate(
       reason: AppLocalizations.of(context)!.settingsAppLockUnlockReason,
       child: LwsKeysScreen(),
     ),
-    '/secret_keys': (context) => ReauthGate(
+    '/secret_keys': (context) => AppLockGate(
       reason: AppLocalizations.of(context)!.revealSeedAuthReason,
       child: SecretKeysScreen(),
     ),
@@ -195,13 +207,18 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
     '/scan_qr': (context) => ScanQrScreen(),
     '/receive': (context) => ReceiveScreen(),
     '/address_book': (context) => AddressBookScreen(),
+    '/history': (context) => const HistoryScreen(),
     '/terms_of_service': (context) => TermsOfService(),
     '/privacy_policy': (context) => PrivacyPolicy(),
   };
 
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    // Deny by default (route_policy.dart): an unlisted route, or one behind the
+    // locks while the app is locked, shows nothing and removes itself.
     final builder = _routes[settings.name];
-    if (builder == null) return null;
+    if (builder == null || !routePolicy.allows(settings.name, unlocked: AppSession.isUnlocked)) {
+      return RefusedRoute(settings, listed: routePolicy.access.containsKey(settings.name));
+    }
     // Desktop: no transition anywhere. Mobile: only between the nav-bar screens;
     // every other push/pop keeps its normal animation.
     if (isDesktop || _noTransitionRoutes.contains(settings.name)) {
@@ -213,55 +230,41 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    assert(() {
+      final c = routePolicy.check(_routes.keys);
+      return c.unlisted.isEmpty && c.stale.isEmpty;
+    }(), 'route_policy.dart does not match the routes');
+    // Android: the Continuous Sync service and this app take turns holding the
+    // wallets, never both at once; installed before anything opens.
+    ForegroundSyncLink.install(Provider.of<WalletManager>(context, listen: false));
+    // First, so it is asked before WidgetsApp's own observer and drops every
+    // pushed route before WidgetsApp could turn it into a screen.
+    WidgetsBinding.instance.addObserver(_routeLinkBlocker);
     WidgetsBinding.instance.addObserver(this);
-    _routeObserver.current.addListener(_onRouteChanged);
+    _paymentLinks = PaymentLinkGate(
+      schemes: _paymentUriSchemes,
+      unlocked: AppSession.unlocked,
+      landing: _routeObserver.current,
+      canLand: () => routePolicy.requiresUnlock(_routeObserver.currentName),
+      open: _openPaymentUri,
+    );
+    unawaited(PaymentLinkChannel.listen(_paymentLinks.offer));
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _routeObserver.current.removeListener(_onRouteChanged);
+    WidgetsBinding.instance.removeObserver(_routeLinkBlocker);
+    _paymentLinks.dispose();
     _announceWallet?.removeListener(_announceNewTxsOnGrowth);
     super.dispose();
   }
 
-  // A deep link that arrives while the app is running (warm start). Payment links
-  // open the send form; anything else is left to the default handling.
-  @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
-    if (_handleDeepLink(routeInformation.uri.toString())) return true;
-    return super.didPushRouteInformation(routeInformation);
-  }
-
-  bool _isPaymentUri(String raw) {
-    final scheme = Uri.tryParse(raw.trim())?.scheme.toLowerCase();
-    return scheme != null && _paymentUriSchemes.contains(scheme);
-  }
-
-  // Open a payment link now if the app is past the lock, else hold it for replay.
-  bool _handleDeepLink(String raw) {
-    if (!_isPaymentUri(raw)) return false;
-    final current = _routeObserver.currentName;
-    if (!_walletExists || current == null || current == '/unlock') {
-      _pendingPaymentUri = raw;
-    } else {
-      _openPaymentUri(raw);
-    }
-    return true;
-  }
-
-  // Replay a held payment link the first time the app reaches home — after boot
-  // (no lock) or after unlock. The send form still reviews and authenticates the
-  // spend; the link only prefills it.
-  void _onRouteChanged() {
-    final raw = _pendingPaymentUri;
-    if (raw == null || _routeObserver.currentName != '/wallet_home') return;
-    _pendingPaymentUri = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _openPaymentUri(raw));
-  }
-
+  /// Opens the Send form for a payment link the gate let through: the user is
+  /// past every lock and on a screen behind them. It only pre-fills the form,
+  /// which reviews and confirms the payment as always.
   void _openPaymentUri(String raw) {
-    if (!mounted) return;
+    if (!mounted || !AppSession.isUnlocked) return;
     final manager = Provider.of<WalletManager>(context, listen: false);
     final request = parsePaymentUri(raw, manager.allWallets);
     if (request == null) return;
@@ -279,43 +282,36 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
       );
       return;
     }
+    // Over whatever screen the user was on, so its back link says just "Back".
+    final overlayContext = _navigatorKey.currentState?.overlay?.context;
     _navigatorKey.currentState?.pushNamed(
       '/send',
-      arguments: SendScreenArgs(destinationAddress: request.address, amount: request.amount),
+      arguments: SendScreenArgs(
+        destinationAddress: request.address,
+        amount: request.amount,
+        backLabel: overlayContext == null ? null : AppLocalizations.of(overlayContext)?.back,
+      ),
     );
   }
 
+  // App Lock and the full locks (AppLockLifecycle) run on this navigator.
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!isMobile) return;
+  NavigatorState? get appLockNavigator => _navigatorKey.currentState;
 
-    if (state == AppLifecycleState.paused) {
-      // App Lock has to cover backgrounding, not just a cold start. Without
-      // this, resuming walked straight back into an unlocked wallet with the
-      // password still in memory, and the seed was reachable from there.
-      unawaited(_maybeArmRelock());
+  @override
+  String? get appLockTopRouteName => _routeObserver.currentName;
 
-      // Leaving the app marks everything on screen as seen so a background
-      // isolate won't re-notify a tx the user just watched arrive. Desktop has
-      // no background isolate — and doing this would pre-empt its foreground
-      // announce. Marks only synced history (hash-based), so an unsynced
-      // receipt is still announced later.
-      unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
-    } else if (state == AppLifecycleState.resumed && _relockPending) {
-      _relockPending = false;
-      // Pushed ON TOP of the current stack rather than replacing it, so
-      // unlocking pops straight back to the screen the user left. Skipped when
-      // one is already showing, which would stack duplicates.
-      if (_routeObserver.currentName != '/unlock') {
-        _navigatorKey.currentState?.pushNamed('/unlock');
-      }
-    }
-  }
+  @override
+  Route<dynamic>? get appLockTopRoute => _routeObserver.top;
 
-  /// On background: with App Lock on and a wallet present, drop the in-memory
-  /// password and arm a re-lock so the next resume returns to the lock screen.
-  Future<void> _maybeArmRelock() async {
-    _relockPending = await armAppLockRelock(context);
+  /// Leaving the app marks everything on screen as seen so a background
+  /// isolate won't re-notify a tx the user just watched arrive. Desktop has
+  /// no background isolate — and doing this would pre-empt its foreground
+  /// announce. Marks only synced history (hash-based), so an unsynced
+  /// receipt is still announced later.
+  @override
+  void onMobilePaused() {
+    unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
   }
 
   // Desktop has no background isolate to announce incoming txs, so the
@@ -355,19 +351,12 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
 
               final theme = sharedPreferences.getString(SharedPreferencesKeys.theme) ?? 'system';
 
-              final appLockEnabled =
-                  sharedPreferences.getBool(SharedPreferencesKeys.appLockEnabled) ?? false;
-
-              // A desktop OS asks for the typed password at every launch.
-              final initialRoute = walletExists
-                  ? appLockEnabled || isDesktopOS
-                        ? '/unlock'
-                        : '/wallet_home'
-                  : '/welcome';
+              // App Lock at every launch (always on; the typed password on
+              // Linux and Windows). With security keys on, a key comes next.
+              final initialRoute = walletExists ? '/unlock' : '/welcome';
 
               if (!_startedServices) {
                 _startedServices = true;
-                _walletExists = walletExists;
                 // Only the built-in Tor is ours to start; external/disabled must
                 // not spin up an embedded Tor, whose status would then misreport
                 // the external proxy.
@@ -398,7 +387,11 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                 navigatorKey: _navigatorKey,
                 navigatorObservers: [_routeObserver],
                 title: 'Skylight Monero Wallet',
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                localizationsDelegates: const [
+                  ...AppLocalizations.localizationsDelegates,
+                  FhseLocalizations.delegate,
+                  BackupLocalizations.delegate,
+                ],
                 supportedLocales: AppLocalizations.supportedLocales,
                 theme: brandLightTheme(),
                 darkTheme: brandDarkTheme(),
@@ -419,24 +412,23 @@ class _AppRootState extends State<_AppRoot> with WidgetsBindingObserver {
                     });
                   }
                   _lastBrightness = brightness;
-                  // Brand-tone skeletons (the default grey clashes with the
-                  // navy/orange scheme); tokens resolve to the current theme.
-                  return SkeletonizerConfig(
-                    data: SkeletonizerConfigData(
-                      effect: SoldColorEffect(color: BrandColors.surfaceMuted),
+                  // App Lock's cover above the navigator; on a desktop OS,
+                  // input anywhere counts as use for "Lock after".
+                  return buildAppLock(
+                    cover: (_) => UnlockScreen(
+                      onUnlocked: hideAppLockCover,
+                      onKeyNeeded: appLockCoverNeedsKey,
                     ),
                     child: child ?? const SizedBox.shrink(),
                   );
                 },
                 initialRoute: initialRoute,
-                // Always boot through the resolved initial route; a cold-start deep
-                // link arrives here, so capture a payment link for replay past the
-                // lock and never let it become the initial route (which would race
-                // boot/unlock and skip the lock). The `route` extra is ignored.
-                onGenerateInitialRoutes: (deepLink) {
-                  if (_isPaymentUri(deepLink)) _pendingPaymentUri = deepLink;
-                  return [_onGenerateRoute(RouteSettings(name: initialRoute))!];
-                },
+                // Always boot through the resolved initial route. Whatever the
+                // platform offers as a deep link is ignored: payment links
+                // arrive over PaymentLinkChannel, and nothing else is taken.
+                onGenerateInitialRoutes: (_) => [
+                  _onGenerateRoute(RouteSettings(name: initialRoute))!,
+                ],
                 locale: Locale.fromSubtags(languageCode: languageProvider.language),
                 onGenerateRoute: _onGenerateRoute,
               );
@@ -484,15 +476,36 @@ class _CurrentRouteObserver extends NavigatorObserver {
 
   String? get currentName => current.value;
 
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
-      current.value = route.settings.name;
+  /// The top route itself.
+  Route<dynamic>? top;
 
   @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
-      current.value = previousRoute?.settings.name;
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    top = route;
+    current.value = route.settings.name;
+  }
 
   @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
-      current.value = newRoute?.settings.name;
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    top = previousRoute;
+    current.value = previousRoute?.settings.name;
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    top = newRoute;
+    current.value = newRoute?.settings.name;
+  }
+
+  /// A route taken out from under the top (a refused one removes itself).
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (!identical(route, top)) return;
+    top = previousRoute;
+    current.value = previousRoute?.settings.name;
+  }
 }
+
+/// Every route name the app defines, for test/route_policy_test.dart.
+@visibleForTesting
+Iterable<String> get appRouteNames => _AppRootState._routes.keys;

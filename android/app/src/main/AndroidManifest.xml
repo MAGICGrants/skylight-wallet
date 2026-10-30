@@ -11,11 +11,27 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Native memory hardening, for the C and C++ in this process (the
+         Flutter engine, Monero, Tor, FHSE). memtagMode: Arm MTE in sync mode,
+         which stops a use-after-free or overflow at the faulting access; it
+         takes effect only on devices with MTE turned on (Pixel 8 and later).
+         nativeHeapZeroInitialized: memory from the system allocator (malloc,
+         new) is zeroed as it is handed out, so a missed initialisation reads
+         zeros rather than an earlier allocation's data; it does not clear
+         memory on free, or cover memory a library pools itself.
+         gwpAsanMode: sampled allocations sit between guard pages on every
+         launch, and a hit ends the process. Older Android versions ignore
+         what they lack. -->
     <application
         android:label="Skylight Wallet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:allowBackup="false">
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:memtagMode="sync"
+        android:nativeHeapZeroInitialized="true"
+        android:gwpAsanMode="always">
         
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
@@ -54,11 +70,19 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- No intent may name a screen: MainActivity forwards payment links
+                 to Dart over a channel instead, and Dart opens the Send form
+                 only once the user is past every lock. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Monero payment links: the send form opens prefilled, past App Lock. -->
+            <!-- Payment links: forwarded to Dart by MainActivity; the Send form
+                 opens pre-filled only once the user is past every lock. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

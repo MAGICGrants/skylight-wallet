@@ -1,4 +1,4 @@
-platform :osx, '10.15'
+platform :osx, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -38,5 +38,27 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    # Xcode 27 refuses macOS deployment targets below 12.0, and several plugin
+    # podspecs still ask for 10.13 to 10.15. Raise them to the app's own minimum
+    # (13.0, for YubiKit).
+    #
+    # The memory hardening Enhanced Security turns on, for the C and C++ the
+    # pods compile (fhse_native's libsodium and libcbor, BoringSSL): zeroed
+    # stack variables, the typed allocator that hardened-heap (the Runner
+    # entitlements) builds on, and libc++'s fast bounds checks in release
+    # builds (debug builds already get its debug mode). Not
+    # ENABLE_ENHANCED_SECURITY itself, which would build for arm64e.
+    target.build_configurations.each do |config|
+      current = config.build_settings['MACOSX_DEPLOYMENT_TARGET']
+      if current && Gem::Version.new(current) < Gem::Version.new('13.0')
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '13.0'
+      end
+      config.build_settings['CLANG_ENABLE_STACK_ZERO_INIT'] = 'YES'
+      config.build_settings['CLANG_ENABLE_C_TYPED_ALLOCATOR_SUPPORT'] = 'YES'
+      config.build_settings['CLANG_ENABLE_CPLUSPLUS_TYPED_ALLOCATOR_SUPPORT'] = 'YES'
+      unless config.name == 'Debug'
+        config.build_settings['CLANG_CXX_STANDARD_LIBRARY_HARDENING'] = 'fast'
+      end
+    end
   end
 end

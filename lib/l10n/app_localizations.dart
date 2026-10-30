@@ -225,6 +225,12 @@ abstract class AppLocalizations {
   /// **'Privacy Policy'**
   String get welcomePrivacyLink;
 
+  /// No description provided for @settingsLicensesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-Source Licenses'**
+  String get settingsLicensesLabel;
+
   /// No description provided for @lwsSetupTitle.
   ///
   /// In en, this message translates to:
@@ -302,6 +308,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An onion address can only be reached through Tor. Turn Tor on to use it.'**
   String get connectionOnionNeedsTor;
+
+  /// No description provided for @connectionPathNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This server is reached at its root, so its address can\'t include a path like /wallet. Remove the path.'**
+  String get connectionPathNotSupported;
+
+  /// No description provided for @lwsAwaitingApprovalAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Your light wallet server hasn\'t approved this wallet yet. Ask the server\'s operator to approve it so you can see your balance and transactions.'**
+  String get lwsAwaitingApprovalAccount;
+
+  /// No description provided for @lwsAwaitingApprovalRestoreHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Your light wallet server hasn\'t approved scanning from your restore height yet, so older transactions may be missing. Ask the server\'s operator to approve it.'**
+  String get lwsAwaitingApprovalRestoreHeight;
 
   /// No description provided for @connectionTorDisabledWarning.
   ///
@@ -423,35 +447,11 @@ abstract class AppLocalizations {
   /// **'in Local Network'**
   String get settingsConnectionInLocalNetwork;
 
-  /// No description provided for @settingsBackgroundSyncLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Background Sync'**
-  String get settingsBackgroundSyncLabel;
-
-  /// No description provided for @settingsBackgroundSyncDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Periodically sync Monero in the background so it\'s up to date when you open the app. Only runs while charging and on WiFi.'**
-  String get settingsBackgroundSyncDescription;
-
-  /// No description provided for @settingsForegroundSyncLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Continuous Sync'**
-  String get settingsForegroundSyncLabel;
-
-  /// No description provided for @settingsForegroundSyncDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep Monero syncing continuously while the app runs in the background, with a persistent notification. Uses more battery.'**
-  String get settingsForegroundSyncDescription;
-
   /// No description provided for @homeBlocksRemaining.
   ///
   /// In en, this message translates to:
-  /// **'{count} blocks left'**
-  String homeBlocksRemaining(String count);
+  /// **'{count, plural, =1{1 block left} other{{count} blocks left}}'**
+  String homeBlocksRemaining(int count);
 
   /// No description provided for @fiatApiSetupTitle.
   ///
@@ -507,6 +507,36 @@ abstract class AppLocalizations {
   /// **'No prices fetched, balances shown in crypto only'**
   String get fiatModeDisabledDesc;
 
+  /// No description provided for @settingsOpenAliasSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAlias Settings'**
+  String get settingsOpenAliasSettingsLabel;
+
+  /// No description provided for @openAliasSettingsSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How names like name@example.com are looked up when you send.'**
+  String get openAliasSettingsSheetSubtitle;
+
+  /// No description provided for @openAliasModeTorOnlyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Names looked up over Tor · recommended'**
+  String get openAliasModeTorOnlyDesc;
+
+  /// No description provided for @openAliasModeClearnetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Not private, DNS servers see your IP address and the name'**
+  String get openAliasModeClearnetDesc;
+
+  /// No description provided for @openAliasModeDisabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No lookups, send to addresses only'**
+  String get openAliasModeDisabledDesc;
+
   /// No description provided for @fiatApiSettingsDisplayCurrencyLabel.
   ///
   /// In en, this message translates to:
@@ -534,7 +564,7 @@ abstract class AppLocalizations {
   /// No description provided for @createWalletRestoreExistingDesc.
   ///
   /// In en, this message translates to:
-  /// **'Enter an existing Monero seed'**
+  /// **'Enter an existing Monero recovery phrase'**
   String get createWalletRestoreExistingDesc;
 
   /// No description provided for @createWalletCreateNewButton.
@@ -546,7 +576,7 @@ abstract class AppLocalizations {
   /// No description provided for @createWalletCreateNewDesc.
   ///
   /// In en, this message translates to:
-  /// **'Skylight Wallet generates a new polyseed'**
+  /// **'Skylight Wallet generates a new Polyseed recovery phrase'**
   String get createWalletCreateNewDesc;
 
   /// No description provided for @createWalletPasswordTitle.
@@ -594,7 +624,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateSeedTitleCovered.
   ///
   /// In en, this message translates to:
-  /// **'Seed Phrase'**
+  /// **'Recovery Phrase'**
   String get generateSeedTitleCovered;
 
   /// No description provided for @generateSeedSubtitleCovered.
@@ -642,103 +672,67 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTorNotePrivacy.
   ///
   /// In en, this message translates to:
-  /// **'Tor hides your address from the node you query — slower, and worth it.'**
+  /// **'Connections over Tor can be slower.'**
   String get onboardingTorNotePrivacy;
 
   /// No description provided for @onboardingTorNoteChangeable.
   ///
   /// In en, this message translates to:
-  /// **'Changeable later under Settings → Connections.'**
+  /// **'You can change this later in Settings.'**
   String get onboardingTorNoteChangeable;
 
   /// No description provided for @onboardingPriceNoteRatesOnly.
   ///
   /// In en, this message translates to:
-  /// **'The price service is asked for rates only — never for addresses or amounts.'**
+  /// **'Only prices are requested. Your addresses and balances are not sent.'**
   String get onboardingPriceNoteRatesOnly;
 
   /// No description provided for @onboardingPriceNoteTor.
   ///
   /// In en, this message translates to:
-  /// **'Routed over Tor by default, separately from chain traffic.'**
+  /// **'Prices are fetched over Tor by default.'**
   String get onboardingPriceNoteTor;
 
   /// No description provided for @onboardingConnectionNoteServer.
   ///
   /// In en, this message translates to:
-  /// **'Point Skylight at a light-wallet server (LWS), or connect to your own Monero node.'**
+  /// **'Use a light-wallet server (LWS) or your own Monero node.'**
   String get onboardingConnectionNoteServer;
 
   /// No description provided for @onboardingConnectionNoteChangeable.
   ///
   /// In en, this message translates to:
-  /// **'Changeable later under Settings → Connection.'**
+  /// **'You can change this later in Settings.'**
   String get onboardingConnectionNoteChangeable;
 
   /// No description provided for @onboardingWalletNoteGenerated.
   ///
   /// In en, this message translates to:
-  /// **'A new wallet’s seed is generated here, offline, and shown to you once.'**
+  /// **'Skylight Wallet generates your recovery phrase on this device.'**
   String get onboardingWalletNoteGenerated;
 
   /// No description provided for @onboardingWalletNoteRestore.
   ///
   /// In en, this message translates to:
-  /// **'Restoring asks roughly when the seed first held funds, to skip years of scanning.'**
+  /// **'When restoring, a scan-from date makes syncing faster.'**
   String get onboardingWalletNoteRestore;
-
-  /// No description provided for @onboardingWalletCreateBullet1.
-  ///
-  /// In en, this message translates to:
-  /// **'A Monero seed phrase, shown once'**
-  String get onboardingWalletCreateBullet1;
-
-  /// No description provided for @onboardingWalletCreateBullet2.
-  ///
-  /// In en, this message translates to:
-  /// **'Starts empty, syncs from today'**
-  String get onboardingWalletCreateBullet2;
-
-  /// No description provided for @onboardingWalletCreateBullet3.
-  ///
-  /// In en, this message translates to:
-  /// **'Takes about two minutes'**
-  String get onboardingWalletCreateBullet3;
-
-  /// No description provided for @onboardingWalletRestoreBullet1.
-  ///
-  /// In en, this message translates to:
-  /// **'A Polyseed, BIP39 or legacy Monero seed'**
-  String get onboardingWalletRestoreBullet1;
-
-  /// No description provided for @onboardingWalletRestoreBullet2.
-  ///
-  /// In en, this message translates to:
-  /// **'Optional scan-from date'**
-  String get onboardingWalletRestoreBullet2;
-
-  /// No description provided for @onboardingWalletRestoreBullet3.
-  ///
-  /// In en, this message translates to:
-  /// **'Recovers your existing balance and history'**
-  String get onboardingWalletRestoreBullet3;
 
   /// No description provided for @onboardingSeedNotePassword.
   ///
   /// In en, this message translates to:
-  /// **'Skylight Wallet asks for your password before ever showing them again.'**
+  /// **'Skylight Wallet asks for your password before showing these words again.'**
   String get onboardingSeedNotePassword;
 
   /// No description provided for @onboardingPasswordNoteLaunch.
   ///
   /// In en, this message translates to:
-  /// **'Asked for at every launch, and before the seed is ever shown.'**
+  /// **'You need this password to open your wallet and to view your recovery phrase.'**
   String get onboardingPasswordNoteLaunch;
 
   /// No description provided for @onboardingPasswordNoteNotCloud.
   ///
   /// In en, this message translates to:
-  /// **'Not a cloud account. Losing it means restoring from your seed phrase.'**
+  /// **'This password can\'t be recovered. If you lose it, restore your wallet from your recovery phrase.'**
   String get onboardingPasswordNoteNotCloud;
 
   /// No description provided for @onboardingPasswordStrong.
@@ -750,7 +744,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingPasswordMatch.
   ///
   /// In en, this message translates to:
-  /// **'Both entries match'**
+  /// **'Passwords match'**
   String get onboardingPasswordMatch;
 
   /// No description provided for @lwsDetailsTitle.
@@ -792,7 +786,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletDescription.
   ///
   /// In en, this message translates to:
-  /// **'Input your Monero seed below. We will check common formats.'**
+  /// **'Input your Monero recovery phrase below. We will check common formats.'**
   String get restoreWalletDescription;
 
   /// No description provided for @restoreWalletScanFrom.
@@ -864,13 +858,13 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletInvalidMnemonic.
   ///
   /// In en, this message translates to:
-  /// **'Invalid seed.'**
+  /// **'Invalid recovery phrase.'**
   String get restoreWalletInvalidMnemonic;
 
   /// No description provided for @restoreWalletSeedLength.
   ///
   /// In en, this message translates to:
-  /// **'Seed length'**
+  /// **'Number of words'**
   String get restoreWalletSeedLength;
 
   /// No description provided for @restoreWalletPaste.
@@ -912,7 +906,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreWalletChecksumError.
   ///
   /// In en, this message translates to:
-  /// **'This isn\'t a valid seed phrase — check the words and their order.'**
+  /// **'This isn\'t a valid recovery phrase — check the words and their order.'**
   String get restoreWalletChecksumError;
 
   /// No description provided for @navigationBarWallet.
@@ -920,6 +914,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallet'**
   String get navigationBarWallet;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get historyTitle;
+
+  /// No description provided for @historyExportCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export CSV'**
+  String get historyExportCsv;
+
+  /// No description provided for @historyExported.
+  ///
+  /// In en, this message translates to:
+  /// **'History exported'**
+  String get historyExported;
+
+  /// No description provided for @historyExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export the history'**
+  String get historyExportFailed;
+
+  /// No description provided for @navigationBarHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get navigationBarHistory;
+
+  /// History filter: received or sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get historyFilterType;
+
+  /// History filter: transactions received at, or sent to, one address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get historyFilterAddress;
+
+  /// No description provided for @historyFilterAddressAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any address'**
+  String get historyFilterAddressAny;
+
+  /// No description provided for @historyFilterAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions received at this address, or sent to it.'**
+  String get historyFilterAddressHint;
+
+  /// No description provided for @historyFilterAddressInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a Monero address'**
+  String get historyFilterAddressInvalid;
+
+  /// No description provided for @historyFilterReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get historyFilterReset;
 
   /// No description provided for @navigationBarSettings.
   ///
@@ -1092,8 +1152,14 @@ abstract class AppLocalizations {
   /// No description provided for @receiveServerNoSubaddressesWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them. You are receiving to your primary address.'**
+  /// **'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them.'**
   String get receiveServerNoSubaddressesWarn;
+
+  /// No description provided for @receiveSubaddressUnavailableWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: You need to configure Monero to enable subaddresses, which better protect your privacy.'**
+  String get receiveSubaddressUnavailableWarn;
 
   /// No description provided for @receiveMaxSubaddressesReachedWarn.
   ///
@@ -1173,6 +1239,12 @@ abstract class AppLocalizations {
   /// **'Invalid OpenAlias.'**
   String get sendOpenAliasResolveError;
 
+  /// No description provided for @sendOpenAliasDisabledError.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAlias is turned off. Turn it on in Settings.'**
+  String get sendOpenAliasDisabledError;
+
   /// No description provided for @sendInvalidAddressError.
   ///
   /// In en, this message translates to:
@@ -1203,10 +1275,22 @@ abstract class AppLocalizations {
   /// **'General'**
   String get settingsSectionGeneral;
 
+  /// No description provided for @settingsSectionSecurityPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Security and privacy'**
+  String get settingsSectionSecurityPrivacy;
+
+  /// No description provided for @settingsSectionData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsSectionData;
+
   /// No description provided for @settingsSectionBehaviour.
   ///
   /// In en, this message translates to:
-  /// **'Behaviour'**
+  /// **'Behavior'**
   String get settingsSectionBehaviour;
 
   /// No description provided for @settingsSectionWallet.
@@ -1230,20 +1314,68 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifyNewTxsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Show a notification when you receive a transaction. When connected to a Monero node, Background Sync must also be enabled.'**
+  /// **'Show a notification when you receive a transaction. Increase the sync frequency setting to see them sooner.'**
   String get settingsNotifyNewTxsDescription;
 
-  /// No description provided for @settingsNotifyNewTxsDescriptionIos.
+  /// No description provided for @settingsSyncFrequencyLabel.
   ///
   /// In en, this message translates to:
-  /// **'Notifications will be delayed for Tor LWS connections.'**
-  String get settingsNotifyNewTxsDescriptionIos;
+  /// **'Sync Frequency'**
+  String get settingsSyncFrequencyLabel;
 
-  /// No description provided for @settingsAppLockLabel.
+  /// No description provided for @syncFrequencySheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'App Lock'**
-  String get settingsAppLockLabel;
+  /// **'How often Monero syncs while the app is closed.'**
+  String get syncFrequencySheetSubtitle;
+
+  /// No description provided for @syncFrequencyModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency'**
+  String get syncFrequencyModeLabel;
+
+  /// No description provided for @syncFrequencyContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous'**
+  String get syncFrequencyContinuous;
+
+  /// No description provided for @syncFrequencyContinuousDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuously sync Monero in the background so it\'s always up to date when you open the app. Uses more battery and requires a persistent notification.'**
+  String get syncFrequencyContinuousDesc;
+
+  /// No description provided for @syncFrequencyPeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic'**
+  String get syncFrequencyPeriodic;
+
+  /// No description provided for @syncFrequencyPeriodicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodically sync Monero in the background so it\'s usually up to date when you open the app. With a Monero node, it only syncs while charging and on WiFi.'**
+  String get syncFrequencyPeriodicDesc;
+
+  /// No description provided for @syncFrequencyPeriodicDescIos.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodically sync Monero in the background so it\'s usually up to date when you open the app. With a Monero node, it only syncs while charging.'**
+  String get syncFrequencyPeriodicDescIos;
+
+  /// No description provided for @syncFrequencyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get syncFrequencyOff;
+
+  /// No description provided for @syncFrequencyOffDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only syncs while the app is open.'**
+  String get syncFrequencyOffDesc;
 
   /// No description provided for @settingsAppLockUnlockReason.
   ///
@@ -1251,29 +1383,23 @@ abstract class AppLocalizations {
   /// **'Unlock Wallet'**
   String get settingsAppLockUnlockReason;
 
-  /// No description provided for @settingsAppLockUnableToAuthError.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to authenticate. Make sure you have device unlock set up.'**
-  String get settingsAppLockUnableToAuthError;
-
-  /// No description provided for @settingsVerboseLoggingLabel.
+  /// No description provided for @settingsLoggingLabel.
   ///
   /// In en, this message translates to:
   /// **'Diagnostic Logs'**
-  String get settingsVerboseLoggingLabel;
+  String get settingsLoggingLabel;
 
-  /// No description provided for @settingsVerboseLoggingDescription.
+  /// No description provided for @settingsLoggingDescription.
   ///
   /// In en, this message translates to:
   /// **'Log wallet operations to a text file in the app\'s data folder for debugging purposes.'**
-  String get settingsVerboseLoggingDescription;
+  String get settingsLoggingDescription;
 
-  /// No description provided for @settingsVerboseLoggingDescriptionIos.
+  /// No description provided for @settingsLoggingDescriptionIos.
   ///
   /// In en, this message translates to:
   /// **'Log wallet operations and allow the logs to be exported to a text file.'**
-  String get settingsVerboseLoggingDescriptionIos;
+  String get settingsLoggingDescriptionIos;
 
   /// No description provided for @settingsExportLogsLabel.
   ///
@@ -1380,7 +1506,7 @@ abstract class AppLocalizations {
   /// No description provided for @revealSeedAuthReason.
   ///
   /// In en, this message translates to:
-  /// **'Confirm it\'s you to view your seed phrase'**
+  /// **'Confirm it\'s you to view your recovery phrase'**
   String get revealSeedAuthReason;
 
   /// No description provided for @settingsSecretKeysLabel.
@@ -1422,7 +1548,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDeleteWalletDialogText.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete your wallet? You will lose access to your funds unless you have backed up your seed phrase.'**
+  /// **'Are you sure you want to delete your wallet? You will lose access to your funds unless you have backed up your recovery phrase. This will not remove your address book and app settings.'**
   String get settingsDeleteWalletDialogText;
 
   /// No description provided for @settingsDeleteWalletDialogDeleteButton.
@@ -1430,6 +1556,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get settingsDeleteWalletDialogDeleteButton;
+
+  /// No description provided for @settingsDeleteAddressBookButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Address Book'**
+  String get settingsDeleteAddressBookButton;
+
+  /// No description provided for @settingsDeleteAddressBookDialogText.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete your address book? If automatic backup is turned on, it will also delete the address book in these automatic backups.'**
+  String get settingsDeleteAddressBookDialogText;
+
+  /// No description provided for @settingsDeleteAddressBookDialogDeleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get settingsDeleteAddressBookDialogDeleteButton;
+
+  /// No description provided for @settingsAddressBookDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Address book deleted'**
+  String get settingsAddressBookDeleted;
 
   /// No description provided for @txDetailsTitle.
   ///
@@ -1554,13 +1704,13 @@ abstract class AppLocalizations {
   /// No description provided for @secretKeysDescription.
   ///
   /// In en, this message translates to:
-  /// **'These seeds and keys restore full control of your wallet. Anyone who sees them can spend your funds.'**
+  /// **'These recovery phrases and keys restore full control of your wallet. Anyone who sees them can spend your funds.'**
   String get secretKeysDescription;
 
   /// No description provided for @secretKeysMnemonic.
   ///
   /// In en, this message translates to:
-  /// **'Seed'**
+  /// **'Recovery phrase'**
   String get secretKeysMnemonic;
 
   /// No description provided for @secretKeysPublicSpendKey.
@@ -1788,7 +1938,7 @@ abstract class AppLocalizations {
   /// No description provided for @sendIrreversibleNote.
   ///
   /// In en, this message translates to:
-  /// **'Monero transactions are irreversible. Double-check the address and amount before sending.'**
+  /// **'Transactions are irreversible, so make sure the address and amount are correct.'**
   String get sendIrreversibleNote;
 
   /// No description provided for @sendSwitchUnit.
@@ -1935,11 +2085,161 @@ abstract class AppLocalizations {
   /// **'Tor is disabled. Please go back and enable it.'**
   String get lwsSetupTorDisabledError;
 
-  /// No description provided for @lwsSetupInvalidQrCode.
+  /// No description provided for @coinHomeSwap.
   ///
   /// In en, this message translates to:
-  /// **'Invalid connection address.'**
-  String get lwsSetupInvalidQrCode;
+  /// **'Swap'**
+  String get coinHomeSwap;
+
+  /// No description provided for @coinHomeSwapComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon!'**
+  String get coinHomeSwapComingSoon;
+
+  /// No description provided for @verifySeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Recovery Phrase'**
+  String get verifySeedTitle;
+
+  /// No description provided for @homeIncomingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming'**
+  String get homeIncomingTitle;
+
+  /// No description provided for @homeIncomingUnlocksIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocks in about {minutes, plural, =1{1 minute} other{{minutes} minutes}} · {done} of {needed}'**
+  String homeIncomingUnlocksIn(int minutes, int done, int needed);
+
+  /// No description provided for @homeIncomingConfirmations.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {needed} confirmations'**
+  String homeIncomingConfirmations(int done, int needed);
+
+  /// No description provided for @homeChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance · 90 days'**
+  String get homeChartTitle;
+
+  /// No description provided for @homeChartToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get homeChartToday;
+
+  /// No description provided for @homeChartEachCoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Each coin\'s balance'**
+  String get homeChartEachCoin;
+
+  /// No description provided for @homeChartNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get homeChartNew;
+
+  /// No description provided for @homeChartEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your balance over time shows here after your first transaction.'**
+  String get homeChartEmpty;
+
+  /// No description provided for @homeChecklistTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure your wallet'**
+  String get homeChecklistTitle;
+
+  /// No description provided for @homeChecklistProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String homeChecklistProgress(int done, int total);
+
+  /// No description provided for @homeChecklistVerifySeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your recovery phrase'**
+  String get homeChecklistVerifySeed;
+
+  /// No description provided for @homeChecklistAutoBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on automatic backups'**
+  String get homeChecklistAutoBackup;
+
+  /// No description provided for @homeChecklistTor.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect through Tor'**
+  String get homeChecklistTor;
+
+  /// No description provided for @homeChecklistPrivateLookups.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Tor for price and OpenAlias lookups'**
+  String get homeChecklistPrivateLookups;
+
+  /// No description provided for @homeChecklistSecurityKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a security key'**
+  String get homeChecklistSecurityKeys;
+
+  /// No description provided for @verifySeedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Input words {first}, {second} and {third} of your recovery phrase below.'**
+  String verifySeedSubtitle(int first, int second, int third);
+
+  /// No description provided for @verifySeedButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifySeedButton;
+
+  /// No description provided for @verifySeedWrongTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Those words don\'t match'**
+  String get verifySeedWrongTitle;
+
+  /// No description provided for @verifySeedWrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the recovery phrase you wrote down, then enter the three new words asked for. {count, plural, =1{1 try} other{{count} tries}} left before the app locks.'**
+  String verifySeedWrongBody(int count);
+
+  /// No description provided for @verifySeedTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get verifySeedTryAgain;
+
+  /// No description provided for @verifySeedUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recovery phrase can\'t be read right now. Try again after unlocking the wallet.'**
+  String get verifySeedUnavailable;
+
+  /// No description provided for @verifySeedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery phrase verified'**
+  String get verifySeedDone;
+
+  /// No description provided for @homeIncomingTitleMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming (+{count, plural, =1{1 Other} other{{count} Others}})'**
+  String homeIncomingTitleMore(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

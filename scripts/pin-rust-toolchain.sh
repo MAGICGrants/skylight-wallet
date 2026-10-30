@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Pin cargokit's Rust toolchain for reproducible Rust-plugin builds (tor + openalias).
+# Pin cargokit's Rust toolchain for reproducible Rust-plugin builds (openalias).
 #
 # cargokit hardcodes the toolchain to "stable" and runs `rustup run stable cargo ...`
 # — a MOVING channel, so the plugin would be built with whatever stable is latest at
@@ -9,9 +9,12 @@
 # cargokit's config only allows the channel enum (stable/beta/nightly), not an exact
 # version — so we patch the default in the package instead.
 #
-# Both Rust plugins — tor_ffi_plugin and wallet_openalias — are git/pub
-# dependencies now, so their cargokit copies live in PUB_CACHE. We still scan the
-# in-repo plugins/ dir for any local path plugin, though there are none today.
+# wallet_openalias is a git dependency, so its cargokit copy lives in PUB_CACHE.
+# We still scan the in-repo plugins/ dir for any local path plugin, though there
+# are none today. tor_ffi_plugin no longer uses cargokit (since cypherstack/tor
+# native-0.2.0): its native-assets build hook builds with the toolchain pinned in
+# the package's own rust/rust-toolchain.toml and `cargo --locked`, and rustup
+# downloads that toolchain on first use.
 #
 # Run AFTER `flutter pub get` (so both packages are in PUB_CACHE) and BEFORE the
 # flutter build. Idempotent; safe if the string is already pinned.

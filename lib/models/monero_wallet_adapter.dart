@@ -6,7 +6,7 @@ import 'package:skylight_wallet/models/wallet_types.dart'
 
 import 'package:wallet_domain/wallet_domain.dart' as domain;
 import 'package:wallet_infra/wallet_infra.dart' show requiresSecureTransport;
-import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
+import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval, MoneroWallet;
 
 const _moneroDecimals = 12;
 
@@ -22,8 +22,7 @@ bool _deriveSsl(String address) =>
 /// converting wallet-core types (BigInt amounts, TxDetails, connection details)
 /// to skylight's. Re-fires the wrapped wallet's notifications.
 class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
-  MoneroWalletAdapter(this._wallet, {StoredSeedReader? readStoredSeed})
-    : _readStoredSeed = readStoredSeed {
+  MoneroWalletAdapter(this._wallet, {this._readStoredSeed}) {
     _wallet.addListener(notifyListeners);
   }
 
@@ -59,8 +58,13 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   @override
   bool get torRequirementBroken => _wallet.torRequirementBroken;
   @override
+  LwsPendingApproval? get lwsPendingApproval => _wallet.lwsPendingApproval;
+  @override
   String connectionAddressExampleForType(String type) =>
       _wallet.connectionAddressExampleForType(type);
+
+  @override
+  bool connectionAllowsPath(String type) => _wallet.connectionAllowsPath(type);
 
   // Sync
   @override
@@ -266,8 +270,9 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
 
   @override
   Future<ResolvedOpenAlias?> resolveOpenAlias(String alias) async {
-    // resolveAlias throws when Tor is down or the input is a raw address;
-    // skylight's send flow expects null on any failure.
+    // resolveAlias follows the OpenAlias setting (over Tor, directly, or not
+    // at all) and throws when that lookup cannot happen or the input is a raw
+    // address; skylight's send flow expects null on any failure.
     try {
       final resolved = await _wallet.resolveAlias(alias);
       if (resolved == null) return null;

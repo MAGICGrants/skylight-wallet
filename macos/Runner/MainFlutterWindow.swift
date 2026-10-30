@@ -2,6 +2,9 @@ import Cocoa
 import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
+  // FIDO2 security keys (YubiKit over USB HID) for FHSE wallet-file encryption.
+  private var securityKeyChannel: SecurityKeyChannel?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     let windowFrame = self.frame
@@ -12,6 +15,7 @@ class MainFlutterWindow: NSWindow {
     self.minSize = NSSize(width: 900, height: 640)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+    securityKeyChannel = SecurityKeyChannel(messenger: flutterViewController.engine.binaryMessenger)
 
     super.awakeFromNib()
   }

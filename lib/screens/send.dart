@@ -10,7 +10,8 @@ import 'package:wallet_domain/wallet_domain.dart'
         decimalToBaseUnits,
         parsePaymentUri,
         BroadcastFailure,
-        BroadcastOutcome;
+        BroadcastOutcome,
+        OpenAliasMode;
 import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
@@ -37,7 +38,11 @@ class SendScreenArgs {
   /// so Send opens showing the contact card rather than a bare address.
   final Contact? contact;
 
-  SendScreenArgs({required this.destinationAddress, this.amount, this.contact});
+  /// The desktop back link's label: where Back returns to. Null: the wallet
+  /// home ("Wallet"), where Send opens from unless the caller says otherwise.
+  final String? backLabel;
+
+  SendScreenArgs({required this.destinationAddress, this.amount, this.contact, this.backLabel});
 }
 
 class SendScreen extends StatefulWidget {
@@ -77,6 +82,7 @@ class _SendScreenState extends State<SendScreen> {
   late final AmountEntryController _amount;
   bool _isSweepAll = false;
   Contact? _selectedContact;
+  String? _backLabel;
   List<int?>? _fees; // estimated fee (piconero) per priority; null = estimate failed
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0; // Track the latest fee calculation request
@@ -87,6 +93,9 @@ class _SendScreenState extends State<SendScreen> {
 
   bool _formValid = false; // gates the send button
   int _openAliasResolving = 0; // >0 while OpenAlias resolution is in flight
+  // The user turned OpenAlias lookups off (Settings), so say that rather than
+  // "invalid".
+  bool _openAliasOff = false;
   bool _didInit = false; // one-time setup guard for didChangeDependencies
 
   // Caches the last OpenAlias resolution + dedupes concurrent lookups so
@@ -135,7 +144,12 @@ class _SendScreenState extends State<SendScreen> {
       final amount = args.amount;
       if (amount != null && amount.isNotEmpty) _amount.setCoinText(amount);
       // Same field the in-send picker sets, so the contact card renders here too.
-      _selectedContact = args.contact;
+      // Set after the text, so the listener cannot check it: check it here.
+      final contact = args.contact;
+      _selectedContact = contact != null && contact.ownsAddress('XMR', args.destinationAddress)
+          ? contact
+          : null;
+      _backLabel = args.backLabel;
     }
   }
 
@@ -254,6 +268,8 @@ class _SendScreenState extends State<SendScreen> {
   /// in-flight lookup of the same domain so amount changes / revalidations
   /// don't re-hit the (slow, over-Tor) resolver. Drives `_openAliasResolving`.
   Future<ResolvedOpenAlias?> _resolveDomain(String domain) async {
+    _openAliasOff = await OpenAliasMode.load() == OpenAliasMode.disabled;
+    if (_openAliasOff || !mounted) return null;
     if (domain == _resolveCacheInput) return _resolveCacheOutput;
     if (_resolveInFlight != null && domain == _resolveInFlightInput) {
       return _resolveInFlight!;
@@ -274,7 +290,7 @@ class _SendScreenState extends State<SendScreen> {
       // Someone may have resolved this exact alias while we were settling.
       if (domain == _resolveCacheInput) return _resolveCacheOutput;
       if (_resolveInFlight != null && domain == _resolveInFlightInput) {
-        return _resolveInFlight!;
+        return await _resolveInFlight!;
       }
 
       // Only a real lookup is published as in-flight, so joining one always
@@ -317,7 +333,9 @@ class _SendScreenState extends State<SendScreen> {
       if (resolved == null) {
         if (setErrors) {
           setState(() {
-            _destinationAddressError = i18n.sendOpenAliasResolveError;
+            _destinationAddressError = _openAliasOff
+                ? i18n.sendOpenAliasDisabledError
+                : i18n.sendOpenAliasResolveError;
           });
         }
         return false;
@@ -440,6 +458,8 @@ class _SendScreenState extends State<SendScreen> {
     }
 
     final destinationAddressUnresolved = _destinationAddressController.text;
+    // Read with the text: the form can change while the tx is being built.
+    final contact = _selectedContact;
     String destinationAddress = '';
     String? destinationOpenAlias;
     String? destinationOpenAliasName;
@@ -453,7 +473,9 @@ class _SendScreenState extends State<SendScreen> {
       if (resolved == null) {
         setState(() {
           _isLoading = false;
-          _destinationAddressError = i18n.sendOpenAliasResolveError;
+          _destinationAddressError = _openAliasOff
+              ? i18n.sendOpenAliasDisabledError
+              : i18n.sendOpenAliasResolveError;
         });
         return;
       }
@@ -485,6 +507,9 @@ class _SendScreenState extends State<SendScreen> {
           destinationAddress: destinationAddress,
           destinationOpenAlias: destinationOpenAlias,
           destinationOpenAliasName: destinationOpenAliasName,
+          // The sheet shows the name only if the tx pays this address.
+          contactName: contact?.name,
+          contactAddress: contact?.addressFor('XMR'),
         );
       }
     } catch (error) {
@@ -523,6 +548,8 @@ class _SendScreenState extends State<SendScreen> {
     required String destinationAddress,
     String? destinationOpenAlias,
     String? destinationOpenAliasName,
+    String? contactName,
+    String? contactAddress,
   }) async {
     final i18n = AppLocalizations.of(context)!;
     final quote = Provider.of<FiatRateModel>(context, listen: false).quoteFor('XMR');
@@ -556,7 +583,8 @@ class _SendScreenState extends State<SendScreen> {
       address: destinationAddress,
       openAlias: destinationOpenAlias,
       openAliasName: destinationOpenAliasName,
-      contactName: _selectedContact?.name,
+      contactName: contactName,
+      contactAddress: contactAddress,
       showHighFeeWarning: showHighFeeWarning,
       highFeeWarning: showHighFeeWarning ? i18n.confirmSendHighFeeWarning(_highFeeToken) : null,
       highFeeToken: _highFeeToken,
@@ -704,6 +732,14 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _onAddressChanged() async {
+    // Anything but the contact's own address in the field (Paste on desktop,
+    // where the pill stays beside the contact card) ends the contact: the card
+    // turns back into the address field, and no name reaches the confirm sheet.
+    final contact = _selectedContact;
+    if (contact != null && !contact.ownsAddress('XMR', _destinationAddressController.text)) {
+      setState(() => _selectedContact = null);
+    }
+
     // Setting text also clears a stale inline error so a corrected address
     // doesn't keep showing the old warning.
     if (_destinationAddressError.isNotEmpty) {
@@ -809,7 +845,10 @@ class _SendScreenState extends State<SendScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(44, 30, 44, 36),
       children: [
-        DesktopBackLink(label: i18n.navigationBarWallet, onTap: () => Navigator.pop(context)),
+        DesktopBackLink(
+          label: _backLabel ?? i18n.navigationBarWallet,
+          onTap: () => Navigator.pop(context),
+        ),
         const SizedBox(height: 16),
         Text(i18n.sendTitle, style: desktopTitleStyle),
         const SizedBox(height: 24),

@@ -4,6 +4,8 @@
 
 A modern, open-source, and self-custody Monero light-wallet built with Flutter by [MAGIC Grants](https://magicgrants.org).
 
+Periodic sync (on Android and iPhone) and Continuous sync (on Android), set under Sync Frequency, use your view key only: they see incoming payments, but never hold a key that could spend.
+
 **Website:** [skylight.magicgrants.org](https://skylight.magicgrants.org)
 
 Looking for Bitcoin, Ethereum, and Dai too? [Spice Wallet](https://github.com/MAGICGrants/spice-wallet) is MAGIC Grants' multicoin wallet, built on the same wallet engine.
@@ -22,6 +24,14 @@ Looking for Bitcoin, Ethereum, and Dai too? [Spice Wallet](https://github.com/MA
 </div>
 
 Android APKs are also available from the [latest release](https://github.com/MAGICGrants/skylight-wallet/releases/latest).
+
+### Requirements
+
+- **iOS:** iOS 16 or later.
+- **Android:** Android 7.0 (API 24) or later.
+- **macOS:** macOS 13 Ventura or later, on Apple silicon. There is no macOS release yet; build from source.
+- **Windows:** Windows 10 or 11, 64-bit. Security keys need Windows 11, version 22H2 or later.
+- **Linux:** 64-bit (x86_64). Security keys need libfido2 (`libfido2-1`, which the ``.deb`` recommends).
 
 ### Desktop
 
@@ -75,11 +85,12 @@ A successful verification prints `Good signature from "MAGIC Grants <info@magicg
 
 Before you begin, ensure you have the following installed:
 
-- **Flutter SDK** (3.8.1 or higher) - [Installation guide](https://docs.flutter.dev/get-started/install)
-- **Dart SDK** (3.8.1 or higher) - Usually comes with Flutter
+- **Flutter SDK** (3.47.7, the version pinned in `pubspec.yaml`) - [Installation guide](https://docs.flutter.dev/get-started/install)
+- **Dart SDK** (3.13.5) - Comes with Flutter
 - **Android Studio** - For Android development
-- **Android SDK** - API level 21+ (Android 5.0 Lollipop or higher)
-- **Java JDK** - Version 11 or higher
+- **Android SDK** - API level 24+ (Android 7.0 or higher)
+- **Java JDK** - Version 17
+- **Xcode** (26 or later) and **CocoaPods** (1.17) - For iOS and macOS builds
 
 ## Getting Started
 
@@ -132,6 +143,25 @@ flutter run -d <device_id>
 ```
 
 Make sure you have an Android emulator running or a physical device connected before running the app.
+
+### Memory safety settings
+
+The release builds turn on the platforms' strictest native-memory checks, for
+the C and C++ in the app (the Flutter engine, Monero, Tor, FHSE):
+
+- **Android** (`android/app/src/main/AndroidManifest.xml`): Arm MTE in sync
+  mode (Pixel 8 and later, when MTE is on), GWP-ASan on every launch, and
+  zeroed heap allocations.
+- **iOS and macOS** (`Runner.entitlements`, `Release.entitlements`): the
+  hardened process with a hardened heap, and Memory Integrity Enforcement
+  (hardware memory tagging on A19 iPhones and M5 Macs) enforced rather than
+  in soft mode.
+
+These stop a use-after-free or overflow at the faulting access. The cost is
+that a latent heap bug in any of that native code, harmless elsewhere, ends
+the app on that hardware, unlock included. A crash there that does not happen
+on other devices points here first: the crash report names a tag mismatch or
+GWP-ASan.
 
 ## Building for Android
 

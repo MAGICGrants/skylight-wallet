@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:wallet_domain/wallet_domain.dart';
+import 'package:wallet_infra/testing.dart';
 import 'package:wallet_monero/testing.dart';
 
 /// TLS against the native library this app ships, on the platform the test
@@ -13,7 +15,18 @@ import 'package:wallet_monero/testing.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('the shipped CA bundle reaches the app directory', (_) => checkShippedCaBundle());
+  testWidgets('the shipped CA bundle reaches the app directory', (_) async {
+    // The app sets up its directory in main(), which this test does not run,
+    // so a temporary directory stands in for it.
+    final dir = await Directory.systemTemp.createTemp('ca_bundle');
+    WalletAppConfig.install(WalletAppConfig.skylight, directories: FixedDirectories(dir));
+    try {
+      await checkShippedCaBundle();
+    } finally {
+      WalletAppConfig.resetForTesting();
+      await dir.delete(recursive: true);
+    }
+  });
 
   for (final check in nativeTlsChecks()) {
     testWidgets(check.name, (_) async {

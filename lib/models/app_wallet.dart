@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show Listenable;
+import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval;
 
 import 'package:skylight_wallet/models/wallet_types.dart'
     show TxDetails, LWSConnectionDetails, ResolvedOpenAlias;
@@ -31,7 +32,11 @@ abstract interface class AppWallet implements Listenable {
   bool get hasAttemptedConnection;
   bool get torRequirementBroken;
 
+  /// What the light-wallet server is still waiting to approve, or null.
+  LwsPendingApproval? get lwsPendingApproval;
+
   String connectionAddressExampleForType(String type);
+  bool connectionAllowsPath(String type);
 
   // Sync
   bool get isConnected;

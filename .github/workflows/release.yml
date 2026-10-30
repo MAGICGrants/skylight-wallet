@@ -181,12 +181,20 @@ jobs:
           VERSION='${{ needs.version.outputs.version }}'
           # Deterministic timestamp for reproducible builds
           export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          # Flutter's build hooks (Tor) take the NDK from ANDROID_NDK_HOME, else
+          # the newest one installed, not the app's ndkVersion, and Tor's
+          # OpenSSL records its path. Name the app's NDK at the path F-Droid's
+          # buildserver has it (fdroidserver and fdroid-build.sh set the same).
+          NDK_VERSION=$(sed -n 's/^[[:space:]]*ndkVersion = "\(.*\)"/\1/p' android/app/build.gradle.kts)
+          test -n "$NDK_VERSION"
+          echo "BUILD_NDK_HOME=/opt/android-sdk/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
           # No key.properties: gradle debug-signs; the real key is applied in the signing pass.
           # Fixed build path for reproducibility
           docker run --rm \
             -v "$PWD:/tmp/skylight" \
             -w /tmp/skylight \
             -e SOURCE_DATE_EPOCH \
+            -e ANDROID_NDK_HOME="/opt/android-sdk/ndk/$NDK_VERSION" \
             "$BUILDER_IMAGE" \
             bash -c "cp -a /opt/cargo /tmp/skylight-cargo && export CARGO_HOME=/tmp/skylight-cargo && export PUB_CACHE=/tmp/skylight/.pub-cache && flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release -PplayStore=true"
 
@@ -195,6 +203,13 @@ jobs:
           cp -v build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/skylight-wallet-${VERSION}-armeabi-v7a.apk"
           cp -v build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/skylight-wallet-${VERSION}-x86_64.apk"
           cp -v build/app/outputs/bundle/release/app-release.aab "dist/skylight-wallet-${VERSION}.aab"
+
+      # F-Droid's rebuild matches the Tor library only if it names the same
+      # NDK and build path as this one; fail here rather than at F-Droid.
+      - name: Check the Tor library's build paths
+        run: |
+          bash scripts/repro/check-tor-paths.sh /tmp/skylight "$BUILD_NDK_HOME" \
+            build/app/outputs/flutter-apk/app-*-release.apk
 
       - name: Sign APKs and AAB
         env:
@@ -282,9 +297,11 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          # cargokit builds the Rust plugins with `rustup run stable`, and the
+          # cargokit builds wallet_openalias with `rustup run stable`, and the
           # image only has the rust-toolchain.toml version, so pin cargokit to it
           # (as the Android job does) instead of downloading stable mid-build.
+          # tor_ffi_plugin's build hook uses its own pinned toolchain, which
+          # rustup downloads on first use.
           VERSION='${{ needs.version.outputs.version }}'
           docker run --rm \
             -v "$PWD:/workspace" \
@@ -416,6 +433,8 @@ jobs:
           <dict>
             <key>method</key>
             <string>app-store</string>
+            <key>iCloudContainerEnvironment</key>
+            <string>Production</string>
             <key>provisioningProfiles</key>
             <dict>
               <key>org.magicgrants.skylightwallet</key>
@@ -434,6 +453,17 @@ jobs:
         run: |
           flutter pub get --enforce-lockfile
           flutter build ipa --dart-define=DEMO_MODE=true --release --export-options-plist=ios/ExportOptions.plist
+
+      - name: Check Swift package pins
+        # YubiKit Swift and swift-log must build from the revisions committed in
+        # Package.resolved. Xcode rewrites the file when it resolves anything
+        # else, so a missing or changed file fails the release.
+        run: |
+          for f in ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+                   ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved; do
+            git ls-files --error-unmatch "$f" > /dev/null
+            git diff --exit-code -- "$f"
+          done
 
       - name: Prepare artifact
         run: |

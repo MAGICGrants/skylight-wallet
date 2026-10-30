@@ -2,13 +2,15 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
-import 'package:skylight_wallet/periodic_tasks.dart' show backgroundDispatcher;
+import 'package:skylight_wallet/periodic_tasks.dart'
+    show applyBackgroundTaskRegistration, backgroundDispatcher;
 import 'package:skylight_wallet/services/foreground_sync_service.dart'
     show foregroundSyncCallback, stopSyncAndDeleteWallets, restartForegroundSyncIfRunning;
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -28,7 +30,11 @@ import 'package:wallet_domain/wallet_domain.dart'
         RestorePoint,
         TxDetails,
         baseUnitsToDecimalString;
-import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet;
+import 'package:wallet_backup_platform/wallet_backup_platform.dart'
+    show MetadataBackupConfig, MetadataBackupSetup;
+import 'package:wallet_fhse/security_keys_ui.dart' show SecurityKeysUi, SecurityKeysUiConfig;
+import 'package:wallet_fhse/wallet_fhse.dart' show FhseNative, FhseWalletGuard;
+import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet, closeOrphanedMoneroWallets;
 import 'package:wallet_openalias/wallet_openalias.dart' show resolveOpenAlias;
 
 const _moneroDecimals = 12;
@@ -46,6 +52,21 @@ void installWalletCore() {
 
   WalletAppConfig.install(WalletAppConfig.skylight);
   CryptoWallet.aliasResolver = resolveOpenAlias;
+  // Android: native Monero wallets an app isolate left open when it was
+  // destroyed (swiped away) are closed by whoever takes over.
+  WalletManager.closeOrphanedWallets = closeOrphanedMoneroWallets;
+
+  // Where the wallet password is generated (mobile and macOS) it is FHSE's
+  // root, derived from the seed, and security keys can later take it out of
+  // the keystore (Settings > Advanced Security). Installed in every isolate, so
+  // background runs know when the password is behind keys and check in with
+  // the view key instead. Where the user types it (Linux, Windows), a new
+  // wallet gets the same root and the typed password unlocks it, together with
+  // a key once keys are on; only where FHSE's library loads, so a computer
+  // without it keeps the typed password as the wallet password.
+  if (wcore.WalletSecrets.holdsWalletPassword || FhseNative.isAvailable) {
+    WalletManager.passwordGuard = const FhseWalletGuard();
+  }
 
   wcore.NotificationService.windowsAppName = 'Skylight Wallet';
   wcore.NotificationService.windowsAppUserModelId = 'org.magicgrants.skylight';
@@ -69,14 +90,13 @@ void installWalletCore() {
   FiatRates.install(getTorProxy: TorSettingsService.sharedInstance.getProxy);
 
   // The whole logger lives in wallet-core now: console + file sinks fan out
-  // from one installed sink; the file sink is verbose-gated internally.
+  // from one installed sink; the file sink writes only with logging on.
   wcore.WalletLog.sink = wcore.CompositeLogSink([
     const wcore.DebugPrintLogSink(),
     wcore.FileLogSink(),
   ]);
-  wcore.WalletLog.isVerbose = () async =>
-      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.verboseLoggingEnabled) ??
-      false;
+  wcore.WalletLog.isLoggingOn = () async =>
+      await SharedPreferencesService.get<bool>(SharedPreferencesKeys.loggingEnabled) ?? false;
 
   CryptoWallet.incomingTxNotifier = (tx, _) {
     final amount =
@@ -138,10 +158,11 @@ Future<bool> startupWalletManager(BuildContext context) =>
 
 Future<bool> _loadExistingWalletManager(WalletManager manager) async {
   if (await manager.hasAnyExistingWallet()) {
-    if (_isMobile) {
-      await manager.loadCachedDisplayState();
-      manager.openWalletFilesAndSync();
-    }
+    // App Lock is always on, so nothing is decrypted before the user gets past
+    // it: the unlock screen opens the wallet (wallet_fhse's
+    // unlockAppLockWithDevice). Linux and Windows wait for the typed password
+    // the same way (unlockAppLockWithPassword).
+    if (wcore.WalletSecrets.holdsWalletPassword) await manager.loadCachedDisplayState();
     return true;
   }
   return false;
@@ -215,37 +236,18 @@ Future<int> commitGeneratedWallet(
   required DateTime restoreDate,
 }) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
-  await manager.restoreAll(seed: seed, from: RestorePoint.date(restoreDate));
+  await manager.restoreAll(seed: seed, from: RestorePoint.date(restoreDate), freshSeed: true);
   manager.syncInBackground();
   return manager.getWallet('XMR')!.getRestoreHeight();
 }
 
-/// Arms the app-lock re-lock when the app goes to the background; see
-/// [WalletManager.armAppLockRelock], which both apps share so the behaviour
-/// cannot drift. Wrapped here only because Skylight reaches wallet-core through
-/// this layer rather than from screens.
-Future<bool> armAppLockRelock(BuildContext context) =>
-    Provider.of<WalletManager>(context, listen: false).armAppLockRelock();
-
-/// Opens an already-existing wallet (used by the welcome safety-net). Returns
-/// false when there is none. Opens only on mobile: on a desktop OS the wallet
-/// waits for the typed password, and the caller shows the unlock screen.
-Future<bool> openExistingWallet(BuildContext context) async {
+/// Where the welcome safety-net sends an install that already has a wallet,
+/// or null when there is none: through the same locks as a launch, so the
+/// unlock screen (App Lock is always on; the typed password on Linux and
+/// Windows), and a security key after it when keys are on.
+Future<String?> existingWalletRoute(BuildContext context) async {
   final manager = Provider.of<WalletManager>(context, listen: false);
-  if (!await manager.hasAnyExistingWallet()) return false;
-  if (_isMobile) manager.openWalletFilesAndSync();
-  return true;
-}
-
-/// Opens the wallet with a desktop-entered password, then syncs. Throws on a
-/// wrong password (the unlock screen shows the error).
-Future<void> unlockWithPassword(BuildContext context, String password) async {
-  final manager = Provider.of<WalletManager>(context, listen: false);
-  if (!await manager.unlockWithTypedPassword(password)) {
-    throw Exception('Incorrect wallet password.');
-  }
-  await manager.openAll();
-  manager.syncInBackground();
+  return await manager.hasAnyExistingWallet() ? '/unlock' : null;
 }
 
 /// Deletes the wallet and everything derived from it.
@@ -255,14 +257,56 @@ Future<void> unlockWithPassword(BuildContext context, String password) async {
 /// own isolate, and deleting them while it runs leaves it syncing -- and
 /// rewriting -- a wallet the user just deleted.
 Future<void> deleteWallet(BuildContext context) async {
-  // TODO(wallet-core): pass skylight's own pref keys (contacts, pending tx,
-  // notification state) once the delete path is validated on device.
+  // The address book and the app's settings outlive the wallet; Settings >
+  // Data > Delete Address Book is the address book's own delete.
+  // TODO(wallet-core): pass skylight's own pref keys (pending tx, notification
+  // state) once the delete path is validated on device.
   await stopSyncAndDeleteWallets(Provider.of<WalletManager>(context, listen: false));
 }
 
 /// Rebuilds the wallet if the server kind (LWS↔node) changed, then resyncs.
 void applyConnectionChange(BuildContext context) {
   final manager = Provider.of<WalletManager>(context, listen: false);
-  // Restart the foreground service too, so its isolate re-reads the new server.
-  unawaited(manager.applyConnectionChange('XMR').then((_) => restartForegroundSyncIfRunning()));
+  // Restart the foreground service too, so its isolate re-reads the new server,
+  // and re-register the background tasks, which depend on LWS or node and on
+  // Tor; both only once the wallet has been rebuilt for it.
+  unawaited(
+    manager
+        .applyConnectionChange('XMR')
+        .then((_) => restartForegroundSyncIfRunning())
+        .then((_) => applyBackgroundTaskRegistration()),
+  );
+}
+
+// ----- Security keys (FHSE) -----
+
+/// The shared security-key screens (wallet_fhse): Skylight's name, mark and
+/// home route, and where they find the wallet manager. UI isolate only.
+void installSecurityKeysUi() {
+  SecurityKeysUi.install(
+    SecurityKeysUiConfig(
+      appName: 'Skylight',
+      walletManagerOf: (context) => Provider.of<WalletManager>(context, listen: false),
+      homeRoute: '/wallet_home',
+      logo: (_) => SvgPicture.asset('assets/logo_nobg.svg', width: 44, height: 44),
+    ),
+  );
+}
+
+// ----- Metadata backup -----
+
+/// The metadata backup (wallet_backup): who each payment went to, its
+/// transaction key, and the address book, encrypted with the seed. Off until the
+/// user turns it on in Settings > Backup; then saved on this device, and to
+/// iCloud (iOS) or Android's Auto Backup (Android) only if the user turns that
+/// on too. UI isolate only, so a background run never writes a backup file.
+/// 25-word seeds have none.
+void installMetadataBackup() {
+  MetadataBackupSetup.install(
+    const MetadataBackupConfig(
+      appName: 'Skylight',
+      iCloudContainer: 'iCloud.org.magicgrants.skylightwallet',
+      exportFileStem: 'skylight-backup',
+    ),
+  );
 }

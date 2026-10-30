@@ -8,12 +8,20 @@ import workmanager_apple
   private var secureClipboardChannel: FlutterMethodChannel?
   private var storeReviewChannel: FlutterMethodChannel?
   private var hostPlatformChannel: FlutterMethodChannel?
+  private var secureScreenChannel: FlutterMethodChannel?
+  private var securityKeyChannel: SecurityKeyChannel?
+  private var paymentLinks: PaymentLinks?
   private var sceneConnectObserver: NSObjectProtocol?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // The launch screen over the app whenever it is not active: the app
+    // switcher, and the Face ID prompt on the way back (wallet_fhse's
+    // apple/PrivacyCover.swift).
+    PrivacyCover.shared.install()
+
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     }
@@ -108,6 +116,27 @@ import workmanager_apple
       storeReviewChannel = channel
     }
 
+    let secureScreenRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecureScreen")
+    if let messenger = secureScreenRegistrar?.messenger() {
+      // App-neutral name shared with wallet-core's SecureScreenMixin. Keeps the
+      // window out of screenshots and recordings while a secret is on screen
+      // (wallet_fhse's apple/SecureScreen.swift).
+      let channel = FlutterMethodChannel(
+        name: "org.magicgrants.wallet/secure_screen",
+        binaryMessenger: messenger
+      )
+      channel.setMethodCallHandler { call, reply in
+        guard call.method == "setSecure" else {
+          reply(FlutterMethodNotImplemented)
+          return
+        }
+        let args = call.arguments as? [String: Any]
+        SecureScreen.shared.setSecure(args?["secure"] as? Bool ?? false)
+        reply(nil)
+      }
+      secureScreenChannel = channel
+    }
+
     let hostRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "HostPlatform")
     if let messenger = hostRegistrar?.messenger() {
       // App-neutral name shared with wallet-core's HostPlatform. The App Store
@@ -126,6 +155,20 @@ import workmanager_apple
       }
       hostPlatformChannel = channel
     }
+
+    let securityKeyRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "SecurityKey")
+    if let messenger = securityKeyRegistrar?.messenger() {
+      // FIDO2 security keys (YubiKit) for FHSE wallet-file encryption.
+      securityKeyChannel = SecurityKeyChannel(messenger: messenger)
+    }
+
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PaymentLinks") {
+      // Payment links (monero:) for the Send form; see PaymentLinks.
+      let links = PaymentLinks(messenger: registrar.messenger(), schemes: ["monero"])
+      registrar.addSceneDelegate(links)
+      registrar.addApplicationDelegate(links)
+      paymentLinks = links
+    }
   }
 
   /// Hands the request to StoreKit's own prompt, which decides whether to show
@@ -138,6 +181,80 @@ import workmanager_apple
       AppStore.requestReview(in: scene)
     } else {
       SKStoreReviewController.requestReview(in: scene)
+    }
+    return true
+  }
+}
+
+/// Payment links reach Dart over this channel and nowhere else; Dart holds them
+/// until the user is past every lock (wallet_ui's PaymentLinkGate).
+/// FlutterDeepLinkingEnabled is NO in Info.plist, so no URL can name a screen.
+///
+/// The link the app is launched with arrives with the scene's connection and
+/// waits until Dart asks for it ("takeInitialLink"); later ones are sent as
+/// they come.
+final class PaymentLinks: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
+  private static let channelName = "org.magicgrants.wallet/payment_links"
+  /// Longer than any real payment link. Dart parses and checks it again.
+  private static let maxLength = 2048
+
+  private let schemes: Set<String>
+  private let channel: FlutterMethodChannel
+  private var pending: String?
+  private var dartListening = false
+
+  init(messenger: FlutterBinaryMessenger, schemes: Set<String>) {
+    self.schemes = schemes
+    channel = FlutterMethodChannel(name: Self.channelName, binaryMessenger: messenger)
+    super.init()
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self, call.method == "takeInitialLink" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      self.dartListening = true
+      result(self.pending)
+      self.pending = nil
+    }
+  }
+
+  /// Registered by AppDelegate, not by the plugin registrant.
+  static func register(with registrar: FlutterPluginRegistrar) {}
+
+  func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions?
+  ) -> Bool {
+    guard let context = connectionOptions?.urlContexts.first else { return false }
+    return accept(context.url)
+  }
+
+  func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) -> Bool {
+    var handled = false
+    for context in URLContexts where accept(context.url) {
+      handled = true
+    }
+    return handled
+  }
+
+  func application(
+    _ application: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    accept(url)
+  }
+
+  /// Takes a link with one of [schemes], or refuses it.
+  private func accept(_ url: URL) -> Bool {
+    guard let scheme = url.scheme?.lowercased(), schemes.contains(scheme) else { return false }
+    let link = url.absoluteString
+    guard link.count <= Self.maxLength else { return false }
+    if dartListening {
+      channel.invokeMethod("link", arguments: link)
+    } else {
+      pending = link
     }
     return true
   }

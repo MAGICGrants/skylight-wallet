@@ -18,6 +18,7 @@ import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:wallet_domain/wallet_domain.dart' show SeedSource, parseRestoreQr;
+import 'package:wallet_backup_platform/backup_ui.dart' show scheduleImportWalletData;
 
 class RestoreWalletScreen extends StatefulWidget {
   const RestoreWalletScreen({super.key});
@@ -125,16 +126,18 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     final restoreHeight = _restoreHeight;
 
-    // A desktop OS adds a password step; mobile has no password screen (the
-    // device app lock guards it), so it restores the wallet directly. That
-    // includes the iOS build on a Mac, in the desktop layout.
-    if (isDesktopOS) {
+    // Linux and Windows add a password step; elsewhere there is no password
+    // screen (the device's App Lock guards a generated one), so it restores the
+    // wallet directly. That includes macOS and the iOS build on a Mac, in the
+    // desktop layout.
+    if (typesWalletPassword) {
       Navigator.pushNamed(
         context,
         '/create_wallet_password',
         arguments: CreateWalletPasswordArgs(
           commit: (ctx) async {
             await restoreWallet(ctx, mnemonic: mnemonic, restoreHeight: restoreHeight);
+            if (ctx.mounted) scheduleImportWalletData(ctx);
             return restoreHeight;
           },
         ),
@@ -168,6 +171,8 @@ class _RestoreWalletScreenState extends State<RestoreWalletScreen> with SecureSc
     }
     if (!mounted) return;
     setState(() => _committing = false);
+    // Asks whether to import wallet data (payment details, address book).
+    scheduleImportWalletData(context);
     Provider.of<FiatRateModel>(context, listen: false).startService();
     if (appWalletOf(context).isNodeMode) {
       Navigator.pushNamedAndRemoveUntil(context, '/wallet_home', (route) => false);

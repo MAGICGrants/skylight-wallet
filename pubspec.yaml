@@ -57,7 +57,7 @@ dependencies:
   monero:
     git:
       url: https://github.com/magicgrants/monero_c
-      ref: db99aad58523387d7cbac345afa3ac7247b8873c
+      ref: c210839a278a16382e1e23bef7f23b915569e2a8
       path: impls/monero.dart
 
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
@@ -65,54 +65,54 @@ dependencies:
   wallet_infra:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_infra
   wallet_domain:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_domain
   wallet_monero:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_monero
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_openalias
   # FHSE: security keys guarding the wallet password.
   wallet_fhse:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_fhse
   # Metadata backup: payment destinations, tx keys and the address book.
   wallet_backup:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_backup
   wallet_backup_platform:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_backup_platform
   wallet_background:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_background
   wallet_fiat:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_fiat
   wallet_ui:
     git:
       url: https://github.com/MAGICGrants/wallet-core
-      ref: f177751fe3f133a48112bcce76489abc13183e4d
+      ref: 583935b80f0ea28baf6cc4f6fea2635e485f8820
       path: packages/wallet_ui
 
   bip39:

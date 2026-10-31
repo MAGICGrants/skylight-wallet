@@ -40,9 +40,10 @@ typedef _HomeValues = ({
 
 _HomeValues _deriveHome(AppWallet wallet, FiatRateModel fiatRate) {
   final unlockedBalance = wallet.unlockedBalance ?? 0;
-  final unlockedBalanceFiat = fiatRate.rateFor('XMR') is double && wallet.unlockedBalance is double
-      ? wallet.unlockedBalance! * fiatRate.rateFor('XMR')!
-      : null;
+  // Priced as soon as the rate is in, like the coin amount: $0 while the
+  // balance is still syncing, not the placeholder.
+  final rate = fiatRate.rateFor('XMR');
+  final unlockedBalanceFiat = rate != null ? unlockedBalance * rate : null;
 
   var status = StatusIconStatus.fail;
   if (wallet.isFullySynced) {

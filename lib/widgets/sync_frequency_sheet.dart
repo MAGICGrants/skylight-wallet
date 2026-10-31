@@ -14,7 +14,6 @@ import 'package:skylight_wallet/widgets/ui/ui.dart';
 SyncFrequencyLabels syncFrequencyLabels(AppLocalizations i18n) => SyncFrequencyLabels(
   title: i18n.settingsSyncFrequencyLabel,
   subtitle: i18n.syncFrequencySheetSubtitle,
-  modeLabel: i18n.syncFrequencyModeLabel,
   continuous: i18n.syncFrequencyContinuous,
   continuousDesc: i18n.syncFrequencyContinuousDesc,
   periodic: i18n.syncFrequencyPeriodic,

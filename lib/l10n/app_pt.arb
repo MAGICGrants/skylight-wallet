@@ -242,7 +242,6 @@
   "settingsNotifyNewTxsDescription": "Mostrar uma notificação quando você receber uma transação. Aumente a frequência de sincronização para vê-las mais cedo.",
   "settingsSyncFrequencyLabel": "Frequência de sincronização",
   "syncFrequencySheetSubtitle": "Com que frequência o Monero sincroniza enquanto o app está fechado.",
-  "syncFrequencyModeLabel": "Frequência",
   "syncFrequencyContinuous": "Contínua",
   "syncFrequencyContinuousDesc": "Sincroniza o Monero continuamente em segundo plano para que esteja sempre atualizado ao abrir o app. Usa mais bateria e exige uma notificação persistente.",
   "syncFrequencyPeriodic": "Periódica",

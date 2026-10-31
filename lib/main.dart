@@ -8,17 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
-import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/screens/lws_details.dart';
 import 'package:skylight_wallet/screens/lws_keys.dart';
 import 'package:skylight_wallet/screens/scan_qr.dart';
 import 'package:skylight_wallet/screens/secret_keys.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/screens/settings.dart';
-import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
@@ -32,9 +29,8 @@ import 'package:skylight_wallet/screens/wallet_home.dart';
 import 'package:skylight_wallet/screens/welcome.dart';
 import 'package:skylight_wallet/screens/tor_settings.dart';
 import 'package:skylight_wallet/screens/address_book.dart';
+import 'package:skylight_wallet/screens/desktop/home_shell.dart' show subPageChrome;
 import 'package:skylight_wallet/screens/history.dart';
-import 'package:skylight_wallet/screens/privacy_policy.dart';
-import 'package:skylight_wallet/screens/terms_of_service.dart';
 import 'package:skylight_wallet/screens/unlock.dart';
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -142,17 +138,12 @@ class _AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<_AppRoot>
-    with WidgetsBindingObserver, AppLockLifecycle<_AppRoot> {
+    with WidgetsBindingObserver, AppLockLifecycle<_AppRoot>, WalletAppServices<_AppRoot> {
   // Started once, on the first build. Building it inside the builder would
   // re-run it on every theme/language change, opening the wallet again — a
   // second wallet on the same file, with its own sync loop, while the first is
   // left running.
   Future<List<Object>>? _startup;
-  // Services that must fire once the startup work is done, not on every build.
-  var _startedServices = false;
-  // Desktop-only foreground announce: listens for tx-history growth (see below).
-  AppWallet? _announceWallet;
-  int _lastAnnouncedTxCount = 0;
 
   // Brightness-flip repaint: screens read BrandColors globally (not via
   // Theme.of), so a theme change doesn't dirty cached routes on its own. On an
@@ -208,8 +199,18 @@ class _AppRootState extends State<_AppRoot>
     '/receive': (context) => ReceiveScreen(),
     '/address_book': (context) => AddressBookScreen(),
     '/history': (context) => const HistoryScreen(),
-    '/terms_of_service': (context) => TermsOfService(),
-    '/privacy_policy': (context) => PrivacyPolicy(),
+    '/terms_of_service': (context) => TermsOfServiceScreen(
+      title: AppLocalizations.of(context)!.welcomeTermsLink,
+      chrome: subPageChrome(context),
+    ),
+    '/privacy_policy': (context) => PrivacyPolicyScreen(
+      title: AppLocalizations.of(context)!.welcomePrivacyLink,
+      chrome: subPageChrome(context),
+    ),
+    '/open_source_licenses': (context) => OpenSourceLicensesScreen(
+      title: AppLocalizations.of(context)!.settingsLicensesLabel,
+      chrome: subPageChrome(context),
+    ),
   };
 
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
@@ -256,9 +257,15 @@ class _AppRootState extends State<_AppRoot>
     WidgetsBinding.instance.removeObserver(this);
     WidgetsBinding.instance.removeObserver(_routeLinkBlocker);
     _paymentLinks.dispose();
-    _announceWallet?.removeListener(_announceNewTxsOnGrowth);
     super.dispose();
   }
+
+  // The services beside the screens (WalletAppServices) use the app's own.
+  @override
+  WalletManager get appWalletManager => Provider.of<WalletManager>(context, listen: false);
+
+  @override
+  FiatRateModel get appFiatRates => Provider.of<FiatRateModel>(context, listen: false);
 
   /// Opens the Send form for a payment link the gate let through: the user is
   /// past every lock and on a screen behind them. It only pre-fills the form,
@@ -310,23 +317,7 @@ class _AppRootState extends State<_AppRoot>
   /// announce. Marks only synced history (hash-based), so an unsynced
   /// receipt is still announced later.
   @override
-  void onMobilePaused() {
-    unawaited(appWalletOf(context, listen: false).notifyNewIncomingTxs(announce: false));
-  }
-
-  // Desktop has no background isolate to announce incoming txs, so the
-  // foreground announces when the wallet's history grows. notifyNewIncomingTxs
-  // is the decider (hash-based, net-receipt only, respects the notifications
-  // toggle); the count is a cheap gate so unrelated notifications (connectivity,
-  // balance) don't hit the keystore.
-  void _announceNewTxsOnGrowth() {
-    final wallet = _announceWallet;
-    if (wallet == null) return;
-    final count = wallet.txHistory.length;
-    if (count <= _lastAnnouncedTxCount) return;
-    _lastAnnouncedTxCount = count;
-    unawaited(wallet.notifyNewIncomingTxs());
-  }
+  void onMobilePaused() => markIncomingTxsSeen();
 
   Future<List<Object>> _runStartup() {
     // Wallet existence drives the initial route; done quickly without a full load.
@@ -340,8 +331,6 @@ class _AppRootState extends State<_AppRoot>
 
     return Consumer2<LanguageModel, ThemeModel>(
       builder: (context, languageProvider, themeProvider, child) {
-        final fiatRate = Provider.of<FiatRateModel>(context, listen: false);
-
         return FutureBuilder(
           future: _startup,
           builder: (context, snapshot) {
@@ -355,33 +344,8 @@ class _AppRootState extends State<_AppRoot>
               // Linux and Windows). With security keys on, a key comes next.
               final initialRoute = walletExists ? '/unlock' : '/welcome';
 
-              if (!_startedServices) {
-                _startedServices = true;
-                // Only the built-in Tor is ours to start; external/disabled must
-                // not spin up an embedded Tor, whose status would then misreport
-                // the external proxy.
-                unawaited(() async {
-                  await TorSettingsService.sharedInstance.loadSettings();
-                  if (TorSettingsService.sharedInstance.torMode == TorMode.builtIn) {
-                    await TorService.sharedInstance.start();
-                  }
-                }());
-
-                // Attach the manager once so the (multicoin) fiat model knows to
-                // fetch XMR; every startService() afterwards can stay argless.
-                attachFiatWalletManager(context);
-                if (walletExists) {
-                  fiatRate.startService();
-                }
-
-                // Desktop has no background isolate to announce incoming txs, so
-                // the foreground announces on tx-history growth. Mobile announces
-                // from its background isolates.
-                if (isDesktopOS) {
-                  _announceWallet = appWalletOf(context, listen: false)
-                    ..addListener(_announceNewTxsOnGrowth);
-                }
-              }
+              // Tor, fiat rates and desktop announcements, once (WalletAppServices).
+              startWalletServices(walletExists: walletExists);
 
               return MaterialApp(
                 navigatorKey: _navigatorKey,

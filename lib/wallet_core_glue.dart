@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/models/app_wallet.dart';
-import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/models/monero_wallet_adapter.dart';
 import 'package:skylight_wallet/widgets/tx_details.dart' show TxDetailsDialog;
 import 'package:skylight_wallet/periodic_tasks.dart'
@@ -15,7 +14,6 @@ import 'package:skylight_wallet/services/foreground_sync_service.dart'
     show foregroundSyncCallback, stopSyncAndDeleteWallets, restartForegroundSyncIfRunning;
 import 'package:skylight_wallet/services/notifications_service.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
-import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 
 import 'package:wallet_infra/wallet_infra.dart' as wcore;
@@ -78,7 +76,7 @@ void installWalletCore() {
     coins: () => [MoneroWallet()],
     workmanagerCallback: backgroundDispatcher,
     foregroundCallback: foregroundSyncCallback,
-    ensureTorConnected: _ensureTorConnected,
+    ensureTorConnected: TorSettingsService.sharedInstance.ensureConnected,
     iosBundleId: 'org.magicgrants.skylightwallet',
     foregroundTitle: 'Skylight Wallet',
     foregroundIcon: const NotificationIcon(
@@ -120,36 +118,9 @@ void installWalletCore() {
   };
 }
 
-/// Brings skylight's Tor up and reports whether it connected — the seam
-/// `wallet_background` uses so a background isolate starts the *same* Tor the
-/// wallet connects through. (Background open + the node/Tor gate now live inside
-/// `wallet_background`.)
-Future<bool> _ensureTorConnected() async {
-  final settings = TorSettingsService.sharedInstance;
-  await settings.ensureLoaded();
-  if (settings.torMode != TorMode.builtIn) {
-    // External: the proxy is the user's, and `getProxy` fails closed if it is
-    // not usable. Disabled: there is no Tor to report.
-    return settings.torMode == TorMode.external;
-  }
-
-  await TorService.sharedInstance.start();
-  return TorService.sharedInstance.waitUntilConnected(timeout: const Duration(minutes: 2));
-}
-
 /// The wallet-core [WalletManager] provider.
 ChangeNotifierProvider<WalletManager> walletManagerProvider() =>
     ChangeNotifierProvider(create: (_) => WalletManager(coins: () => [MoneroWallet()]));
-
-/// Attaches the [WalletManager] to the fiat model so it fetches rates for the
-/// active coins (XMR). Call once at startup; the model stays attached, so every
-/// `FiatRateModel.startService()` afterwards needs no manager argument.
-void attachFiatWalletManager(BuildContext context) {
-  Provider.of<FiatRateModel>(
-    context,
-    listen: false,
-  ).attachWalletManager(Provider.of<WalletManager>(context, listen: false));
-}
 
 /// Startup for the wallet-core stack: whether a wallet exists (for the initial
 /// route) and, on mobile, opening + starting its sync.

@@ -688,9 +688,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Com que frequência o Monero sincroniza enquanto o app está fechado.';
 
   @override
-  String get syncFrequencyModeLabel => 'Frequência';
-
-  @override
   String get syncFrequencyContinuous => 'Contínua';
 
   @override

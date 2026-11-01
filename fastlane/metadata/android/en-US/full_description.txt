@@ -2,13 +2,14 @@ Skylight Wallet is an open-source and self-custody wallet for Monero created by 
 
 FEATURES
 * A beautiful, modern interface available in light and dark themes.
-* Fully self-custody. Only you have your private keys and seed, not us.
+* Fully self-custody. Only you have your private keys and recovery phrase, not us.
 * Completely open-source, with reproducible builds.
-* No local wallet scanning needed! Syncing can be handled by the LWS you specify. Save time, data, and your battery. Alternatively, you can choose to connect to a Monero node and sync locally.
-* Built-in Tor support. Optionally connect to your LWS or node over Tor to protect your privacy.
 * Address book for managing contacts.
-* Background notifications for incoming transactions, and background syncing if you use a remote node.
-* OpenAlias, for easy and secure sending without cumbersome addresses.
-* Subaddress support.
+* No local wallet scanning needed. You can offload scanning to servers of your choice, or you can scan locally with a node connection if you prefer.
+* Built-in Tor support. Optionally connect to services over Tor to protect your privacy.
+* Protect your wallet with hardware security keys. When enabled, your spend key and recovery phrase have multiple layers of protection.
+* Encrypted backups of your payment details and address book. They are securely encrypted with keys derived from your recovery phrase, so you don't need another backup password.
+* Background notifications for incoming transactions and background syncing.
+* OpenAlias and payment links, for easy and secure sending without cumbersome addresses.
 
 Skylight Wallet is developed by MAGIC Grants, a 501(c)(3) public charity.

@@ -118,9 +118,14 @@ void installWalletCore() {
   };
 }
 
+/// The wallets the app's [WalletManager] holds. Only the store-screenshot test
+/// (integration_test/store_screenshots_test.dart) swaps it, for sample ones.
+@visibleForTesting
+List<CryptoWallet> Function() appCoins = () => [MoneroWallet()];
+
 /// The wallet-core [WalletManager] provider.
 ChangeNotifierProvider<WalletManager> walletManagerProvider() =>
-    ChangeNotifierProvider(create: (_) => WalletManager(coins: () => [MoneroWallet()]));
+    ChangeNotifierProvider(create: (_) => WalletManager(coins: appCoins));
 
 /// Startup for the wallet-core stack: whether a wallet exists (for the initial
 /// route) and, on mobile, opening + starting its sync.

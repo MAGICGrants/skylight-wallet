@@ -59,7 +59,7 @@ void main() {
       await _tap(tester, find.text('Test Connection'));
       await _waitFor(tester, find.text('Connection works'));
       await _tap(tester, find.text('Continue'));
-      await _tap(tester, find.text('Restore Existing'));
+      await _tap(tester, find.text('Restore Existing Wallet'));
       await Clipboard.setData(const ClipboardData(text: _seed));
       await _tap(tester, find.byTooltip('Paste'));
       await _tap(tester, find.text('Restore').last);
@@ -95,7 +95,7 @@ void main() {
       await _shot(tester, 'wallet_home', light: false, dark: true);
 
       await _tap(tester, find.text('Receive'));
-      await _waitFor(tester, find.text('Copy address'));
+      await _waitFor(tester, find.text('Copy Address'));
       await _shot(tester, 'receive');
       await _back(tester);
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
@@ -34,7 +35,7 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
     if (value.isEmpty) return;
     SecureClipboard.copy(value);
     final i18n = AppLocalizations.of(context)!;
-    showCopyToast(context, i18n.copiedToClipboard);
+    showCopyToast(context, i18n.shared.copiedToClipboard);
   }
 
   @override
@@ -45,12 +46,12 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
 
     final labels = LwsKeysLabels(
       title: i18n.lwsDetailsTitle,
-      description: i18n.lwsDetailsDescription,
+      description: i18n.shared.lwsDetailsDescription,
       primaryAddressLabel: i18n.lwsDetailsPrimaryAddressLabel,
       viewKeyLabel: i18n.lwsDetailsSecretViewKeyLabel,
       restoreHeightLabel: i18n.lwsDetailsRestoreHeightLabel,
-      reveal: i18n.generateSeedReveal,
-      warning: i18n.lwsKeysWarning,
+      reveal: i18n.shared.generateSeedReveal,
+      warning: i18n.shared.lwsKeysWarning,
     );
 
     void goHome() =>
@@ -63,12 +64,12 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
         showSteps: false,
         logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
         title: i18n.lwsDetailsTitle,
-        description: i18n.lwsDetailsDescription,
+        description: i18n.shared.lwsDetailsDescription,
         step: 0,
         totalSteps: 0,
-        continueLabel: i18n.continueText,
+        continueLabel: i18n.shared.continueText,
         onContinue: goHome,
-        notes: [OnboardingNote(Icons.visibility_off_outlined, i18n.lwsKeysWarning)],
+        notes: [OnboardingNote(Icons.visibility_off_outlined, i18n.shared.lwsKeysWarning)],
         content: LwsKeysView(
           fieldsOnly: true,
           labels: labels,
@@ -87,7 +88,7 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
       secretViewKey: _secretViewKey,
       restoreHeight: restoreHeight.toString(),
       onCopy: _copy,
-      footer: BrandButton(label: i18n.continueText, onPressed: goHome),
+      footer: BrandButton(label: i18n.shared.continueText, onPressed: goHome),
     );
   }
 }

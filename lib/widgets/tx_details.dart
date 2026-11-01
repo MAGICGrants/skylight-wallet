@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet, TxDetails;
 import 'package:wallet_ui/wallet_ui.dart' show TxDetailsSheetLabels, showTxDetailsSheet;
 
@@ -16,25 +17,25 @@ class TxDetailsDialog {
       wallet: wallet,
       tx: txDetails,
       labels: TxDetailsSheetLabels(
-        title: i18n.txDetailsTitle,
-        hash: i18n.txDetailsHashLabel,
-        amount: i18n.amount,
-        networkFee: i18n.networkFee,
-        timeAndDate: i18n.txDetailsTimeAndDateLabel,
-        confirmationHeight: i18n.txDetailsConfirmationHeightLabel,
-        confirmations: i18n.txDetailsConfirmationsLabel,
-        viewKey: i18n.txDetailsViewKeyLabel,
-        recipients: i18n.txDetailsRecipientsLabel,
-        changeRecipient: i18n.txDetailsChangeRecipientLabel,
-        close: i18n.close,
-        copied: i18n.copiedToClipboard,
-        received: i18n.coinHomeReceived,
-        sent: i18n.coinHomeSent,
-        copyHint: i18n.txDetailsCopyHint,
-        failed: i18n.txDetailsFailed,
-        unknownStatus: i18n.txDetailsUnknownStatus,
-        receivedAt: i18n.txDetailsReceivedAtLabel,
-        unconfirmed: i18n.unconfirmed,
+        title: i18n.shared.txDetailsTitle,
+        hash: i18n.shared.txDetailsHashLabel,
+        amount: i18n.shared.amount,
+        networkFee: i18n.shared.networkFee,
+        timeAndDate: i18n.shared.txDetailsTimeAndDateLabel,
+        confirmationHeight: i18n.shared.txDetailsConfirmationHeightLabel,
+        confirmations: i18n.shared.txDetailsConfirmationsLabel,
+        viewKey: i18n.shared.txDetailsViewKeyLabel,
+        recipients: i18n.shared.txDetailsRecipientsLabel,
+        changeRecipient: i18n.shared.txDetailsChangeRecipientLabel,
+        close: i18n.shared.close,
+        copied: i18n.shared.copiedToClipboard,
+        received: i18n.shared.coinHomeReceived,
+        sent: i18n.shared.coinHomeSent,
+        copyHint: i18n.shared.txDetailsCopyHint,
+        failed: i18n.shared.txDetailsFailed,
+        unknownStatus: i18n.shared.txDetailsUnknownStatus,
+        receivedAt: i18n.shared.txDetailsReceivedAtLabel,
+        unconfirmed: i18n.shared.unconfirmed,
       ),
     );
   }

@@ -21,10 +21,11 @@ import 'package:wallet_infra/wallet_infra.dart';
 import 'package:wallet_monero/wallet_monero.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart'
-    show BrandButton, ConfirmSendView, SendAmountCard;
+    show BrandButton, ConfirmSendView, SendAmountCard, WalletUiLocalizations;
 
 void main() {
   late Directory tmp;
@@ -115,6 +116,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: const [
             AppLocalizations.delegate,
+            WalletUiLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -135,7 +137,7 @@ void main() {
 
   /// Picks Alice in Send's own contact picker.
   Future<void> pickAlice(WidgetTester tester) async {
-    await tester.tap(find.text(l10n(tester).sendContactsButton));
+    await tester.tap(find.text(l10n(tester).shared.sendContactsButton));
     await settle(tester);
     await tester.tap(find.text('Alice'));
     await settle(tester);
@@ -148,7 +150,7 @@ void main() {
       '1',
     );
     await settle(tester);
-    final sendButton = find.widgetWithText(BrandButton, l10n(tester).sendSendButton);
+    final sendButton = find.widgetWithText(BrandButton, l10n(tester).shared.sendSendButton);
     expect(sendButton, findsOneWidget);
     await tester.tap(sendButton);
     await settle(tester);
@@ -175,7 +177,7 @@ void main() {
       // Before: the contact card names Alice over her address, with Paste beside it.
       expect(find.text('Alice'), findsOneWidget);
       expect(find.text(short(alice)), findsOneWidget);
-      final paste = find.text(l10n(tester).sendPasteButton);
+      final paste = find.text(l10n(tester).shared.sendPasteButton);
       expect(paste, findsOneWidget);
 
       await tester.tap(paste);

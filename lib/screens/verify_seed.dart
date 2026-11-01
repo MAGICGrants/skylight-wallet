@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wallet_fhse/security_keys_ui.dart' show lockWalletAction;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -57,18 +58,18 @@ class _VerifySeedScreenState extends State<VerifySeedScreen> with SecureScreenMi
     final i18n = AppLocalizations.of(context)!;
     return SeedVerifyView(
       labels: SeedVerifyLabels(
-        title: i18n.verifySeedTitle,
-        subtitle: (p) => i18n.verifySeedSubtitle(p[0], p[1], p[2]),
-        verifyButton: i18n.verifySeedButton,
-        wrongTitle: i18n.verifySeedWrongTitle,
-        wrongBody: i18n.verifySeedWrongBody,
-        tryAgain: i18n.verifySeedTryAgain,
-        unavailable: i18n.verifySeedUnavailable,
+        title: i18n.shared.verifySeedTitle,
+        subtitle: (p) => i18n.shared.verifySeedSubtitle(p[0], p[1], p[2]),
+        verifyButton: i18n.shared.verifySeedButton,
+        wrongTitle: i18n.shared.verifySeedWrongTitle,
+        wrongBody: i18n.shared.verifySeedWrongBody,
+        tryAgain: i18n.shared.verifySeedTryAgain,
+        unavailable: i18n.shared.verifySeedUnavailable,
       ),
       verifier: _verifier,
       embedded: widget.embedded,
       onVerified: () {
-        showBrandToast(context, i18n.verifySeedDone);
+        showBrandToast(context, i18n.shared.verifySeedDone);
         Navigator.pop(context);
       },
       onLocked: _lock,

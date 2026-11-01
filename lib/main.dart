@@ -15,6 +15,7 @@ import 'package:skylight_wallet/screens/secret_keys.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/models/theme_model.dart';
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
@@ -187,11 +188,11 @@ class _AppRootState extends State<_AppRoot>
     '/wallet_home': (context) => WalletHomeScreen(),
     '/settings': (context) => SettingsScreen(),
     '/lws_keys': (context) => AppLockGate(
-      reason: AppLocalizations.of(context)!.settingsAppLockUnlockReason,
+      reason: AppLocalizations.of(context)!.shared.unlockWalletReason,
       child: LwsKeysScreen(),
     ),
     '/secret_keys': (context) => AppLockGate(
-      reason: AppLocalizations.of(context)!.revealSeedAuthReason,
+      reason: AppLocalizations.of(context)!.shared.revealSeedAuthReason,
       child: SecretKeysScreen(),
     ),
     '/send': (context) => SendScreen(),
@@ -208,7 +209,7 @@ class _AppRootState extends State<_AppRoot>
       chrome: subPageChrome(context),
     ),
     '/open_source_licenses': (context) => OpenSourceLicensesScreen(
-      title: AppLocalizations.of(context)!.settingsLicensesLabel,
+      title: AppLocalizations.of(context)!.shared.settingsLicensesLabel,
       chrome: subPageChrome(context),
     ),
   };
@@ -285,7 +286,7 @@ class _AppRootState extends State<_AppRoot>
       final name = wallet?.blockchainName ?? request.coinSymbol;
       showBrandToastOnOverlay(
         overlay,
-        AppLocalizations.of(overlay.context)!.deepLinkCoinNotConfigured(name),
+        AppLocalizations.of(overlay.context)!.shared.deepLinkCoinNotConfigured(name),
       );
       return;
     }
@@ -296,7 +297,7 @@ class _AppRootState extends State<_AppRoot>
       arguments: SendScreenArgs(
         destinationAddress: request.address,
         amount: request.amount,
-        backLabel: overlayContext == null ? null : AppLocalizations.of(overlayContext)?.back,
+        backLabel: overlayContext == null ? null : AppLocalizations.of(overlayContext)?.shared.back,
       ),
     );
   }
@@ -355,6 +356,7 @@ class _AppRootState extends State<_AppRoot>
                   ...AppLocalizations.localizationsDelegates,
                   FhseLocalizations.delegate,
                   BackupLocalizations.delegate,
+                  WalletUiLocalizations.delegate,
                 ],
                 supportedLocales: AppLocalizations.supportedLocales,
                 theme: brandLightTheme(),

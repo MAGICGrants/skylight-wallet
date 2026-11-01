@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/services/shared_preferences_service.dart';
@@ -20,7 +21,15 @@ class TorSettingsForm extends StatefulWidget {
   final String saveButtonLabel;
   final VoidCallback onSaved;
 
-  const TorSettingsForm({super.key, required this.saveButtonLabel, required this.onSaved});
+  /// In a settings sheet: a Cancel beside Save, as on the other settings sheets.
+  final VoidCallback? onCancel;
+
+  const TorSettingsForm({
+    super.key,
+    required this.saveButtonLabel,
+    required this.onSaved,
+    this.onCancel,
+  });
 
   @override
   State<TorSettingsForm> createState() => _TorSettingsFormState();
@@ -112,10 +121,10 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
       icon: Icons.warning_amber_rounded,
       iconBg: BrandColors.errorBg,
       iconColor: BrandColors.error,
-      title: i18n.torDisabledWalletsWarningTitle,
-      body: i18n.torDisabledWalletsWarningBody,
-      confirmLabel: i18n.torDisabledWalletsWarningConfirm,
-      cancelLabel: i18n.cancel,
+      title: i18n.shared.torDisabledWalletsWarningTitle,
+      body: i18n.shared.torDisabledWalletsWarningBody,
+      confirmLabel: i18n.shared.torDisabledWalletsWarningConfirm,
+      cancelLabel: i18n.shared.cancel,
     );
   }
 
@@ -189,22 +198,26 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
     final canSave =
         _selectedMode != TorMode.external ||
         (_connectionSuccess && _hasTested && !_isTestingConnection);
+    final save = BrandButton(
+      label: widget.saveButtonLabel,
+      onPressed: canSave ? _onSavePressed : null,
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ModeSelectCard(
-          title: i18n.torSettingsModeBuiltIn,
-          description: i18n.torChoiceBuiltInDesc,
+          title: i18n.shared.torSettingsModeBuiltIn,
+          description: i18n.shared.torChoiceBuiltInDesc(appShortName),
           selected: _selectedMode == TorMode.builtIn,
           radioLeading: true,
           onTap: () => _select(TorMode.builtIn),
         ),
         const SizedBox(height: 9),
         ModeSelectCard(
-          title: i18n.torSettingsModeExternal,
-          description: i18n.torChoiceExternalDesc,
+          title: i18n.shared.torSettingsModeExternal,
+          description: i18n.shared.torChoiceExternalDesc,
           selected: _selectedMode == TorMode.external,
           radioLeading: true,
           onTap: () => _select(TorMode.external),
@@ -212,14 +225,24 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
         ),
         const SizedBox(height: 9),
         ModeSelectCard(
-          title: i18n.torSettingsModeDisabled,
-          description: i18n.torChoiceNoTorDesc,
+          title: i18n.shared.torSettingsModeDisabled,
+          description: i18n.shared.torChoiceNoTorDesc,
           selected: _selectedMode == TorMode.disabled,
           radioLeading: true,
           onTap: () => _select(TorMode.disabled),
         ),
         const SizedBox(height: BrandSpacing.lg),
-        BrandButton(label: widget.saveButtonLabel, onPressed: canSave ? _onSavePressed : null),
+        if (widget.onCancel == null)
+          save
+        else
+          SheetActions(
+            primary: save,
+            secondary: BrandButton.ghost(
+              label: i18n.shared.cancel,
+              color: BrandColors.inkMuted,
+              onPressed: widget.onCancel,
+            ),
+          ),
       ],
     );
   }
@@ -231,7 +254,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
       children: [
         TorPortField(
           controller: _socksPortController,
-          label: i18n.torSettingsSocksPortLabel,
+          label: i18n.shared.torSettingsSocksPortLabel,
           enabled: portEnabled,
           onChanged: () => setState(() {
             _hasTested = false;
@@ -241,9 +264,7 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
         if (isMobile)
           _OrbotCheck(
             value: _useOrbot,
-            label: Platform.isIOS
-                ? i18n.torSettingsUseOrbotLabelIos
-                : i18n.torSettingsUseOrbotLabel,
+            label: Platform.isIOS ? i18n.shared.torUseOrbotLabelIos : i18n.shared.torUseOrbotLabel,
             onChanged: (v) => setState(() {
               _useOrbot = v;
               if (v) _socksPortController.text = '9050';
@@ -259,13 +280,13 @@ class _TorSettingsFormState extends State<TorSettingsForm> {
                 testing: _isTestingConnection,
                 tested: _hasTested,
                 ok: _connectionSuccess,
-                connectedLabel: i18n.torChoiceConnected,
-                failedLabel: i18n.torChoiceTestFailed,
+                connectedLabel: i18n.shared.torChoiceConnected,
+                failedLabel: i18n.shared.torChoiceTestFailed,
               ),
             ),
             const SizedBox(width: BrandSpacing.md),
             TorTestChip(
-              label: i18n.torSettingsTestConnectionButton,
+              label: i18n.shared.torSettingsTestConnectionButton,
               onTap: _isTestingConnection ? null : _testConnection,
             ),
           ],

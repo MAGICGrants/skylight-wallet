@@ -6,6 +6,7 @@ import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/util/logging.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/services/tor_service.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -43,6 +44,9 @@ class ConnectionSettingsForm extends StatefulWidget {
   final bool embedded;
   final ConnectionFormController? controller;
 
+  /// In a settings sheet: a Cancel beside Save, as on the other settings sheets.
+  final VoidCallback? onCancel;
+
   const ConnectionSettingsForm({
     super.key,
     required this.saveButtonLabel,
@@ -51,6 +55,7 @@ class ConnectionSettingsForm extends StatefulWidget {
     this.onBeforeSave,
     this.embedded = false,
     this.controller,
+    this.onCancel,
   });
 
   @override
@@ -142,14 +147,14 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
 
     setState(() {
       _hasTested = false;
-      _errorMessage = input.isRemoteIp ? i18n.connectionRemoteIpNotAllowed : null;
+      _errorMessage = input.isRemoteIp ? i18n.shared.connectionRemoteIpNotAllowed : null;
     });
 
     if (input.hadProtocol) {
       showBrandToast(context, switch (input.protocolHint) {
-        AddressProtocolHint.onion => i18n.connectionProtocolHttpOnion,
-        AddressProtocolHint.secure => i18n.connectionProtocolHttps,
-        AddressProtocolHint.plain => i18n.connectionProtocolHttp,
+        AddressProtocolHint.onion => i18n.shared.connectionProtocolHttpOnion,
+        AddressProtocolHint.secure => i18n.shared.connectionProtocolHttps,
+        AddressProtocolHint.plain => i18n.shared.connectionProtocolHttp,
       });
     }
   }
@@ -231,15 +236,15 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   }
 
   String _connectionTypeLabel(AppLocalizations i18n, String type) {
-    return type == 'node' ? i18n.connectionTypeNode : i18n.connectionTypeLws;
+    return type == 'node' ? i18n.shared.connectionTypeNode : i18n.shared.connectionTypeLws;
   }
 
   String _connectionAddressErrorMessage(AppLocalizations i18n, ConnectionAddressError error) =>
       switch (error) {
-        ConnectionAddressError.remoteIp => i18n.connectionRemoteIpNotAllowed,
-        ConnectionAddressError.pathNotSupported => i18n.connectionPathNotSupported,
-        ConnectionAddressError.localOverTor => i18n.connectionLocalOverTorNotAllowed,
-        ConnectionAddressError.onionNeedsTor => i18n.connectionOnionNeedsTor,
+        ConnectionAddressError.remoteIp => i18n.shared.connectionRemoteIpNotAllowed,
+        ConnectionAddressError.pathNotSupported => i18n.shared.connectionPathNotSupported,
+        ConnectionAddressError.localOverTor => i18n.shared.connectionLocalOverTorNotAllowed,
+        ConnectionAddressError.onionNeedsTor => i18n.shared.connectionOnionNeedsTor,
       };
 
   /// Resolves the SOCKS proxy port to pass to `wallet.testConnection`. When Tor
@@ -286,7 +291,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
     }
 
     if (_useTor && TorSettingsService.sharedInstance.torMode == TorMode.disabled) {
-      showBrandToast(context, i18n.lwsSetupTorDisabledError);
+      showBrandToast(context, i18n.shared.lwsSetupTorDisabledError);
       return;
     }
 
@@ -374,9 +379,11 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
   /// How the successful probe reached the server (the one server fact we can
   /// state from an unauthenticated test).
   String _successDetail(AppLocalizations i18n) {
-    if (_useTor) return i18n.connectionReachedOverTor;
-    if (_customProxyPortController.text.trim().isNotEmpty) return i18n.connectionReachedViaProxy;
-    return i18n.connectionReachedDirect;
+    if (_useTor) return i18n.shared.connectionReachedOverTor;
+    if (_customProxyPortController.text.trim().isNotEmpty) {
+      return i18n.shared.connectionReachedViaProxy;
+    }
+    return i18n.shared.connectionReachedDirect;
   }
 
   /// Maps this wrapper's flags onto the shared test-card state: starting-Tor
@@ -411,18 +418,18 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       labels: ConnectionFormLabels(
         proxyPortLabel: i18n.lwsSetupProxyPortLabel,
         proxyPortHint: i18n.lwsSetupProxyPortHint,
-        useTorLabel: i18n.lwsSetupUseTorLabel,
-        startingTorTitle: i18n.lwsSetupStartingTor,
-        testButton: i18n.lwsSetupTestConnectionButton,
-        testStop: i18n.connectionTestStop,
-        testingTitle: i18n.connectionTestingTitle,
-        testingDetail: i18n.connectionTestingDetail,
-        testAgain: i18n.connectionTestAgain,
-        resultWorksTitle: i18n.connectionResultWorksTitle,
-        resultFailedTitle: i18n.connectionResultFailedTitle,
-        resultFailedDetail: i18n.connectionResultFailedDetail,
+        useTorLabel: i18n.shared.lwsSetupUseTorLabel,
+        startingTorTitle: i18n.shared.lwsSetupStartingTor,
+        testButton: i18n.shared.lwsSetupTestConnectionButton,
+        testStop: i18n.shared.connectionTestStop,
+        testingTitle: i18n.shared.connectionTestingTitle,
+        testingDetail: i18n.shared.connectionTestingDetail,
+        testAgain: i18n.shared.connectionTestAgain,
+        resultWorksTitle: i18n.shared.connectionResultWorksTitle,
+        resultFailedTitle: i18n.shared.connectionResultFailedTitle,
+        resultFailedDetail: i18n.shared.connectionResultFailedDetail,
       ),
-      addressLabel: i18n.address,
+      addressLabel: i18n.shared.address,
       addressHint: addressHint,
       addressController: _addressController,
       onAddressChanged: _onAddressChange,
@@ -430,7 +437,7 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       errorMessage: _errorMessage,
       // The saved connection used Tor, which is now disabled: prompt to reconfigure.
       warning: (_savedConnectionUsedTor && torMode == TorMode.disabled)
-          ? i18n.connectionTorDisabledWarning
+          ? i18n.shared.connectionTorDisabledWarning
           : null,
       proxyController: _customProxyPortController,
       onProxyChanged: _onProxyPortChange,
@@ -453,6 +460,8 @@ class _ConnectionSettingsFormState extends State<ConnectionSettingsForm> {
       canSave: canSave,
       onSave: _saveConnection,
       showSave: !widget.embedded,
+      cancelLabel: widget.onCancel == null ? null : i18n.shared.cancel,
+      onCancel: widget.onCancel,
     );
   }
 }

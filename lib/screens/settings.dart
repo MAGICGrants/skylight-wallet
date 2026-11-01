@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -177,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (logFiles.isEmpty) {
         if (mounted) {
-          showBrandToast(context, i18n.settingsExportLogsError);
+          showBrandToast(context, i18n.shared.settingsExportLogsError);
         }
         return;
       }
@@ -187,9 +188,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           context,
           logFiles,
           ExportLogsLabels(
-            title: i18n.settingsExportLogsLabel,
-            cancel: i18n.cancel,
-            exportError: i18n.settingsExportLogsFailed,
+            title: i18n.shared.settingsExportLogsLabel,
+            cancel: i18n.shared.cancel,
+            exportError: i18n.shared.settingsExportLogsFailed,
           ),
         );
       }
@@ -197,7 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Not "no logs found": the listing itself failed, which is a different
       // thing to tell the user than an empty list.
       if (mounted) {
-        showBrandToast(context, i18n.settingsExportLogsFailed);
+        showBrandToast(context, i18n.shared.settingsExportLogsFailed);
       }
     }
   }
@@ -209,10 +210,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.delete_outline,
       iconBg: BrandColors.errorBg,
       iconColor: BrandColors.error,
-      title: i18n.settingsDeleteWalletButton,
-      body: i18n.settingsDeleteWalletDialogText,
-      confirmLabel: i18n.settingsDeleteWalletDialogDeleteButton,
-      cancelLabel: i18n.cancel,
+      title: i18n.shared.settingsDeleteWalletButton,
+      body: i18n.shared.settingsDeleteWalletDialogText,
+      confirmLabel: i18n.shared.settingsDeleteWalletDialogDeleteButton,
+      cancelLabel: i18n.shared.cancel,
       onConfirm: _deleteWallet,
     );
   }
@@ -224,10 +225,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.delete_outline,
       iconBg: BrandColors.errorBg,
       iconColor: BrandColors.error,
-      title: i18n.settingsDeleteAddressBookButton,
-      body: i18n.settingsDeleteAddressBookDialogText,
-      confirmLabel: i18n.settingsDeleteAddressBookDialogDeleteButton,
-      cancelLabel: i18n.cancel,
+      title: i18n.shared.settingsDeleteAddressBookButton,
+      body: i18n.shared.settingsDeleteAddressBookDialogText,
+      confirmLabel: i18n.shared.settingsDeleteAddressBookDialogDeleteButton,
+      cancelLabel: i18n.shared.cancel,
       onConfirm: _deleteAddressBook,
     );
   }
@@ -238,7 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteAddressBook() async {
     final i18n = AppLocalizations.of(context)!;
     await Provider.of<ContactModel>(context, listen: false).deleteAll();
-    if (mounted) showBrandToast(context, i18n.settingsAddressBookDeleted);
+    if (mounted) showBrandToast(context, i18n.shared.settingsAddressBookDeleted);
   }
 
   Future<void> _showViewLwsKeysDialog() async {
@@ -248,10 +249,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.warning_amber_rounded,
       iconBg: BrandColors.warningBg,
       iconColor: BrandColors.warning,
-      title: i18n.warning,
+      title: i18n.shared.warning,
       body: i18n.settingsViewLwsKeysDialogText,
       confirmLabel: i18n.settingsViewLwsKeysDialogRevealButton,
-      cancelLabel: i18n.cancel,
+      cancelLabel: i18n.shared.cancel,
       confirmColor: BrandColors.warning,
     );
     if (ok != true || !mounted) return;
@@ -275,10 +276,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.warning_amber_rounded,
       iconBg: BrandColors.errorBg,
       iconColor: BrandColors.error,
-      title: i18n.warning,
+      title: i18n.shared.warning,
       body: i18n.settingsViewSecretKeysDialogText,
       confirmLabel: i18n.settingsViewSecretKeysDialogRevealButton,
-      cancelLabel: i18n.cancel,
+      cancelLabel: i18n.shared.cancel,
     );
     if (ok != true || !mounted) return;
     if (isDesktop) {
@@ -321,9 +322,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.dns,
       title: i18n.settingsConnectionSettingsLabel,
       form: ConnectionSettingsForm(
-        saveButtonLabel: i18n.torSettingsSaveButton,
+        saveButtonLabel: i18n.shared.save,
         onSaved: onSaved,
         isInDialog: true,
+        onCancel: () => Navigator.pop(context),
       ),
     );
     // The connection address subtitle follows the wallet, but the Tor mode row
@@ -340,9 +342,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _openAliasModeLabel(AppLocalizations i18n) => switch (_openAliasMode) {
-    OpenAliasMode.torOnly => i18n.fiatApiSettingsModeTorOnly,
-    OpenAliasMode.clearnet => i18n.fiatApiSettingsModeClearnet,
-    OpenAliasMode.disabled => i18n.fiatApiSettingsModeDisabled,
+    OpenAliasMode.torOnly => i18n.shared.fiatApiSettingsModeTorOnly,
+    OpenAliasMode.clearnet => i18n.shared.clearnetOnlyChoice,
+    OpenAliasMode.disabled => i18n.shared.fiatApiSettingsModeDisabled,
   };
 
   Future<void> _refreshFiatMode() async {
@@ -352,15 +354,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _torModeLabel(AppLocalizations i18n) =>
       switch (TorSettingsService.sharedInstance.torMode) {
-        TorMode.builtIn => i18n.torSettingsModeBuiltIn,
-        TorMode.external => i18n.torSettingsModeExternal,
-        TorMode.disabled => i18n.torSettingsModeDisabled,
+        TorMode.builtIn => i18n.shared.torSettingsModeBuiltIn,
+        TorMode.external => i18n.shared.torSettingsModeExternal,
+        TorMode.disabled => i18n.shared.torSettingsModeDisabled,
       };
 
   String _fiatModeLabel(AppLocalizations i18n) => switch (_fiatMode) {
-    FiatApiMode.torOnly => i18n.fiatApiSettingsModeTorOnly,
-    FiatApiMode.clearnet => i18n.fiatApiSettingsModeClearnet,
-    FiatApiMode.disabled => i18n.fiatApiSettingsModeDisabled,
+    FiatApiMode.torOnly => i18n.shared.fiatApiSettingsModeTorOnly,
+    FiatApiMode.clearnet => i18n.shared.clearnetOnlyChoice,
+    FiatApiMode.disabled => i18n.shared.fiatApiSettingsModeDisabled,
   };
 
   /// A plain-language description of the active connection, e.g. "LWS in Local
@@ -380,9 +382,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _themeLabel(AppLocalizations i18n, String value) => switch (value) {
-    'light' => i18n.settingsThemeLight,
-    'dark' => i18n.settingsThemeDark,
-    _ => i18n.settingsThemeSystem,
+    'light' => i18n.shared.settingsThemeLight,
+    'dark' => i18n.shared.settingsThemeDark,
+    _ => i18n.shared.settingsThemeSystem,
   };
 
   void _showThemePicker() {
@@ -391,14 +393,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showThemePickerSheet(
       context,
       labels: SettingsPickerLabels(
-        title: i18n.settingsThemeLabel,
-        subtitle: i18n.settingsThemeSheetSubtitle,
-        done: i18n.done,
+        title: i18n.shared.settingsThemeLabel,
+        subtitle: i18n.shared.settingsThemeSheetSubtitle,
+        done: i18n.shared.done,
       ),
       options: [
         ThemePickerOption(
           value: 'light',
-          label: i18n.settingsThemeLight,
+          label: i18n.shared.settingsThemeLight,
           description: i18n.settingsThemeLightDesc,
           swatch: const ThemeSwatchSpec(
             ground: Color(0xFFF2F6FA),
@@ -408,8 +410,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         ThemePickerOption(
           value: 'dark',
-          label: i18n.settingsThemeDark,
-          description: i18n.settingsThemeDarkDesc,
+          label: i18n.shared.settingsThemeDark,
+          description: i18n.shared.settingsThemeDarkDesc,
           swatch: const ThemeSwatchSpec(
             ground: Color(0xFF03090F),
             barColor: Color(0xFF1A2837),
@@ -418,8 +420,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         ThemePickerOption(
           value: 'system',
-          label: i18n.settingsThemeSystem,
-          description: i18n.settingsThemeSystemDesc,
+          label: i18n.shared.settingsThemeSystem,
+          description: i18n.shared.settingsThemeSystemDesc,
           swatch: const ThemeSwatchSpec(
             gradient: LinearGradient(
               colors: [Color(0xFFF2F6FA), Color(0xFF102A4C)],
@@ -453,34 +455,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final groups = <Widget>[
       SettingsGroup(
-        label: i18n.settingsSectionGeneral,
+        label: i18n.shared.settingsSectionGeneral,
         tiles: [
           SettingsNavTile(
-            title: i18n.settingsThemeLabel,
+            title: i18n.shared.settingsThemeLabel,
             value: _themeLabel(i18n, theme.theme),
             onTap: _showThemePicker,
           ),
           SettingsNavTile(
-            title: i18n.settingsLanguageLabel,
+            title: i18n.shared.settingsLanguageLabel,
             value: languageNames[language.language]?.$1 ?? language.language.toUpperCase(),
             onTap: () => showLanguageSheet(context),
           ),
           SettingsLinkTile(
             title: i18n.settingsConnectionSettingsLabel,
             subtitle: connectionSubtitle,
-            linkLabel: i18n.settingsLwsViewKeysButton,
+            linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showConnectionSettings,
           ),
           SettingsLinkTile(
-            title: i18n.settingsFiatApiSettingsLabel,
+            title: i18n.shared.settingsFiatApiSettingsLabel,
             subtitle: fiatSubtitle,
-            linkLabel: i18n.settingsLwsViewKeysButton,
+            linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showFiatApiSettings,
           ),
         ],
       ),
       SettingsGroup(
-        label: i18n.settingsSectionSecurityPrivacy,
+        label: i18n.shared.settingsSectionSecurityPrivacy,
         tiles: [
           // Always on: how long the app may be away before it asks again.
           const AppLockTile(),
@@ -492,31 +494,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _openAdvancedSecurity,
             ),
           SettingsLinkTile(
-            title: i18n.settingsTorSettingsLabel,
+            title: i18n.shared.settingsTorSettingsLabel,
             subtitle: _torModeLabel(i18n),
-            linkLabel: i18n.settingsLwsViewKeysButton,
+            linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showTorSettings,
           ),
           SettingsLinkTile(
-            title: i18n.settingsOpenAliasSettingsLabel,
+            title: i18n.shared.settingsOpenAliasSettingsLabel,
             subtitle: _openAliasModeLabel(i18n),
-            linkLabel: i18n.settingsLwsViewKeysButton,
+            linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showOpenAliasSettings,
           ),
         ],
       ),
       SettingsGroup(
-        label: i18n.settingsSectionData,
+        label: i18n.shared.settingsSectionData,
         tiles: [
           SettingsNavTile(
             title: BackupLocalizations.of(context).backupTitle,
             onTap: () => Navigator.pushNamed(context, '/metadata_backup'),
           ),
           SettingsToggleTile(
-            title: i18n.settingsLoggingLabel,
+            title: i18n.shared.settingsLoggingLabel,
             description: Platform.isIOS
-                ? i18n.settingsLoggingDescriptionIos
-                : i18n.settingsLoggingDescription,
+                ? i18n.shared.settingsLoggingDescriptionIos
+                : i18n.shared.settingsLoggingDescription,
             value: _loggingEnabled,
             onChanged: _setLoggingEnabled,
             animate: _animateToggles,
@@ -525,12 +527,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // logging is off rather than disabling it.
           if (Platform.isIOS && _loggingEnabled)
             SettingsLinkTile(
-              title: i18n.settingsExportLogsLabel,
-              linkLabel: i18n.settingsExportLogsButton,
+              title: i18n.shared.settingsExportLogsLabel,
+              linkLabel: i18n.shared.settingsExportLogsButton,
               onTap: _exportLogs,
             ),
           SettingsLinkTile(
-            title: i18n.settingsDeleteAddressBookButton,
+            title: i18n.shared.settingsDeleteAddressBookButton,
             titleColor: BrandColors.error,
             onTap: _showDeleteAddressBookDialog,
           ),
@@ -538,16 +540,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       if (showNotifyToggle)
         SettingsGroup(
-          label: i18n.settingsSectionBehaviour,
+          label: i18n.shared.settingsSectionBehaviour,
           tiles: [
             SettingsNavTile(
-              title: i18n.settingsSyncFrequencyLabel,
+              title: i18n.shared.settingsSyncFrequencyLabel,
               value: syncFrequencyLabels(i18n).nameOf(_syncFrequency),
               onTap: _showSyncFrequency,
             ),
             SettingsToggleTile(
-              title: i18n.settingsNotifyNewTxsLabel,
-              description: i18n.settingsNotifyNewTxsDescription,
+              title: i18n.shared.settingsNotifyNewTxsLabel,
+              description: i18n.shared.settingsNotifyNewTxsDescription,
               value: _newTxNotificationsEnabled,
               onChanged: _setTxNotificationsEnabled,
               animate: _animateToggles,
@@ -555,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       SettingsGroup(
-        label: i18n.settingsSectionWallet,
+        label: i18n.shared.settingsSectionWallet,
         tiles: [
           SettingsLinkTile(
             title: i18n.settingsLwsViewKeysLabel,
@@ -568,14 +570,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _showViewSecretKeysDialog,
           ),
           SettingsLinkTile(
-            title: i18n.settingsDeleteWalletButton,
+            title: i18n.shared.settingsDeleteWalletButton,
             titleColor: BrandColors.error,
             onTap: _showDeleteWalletDialog,
           ),
         ],
       ),
       SettingsGroup(
-        label: i18n.settingsSectionAbout,
+        label: i18n.shared.settingsSectionAbout,
         tiles: [
           SettingsNavTile(
             title: i18n.welcomeTermsLink,
@@ -586,7 +588,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => Navigator.pushNamed(context, '/privacy_policy', arguments: true),
           ),
           SettingsNavTile(
-            title: i18n.settingsLicensesLabel,
+            title: i18n.shared.settingsLicensesLabel,
             onTap: () => Navigator.pushNamed(context, '/open_source_licenses', arguments: true),
           ),
         ],
@@ -623,7 +625,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: BrandScreenHeader(
                     center: Text(
-                      i18n.settingsTitle,
+                      i18n.shared.settingsTitle,
                       style: BrandText.appBar.copyWith(fontSize: 16),
                     ),
                   ),
@@ -666,7 +668,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(width: 13),
               Text(
-                i18n.settingsTitle,
+                i18n.shared.settingsTitle,
                 style: TextStyle(
                   fontFamily: 'Ubuntu',
                   fontSize: 21,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/screens/desktop/wallet_setup_view.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -44,11 +45,11 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     final labels = CreateWalletLabels(
-      title: i18n.createWalletTitle,
+      title: i18n.shared.createWalletTitle,
       subtitle: i18n.createWalletDescription,
-      createNew: i18n.createWalletCreateNewButton,
+      createNew: i18n.shared.createNewWalletChoice,
       createNewDesc: i18n.createWalletCreateNewDesc,
-      restore: i18n.createWalletRestoreExistingButton,
+      restore: i18n.shared.restoreExistingWalletChoice,
       restoreDesc: i18n.createWalletRestoreExistingDesc,
     );
     void createNew() => Navigator.pushNamed(context, '/generate_seed');
@@ -56,9 +57,9 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     if (isDesktop) {
       return DesktopWalletSetupView(
         labels: labels,
-        continueText: i18n.continueText,
-        noteGenerated: i18n.onboardingWalletNoteGenerated,
-        noteRestore: i18n.onboardingWalletNoteRestore,
+        continueText: i18n.shared.continueText,
+        noteGenerated: i18n.shared.onboardingWalletNoteGenerated(appShortName),
+        noteRestore: i18n.shared.onboardingWalletNoteRestore,
         onCreateNew: createNew,
         onRestore: _restoreExisting,
         onBack: () => Navigator.pop(context),

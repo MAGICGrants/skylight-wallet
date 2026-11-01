@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/screens/desktop/receive_view.dart';
@@ -77,7 +78,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   void _copyAddressToClipboard(String address) {
     final i18n = AppLocalizations.of(context)!;
     SecureClipboard.copy(address);
-    showCopyToast(context, i18n.addressCopied);
+    showCopyToast(context, i18n.shared.addressCopied);
   }
 
   /// Opens the system share sheet on [address], anchored at [origin].
@@ -93,7 +94,7 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       await SharePlus.instance.share(ShareParams(text: address, sharePositionOrigin: origin));
     } catch (error) {
       log(LogLevel.error, 'Address share failed (origin=${origin ?? 'none'}): $error');
-      toast.show(i18n.receiveShareError);
+      toast.show(i18n.shared.receiveShareError);
     }
   }
 
@@ -123,21 +124,23 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     final ready = address != null;
     final warning = _warning(i18n, wallet, isDemoMode, subSupported, sub);
     final qrHeading = canToggle && _showSubaddress
-        ? '${i18n.receiveSubaddressTab} #${sub.index}'
-        : i18n.receiveAddressHeading('Monero');
+        ? '${i18n.shared.receiveSubaddressTab} #${sub.index}'
+        : i18n.shared.receiveAddressHeading('Monero');
 
     if (isDesktop) {
       return DesktopShell(
         active: DesktopNav.home,
         child: DesktopReceiveView(
-          title: i18n.receiveTitle,
+          title: i18n.shared.receiveTitle,
           backLabel: i18n.navigationBarWallet,
-          copyLabel: i18n.receiveCopyAddress,
+          copyLabel: i18n.shared.receiveCopyAddress,
           qrHint: i18n.receiveQrHint,
           ready: ready,
           address: address ?? '',
           qrHeading: ready ? qrHeading : '',
-          tabLabels: canToggle ? [i18n.receiveSubaddressTab, i18n.receivePrimaryTab] : null,
+          tabLabels: canToggle
+              ? [i18n.shared.receiveSubaddressTab, i18n.shared.receivePrimaryTab]
+              : null,
           selectedTab: _showSubaddress ? 0 : 1,
           onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
           warning: warning,
@@ -149,10 +152,10 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
 
     return ReceiveView(
       labels: ReceiveLabels(
-        title: i18n.receiveTitle,
-        copyAddress: i18n.receiveCopyAddress,
-        enlargeQr: i18n.receiveEnlargeQr,
-        shrinkQr: i18n.receiveShrinkQr,
+        title: i18n.shared.receiveTitle,
+        copyAddress: i18n.shared.receiveCopyAddress,
+        enlargeQr: i18n.shared.receiveEnlargeQr,
+        shrinkQr: i18n.shared.receiveShrinkQr,
       ),
       onBack: () => Navigator.of(context).pop(),
       onShare: _isMobile ? (origin) => _share(address!, origin) : null,
@@ -162,7 +165,9 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       iconAsset: 'assets/icons/monero.svg',
       coinName: null,
       blockchainSubtitle: null,
-      tabLabels: canToggle ? [i18n.receiveSubaddressTab, i18n.receivePrimaryTab] : null,
+      tabLabels: canToggle
+          ? [i18n.shared.receiveSubaddressTab, i18n.shared.receivePrimaryTab]
+          : null,
       selectedTab: _showSubaddress ? 0 : 1,
       onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
       address: address ?? '',
@@ -184,11 +189,11 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     ({int index, String address})? sub,
   ) {
     if (isDemoMode) return null;
-    if (subSupported == false) return i18n.receiveServerNoSubaddressesWarn;
-    if (sub == null) return i18n.receiveSubaddressUnavailableWarn;
-    if (!_showSubaddress) return i18n.receivePrimaryAddressWarn;
+    if (subSupported == false) return i18n.shared.receiveServerNoSubaddressesWarn;
+    if (sub == null) return i18n.shared.receiveSubaddressUnavailableWarn;
+    if (!_showSubaddress) return i18n.shared.receivePrimaryAddressWarn;
     if (wallet.unusedSubaddressIndexIsSupported == false) {
-      return i18n.receiveMaxSubaddressesReachedWarn;
+      return i18n.shared.receiveMaxSubaddressesReachedWarn;
     }
     return null;
   }

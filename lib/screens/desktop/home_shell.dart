@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -14,8 +15,8 @@ enum DesktopNav { home, history, addressBook, settings }
 SubPageChrome subPageChrome(BuildContext context) {
   final i18n = AppLocalizations.of(context)!;
   return SubPageChrome(
-    back: i18n.back,
-    parent: i18n.navigationBarSettings,
+    back: i18n.shared.back,
+    parent: i18n.shared.navigationBarSettings,
     desktopShell: (page) => DesktopShell(active: DesktopNav.settings, child: page),
   );
 }
@@ -140,32 +141,37 @@ class _DesktopShellState extends State<DesktopShell> {
               '/wallet_home',
             ),
             const SizedBox(height: 2),
-            _navItem(DesktopNav.history, Icons.history, i18n.navigationBarHistory, '/history'),
+            _navItem(
+              DesktopNav.history,
+              Icons.history,
+              i18n.shared.navigationBarHistory,
+              '/history',
+            ),
             const SizedBox(height: 2),
             _navItem(
               DesktopNav.addressBook,
               Icons.people_outline,
-              i18n.addressBookTitle,
+              i18n.shared.addressBookTitle,
               '/address_book',
             ),
             const Spacer(),
             // Settings opens as a modal over the current screen (not a page).
             _navTile(
               icon: Icons.tune,
-              label: i18n.navigationBarSettings,
+              label: i18n.shared.navigationBarSettings,
               active: false,
               onTap: () => showSettingsSheet(context),
             ),
             const SizedBox(height: 6),
             TorStatusPill(
               labels: TorStatusLabels(
-                connected: i18n.homeTorConnected,
-                connecting: i18n.homeTorConnecting,
-                disconnected: i18n.homeTorDisconnected,
-                off: i18n.homeTorOff,
-                externalConnected: i18n.homeTorExternalConnected,
-                externalConnecting: i18n.homeTorExternalConnecting,
-                externalDisconnected: i18n.homeTorExternalDisconnected,
+                connected: i18n.shared.homeTorConnected,
+                connecting: i18n.shared.homeTorConnecting,
+                disconnected: i18n.shared.homeTorDisconnected,
+                off: i18n.shared.homeTorOff,
+                externalConnected: i18n.shared.homeTorExternalConnected,
+                externalConnecting: i18n.shared.homeTorExternalConnecting,
+                externalDisconnected: i18n.shared.homeTorExternalDisconnected,
               ),
             ),
             if (_version.isNotEmpty)

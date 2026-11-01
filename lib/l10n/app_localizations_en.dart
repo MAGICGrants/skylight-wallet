@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -584,15 +583,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receivePrimaryAddressWarn =>
-      'Warning: Unless you know what you\'re doing, please use subaddresses for better privacy.';
+      'Unless you know what you\'re doing, please use subaddresses for better privacy.';
 
   @override
   String get receiveServerNoSubaddressesWarn =>
-      'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them.';
+      'This server does not support subaddresses. For better privacy, consider using a server that supports them.';
 
   @override
   String get receiveSubaddressUnavailableWarn =>
-      'Warning: You need to configure Monero to enable subaddresses, which better protect your privacy.';
+      'You need to configure Monero to enable subaddresses, which better protect your privacy.';
 
   @override
   String get receiveMaxSubaddressesReachedWarn =>

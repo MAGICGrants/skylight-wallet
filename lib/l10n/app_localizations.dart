@@ -1146,19 +1146,19 @@ abstract class AppLocalizations {
   /// No description provided for @receivePrimaryAddressWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: Unless you know what you\'re doing, please use subaddresses for better privacy.'**
+  /// **'Unless you know what you\'re doing, please use subaddresses for better privacy.'**
   String get receivePrimaryAddressWarn;
 
   /// No description provided for @receiveServerNoSubaddressesWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: This server does not support subaddresses. For better privacy, consider using a server that supports them.'**
+  /// **'This server does not support subaddresses. For better privacy, consider using a server that supports them.'**
   String get receiveServerNoSubaddressesWarn;
 
   /// No description provided for @receiveSubaddressUnavailableWarn.
   ///
   /// In en, this message translates to:
-  /// **'Warning: You need to configure Monero to enable subaddresses, which better protect your privacy.'**
+  /// **'You need to configure Monero to enable subaddresses, which better protect your privacy.'**
   String get receiveSubaddressUnavailableWarn;
 
   /// No description provided for @receiveMaxSubaddressesReachedWarn.

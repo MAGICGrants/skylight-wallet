@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// Optional arguments for the scan route. When [accept] is given, the scanner
@@ -22,7 +23,7 @@ class ScanQrScreen extends StatelessWidget {
     final args = ModalRoute.of(context)?.settings.arguments as ScanQrArgs?;
 
     return ScanQrView(
-      title: i18n.scanQrTitle,
+      title: i18n.shared.scanQrTitle,
       accept: args?.accept,
       invalidMessage: args?.invalidMessage,
       onResult: (text) => Navigator.pop(context, text),

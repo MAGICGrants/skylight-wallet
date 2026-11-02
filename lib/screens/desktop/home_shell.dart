@@ -3,62 +3,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/screens/settings.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// The top-level desktop destinations, mirroring the mobile navigation bar.
 enum DesktopNav { home, history, addressBook, settings }
 
-/// Shared style for a desktop screen's large title (Settings, Contacts, …).
-TextStyle get desktopTitleStyle => TextStyle(
-  fontFamily: 'Ubuntu',
-  fontSize: 26,
-  height: 1.2,
-  fontWeight: FontWeight.w700,
-  color: BrandColors.ink,
-);
-
-/// The "‹ label" back link at the top of a desktop sub-screen (receive, send,
-/// ToS, …) — the shared back affordance in place of a mobile app bar.
-class DesktopBackLink extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const DesktopBackLink({super.key, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    // Sized to its content (left-aligned) so the hover/ripple doesn't span the
-    // full parent width; a little right padding keeps the ripple off the label.
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: InkWell(
-        mouseCursor: WidgetStateMouseCursor.clickable,
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 4, 4, 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.chevron_left, size: 18, color: BrandColors.primary),
-              const SizedBox(width: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Ubuntu',
-                  fontSize: 12.5,
-                  height: 1,
-                  fontWeight: FontWeight.w500,
-                  color: BrandColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+/// The chrome for wallet_ui's shared sub-pages (the legal pages): the back
+/// links' strings, and Settings' place in the sidebar when opened from there.
+SubPageChrome subPageChrome(BuildContext context) {
+  final i18n = AppLocalizations.of(context)!;
+  return SubPageChrome(
+    back: i18n.shared.back,
+    parent: i18n.shared.navigationBarSettings,
+    desktopShell: (page) => DesktopShell(active: DesktopNav.settings, child: page),
+  );
 }
 
 /// Two-pane desktop chrome: a fixed left sidebar (brand, nav, Tor status,
@@ -181,32 +141,37 @@ class _DesktopShellState extends State<DesktopShell> {
               '/wallet_home',
             ),
             const SizedBox(height: 2),
-            _navItem(DesktopNav.history, Icons.history, i18n.navigationBarHistory, '/history'),
+            _navItem(
+              DesktopNav.history,
+              Icons.history,
+              i18n.shared.navigationBarHistory,
+              '/history',
+            ),
             const SizedBox(height: 2),
             _navItem(
               DesktopNav.addressBook,
               Icons.people_outline,
-              i18n.addressBookTitle,
+              i18n.shared.addressBookTitle,
               '/address_book',
             ),
             const Spacer(),
             // Settings opens as a modal over the current screen (not a page).
             _navTile(
               icon: Icons.tune,
-              label: i18n.navigationBarSettings,
+              label: i18n.shared.navigationBarSettings,
               active: false,
               onTap: () => showSettingsSheet(context),
             ),
             const SizedBox(height: 6),
             TorStatusPill(
               labels: TorStatusLabels(
-                connected: i18n.homeTorConnected,
-                connecting: i18n.homeTorConnecting,
-                disconnected: i18n.homeTorDisconnected,
-                off: i18n.homeTorOff,
-                externalConnected: i18n.homeTorExternalConnected,
-                externalConnecting: i18n.homeTorExternalConnecting,
-                externalDisconnected: i18n.homeTorExternalDisconnected,
+                connected: i18n.shared.homeTorConnected,
+                connecting: i18n.shared.homeTorConnecting,
+                disconnected: i18n.shared.homeTorDisconnected,
+                off: i18n.shared.homeTorOff,
+                externalConnected: i18n.shared.homeTorExternalConnected,
+                externalConnecting: i18n.shared.homeTorExternalConnecting,
+                externalDisconnected: i18n.shared.homeTorExternalDisconnected,
               ),
             ),
             if (_version.isNotEmpty)

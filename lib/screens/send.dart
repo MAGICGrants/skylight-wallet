@@ -16,6 +16,7 @@ import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
@@ -175,7 +176,7 @@ class _SendScreenState extends State<SendScreen> {
     final result = await Navigator.pushNamed(
       context,
       '/scan_qr',
-      arguments: ScanQrArgs(accept: accept, invalidMessage: i18n.scanQrUnexpectedCode),
+      arguments: ScanQrArgs(accept: accept, invalidMessage: i18n.shared.scanQrUnexpectedCode),
     );
 
     if (result == null || result is! String) return;
@@ -217,11 +218,11 @@ class _SendScreenState extends State<SendScreen> {
     final contact = await showContactPickerSheet<Contact>(
       context: context,
       labels: ContactPickerLabels(
-        title: i18n.sendPickContactTitle,
-        searchHint: i18n.addressBookSearchHint,
-        cancel: i18n.cancel,
-        noContacts: i18n.addressBookNoContacts,
-        noResults: i18n.addressBookNoSearchResults,
+        title: i18n.shared.sendPickContactTitle,
+        searchHint: i18n.shared.addressBookSearchHint,
+        cancel: i18n.shared.cancel,
+        noContacts: i18n.shared.addressBookNoContacts,
+        noResults: i18n.shared.addressBookNoSearchResults,
       ),
       headerIcon: SheetIcon(
         icon: Icons.people,
@@ -334,8 +335,8 @@ class _SendScreenState extends State<SendScreen> {
         if (setErrors) {
           setState(() {
             _destinationAddressError = _openAliasOff
-                ? i18n.sendOpenAliasDisabledError
-                : i18n.sendOpenAliasResolveError;
+                ? i18n.shared.sendOpenAliasDisabledError
+                : i18n.shared.sendOpenAliasResolveError;
           });
         }
         return false;
@@ -352,7 +353,7 @@ class _SendScreenState extends State<SendScreen> {
     if (_amount.baseUnits > (wallet.unlockedBalanceBaseUnits ?? BigInt.zero)) {
       if (setErrors) {
         setState(() {
-          _amountError = i18n.sendInsufficientBalanceError;
+          _amountError = i18n.shared.sendInsufficientBalanceError;
         });
         return false;
       }
@@ -432,7 +433,7 @@ class _SendScreenState extends State<SendScreen> {
           _isLoadingFees = false;
         });
 
-        showBrandToast(context, i18n.sendFailedToGetFeesError);
+        showBrandToast(context, i18n.shared.sendFailedToGetFeesError);
       }
     }
   }
@@ -474,8 +475,8 @@ class _SendScreenState extends State<SendScreen> {
         setState(() {
           _isLoading = false;
           _destinationAddressError = _openAliasOff
-              ? i18n.sendOpenAliasDisabledError
-              : i18n.sendOpenAliasResolveError;
+              ? i18n.shared.sendOpenAliasDisabledError
+              : i18n.shared.sendOpenAliasResolveError;
         });
         return;
       }
@@ -520,16 +521,16 @@ class _SendScreenState extends State<SendScreen> {
         final approxAmount = double.tryParse(_amount.coinText) ?? 0;
         if (wallet.unlockedBalance! > approxAmount) {
           setState(() {
-            _amountError = i18n.sendInsufficientBalanceToCoverFeeError;
+            _amountError = i18n.shared.sendInsufficientBalanceToCoverFeeError;
           });
         } else {
           setState(() {
-            _amountError = i18n.sendInsufficientBalanceError;
+            _amountError = i18n.shared.sendInsufficientBalanceError;
           });
         }
       } else {
         if (mounted) {
-          showBrandToast(context, i18n.unknownError);
+          showBrandToast(context, i18n.shared.unknownError);
         }
       }
     }
@@ -567,13 +568,13 @@ class _SendScreenState extends State<SendScreen> {
     final committed = await showConfirmSendSheet(
       context: context,
       labels: ConfirmSendLabels(
-        title: i18n.confirmSendTitle,
-        description: i18n.confirmSendDescription,
-        amount: i18n.amount,
-        networkFee: i18n.networkFee,
-        address: i18n.address,
-        send: i18n.sendSendButton,
-        cancel: i18n.cancel,
+        title: i18n.shared.confirmSendTitle,
+        description: i18n.shared.confirmSendDescription,
+        amount: i18n.shared.amount,
+        networkFee: i18n.shared.networkFee,
+        address: i18n.shared.address,
+        send: i18n.shared.sendSendButton,
+        cancel: i18n.shared.cancel,
       ),
       coinSymbol: 'XMR',
       amountText: '${tx.amount.toStringAsFixed(12)} XMR',
@@ -586,7 +587,9 @@ class _SendScreenState extends State<SendScreen> {
       contactName: contactName,
       contactAddress: contactAddress,
       showHighFeeWarning: showHighFeeWarning,
-      highFeeWarning: showHighFeeWarning ? i18n.confirmSendHighFeeWarning(_highFeeToken) : null,
+      highFeeWarning: showHighFeeWarning
+          ? i18n.shared.confirmSendHighFeeWarning(_highFeeToken)
+          : null,
       highFeeToken: _highFeeToken,
       highFeePercent: showHighFeeWarning ? '${(feeRatio * 100).round()}%' : null,
       onConfirm: () => _commitTx(
@@ -639,16 +642,16 @@ class _SendScreenState extends State<SendScreen> {
                     color: BrandColors.warning,
                   ),
                   const SizedBox(width: 11),
-                  Expanded(child: Text(i18n.warning, style: BrandText.sheetTitle)),
+                  Expanded(child: Text(i18n.shared.warning, style: BrandText.sheetTitle)),
                 ],
               ),
               const SizedBox(height: 7),
               Text(
-                i18n.txDetailsUnknownStatus,
+                i18n.shared.txDetailsUnknownStatus,
                 style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
               ),
               const SizedBox(height: 18),
-              BrandButton(label: i18n.close, onPressed: () => Navigator.pop(sheetContext)),
+              BrandButton(label: i18n.shared.close, onPressed: () => Navigator.pop(sheetContext)),
             ],
           ),
         ),
@@ -675,11 +678,11 @@ class _SendScreenState extends State<SendScreen> {
         onUnresolved();
         return;
       }
-      if (mounted) showBrandToast(context, i18n.unknownError);
+      if (mounted) showBrandToast(context, i18n.shared.unknownError);
       rethrow;
     } on RequestNotSentException {
       // Nothing was sent: show a connectivity error and close the sheet.
-      if (mounted) showBrandToast(context, i18n.sendNoConnectionError);
+      if (mounted) showBrandToast(context, i18n.shared.sendNoConnectionError);
       onConnectionFailed();
       return;
     } on FormatException catch (error) {
@@ -694,7 +697,7 @@ class _SendScreenState extends State<SendScreen> {
     } catch (error) {
       log(LogLevel.error, error.toString());
       if (mounted) {
-        showBrandToast(context, i18n.unknownError);
+        showBrandToast(context, i18n.shared.unknownError);
       }
       rethrow;
     }
@@ -789,20 +792,24 @@ class _SendScreenState extends State<SendScreen> {
 
     return SendView(
       labels: SendLabels(
-        title: i18n.sendTitle,
-        toLabel: i18n.sendToLabel,
-        amount: i18n.amount,
-        priorityHeading: i18n.sendPriorityHeading,
-        networkFee: i18n.sendNetworkFee,
-        sendButton: i18n.sendSendButton,
-        cancel: i18n.cancel,
-        pasteButton: i18n.sendPasteButton,
-        scanButton: i18n.sendScanButton,
-        contactsButton: i18n.sendContactsButton,
-        maxButton: i18n.sendMaxButton,
-        addressHint: i18n.address,
-        priorityLabels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
-        switchUnit: i18n.sendSwitchUnit,
+        title: i18n.shared.sendTitle,
+        toLabel: i18n.shared.sendToLabel,
+        amount: i18n.shared.amount,
+        priorityHeading: i18n.shared.sendPriorityHeading,
+        networkFee: i18n.shared.sendNetworkFee,
+        sendButton: i18n.shared.sendSendButton,
+        cancel: i18n.shared.cancel,
+        pasteButton: i18n.shared.sendPasteButton,
+        scanButton: i18n.shared.sendScanButton,
+        contactsButton: i18n.shared.sendContactsButton,
+        maxButton: i18n.shared.sendMaxButton,
+        addressHint: i18n.shared.address,
+        priorityLabels: [
+          i18n.shared.sendPriorityLow,
+          i18n.shared.sendPriorityNormal,
+          i18n.shared.sendPriorityHigh,
+        ],
+        switchUnit: i18n.shared.sendSwitchUnit,
       ),
       onBack: () => Navigator.of(context).pop(),
       addressController: _destinationAddressController,
@@ -819,7 +826,7 @@ class _SendScreenState extends State<SendScreen> {
       amount: _amount,
       amountError: _amountError,
       onMax: _setBalanceAsSendAmount,
-      availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
+      availableText: '${_amountText(available)} ${i18n.shared.sendAvailableSuffix}',
       availableLeading: xmr != null
           ? CoinMark(coinSymbol: xmr.coinSymbol, iconAsset: xmr.iconAsset, size: 16)
           : const SizedBox(width: 16, height: 16),
@@ -850,7 +857,7 @@ class _SendScreenState extends State<SendScreen> {
           onTap: () => Navigator.pop(context),
         ),
         const SizedBox(height: 16),
-        Text(i18n.sendTitle, style: desktopTitleStyle),
+        Text(i18n.shared.sendTitle, style: desktopTitleStyle),
         const SizedBox(height: 24),
         _sendForm(context, i18n, quote, available, canSend),
       ],
@@ -867,10 +874,10 @@ class _SendScreenState extends State<SendScreen> {
     final formColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _dField(i18n.sendToLabel, _dToCard(i18n)),
+        _dField(i18n.shared.sendToLabel, _dToCard(i18n)),
         if (_destinationAddressError.isNotEmpty) _dError(_destinationAddressError),
         const SizedBox(height: 16),
-        _dField(i18n.amount, _dAmountCard(i18n, available)),
+        _dField(i18n.shared.amount, _dAmountCard(i18n, available)),
         if (_amountError.isNotEmpty) _dError(_amountError),
       ],
     );
@@ -878,12 +885,16 @@ class _SendScreenState extends State<SendScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _dField(
-          i18n.sendPriorityHeading,
+          i18n.shared.sendPriorityHeading,
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               BrandSegmented(
-                labels: [i18n.sendPriorityLow, i18n.sendPriorityNormal, i18n.sendPriorityHigh],
+                labels: [
+                  i18n.shared.sendPriorityLow,
+                  i18n.shared.sendPriorityNormal,
+                  i18n.shared.sendPriorityHigh,
+                ],
                 selectedIndex: _selectedPriority,
                 onSelect: _setPriority,
               ),
@@ -892,7 +903,7 @@ class _SendScreenState extends State<SendScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    i18n.sendNetworkFee,
+                    i18n.shared.sendNetworkFee,
                     style: TextStyle(
                       fontFamily: 'Ubuntu',
                       fontSize: 12.5,
@@ -907,12 +918,12 @@ class _SendScreenState extends State<SendScreen> {
         ),
         const SizedBox(height: 18),
         BrandButton(
-          label: i18n.sendSendButton,
+          label: i18n.shared.sendSendButton,
           loading: _isLoading,
           onPressed: canSend ? _send : null,
         ),
         const SizedBox(height: 9),
-        BrandButton.ghost(label: i18n.cancel, onPressed: () => Navigator.pop(context)),
+        BrandButton.ghost(label: i18n.shared.cancel, onPressed: () => Navigator.pop(context)),
         const SizedBox(height: 16),
         Text(
           i18n.sendIrreversibleNote,
@@ -1028,7 +1039,7 @@ class _SendScreenState extends State<SendScreen> {
                 color: BrandColors.ink,
               ),
               decoration: InputDecoration.collapsed(
-                hintText: i18n.address,
+                hintText: i18n.shared.address,
                 hintStyle: TextStyle(
                   fontFamily: 'Ubuntu Mono',
                   fontSize: 13.5,
@@ -1040,9 +1051,9 @@ class _SendScreenState extends State<SendScreen> {
           const SizedBox(height: 14),
           Row(
             children: [
-              _dPill(Icons.content_paste, i18n.sendPasteButton, _pasteAddressFromClipboard),
+              _dPill(Icons.content_paste, i18n.shared.sendPasteButton, _pasteAddressFromClipboard),
               const SizedBox(width: 8),
-              _dPill(Icons.people_outline, i18n.sendContactsButton, _showContactPicker),
+              _dPill(Icons.people_outline, i18n.shared.sendContactsButton, _showContactPicker),
             ],
           ),
         ],
@@ -1056,10 +1067,10 @@ class _SendScreenState extends State<SendScreen> {
         listenable: _amount,
         builder: (_, _) => SendAmountCard(
           amount: _amount,
-          maxLabel: i18n.sendMaxButton,
-          switchUnitLabel: i18n.sendSwitchUnit,
+          maxLabel: i18n.shared.sendMaxButton,
+          switchUnitLabel: i18n.shared.sendSwitchUnit,
           onMax: _setBalanceAsSendAmount,
-          availableText: '${_amountText(available)} ${i18n.sendAvailableSuffix}',
+          availableText: '${_amountText(available)} ${i18n.shared.sendAvailableSuffix}',
           onAvailableTap: _setBalanceAsSendAmount,
         ),
       ),

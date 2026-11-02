@@ -151,13 +151,7 @@ class DesktopReceiveView extends StatelessWidget {
             ),
           ),
         ),
-        if (warning != null) ...[
-          const SizedBox(height: 12),
-          Text(
-            warning!,
-            style: BrandText.caption.copyWith(color: BrandColors.warning, height: 1.4),
-          ),
-        ],
+        if (warning != null) ...[const SizedBox(height: 12), WarningCard.text(warning!)],
         const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,

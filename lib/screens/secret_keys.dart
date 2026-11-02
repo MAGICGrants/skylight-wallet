@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/util/secure_screen.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -11,7 +12,7 @@ import 'package:wallet_fhse/security_keys_ui.dart' show passAppLock;
 /// Lock passes ([passAppLock]): a sheet is not a route, so the `/secret_keys`
 /// AppLockGate does not cover it. Mobile keeps that route.
 Future<void> showSecretKeysSheet(BuildContext context) async {
-  final reason = AppLocalizations.of(context)!.revealSeedAuthReason;
+  final reason = AppLocalizations.of(context)!.shared.revealSeedAuthReason;
   if (!await passAppLock(context, reason: reason) || !context.mounted) return;
   return showBrandSheet<void>(
     context: context,
@@ -77,7 +78,7 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
     if (value.isEmpty) return;
     SecureClipboard.copy(value);
     final i18n = AppLocalizations.of(context)!;
-    showCopyToast(context, i18n.copiedToClipboard);
+    showCopyToast(context, i18n.shared.copiedToClipboard);
   }
 
   @override
@@ -103,7 +104,7 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
       title: i18n.secretKeysTitle,
       description: i18n.secretKeysDescription,
       warning: i18n.secretKeysWarning,
-      revealLabel: i18n.generateSeedReveal,
+      revealLabel: i18n.shared.generateSeedReveal,
       onCopy: _copy,
       asModal: widget.asModal,
       onBack: widget.asModal ? null : () => Navigator.pop(context),

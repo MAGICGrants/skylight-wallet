@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/screens/desktop/connection_view.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/widgets/connection_settings_form.dart';
@@ -19,11 +20,11 @@ class ConnectionSetupScreen extends StatelessWidget {
 
     if (isDesktop) {
       return DesktopConnectionView(
-        title: i18n.lwsSetupTitle,
+        title: i18n.shared.connectionSetupTitle,
         description: i18n.lwsSetupDescription,
         noteServer: i18n.onboardingConnectionNoteServer,
         noteChangeable: i18n.onboardingConnectionNoteChangeable,
-        saveButtonLabel: i18n.lwsSetupContinueButton,
+        saveButtonLabel: i18n.shared.continueText,
         onSaved: onSaved,
         onBack: () => Navigator.pop(context),
       );
@@ -46,14 +47,14 @@ class ConnectionSetupScreen extends StatelessWidget {
                     center: const StepDots(count: 6, index: 2),
                   ),
                   const SizedBox(height: BrandSpacing.lg),
-                  Text(i18n.lwsSetupTitle, style: BrandText.title),
+                  Text(i18n.shared.connectionSetupTitle, style: BrandText.title),
                   const SizedBox(height: BrandSpacing.sm),
                   Text(i18n.lwsSetupDescription, style: BrandText.bodyMuted),
                   const SizedBox(height: BrandSpacing.xl),
                   Expanded(
                     child: SingleChildScrollView(
                       child: ConnectionSettingsForm(
-                        saveButtonLabel: i18n.lwsSetupContinueButton,
+                        saveButtonLabel: i18n.shared.continueText,
                         onSaved: onSaved,
                       ),
                     ),

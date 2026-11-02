@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/language_model.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
@@ -22,9 +23,9 @@ Future<void> showLanguageSheet(BuildContext context) {
     labels: (context) {
       final i18n = AppLocalizations.of(context)!;
       return SettingsPickerLabels(
-        title: i18n.settingsLanguageLabel,
-        subtitle: i18n.settingsLanguageSheetSubtitle,
-        done: i18n.done,
+        title: i18n.shared.settingsLanguageLabel,
+        subtitle: i18n.shared.settingsLanguageSheetSubtitle,
+        done: i18n.shared.done,
       );
     },
     options: [

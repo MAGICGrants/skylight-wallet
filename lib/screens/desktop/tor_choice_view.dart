@@ -35,7 +35,8 @@ class DesktopTorChoiceView extends StatefulWidget {
 class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
   static const _builtIn = 0, _external = 1, _noTor = 2;
 
-  int? _selected;
+  // Built-in, the recommended mode, starts selected, as on the phone screen.
+  int _selected = _builtIn;
   final _portController = TextEditingController(text: '9050');
   final bool _useOrbot = false;
   bool _testing = false;
@@ -47,7 +48,7 @@ class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
     super.dispose();
   }
 
-  bool get _canContinue => _selected != null && (_selected != _external || _testOk == true);
+  bool get _canContinue => _selected != _external || _testOk == true;
 
   Future<void> _runTest() async {
     setState(() {
@@ -74,13 +75,11 @@ class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
       continueLabel: l.continueText,
       continueEnabled: _canContinue,
       onBack: widget.onBack,
-      onContinue: _selected == null
-          ? null
-          : () => widget.onContinue(
-              modeIndex: _selected!,
-              port: _portController.text.trim(),
-              useOrbot: _useOrbot,
-            ),
+      onContinue: () => widget.onContinue(
+        modeIndex: _selected,
+        port: _portController.text.trim(),
+        useOrbot: _useOrbot,
+      ),
       notes: [
         OnboardingNote(Icons.lock_outline, widget.notePrivacy),
         OnboardingNote(Icons.tune, widget.noteChangeable),

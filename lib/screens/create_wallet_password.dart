@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/desktop/create_password_view.dart';
 import 'package:skylight_wallet/util/logging.dart';
@@ -66,14 +67,14 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
     final args = ModalRoute.of(context)?.settings.arguments as CreateWalletPasswordArgs?;
 
     final labels = CreatePasswordLabels(
-      title: i18n.createWalletPasswordTitle,
-      description: i18n.createWalletPasswordDescription,
-      passwordHint: i18n.createWalletPasswordHint,
-      confirmPasswordHint: i18n.createWalletConfirmPasswordHint,
-      submit: i18n.continueText,
-      fieldEmptyError: i18n.fieldEmptyError,
-      tooShortError: i18n.passwordTooShortError,
-      doNotMatchError: i18n.passwordsDoNotMatchError,
+      title: i18n.shared.createWalletPasswordTitle,
+      description: i18n.shared.createWalletPasswordDescription,
+      passwordHint: i18n.shared.createWalletPasswordHint,
+      confirmPasswordHint: i18n.shared.createWalletConfirmPasswordHint,
+      submit: i18n.shared.continueText,
+      fieldEmptyError: i18n.shared.fieldEmptyError,
+      tooShortError: i18n.shared.passwordTooShortError,
+      doNotMatchError: i18n.shared.passwordsDoNotMatchError,
     );
 
     void submit(String password) {
@@ -83,11 +84,11 @@ class _CreateWalletPasswordScreenState extends State<CreateWalletPasswordScreen>
     if (isDesktop) {
       return DesktopCreatePasswordView(
         labels: labels,
-        continueText: i18n.continueText,
-        noteLaunch: i18n.onboardingPasswordNoteLaunch,
-        noteNotCloud: i18n.onboardingPasswordNoteNotCloud,
-        strongLabel: i18n.onboardingPasswordStrong,
-        matchLabel: i18n.onboardingPasswordMatch,
+        continueText: i18n.shared.continueText,
+        noteLaunch: i18n.shared.onboardingPasswordNoteLaunch,
+        noteNotCloud: i18n.shared.onboardingPasswordNoteNotCloud,
+        strongLabel: i18n.shared.onboardingPasswordStrong,
+        matchLabel: i18n.shared.onboardingPasswordMatch,
         loading: _isLoading,
         onSubmit: submit,
         onBack: () => Navigator.pop(context),

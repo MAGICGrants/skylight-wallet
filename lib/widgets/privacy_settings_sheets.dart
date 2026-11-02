@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart' show OpenAliasMode;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/widgets/fiat_api_settings_form.dart';
@@ -18,12 +19,13 @@ double _sheetMaxHeight(BuildContext sheetContext) {
 }
 
 /// Settings popup chrome, matching Spice's sheets: a handle, an icon + title
-/// header, then the form scrolling below (the form carries its own save
-/// button and pops on success).
+/// header, then the form scrolling below (the form carries its own Save and
+/// Cancel buttons, given an `onCancel`, and pops on success).
 Future<void> showSettingsFormSheet(
   BuildContext context, {
   required IconData icon,
   required String title,
+  String? subtitle,
   required Widget form,
 }) {
   return showBrandSheet<void>(
@@ -45,15 +47,27 @@ Future<void> showSettingsFormSheet(
                 const SheetHandle(),
                 Padding(
                   padding: EdgeInsets.fromLTRB(hpad, 0, hpad, 16),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SheetIcon(
-                        icon: icon,
-                        bg: BrandColors.surfaceTinted,
-                        color: BrandColors.primaryDeep,
+                      Row(
+                        children: [
+                          SheetIcon(
+                            icon: icon,
+                            bg: BrandColors.surfaceTinted,
+                            color: BrandColors.primaryDeep,
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(child: Text(title, style: BrandText.sheetTitle)),
+                        ],
                       ),
-                      const SizedBox(width: 11),
-                      Expanded(child: Text(title, style: BrandText.sheetTitle)),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 7),
+                        Text(
+                          subtitle,
+                          style: BrandText.bodyMuted.copyWith(fontSize: 13, height: 1.5),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -79,15 +93,17 @@ Future<void> showTorSettingsSheet(BuildContext context) {
   return showSettingsFormSheet(
     context,
     icon: Icons.public,
-    title: i18n.torSettingsTitle,
+    title: i18n.shared.torSettingsTitle,
+    subtitle: i18n.torSettingsSheetSubtitle,
     form: Builder(
       builder: (formContext) => TorSettingsForm(
-        saveButtonLabel: i18n.torSettingsSaveButton,
+        saveButtonLabel: i18n.shared.save,
         onSaved: () {
           appWalletOf(formContext).load();
           Provider.of<FiatRateModel>(formContext, listen: false).startService();
           Navigator.pop(formContext);
         },
+        onCancel: () => Navigator.pop(formContext),
       ),
     ),
   );
@@ -99,14 +115,16 @@ Future<void> showFiatApiSettingsSheet(BuildContext context) {
   return showSettingsFormSheet(
     context,
     icon: Icons.attach_money,
-    title: i18n.settingsFiatApiSettingsLabel,
+    title: i18n.shared.settingsFiatApiSettingsLabel,
+    subtitle: i18n.shared.fiatApiSettingsSheetSubtitle,
     form: Builder(
       builder: (formContext) => FiatApiSettingsForm(
-        saveButtonLabel: i18n.torSettingsSaveButton,
+        saveButtonLabel: i18n.shared.save,
         onSaved: () async {
           await Provider.of<FiatRateModel>(formContext, listen: false).startService();
           if (formContext.mounted) Navigator.pop(formContext);
         },
+        onCancel: () => Navigator.pop(formContext),
       ),
     ),
   );
@@ -118,17 +136,17 @@ Future<bool?> showOpenAliasSheet(BuildContext context) {
   return showOpenAliasSettingsSheet(
     context,
     labels: OpenAliasSettingsLabels(
-      title: i18n.settingsOpenAliasSettingsLabel,
-      subtitle: i18n.openAliasSettingsSheetSubtitle,
-      modeLabel: i18n.fiatApiSettingsModeLabel,
-      torOnly: i18n.fiatApiSettingsModeTorOnly,
-      torOnlyDesc: i18n.openAliasModeTorOnlyDesc,
-      clearnet: i18n.fiatApiSettingsModeClearnet,
-      clearnetDesc: i18n.openAliasModeClearnetDesc,
-      disabled: i18n.fiatApiSettingsModeDisabled,
-      disabledDesc: i18n.openAliasModeDisabledDesc,
-      save: i18n.torSettingsSaveButton,
-      cancel: i18n.cancel,
+      title: i18n.shared.settingsOpenAliasSettingsLabel,
+      subtitle: i18n.shared.openAliasSettingsSheetSubtitle,
+      modeLabel: i18n.shared.fiatApiSettingsModeLabel,
+      torOnly: i18n.shared.fiatApiSettingsModeTorOnly,
+      torOnlyDesc: i18n.shared.openAliasModeTorOnlyDesc,
+      clearnet: i18n.shared.clearnetOnlyChoice,
+      clearnetDesc: i18n.shared.openAliasModeClearnetDesc,
+      disabled: i18n.shared.fiatApiSettingsModeDisabled,
+      disabledDesc: i18n.shared.openAliasModeDisabledDesc,
+      save: i18n.shared.save,
+      cancel: i18n.shared.cancel,
     ),
   );
 }

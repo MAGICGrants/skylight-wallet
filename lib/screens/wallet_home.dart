@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/periodic_tasks.dart' show applyBackgroundTaskRegistration;
@@ -40,9 +41,10 @@ typedef _HomeValues = ({
 
 _HomeValues _deriveHome(AppWallet wallet, FiatRateModel fiatRate) {
   final unlockedBalance = wallet.unlockedBalance ?? 0;
-  final unlockedBalanceFiat = fiatRate.rateFor('XMR') is double && wallet.unlockedBalance is double
-      ? wallet.unlockedBalance! * fiatRate.rateFor('XMR')!
-      : null;
+  // Priced as soon as the rate is in, like the coin amount: $0 while the
+  // balance is still syncing, not the placeholder.
+  final rate = fiatRate.rateFor('XMR');
+  final unlockedBalanceFiat = rate != null ? unlockedBalance * rate : null;
 
   var status = StatusIconStatus.fail;
   if (wallet.isFullySynced) {
@@ -143,7 +145,7 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
   void _showTxSuccessToast() {
     final i18n = AppLocalizations.of(context)!;
 
-    showBrandToast(context, i18n.sendTransactionSuccessfullySent);
+    showBrandToast(context, i18n.shared.sendTransactionSuccessfullySent);
   }
 
   Future<void> _openStep(SecurityStep step) => switch (step) {
@@ -172,19 +174,21 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
       fiatRate: fiatRate,
       fiatTotal: v.unlockedBalanceFiat,
       coinText: '${_amountText(v.unlockedBalance)} XMR',
-      fiatErrorTooltip: i18n.homeFiatApiError,
+      fiatErrorTooltip: i18n.shared.homeFiatApiError,
       footer: footer,
     );
     void receive() => Navigator.pushNamed(context, '/receive');
     void send() => Navigator.pushNamed(context, '/send');
-    void swap() => showBrandToast(context, i18n.coinHomeSwapComingSoon);
+    void swap() => showBrandToast(context, i18n.shared.coinHomeSwapComingSoon);
     final incoming = sections.incoming(coins);
     final chart = sections.chart(coins);
     // The server still waiting to approve this wallet, said where it matters.
     final notice = switch (wallet.lwsPendingApproval) {
       null => null,
-      LwsPendingApproval.account => WarningCallout(i18n.lwsAwaitingApprovalAccount),
-      LwsPendingApproval.restoreHeight => WarningCallout(i18n.lwsAwaitingApprovalRestoreHeight),
+      LwsPendingApproval.account => WarningCallout(i18n.shared.lwsAwaitingApprovalAccount),
+      LwsPendingApproval.restoreHeight => WarningCallout(
+        i18n.shared.lwsAwaitingApprovalRestoreHeight,
+      ),
     };
     final checklist = securityChecklistCard(
       checklist: _checklist,
@@ -201,9 +205,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
               : null,
           balance: hero(configured ? ConnectionPills(wallet: cw) : null),
           actions: DesktopHomeActions(
-            receiveLabel: i18n.homeReceive,
-            sendLabel: i18n.homeSend,
-            swapLabel: i18n.coinHomeSwap,
+            receiveLabel: i18n.shared.homeReceive,
+            sendLabel: i18n.shared.homeSend,
+            swapLabel: i18n.shared.coinHomeSwap,
             onReceive: receive,
             onSend: send,
             onSwap: swap,
@@ -225,9 +229,9 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
       notice: notice,
       balance: hero(_ConnectionRow(wallet: wallet, disconnected: v.disconnected)),
       actions: HomeActionRow(
-        receiveLabel: i18n.homeReceive,
-        sendLabel: i18n.homeSend,
-        swapLabel: i18n.coinHomeSwap,
+        receiveLabel: i18n.shared.homeReceive,
+        sendLabel: i18n.shared.homeSend,
+        swapLabel: i18n.shared.coinHomeSwap,
         onReceive: receive,
         onSend: send,
         onSwap: swap,
@@ -257,7 +261,7 @@ class _ConnectionRow extends StatelessWidget {
     if (cw == null || cw.connectionAddress.isEmpty) return const SizedBox.shrink();
     final blocks = wallet.syncBlocksRemaining;
     final trailing = blocks != null
-        ? i18n.homeBlocksRemaining(blocks)
+        ? i18n.shared.homeBlocksRemaining(blocks)
         : disconnected
         ? i18n.homeDisconnected
         : null;
@@ -298,10 +302,10 @@ class _SyncStatusPill extends StatelessWidget {
     final i18n = AppLocalizations.of(context)!;
     final blocks = blocksRemaining;
     final (Color dot, String text) = switch (status) {
-      StatusIconStatus.complete => (BrandColors.success, i18n.homeSynced),
+      StatusIconStatus.complete => (BrandColors.success, i18n.shared.homeSynced),
       StatusIconStatus.loading => (
         BrandColors.warning,
-        blocks != null ? i18n.homeBlocksRemaining(blocks) : i18n.homeSyncing,
+        blocks != null ? i18n.shared.homeBlocksRemaining(blocks) : i18n.shared.homeSyncing,
       ),
       StatusIconStatus.fail => (BrandColors.error, i18n.homeDisconnected),
     };

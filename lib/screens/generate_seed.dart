@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:wallet_domain/wallet_domain.dart' show SeedSource;
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
 import 'package:skylight_wallet/screens/desktop/onboarding_steps.dart';
@@ -100,20 +101,21 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
         logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
         step: 5,
         totalSteps: desktopOnboardingSteps,
-        title: i18n.generateSeedTitle,
-        description: i18n.generateSeedSubtitleRevealed,
+        title: i18n.shared.generateSeedTitle,
+        description: i18n.shared.generateSeedSubtitleRevealed,
         seedWords: _seed ?? const [],
-        birthdayLabel: i18n.generateSeedBirthdayLabel,
-        birthdayReason: i18n.generateSeedBirthdayReason,
+        birthdayLabel: i18n.shared.generateSeedBirthdayLabel,
+        birthdayReason: i18n.shared.generateSeedBirthdayReason,
         birthdayValue: _generated != null
-            ? DateFormat.yMMM(
-                Localizations.localeOf(context).toString(),
-              ).format(_generated!.restoreDate)
+            ? DateFormat.yMMM(Localizations.localeOf(context).toString())
+                  .format(_generated!.restoreDate)
             : null,
-        confirmLabel: i18n.generateSeedConfirm,
-        passwordNote: typesWalletPassword ? i18n.onboardingSeedNotePassword : null,
-        revealLabel: i18n.generateSeedReveal,
-        continueText: i18n.continueText,
+        confirmLabel: i18n.shared.generateSeedConfirm(_seed?.length ?? 0),
+        passwordNote: typesWalletPassword
+            ? i18n.shared.generateSeedPasswordNote(appShortName)
+            : null,
+        revealLabel: i18n.shared.generateSeedReveal,
+        continueText: i18n.shared.continueText,
         loading: _committing,
         onContinue: _continue,
         onBack: () => Navigator.pop(context),
@@ -128,14 +130,14 @@ class _GenerateSeedScreenState extends State<GenerateSeedScreen> with SecureScre
       onContinue: _continue,
       continueLoading: _committing,
       labels: GenerateSeedLabels(
-        titleCovered: i18n.generateSeedTitleCovered,
-        titleRevealed: i18n.generateSeedTitle,
+        titleCovered: i18n.shared.generateSeedTitleCovered,
+        titleRevealed: i18n.shared.generateSeedTitle,
         subtitleCovered: i18n.generateSeedSubtitleCovered,
-        subtitleRevealed: i18n.generateSeedSubtitleRevealed,
-        reveal: i18n.generateSeedReveal,
-        screenshotNote: i18n.generateSeedScreenshotNote,
-        confirm: i18n.generateSeedConfirm,
-        continueText: i18n.continueText,
+        subtitleRevealed: i18n.shared.generateSeedSubtitleRevealed,
+        reveal: i18n.shared.generateSeedReveal,
+        screenshotNote: i18n.shared.generateSeedScreenshotNote,
+        confirm: i18n.shared.generateSeedConfirm(_seed?.length ?? 0),
+        continueText: i18n.shared.continueText,
       ),
     );
   }

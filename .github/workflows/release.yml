@@ -196,7 +196,18 @@ jobs:
             -e SOURCE_DATE_EPOCH \
             -e ANDROID_NDK_HOME="/opt/android-sdk/ndk/$NDK_VERSION" \
             "$BUILDER_IMAGE" \
-            bash -c "cp -a /opt/cargo /tmp/skylight-cargo && export CARGO_HOME=/tmp/skylight-cargo && export PUB_CACHE=/tmp/skylight/.pub-cache && flutter pub get --enforce-lockfile && bash scripts/pin-rust-toolchain.sh && flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi && flutter build appbundle --dart-define=DEMO_MODE=true --release -PplayStore=true"
+            bash -c '
+              set -euo pipefail
+              cp -a /opt/cargo /tmp/skylight-cargo
+              export CARGO_HOME=/tmp/skylight-cargo
+              export PUB_CACHE=/tmp/skylight/.pub-cache
+              flutter pub get --enforce-lockfile
+              bash scripts/pin-rust-toolchain.sh
+              for platform in android-arm android-arm64 android-x64; do
+                flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$platform"
+              done
+              flutter build appbundle --dart-define=DEMO_MODE=true --release -PplayStore=true
+            '
 
           mkdir -p dist
           cp -v build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/skylight-wallet-${VERSION}-arm64-v8a.apk"

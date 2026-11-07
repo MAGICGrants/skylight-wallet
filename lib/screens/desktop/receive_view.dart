@@ -5,9 +5,12 @@ import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// Desktop receive (inside [DesktopShell]): a QR panel on the left, and the
-/// subaddress/primary toggle, address and Copy on the right. Monero-only, so
-/// there is no coin card. Presentational — the screen computes the address /
+/// subaddress/primary/labeled tabs, address and Copy on the right. Monero-only,
+/// so there is no coin card. Presentational — the screen computes the address /
 /// heading / warning and supplies callbacks.
+///
+/// [tabBody] is the Labeled tab's list, which has no single address: it takes
+/// the whole width under the tabs instead of the QR panel and details.
 class DesktopReceiveView extends StatelessWidget {
   final String title;
   final String backLabel;
@@ -22,6 +25,7 @@ class DesktopReceiveView extends StatelessWidget {
   final String? warning;
   final VoidCallback onCopy;
   final VoidCallback onBack;
+  final Widget? tabBody;
 
   const DesktopReceiveView({
     super.key,
@@ -38,6 +42,7 @@ class DesktopReceiveView extends StatelessWidget {
     this.selectedTab = 0,
     this.onSelectTab,
     this.warning,
+    this.tabBody,
   });
 
   @override
@@ -52,32 +57,46 @@ class DesktopReceiveView extends StatelessWidget {
         const SizedBox(height: 16),
         Text(title, style: desktopTitleStyle),
         const SizedBox(height: 24),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // Two columns (QR beside details) only when there's room; below that,
-            // stack the QR above the details.
-            const twoColMinWidth = 640.0;
-            final qr = SizedBox(width: 300, child: _qrCard());
-            if (constraints.maxWidth < twoColMinWidth) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        if (tabBody case final body?) ...[
+          if (tabLabels != null)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: BrandSegmented(
+                dense: true,
+                labels: tabLabels!,
+                selectedIndex: selectedTab,
+                onSelect: onSelectTab ?? (_) {},
+              ),
+            ),
+          const SizedBox(height: 18),
+          ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720), child: body),
+        ] else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Two columns (QR beside details) only when there's room; below that,
+              // stack the QR above the details.
+              const twoColMinWidth = 640.0;
+              final qr = SizedBox(width: 300, child: _qrCard());
+              if (constraints.maxWidth < twoColMinWidth) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(child: qr),
+                    const SizedBox(height: 24),
+                    _details(context),
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: qr),
-                  const SizedBox(height: 24),
-                  _details(context),
+                  qr,
+                  const SizedBox(width: 28),
+                  Expanded(child: _details(context)),
                 ],
               );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                qr,
-                const SizedBox(width: 28),
-                Expanded(child: _details(context)),
-              ],
-            );
-          },
-        ),
+            },
+          ),
       ],
     );
   }

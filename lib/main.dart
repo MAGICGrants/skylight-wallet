@@ -21,6 +21,7 @@ import 'package:skylight_wallet/screens/connection_setup.dart';
 import 'package:skylight_wallet/screens/fiat_api_setup_screen.dart';
 import 'package:skylight_wallet/screens/generate_seed.dart';
 import 'package:skylight_wallet/screens/receive.dart';
+import 'package:skylight_wallet/screens/receive_address.dart';
 import 'package:skylight_wallet/screens/send.dart';
 import 'package:skylight_wallet/screens/create_wallet.dart';
 import 'package:skylight_wallet/screens/create_wallet_password.dart';
@@ -45,7 +46,8 @@ import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/route_policy.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:wallet_backup_platform/backup_ui.dart';
-import 'package:wallet_domain/wallet_domain.dart' show AppSession, WalletManager, parsePaymentUri;
+import 'package:wallet_domain/wallet_domain.dart'
+    show AddressLabelModel, AppSession, WalletManager, parsePaymentUri;
 import 'package:wallet_fhse/security_keys_ui.dart';
 import 'package:wallet_infra/wallet_infra.dart' show HostPlatform;
 
@@ -125,6 +127,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ThemeModel()),
         ChangeNotifierProvider(create: (context) => FiatRateModel()),
         ChangeNotifierProvider(create: (context) => ContactModel()),
+        ChangeNotifierProvider(create: (context) => AddressLabelModel()),
       ],
       child: const _AppRoot(),
     );
@@ -198,6 +201,7 @@ class _AppRootState extends State<_AppRoot>
     '/send': (context) => SendScreen(),
     '/scan_qr': (context) => ScanQrScreen(),
     '/receive': (context) => ReceiveScreen(),
+    '/receive_address': (context) => const ReceiveAddressScreen(),
     '/address_book': (context) => AddressBookScreen(),
     '/history': (context) => const HistoryScreen(),
     '/terms_of_service': (context) => TermsOfServiceScreen(
@@ -222,8 +226,10 @@ class _AppRootState extends State<_AppRoot>
       return RefusedRoute(settings, listed: routePolicy.access.containsKey(settings.name));
     }
     // Desktop: no transition anywhere. Mobile: only between the nav-bar screens;
-    // every other push/pop keeps its normal animation.
-    if (isDesktop || _noTransitionRoutes.contains(settings.name)) {
+    // every other push/pop keeps its normal animation. History opened with an
+    // address to filter by is pushed from that address, not a nav-bar tab.
+    final navBarTab = _noTransitionRoutes.contains(settings.name) && settings.arguments == null;
+    if (isDesktop || navBarTab) {
       return _NoTransitionPageRoute(builder: builder, settings: settings);
     }
     return MaterialPageRoute(builder: builder, settings: settings);

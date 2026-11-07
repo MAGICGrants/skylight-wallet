@@ -40,6 +40,7 @@ void main() {
       '/wallet_home',
       '/send',
       '/receive',
+      '/receive_address',
       '/address_book',
       '/history',
       '/settings',

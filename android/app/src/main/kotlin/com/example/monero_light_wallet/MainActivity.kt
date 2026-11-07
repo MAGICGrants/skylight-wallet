@@ -51,6 +51,7 @@ class MainActivity : FlutterFragmentActivity() {
         // FLAG_SECURE, which would also stop the user's own screenshots; the
         // screens that show a secret add that themselves (SecureScreenMixin).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) window.setHideOverlayWindows(true)
     }
 
     override fun onNewIntent(intent: Intent) {

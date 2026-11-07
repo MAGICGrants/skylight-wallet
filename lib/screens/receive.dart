@@ -1,19 +1,23 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:screen_brightness/screen_brightness.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/app_wallet.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/screens/desktop/receive_view.dart';
+import 'package:skylight_wallet/screens/receive_address.dart';
 import 'package:skylight_wallet/util/logging.dart';
 import 'package:skylight_wallet/util/platform.dart';
+import 'package:skylight_wallet/util/qr_brightness.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
+import 'package:wallet_domain/wallet_domain.dart'
+    show AddressLabelModel, CryptoWallet, UsedReceiveAddress;
 
 class ReceiveScreen extends StatefulWidget {
   const ReceiveScreen({super.key});
@@ -22,58 +26,14 @@ class ReceiveScreen extends StatefulWidget {
   State<ReceiveScreen> createState() => _ReceiveScreenState();
 }
 
-class _ReceiveScreenState extends State<ReceiveScreen> {
-  var _showSubaddress = true;
+/// The tabs, in order: the next unused subaddress, the primary address, and
+/// every used subaddress (the Labeled tab).
+enum _Tab { subaddress, primary, labeled }
 
-  /// Whether the QR is grown to fill the screen. Brightness is held at full for
-  /// exactly as long as this is true, and otherwise left to the system: the
-  /// screen itself never takes it over.
-  var _qrEnlarged = false;
+class _ReceiveScreenState extends State<ReceiveScreen> with QrBrightness {
+  var _tab = _Tab.subaddress;
 
   static bool get _isMobile => Platform.isAndroid || Platform.isIOS;
-
-  @override
-  void dispose() {
-    // Left with the QR still enlarged: hand brightness back on the way out.
-    if (_qrEnlarged) _releaseBrightness();
-    super.dispose();
-  }
-
-  void _toggleQr() {
-    setState(() => _qrEnlarged = !_qrEnlarged);
-    // No await before either call reaches the plugin, and both go down one
-    // method channel, so the platform sees them in tap order: a quick
-    // enlarge-shrink cannot land the raise after the release.
-    _qrEnlarged ? _maximizeBrightness() : _releaseBrightness();
-  }
-
-  /// Turns the screen up while the QR is enlarged, so it still scans in
-  /// daylight.
-  Future<void> _maximizeBrightness() async {
-    try {
-      await ScreenBrightness().setApplicationScreenBrightness(1.0);
-    } catch (error) {
-      log(LogLevel.warn, 'Could not raise screen brightness for the QR code: $error');
-    }
-  }
-
-  /// Hands brightness back to the system.
-  ///
-  /// This resets the override rather than setting it back to whatever the
-  /// system brightness read before. An application override is an absolute
-  /// value pinned on the window, and while one is set Android ignores the
-  /// system brightness entirely: writing the old value back left the screen
-  /// deaf to auto-brightness and to the user's own slider until the app was
-  /// restarted (skylight-wallet#169). Resetting drops the override, so the
-  /// window follows the system setting again -- which is both the brightness
-  /// the user had before and the one they can keep changing.
-  Future<void> _releaseBrightness() async {
-    try {
-      await ScreenBrightness().resetApplicationScreenBrightness();
-    } catch (error) {
-      log(LogLevel.warn, 'Could not hand screen brightness back to the system: $error');
-    }
-  }
 
   void _copyAddressToClipboard(String address) {
     final i18n = AppLocalizations.of(context)!;
@@ -108,24 +68,44 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     // they can name different subaddresses.
     final sub = isDemoMode ? null : wallet.unusedSubaddress;
     final subSupported = wallet.serverSupportsSubaddresses;
-    // The toggle needs a subaddress to toggle to. Until there is one (the
-    // server has not answered yet, or cannot be reached at all) the primary
-    // address is shown: every server scans it. Waiting for the subaddress
-    // instead spun forever with no connection.
+    // The tabs need a subaddress to show. Until there is one (the server has
+    // not answered yet, or cannot be reached at all) the primary address is
+    // shown: every server scans it. Waiting for the subaddress instead spun
+    // forever with no connection.
     final canToggle = subSupported == true && sub != null;
+    final tab = canToggle ? _tab : _Tab.primary;
 
     String? address;
-    if (canToggle && _showSubaddress) {
-      address = sub.address;
+    if (tab == _Tab.subaddress) {
+      address = sub!.address;
     } else if (primaryAddress.isNotEmpty) {
       address = primaryAddress;
     }
 
     final ready = address != null;
-    final warning = _warning(i18n, wallet, isDemoMode, subSupported, sub);
-    final qrHeading = canToggle && _showSubaddress
-        ? '${i18n.shared.receiveSubaddressTab} #${sub.index}'
+    final warning = tab == _Tab.labeled
+        ? null
+        : _warning(i18n, wallet, isDemoMode, subSupported, sub, tab);
+    final qrHeading = tab == _Tab.subaddress
+        ? '${i18n.shared.receiveSubaddressTab} #${sub!.index}'
         : i18n.shared.receiveAddressHeading('Monero');
+    final tabLabels = canToggle
+        ? [
+            i18n.shared.receiveSubaddressTab,
+            i18n.shared.receivePrimaryTab,
+            i18n.shared.receiveLabeledTab,
+          ]
+        : null;
+    void selectTab(int index) {
+      final next = _Tab.values[index];
+      // The Labeled tab has no QR: one left enlarged would hold the screen at
+      // full brightness behind the list.
+      if (next == _Tab.labeled && qrEnlarged) toggleQr();
+      setState(() => _tab = next);
+    }
+
+    final engine = xmrWallet(context);
+    final labeled = tab == _Tab.labeled && engine != null ? _LabeledTab(wallet: engine) : null;
 
     if (isDesktop) {
       return DesktopShell(
@@ -138,14 +118,13 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
           ready: ready,
           address: address ?? '',
           qrHeading: ready ? qrHeading : '',
-          tabLabels: canToggle
-              ? [i18n.shared.receiveSubaddressTab, i18n.shared.receivePrimaryTab]
-              : null,
-          selectedTab: _showSubaddress ? 0 : 1,
-          onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
+          tabLabels: tabLabels,
+          selectedTab: tab.index,
+          onSelectTab: selectTab,
           warning: warning,
           onCopy: () => _copyAddressToClipboard(address!),
           onBack: () => Navigator.of(context).pop(),
+          tabBody: labeled,
         ),
       );
     }
@@ -165,19 +144,16 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
       iconAsset: 'assets/icons/monero.svg',
       coinName: null,
       blockchainSubtitle: null,
-      tabLabels: canToggle
-          ? [i18n.shared.receiveSubaddressTab, i18n.shared.receivePrimaryTab]
-          : null,
-      selectedTab: _showSubaddress ? 0 : 1,
-      onSelectTab: (index) => setState(() => _showSubaddress = index == 0),
+      tabLabels: tabLabels,
+      selectedTab: tab.index,
+      onSelectTab: selectTab,
       address: address ?? '',
       qrHeading: qrHeading,
       warning: warning,
       onCopy: () => _copyAddressToClipboard(address!),
-      // Mobile only: the hint promises a brighter screen, and brightness is
-      // only managed on phones.
-      qrEnlarged: _qrEnlarged,
-      onToggleQr: _isMobile ? _toggleQr : null,
+      qrEnlarged: qrEnlarged,
+      onToggleQr: QrBrightness.canBrighten ? toggleQr : null,
+      tabBody: labeled,
     );
   }
 
@@ -187,14 +163,73 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
     bool isDemoMode,
     bool? subSupported,
     ({int index, String address})? sub,
+    _Tab tab,
   ) {
     if (isDemoMode) return null;
     if (subSupported == false) return i18n.shared.receiveServerNoSubaddressesWarn;
     if (sub == null) return i18n.shared.receiveSubaddressUnavailableWarn;
-    if (!_showSubaddress) return i18n.shared.receivePrimaryAddressWarn;
+    if (tab == _Tab.primary) return i18n.shared.receivePrimaryAddressWarn;
     if (wallet.unusedSubaddressIndexIsSupported == false) {
       return i18n.shared.receiveMaxSubaddressesReachedWarn;
     }
     return null;
+  }
+}
+
+/// The Labeled tab: every used subaddress with its label, from
+/// [CryptoWallet.loadUsedReceiveAddresses] (read again only when the history
+/// moves) and the [AddressLabelModel].
+class _LabeledTab extends StatefulWidget {
+  const _LabeledTab({required this.wallet});
+
+  final CryptoWallet wallet;
+
+  @override
+  State<_LabeledTab> createState() => _LabeledTabState();
+}
+
+class _LabeledTabState extends State<_LabeledTab> {
+  Future<List<UsedReceiveAddress>>? _used;
+  int? _revision;
+
+  Future<List<UsedReceiveAddress>> _load() {
+    final revision = widget.wallet.txHistoryRevision;
+    if (_used == null || _revision != revision) {
+      _revision = revision;
+      _used = widget.wallet.loadUsedReceiveAddresses();
+    }
+    return _used!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = AppLocalizations.of(context)!;
+    // Watched so the list follows new transactions and label edits.
+    appWalletOf(context, listen: true);
+    final labels = context.watch<AddressLabelModel>();
+    final wallet = widget.wallet;
+    final coin = labeledAddressCoinOf(wallet);
+    return FutureBuilder<List<UsedReceiveAddress>>(
+      future: _load(),
+      builder: (context, snapshot) {
+        final used = snapshot.hasError ? const <UsedReceiveAddress>[] : snapshot.data;
+        return LabeledAddressList(
+          strings: i18n.shared,
+          coin: coin,
+          entries: used == null
+              ? null
+              : [
+                  for (final u in used)
+                    (used: u, label: labels.labelFor(wallet.coinSymbol, u.address)),
+                ],
+          onOpen: (entry) => Navigator.pushNamed(
+            context,
+            '/receive_address',
+            arguments: ReceiveAddressArgs(used: entry.used),
+          ),
+          onLabel: (entry) => editAddressLabel(context, wallet, entry),
+        );
+      },
+    );
   }
 }

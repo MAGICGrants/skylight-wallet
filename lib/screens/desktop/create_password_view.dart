@@ -141,6 +141,11 @@ class _DesktopCreatePasswordViewState extends State<DesktopCreatePasswordView> {
                 child: TextField(
                   controller: controller,
                   obscureText: obscured,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  enableIMEPersonalizedLearning: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
                   style: TextStyle(
                     fontFamily: 'Ubuntu Mono',
                     fontSize: 16,

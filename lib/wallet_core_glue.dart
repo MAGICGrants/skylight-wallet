@@ -118,8 +118,8 @@ void installWalletCore() {
   };
 }
 
-/// The wallets the app's [WalletManager] holds. Only the store-screenshot test
-/// (integration_test/store_screenshots_test.dart) swaps it, for sample ones.
+/// The wallets the app's [WalletManager] holds. Tests can swap it for sample
+/// ones, which makes it easier to take promotional screenshots and recordings.
 @visibleForTesting
 List<CryptoWallet> Function() appCoins = () => [MoneroWallet()];
 

@@ -20,7 +20,7 @@ import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:wallet_backup_platform/backup_ui.dart' show BackupLocalizations;
 import 'package:wallet_fhse/security_keys_ui.dart'
     show AppLockTile, DesktopAutoLockTile, FhseLocalizations, SecurityKeysState, securityKeysState;
-import 'package:wallet_domain/wallet_domain.dart' show OpenAliasMode;
+import 'package:wallet_domain/wallet_domain.dart' show AddressLabelModel, OpenAliasMode;
 import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
 import 'package:wallet_infra/wallet_infra.dart' show SyncFrequency, loadSyncFrequency;
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -242,6 +242,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) showBrandToast(context, i18n.shared.settingsAddressBookDeleted);
   }
 
+  void _showDeleteAddressLabelsDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    showConfirmSheet(
+      context: context,
+      icon: Icons.delete_outline,
+      iconBg: BrandColors.errorBg,
+      iconColor: BrandColors.error,
+      title: i18n.shared.settingsDeleteAddressLabelsButton,
+      body: i18n.shared.settingsDeleteAddressLabelsDialogText,
+      confirmLabel: i18n.shared.settingsDeleteAddressLabelsDialogDeleteButton,
+      cancelLabel: i18n.shared.cancel,
+      onConfirm: _deleteAddressLabels,
+    );
+  }
+
+  // Only the labels: the addresses and their transactions stay. A backup
+  // syncing to a location records the removals, as for the address book.
+  Future<void> _deleteAddressLabels() async {
+    final i18n = AppLocalizations.of(context)!;
+    await Provider.of<AddressLabelModel>(context, listen: false).deleteAll();
+    if (mounted) showBrandToast(context, i18n.shared.settingsAddressLabelsDeleted);
+  }
+
   Future<void> _showViewLwsKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
     final ok = await showConfirmSheet(
@@ -447,6 +470,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
     // Sync Frequency and the notifications it feeds: phones only.
+    final hasContacts = context.watch<ContactModel>().contacts.isNotEmpty;
+    final hasLabels = context.watch<AddressLabelModel>().count > 0;
     final showNotifyToggle = Platform.isAndroid || Platform.isIOS;
     final connectionSubtitle = _connectionSubtitle(wallet, i18n);
     final fiatSubtitle = _fiatMode == FiatApiMode.disabled
@@ -531,11 +556,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               linkLabel: i18n.shared.settingsExportLogsButton,
               onTap: _exportLogs,
             ),
-          SettingsLinkTile(
-            title: i18n.shared.settingsDeleteAddressBookButton,
-            titleColor: BrandColors.error,
-            onTap: _showDeleteAddressBookDialog,
-          ),
+          // Each only while there is something to delete.
+          if (hasContacts)
+            SettingsLinkTile(
+              title: i18n.shared.settingsDeleteAddressBookButton,
+              titleColor: BrandColors.error,
+              onTap: _showDeleteAddressBookDialog,
+            ),
+          if (hasLabels)
+            SettingsLinkTile(
+              title: i18n.shared.settingsDeleteAddressLabelsButton,
+              titleColor: BrandColors.error,
+              onTap: _showDeleteAddressLabelsDialog,
+            ),
         ],
       ),
       if (showNotifyToggle)

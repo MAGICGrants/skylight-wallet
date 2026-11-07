@@ -27,6 +27,7 @@ const routePolicy = RoutePolicy({
   '/wallet_home': RouteAccess.unlocked,
   '/send': RouteAccess.unlocked,
   '/receive': RouteAccess.unlocked,
+  '/receive_address': RouteAccess.unlocked,
   '/address_book': RouteAccess.unlocked,
   '/history': RouteAccess.unlocked,
   '/settings': RouteAccess.unlocked,

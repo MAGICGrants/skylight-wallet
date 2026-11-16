@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
+import android.view.View
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -24,7 +25,8 @@ class MainActivity : FlutterFragmentActivity() {
     private val storeReviewChannel = "org.magicgrants.wallet/store_review"
 
     // App-neutral name shared with wallet-core's SecureScreenMixin: FLAG_SECURE
-    // (no screenshots, recordings or casting) while a screen shows a secret.
+    // (no screenshots, recordings or casting) while a screen shows a secret, and
+    // on Android 14+ only accessibility tools may read or act on it.
     private val secureScreenChannel = "org.magicgrants.wallet/secure_screen"
 
     // Payment links (monero:) reach Dart over this channel and nowhere else; Dart
@@ -126,16 +128,35 @@ class MainActivity : FlutterFragmentActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "setSecure" -> {
-                        if (call.argument<Boolean>("secure") == true) {
+                        val secure = call.argument<Boolean>("secure") == true
+                        if (secure) {
                             window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                         } else {
                             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                         }
+                        setAccessibilityDataSensitive(secure)
                         result.success(null)
                     }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    // Android 14+: while a secret is on screen, only accessibility services that
+    // declare themselves accessibility tools (TalkBack, Switch Access, Voice
+    // Access) can read the screen or act on it. Any other accessibility service,
+    // a common way malware reads wallets, gets nothing from it. Set on the
+    // window's root view, so the Flutter view and the virtual nodes it serves
+    // inherit it. Every other screen keeps the platform default.
+    private fun setAccessibilityDataSensitive(sensitive: Boolean) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+        window.decorView.setAccessibilityDataSensitive(
+            if (sensitive) {
+                View.ACCESSIBILITY_DATA_SENSITIVE_YES
+            } else {
+                View.ACCESSIBILITY_DATA_SENSITIVE_AUTO
+            },
+        )
     }
 
     private val clipboardHandler = Handler(Looper.getMainLooper())

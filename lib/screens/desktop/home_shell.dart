@@ -69,28 +69,45 @@ class _DesktopShellState extends State<DesktopShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BrandColors.paper,
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Flies in place across transitions, so the sidebar doesn't slide with
-          // the page. Kept out of the page's own transition, like the mobile nav.
-          // placeholderBuilder keeps it painted in place during the flight, so
-          // instant (zero-duration) tab switches don't blink an empty gap.
-          Hero(
-            tag: 'desktop-sidebar',
-            placeholderBuilder: (context, heroSize, child) => child,
-            child: _sidebar(context),
-          ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: contentMaxWidth),
-                child: widget.child,
+      // Keyboard: Tab goes through the page first and the sidebar after it,
+      // so reaching the page's own controls doesn't mean tabbing past every
+      // destination on each screen. Shift+Tab from the page's first control
+      // reaches the sidebar. Screen readers keep the visual order.
+      body: FocusTraversalGroup(
+        policy: OrderedTraversalPolicy(),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Flies in place across transitions, so the sidebar doesn't slide with
+            // the page. Kept out of the page's own transition, like the mobile nav.
+            // placeholderBuilder keeps it painted in place during the flight, so
+            // instant (zero-duration) tab switches don't blink an empty gap.
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(2),
+              child: FocusTraversalGroup(
+                child: Hero(
+                  tag: 'desktop-sidebar',
+                  placeholderBuilder: (context, heroSize, child) => child,
+                  child: _sidebar(context),
+                ),
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: FocusTraversalOrder(
+                order: const NumericFocusOrder(1),
+                child: FocusTraversalGroup(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: contentMaxWidth),
+                      child: widget.child,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -117,7 +134,12 @@ class _DesktopShellState extends State<DesktopShell> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: SvgPicture.asset('assets/logo.svg', width: 28, height: 28),
+                    child: SvgPicture.asset(
+                      'assets/logo.svg',
+                      width: 28,
+                      height: 28,
+                      excludeFromSemantics: true,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Text(
@@ -160,6 +182,7 @@ class _DesktopShellState extends State<DesktopShell> {
               icon: Icons.tune,
               label: i18n.shared.navigationBarSettings,
               active: false,
+              destination: false,
               onTap: () => showSettingsSheet(context),
             ),
             const SizedBox(height: 6),
@@ -204,40 +227,48 @@ class _DesktopShellState extends State<DesktopShell> {
     );
   }
 
+  /// [destination]: a screen of its own, so it says whether it is the
+  /// current one; Settings opens a modal instead and is a plain button.
   Widget _navTile({
     required IconData icon,
     required String label,
     required bool active,
+    bool destination = true,
     required VoidCallback? onTap,
   }) {
     final fg = active ? BrandColors.primaryDeep : BrandColors.inkMuted;
-    return Material(
-      color: active ? BrandColors.paper : Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: active ? BrandColors.border : Colors.transparent),
-      ),
-      child: InkWell(
-        mouseCursor: WidgetStateMouseCursor.clickable,
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Ubuntu',
-                  fontSize: 14,
-                  height: 1,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                  color: fg,
+    return Semantics(
+      container: true,
+      button: true,
+      selected: destination ? active : null,
+      child: Material(
+        color: active ? BrandColors.paper : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: active ? BrandColors.border : Colors.transparent),
+        ),
+        child: InkWell(
+          mouseCursor: WidgetStateMouseCursor.clickable,
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+            child: Row(
+              children: [
+                Icon(icon, size: 18, color: fg),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu',
+                    fontSize: 14,
+                    height: 1,
+                    fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                    color: fg,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

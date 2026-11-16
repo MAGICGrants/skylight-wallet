@@ -58,7 +58,13 @@ Future<void> showSettingsFormSheet(
                             color: BrandColors.primaryDeep,
                           ),
                           const SizedBox(width: 11),
-                          Expanded(child: Text(title, style: BrandText.sheetTitle)),
+                          Expanded(
+                            child: Semantics(
+                              header: true,
+                              namesRoute: true,
+                              child: Text(title, style: BrandText.sheetTitle),
+                            ),
+                          ),
                         ],
                       ),
                       if (subtitle != null) ...[

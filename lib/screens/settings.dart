@@ -700,14 +700,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Icon(Icons.tune, size: 19, color: BrandColors.primary),
               ),
               const SizedBox(width: 13),
-              Text(
-                i18n.shared.settingsTitle,
-                style: TextStyle(
-                  fontFamily: 'Ubuntu',
-                  fontSize: 21,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                  color: BrandColors.ink,
+              Semantics(
+                header: true,
+                namesRoute: true,
+                child: Text(
+                  i18n.shared.settingsTitle,
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu',
+                    fontSize: 21,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
+                    color: BrandColors.ink,
+                  ),
                 ),
               ),
             ],

@@ -222,7 +222,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
       header: HomeHeader(
         logo: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: SvgPicture.asset('assets/logo.svg', width: 30, height: 30),
+          child: SvgPicture.asset(
+            'assets/logo.svg',
+            width: 30,
+            height: 30,
+            excludeFromSemantics: true,
+          ),
         ),
         title: 'Skylight Wallet',
       ),
@@ -273,14 +278,20 @@ class _ConnectionRow extends StatelessWidget {
         Container(width: 1, height: 14, color: BrandColors.borderStrong),
         const SizedBox(width: 10),
         Flexible(
-          child: Text(
-            trailing,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'Ubuntu Mono',
-              fontSize: 13,
-              height: 1,
-              color: disconnected ? BrandColors.error : BrandColors.inkMuted,
+          // "Disconnected" is spoken when it appears; the blocks-left count,
+          // which ticks, is not.
+          child: Semantics(
+            container: true,
+            liveRegion: blocks == null && disconnected,
+            child: Text(
+              trailing,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Ubuntu Mono',
+                fontSize: 13,
+                height: 1,
+                color: disconnected ? BrandColors.error : BrandColors.inkMuted,
+              ),
             ),
           ),
         ),
@@ -309,32 +320,38 @@ class _SyncStatusPill extends StatelessWidget {
       ),
       StatusIconStatus.fail => (BrandColors.error, i18n.homeDisconnected),
     };
-    return Container(
-      decoration: BoxDecoration(
-        color: BrandColors.surfaceSunken,
-        border: Border.all(color: BrandColors.border),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              fontFamily: 'Ubuntu',
-              fontSize: 12.5,
-              height: 1,
-              color: BrandColors.inkMuted,
+    // Spoken when it turns Synced or Disconnected; not while the blocks-left
+    // count ticks during a sync.
+    return Semantics(
+      container: true,
+      liveRegion: status != StatusIconStatus.loading,
+      child: Container(
+        decoration: BoxDecoration(
+          color: BrandColors.surfaceSunken,
+          border: Border.all(color: BrandColors.border),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontSize: 12.5,
+                height: 1,
+                color: BrandColors.inkMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

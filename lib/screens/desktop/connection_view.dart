@@ -47,7 +47,7 @@ class _DesktopConnectionViewState extends State<DesktopConnectionView> {
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.canSave,
       builder: (context, canSave, _) => DesktopOnboardingScaffold(
-        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52, excludeFromSemantics: true),
         title: widget.title,
         description: widget.description,
         step: 3,

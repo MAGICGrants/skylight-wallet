@@ -391,7 +391,11 @@ class _AppRootState extends State<_AppRoot>
                       onUnlocked: hideAppLockCover,
                       onKeyNeeded: appLockCoverNeedsKey,
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    // Desktop: Cmd+[ / Alt+Left goes back a screen.
+                    child: DesktopBackShortcut(
+                      navigatorKey: _navigatorKey,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   );
                 },
                 initialRoute: initialRoute,

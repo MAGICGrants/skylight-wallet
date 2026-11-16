@@ -90,11 +90,16 @@ class _SecretKeysScreenState extends State<SecretKeysScreen> with SecureScreenMi
       if (widget.asModal) {
         // Bounded height so the modal stays compact while loading, then grows to
         // fit the keys once they're read (an unbounded Center balloons the card).
-        return const SizedBox(height: 160, child: Center(child: CircularProgressIndicator()));
+        return SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator(semanticsLabel: i18n.shared.a11yLoading)),
+        );
       }
       return Scaffold(
         backgroundColor: BrandColors.paper,
-        body: const SafeArea(child: Center(child: CircularProgressIndicator())),
+        body: SafeArea(
+          child: Center(child: CircularProgressIndicator(semanticsLabel: i18n.shared.a11yLoading)),
+        ),
       );
     }
 

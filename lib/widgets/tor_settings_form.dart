@@ -315,15 +315,24 @@ class TorTestStatus extends StatelessWidget {
     required this.failedLabel,
   });
 
+  // One live region around every state, so screen readers say when a test
+  // starts and how it ended.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Semantics(container: true, liveRegion: true, child: _status(context));
+
+  Widget _status(BuildContext context) {
     if (testing) {
       return Align(
         alignment: Alignment.centerLeft,
         child: SizedBox(
           width: 16,
           height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2, color: BrandColors.primary),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: BrandColors.primary,
+            semanticsLabel: AppLocalizations.of(context)?.shared.a11yLoading,
+          ),
         ),
       );
     }
@@ -393,8 +402,11 @@ class _TorPortFieldState extends State<TorPortField> {
 
   @override
   Widget build(BuildContext context) {
+    // The box's tap only puts the caret in the field, which is the control
+    // (named by the label) to assistive tech.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
       onTap: widget.enabled ? _focusNode.requestFocus : null,
       child: MouseRegion(
         cursor: widget.enabled ? SystemMouseCursors.text : MouseCursor.defer,
@@ -408,27 +420,32 @@ class _TorPortFieldState extends State<TorPortField> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.label.toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'Ubuntu Mono',
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                  color: BrandColors.inkFaint,
+              ExcludeSemantics(
+                child: Text(
+                  widget.label.toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu Mono',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                    color: BrandColors.inkFaint,
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
-              TextField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                enabled: widget.enabled,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 14, color: BrandColors.ink),
-                cursorColor: BrandColors.primary,
-                decoration: const InputDecoration.collapsed(hintText: '9050'),
-                onChanged: (_) => widget.onChanged(),
+              Semantics(
+                label: widget.label,
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  enabled: widget.enabled,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 14, color: BrandColors.ink),
+                  cursorColor: BrandColors.primary,
+                  decoration: const InputDecoration.collapsed(hintText: '9050'),
+                  onChanged: (_) => widget.onChanged(),
+                ),
               ),
             ],
           ),
@@ -451,22 +468,27 @@ class TorTestChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       side: BorderSide(color: BrandColors.border),
     );
-    return Opacity(
-      opacity: onTap == null ? 0.5 : 1,
-      child: Material(
-        color: BrandColors.surfaceSunken,
-        shape: shape,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: shape,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color: BrandColors.primaryDeep,
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: onTap != null,
+      child: Opacity(
+        opacity: onTap == null ? 0.5 : 1,
+        child: Material(
+          color: BrandColors.surfaceSunken,
+          shape: shape,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: shape,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  color: BrandColors.primaryDeep,
+                ),
               ),
             ),
           ),
@@ -485,25 +507,31 @@ class _OrbotCheck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => onChanged(!value),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: BrandSpacing.md),
-        child: Row(
-          children: [
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: value ? BrandColors.primary : BrandColors.card,
-                borderRadius: BorderRadius.circular(6),
-                border: value ? null : Border.all(color: BrandColors.inputBorder),
+    return Semantics(
+      container: true,
+      checked: value,
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: BrandSpacing.md),
+          child: Row(
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: value ? BrandColors.primary : BrandColors.card,
+                  borderRadius: BorderRadius.circular(6),
+                  border: value ? null : Border.all(color: BrandColors.inputBorder),
+                ),
+                child: value
+                    ? const Icon(Icons.check, size: 15, color: BrandColors.onPrimary)
+                    : null,
               ),
-              child: value ? const Icon(Icons.check, size: 15, color: BrandColors.onPrimary) : null,
-            ),
-            const SizedBox(width: BrandSpacing.sm),
-            Expanded(child: Text(label, style: BrandText.caption)),
-          ],
+              const SizedBox(width: BrandSpacing.sm),
+              Expanded(child: Text(label, style: BrandText.caption)),
+            ],
+          ),
         ),
       ),
     );

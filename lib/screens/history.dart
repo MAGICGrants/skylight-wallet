@@ -10,6 +10,7 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
+import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
@@ -223,26 +224,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     final filters = <Widget>[
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
-        child: Row(
-          children: [
-            _FilterPill(
-              label: i18n.shared.historyFilterType,
-              count: typeCountBadge,
-              open: _open == _Filter.type,
-              onTap: () => _toggleOpen(_Filter.type),
-            ),
-            const SizedBox(width: 7),
-            _FilterPill(
-              label: addressLabel ?? i18n.historyFilterAddress,
-              count: _address == null || addressLabel != null ? null : 1,
-              selected: _address != null,
-              open: _open == _Filter.address,
-              onTap: () => _toggleOpen(_Filter.address),
-            ),
-          ],
+      // Esc closes an open filter panel, keyboard or mouse.
+      EscapeCloses(
+        active: _open != null,
+        onClose: () => setState(() => _open = null),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
+          child: Row(
+            children: [
+              _FilterPill(
+                label: i18n.shared.historyFilterType,
+                count: typeCountBadge,
+                open: _open == _Filter.type,
+                onTap: () => _toggleOpen(_Filter.type),
+              ),
+              const SizedBox(width: 7),
+              _FilterPill(
+                label: addressLabel ?? i18n.historyFilterAddress,
+                count: _address == null || addressLabel != null ? null : 1,
+                selected: _address != null,
+                open: _open == _Filter.address,
+                onTap: () => _toggleOpen(_Filter.address),
+              ),
+            ],
+          ),
         ),
       ),
       if (_open == _Filter.type)
@@ -288,10 +294,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       Expanded(
         child: _open == null
             ? list
+            // A tap outside closes the panel. Not a control to assistive tech
+            // (the panel's Done is), and the dimmed rows leave the Tab order.
             : GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true,
                 onTap: () => setState(() => _open = null),
-                child: Opacity(opacity: 0.4, child: IgnorePointer(child: list)),
+                child: ExcludeFocus(
+                  child: Opacity(opacity: 0.4, child: IgnorePointer(child: list)),
+                ),
               ),
       ),
     ];
@@ -317,7 +328,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
               padding: EdgeInsets.fromLTRB(44, pushed ? 16 : 30, 44, 20),
               child: Row(
                 children: [
-                  Expanded(child: Text(i18n.shared.historyTitle, style: desktopTitleStyle)),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      namesRoute: true,
+                      child: Text(i18n.shared.historyTitle, style: desktopTitleStyle),
+                    ),
+                  ),
                   Builder(
                     builder: (anchor) => BrandButton.secondary(
                       label: i18n.shared.historyExportCsv,
@@ -356,11 +373,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     action: Tooltip(
                       message: i18n.shared.historyExportCsv,
+                      // The button carries the name, so it is not read twice.
+                      excludeFromSemantics: true,
                       child: Opacity(
                         opacity: canExport ? 1 : 0.4,
                         child: Builder(
                           builder: (anchor) => IconCircleButton(
                             icon: Icons.file_download_outlined,
+                            semanticLabel: i18n.shared.historyExportCsv,
                             onPressed: canExport ? () => export(anchor) : null,
                           ),
                         ),
@@ -512,7 +532,7 @@ class _AddressPanel extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-              child: address == null ? _empty(i18n) : _filled(),
+              child: address == null ? _empty(i18n) : _filled(i18n),
             ),
             Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 6), child: picker),
             _PanelFooter(onReset: onClear, onDone: onDone),
@@ -575,16 +595,20 @@ class _AddressPanel extends StatelessWidget {
         ),
         if (invalid) ...[
           const SizedBox(height: 8),
-          Text(
-            i18n.historyFilterAddressInvalid,
-            style: BrandText.caption.copyWith(color: BrandColors.error),
+          Semantics(
+            container: true,
+            liveRegion: true,
+            child: Text(
+              i18n.historyFilterAddressInvalid,
+              style: BrandText.caption.copyWith(color: BrandColors.error),
+            ),
           ),
         ],
       ],
     ),
   );
 
-  Widget _filled() => BrandCard(
+  Widget _filled(AppLocalizations i18n) => BrandCard(
     radius: 14,
     padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
     child: Row(
@@ -604,12 +628,16 @@ class _AddressPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 3),
-              Text(
-                shortenMiddle(address!, head: 9, tail: 9),
-                style: TextStyle(
-                  fontFamily: 'Ubuntu Mono',
-                  fontSize: 11,
-                  color: BrandColors.inkMuted,
+              Semantics(
+                label: spokenShortAddress(i18n, address!, head: 9, tail: 9),
+                excludeSemantics: true,
+                child: Text(
+                  shortenMiddle(address!, head: 9, tail: 9),
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu Mono',
+                    fontSize: 11,
+                    color: BrandColors.inkMuted,
+                  ),
                 ),
               ),
             ],
@@ -618,6 +646,8 @@ class _AddressPanel extends StatelessWidget {
         Tappable(
           behavior: HitTestBehavior.opaque,
           onTap: onClear,
+          semanticLabel: i18n.shared.a11yClear,
+          focusRadius: BorderRadius.circular(13),
           child: Container(
             width: 26,
             height: 26,
@@ -713,6 +743,8 @@ class _FilterPill extends StatelessWidget {
     return Tappable(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      expanded: open,
+      focusRadius: BorderRadius.circular(100),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
@@ -814,6 +846,7 @@ class _FilterPanel extends StatelessWidget {
     return Tappable(
       behavior: HitTestBehavior.opaque,
       onTap: () => onToggle(opt.value),
+      checked: selected,
       child: Container(
         decoration: last
             ? null

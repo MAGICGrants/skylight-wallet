@@ -15,7 +15,12 @@ class WalletNavigationBar extends StatelessWidget {
   static const _routes = ['/wallet_home', '/history', '/address_book', '/settings'];
 
   void _select(BuildContext context, int index) {
-    if (index == selectedIndex) return;
+    if (index == selectedIndex || !context.mounted) return;
+    // A touch calls this twice, on tap-down and again on release. The push on
+    // tap-down leaves this screen's route no longer current, so the release
+    // does nothing. Screen readers, Switch Access and the keyboard send only
+    // the tap, which navigates.
+    if (ModalRoute.isCurrentOf(context) != true) return;
     Navigator.pushNamed(context, _routes[index]);
   }
 
@@ -78,30 +83,37 @@ class _NavTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = selected ? BrandColors.primaryDeep : BrandColors.inkMuted;
-    return InkWell(
-      // Navigate on touch-down, not release: a very light (or slightly rolling)
-      // tap can drift past the tap recognizer's slop before the finger lifts and
-      // get dropped. onTap stays as a no-op only to keep the ripple feedback.
-      onTapDown: (_) => onTap(),
-      onTap: () {},
-      borderRadius: BorderRadius.circular(BrandRadii.tile),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 23, color: color),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                height: 1,
-                fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-                color: color,
+    // One tab node, named by its label; the icon beside it says nothing more.
+    return Semantics(
+      container: true,
+      button: true,
+      selected: selected,
+      child: InkWell(
+        // Navigate on touch-down, not release: a very light (or slightly rolling)
+        // tap can drift past the tap recognizer's slop before the finger lifts
+        // and get dropped. onTap navigates too, for assistive tech and the
+        // keyboard, which send only a tap; after a touch-down it does nothing.
+        onTapDown: (_) => onTap(),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(BrandRadii.tile),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 23, color: color),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  height: 1,
+                  fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

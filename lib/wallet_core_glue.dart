@@ -264,7 +264,12 @@ void installSecurityKeysUi() {
       appName: 'Skylight',
       walletManagerOf: (context) => Provider.of<WalletManager>(context, listen: false),
       homeRoute: '/wallet_home',
-      logo: (_) => SvgPicture.asset('assets/logo_nobg.svg', width: 44, height: 44),
+      logo: (_) => SvgPicture.asset(
+        'assets/logo_nobg.svg',
+        width: 44,
+        height: 44,
+        excludeFromSemantics: true,
+      ),
     ),
   );
 }

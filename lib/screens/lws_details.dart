@@ -62,7 +62,7 @@ class _LwsDetailsScreenState extends State<LwsDetailsScreen> with SecureScreenMi
     if (isDesktop) {
       return DesktopOnboardingScaffold(
         showSteps: false,
-        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+        logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52, excludeFromSemantics: true),
         title: i18n.lwsDetailsTitle,
         description: i18n.shared.lwsDetailsDescription,
         step: 0,

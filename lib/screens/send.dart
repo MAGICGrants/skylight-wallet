@@ -642,7 +642,13 @@ class _SendScreenState extends State<SendScreen> {
                     color: BrandColors.warning,
                   ),
                   const SizedBox(width: 11),
-                  Expanded(child: Text(i18n.shared.warning, style: BrandText.sheetTitle)),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      namesRoute: true,
+                      child: Text(i18n.shared.warning, style: BrandText.sheetTitle),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 7),
@@ -857,7 +863,11 @@ class _SendScreenState extends State<SendScreen> {
           onTap: () => Navigator.pop(context),
         ),
         const SizedBox(height: 16),
-        Text(i18n.shared.sendTitle, style: desktopTitleStyle),
+        Semantics(
+          header: true,
+          namesRoute: true,
+          child: Text(i18n.shared.sendTitle, style: desktopTitleStyle),
+        ),
         const SizedBox(height: 24),
         _sendForm(context, i18n, quote, available, canSend),
       ],
@@ -899,19 +909,21 @@ class _SendScreenState extends State<SendScreen> {
                 onSelect: _setPriority,
               ),
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    i18n.shared.sendNetworkFee,
-                    style: TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontSize: 12.5,
-                      color: BrandColors.inkMuted,
+              MergeSemantics(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      i18n.shared.sendNetworkFee,
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontSize: 12.5,
+                        color: BrandColors.inkMuted,
+                      ),
                     ),
-                  ),
-                  _feeValue(quote),
-                ],
+                    _feeValue(quote),
+                  ],
+                ),
               ),
             ],
           ),
@@ -965,7 +977,12 @@ class _SendScreenState extends State<SendScreen> {
     children: [
       Align(
         alignment: Alignment.centerLeft,
-        child: Text(caption.toUpperCase(), style: BrandText.section),
+        // Read as written: shown upper-cased, a short word ("To") can be spelled
+        // out letter by letter.
+        child: Semantics(
+          label: caption,
+          child: ExcludeSemantics(child: Text(caption.toUpperCase(), style: BrandText.section)),
+        ),
       ),
       const SizedBox(height: 8),
       child,
@@ -974,7 +991,11 @@ class _SendScreenState extends State<SendScreen> {
 
   Widget _dError(String text) => Padding(
     padding: const EdgeInsets.only(top: 8, left: 2),
-    child: Text(text, style: BrandText.caption.copyWith(color: BrandColors.error)),
+    child: Semantics(
+      container: true,
+      liveRegion: true,
+      child: Text(text, style: BrandText.caption.copyWith(color: BrandColors.error)),
+    ),
   );
 
   Widget _dCard({required Widget child}) => Container(
@@ -1010,41 +1031,58 @@ class _SendScreenState extends State<SendScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        _shortenMiddle(_destinationAddressController.text, head: 10, tail: 12),
-                        style: TextStyle(
-                          fontFamily: 'Ubuntu Mono',
-                          fontSize: 12,
-                          color: BrandColors.inkMuted,
+                      Semantics(
+                        label: spokenShortAddress(
+                          i18n,
+                          _destinationAddressController.text,
+                          head: 10,
+                          tail: 12,
+                        ),
+                        excludeSemantics: true,
+                        child: Text(
+                          _shortenMiddle(_destinationAddressController.text, head: 10, tail: 12),
+                          style: TextStyle(
+                            fontFamily: 'Ubuntu Mono',
+                            fontSize: 12,
+                            color: BrandColors.inkMuted,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close, size: 18, color: BrandColors.inkMuted),
+                  icon: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: BrandColors.inkMuted,
+                    semanticLabel: i18n.shared.a11yClear,
+                  ),
                   onPressed: _clearSelectedContact,
                 ),
               ],
             )
           else
-            TextField(
-              controller: _destinationAddressController,
-              minLines: 1,
-              maxLines: 2,
-              style: TextStyle(
-                fontFamily: 'Ubuntu Mono',
-                fontSize: 13.5,
-                height: 1.6,
-                color: BrandColors.ink,
-              ),
-              decoration: InputDecoration.collapsed(
-                hintText: i18n.shared.address,
-                hintStyle: TextStyle(
+            Semantics(
+              label: i18n.shared.sendToLabel,
+              child: TextField(
+                controller: _destinationAddressController,
+                minLines: 1,
+                maxLines: 2,
+                style: TextStyle(
                   fontFamily: 'Ubuntu Mono',
                   fontSize: 13.5,
                   height: 1.6,
-                  color: BrandColors.inkFaint,
+                  color: BrandColors.ink,
+                ),
+                decoration: InputDecoration.collapsed(
+                  hintText: i18n.shared.address,
+                  hintStyle: TextStyle(
+                    fontFamily: 'Ubuntu Mono',
+                    fontSize: 13.5,
+                    height: 1.6,
+                    color: BrandColors.inkFaint,
+                  ),
                 ),
               ),
             ),
@@ -1077,31 +1115,35 @@ class _SendScreenState extends State<SendScreen> {
     );
   }
 
-  Widget _dPill(IconData icon, String label, VoidCallback onTap) => Material(
-    color: BrandColors.surfaceSunken,
-    borderRadius: BorderRadius.circular(11),
-    child: InkWell(
-      mouseCursor: WidgetStateMouseCursor.clickable,
-      onTap: onTap,
+  Widget _dPill(IconData icon, String label, VoidCallback onTap) => Semantics(
+    container: true,
+    button: true,
+    child: Material(
+      color: BrandColors.surfaceSunken,
       borderRadius: BorderRadius.circular(11),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: BrandColors.primaryDeep),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Ubuntu',
-                fontSize: 12.5,
-                height: 1,
-                fontWeight: FontWeight.w500,
-                color: BrandColors.primaryDeep,
+      child: InkWell(
+        mouseCursor: WidgetStateMouseCursor.clickable,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(11),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: BrandColors.primaryDeep),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Ubuntu',
+                  fontSize: 12.5,
+                  height: 1,
+                  fontWeight: FontWeight.w500,
+                  color: BrandColors.primaryDeep,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
@@ -1115,7 +1157,11 @@ class _SendScreenState extends State<SendScreen> {
       return SizedBox(
         width: 14,
         height: 14,
-        child: CircularProgressIndicator(strokeWidth: 2, color: BrandColors.primary),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: BrandColors.primary,
+          semanticsLabel: AppLocalizations.of(context)!.shared.a11yLoading,
+        ),
       );
     }
     if (feePiconero == null) {
@@ -1125,14 +1171,22 @@ class _SendScreenState extends State<SendScreen> {
       );
     }
     final fee = doubleAmountFromInt(feePiconero);
-    final feeFiat = quote != null ? ' · ${formatFiat(fee * quote.rate, quote.currency)}' : '';
+    final fiat = quote != null ? formatFiat(fee * quote.rate, quote.currency) : null;
+    final feeFiat = fiat != null ? ' · $fiat' : '';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SvgPicture.asset('assets/icons/monero.svg', width: 13, height: 13),
+        SvgPicture.asset(
+          'assets/icons/monero.svg',
+          width: 13,
+          height: 13,
+          excludeFromSemantics: true,
+        ),
         const SizedBox(width: 5),
         Text(
           '~${_amountText(fee)}$feeFiat',
+          // Spoken without the "~" and "·" marks.
+          semanticsLabel: '${_amountText(fee)} XMR${fiat != null ? ', $fiat' : ''}',
           style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12, color: BrandColors.inkMuted),
         ),
       ],

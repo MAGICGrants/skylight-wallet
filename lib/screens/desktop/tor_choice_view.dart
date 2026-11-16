@@ -67,7 +67,7 @@ class _DesktopTorChoiceViewState extends State<DesktopTorChoiceView> {
   Widget build(BuildContext context) {
     final l = widget.labels;
     return DesktopOnboardingScaffold(
-      logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+      logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52, excludeFromSemantics: true),
       title: l.title,
       description: l.subtitle,
       step: 1,

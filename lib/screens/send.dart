@@ -692,12 +692,10 @@ class _SendScreenState extends State<SendScreen> {
       onConnectionFailed();
       return;
     } on FormatException catch (error) {
-      var errorMsg = error.toString().replaceFirst('FormatException: ', '');
-      if (error.toString().contains('HTTP error code 500')) {
-        errorMsg = 'Failed to send transaction. You might have insufficient unlocked balance.';
-      }
+      // A definite rejection: nothing moved, and the message carries the
+      // daemon's reason (node mode, and LWS servers that send it).
       if (mounted) {
-        showBrandToast(context, errorMsg);
+        showBrandToast(context, error.message);
       }
       rethrow;
     } catch (error) {

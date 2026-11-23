@@ -531,9 +531,7 @@ class _SendScreenState extends State<SendScreen> {
           });
         }
       } else {
-        if (mounted) {
-          showBrandToast(context, i18n.shared.unknownError);
-        }
+        showBrandToast(context, i18n.shared.txBuildFailureMessage(error));
       }
     }
 

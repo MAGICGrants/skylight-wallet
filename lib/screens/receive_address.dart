@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -25,10 +26,12 @@ class ReceiveAddressArgs {
 }
 
 /// How [wallet]'s used addresses are written in the shared widgets.
-LabeledAddressCoin labeledAddressCoinOf(CryptoWallet wallet) => (
+/// [trimDecimals] is `FiatRateModel.trimDigitsOf(wallet)`.
+LabeledAddressCoin labeledAddressCoinOf(CryptoWallet wallet, {required int? trimDecimals}) => (
   coinSymbol: wallet.coinSymbol,
   baseUnitDecimals: wallet.baseUnitDecimals,
   kind: wallet.rotatingAddressKind ?? RotatingAddressKind.subaddress,
+  trimDecimals: trimDecimals,
 );
 
 /// Opens the label sheet for [entry] and saves what it returns: a blank label
@@ -43,7 +46,10 @@ Future<void> editAddressLabel(
   final label = await showAddressLabelSheet(
     context: context,
     strings: i18n.shared,
-    coin: labeledAddressCoinOf(wallet),
+    coin: labeledAddressCoinOf(
+      wallet,
+      trimDecimals: context.read<FiatRateModel>().trimDigitsOf(wallet),
+    ),
     used: entry.used,
     initialLabel: entry.label,
   );
@@ -121,7 +127,10 @@ class _ReceiveAddressScreenState extends State<ReceiveAddressScreen> with QrBrig
       return const SizedBox.shrink();
     }
     _refresh(wallet);
-    final coin = labeledAddressCoinOf(wallet);
+    final coin = labeledAddressCoinOf(
+      wallet,
+      trimDecimals: context.watch<FiatRateModel>().trimDigitsOf(wallet),
+    );
     final label = labels.labelFor(wallet.coinSymbol, used.address);
     final entry = (used: used, label: label);
     final title = label ?? labeledAddressName(i18n.shared, coin.kind, used.index);

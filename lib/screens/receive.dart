@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:skylight_wallet/l10n/app_localizations.dart';
@@ -208,7 +209,10 @@ class _LabeledTabState extends State<_LabeledTab> {
     appWalletOf(context, listen: true);
     final labels = context.watch<AddressLabelModel>();
     final wallet = widget.wallet;
-    final coin = labeledAddressCoinOf(wallet);
+    final coin = labeledAddressCoinOf(
+      wallet,
+      trimDecimals: context.watch<FiatRateModel>().trimDigitsOf(wallet),
+    );
     return FutureBuilder<List<UsedReceiveAddress>>(
       future: _load(),
       builder: (context, snapshot) {

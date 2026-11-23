@@ -334,6 +334,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) await _refreshFiatMode();
   }
 
+  void _showTrimDecimals() {
+    final i18n = AppLocalizations.of(context)!;
+    showTrimDecimalsSheet(
+      context,
+      fiatRate: context.read<FiatRateModel>(),
+      strings: i18n.shared,
+      coins: [(coinSymbol: 'XMR', baseUnitDecimals: xmrWallet(context)?.baseUnitDecimals ?? 12)],
+      iconBg: BrandColors.surfaceTinted,
+      iconColor: BrandColors.primaryDeep,
+    );
+  }
+
   void _showConnectionSettings() async {
     final i18n = AppLocalizations.of(context)!;
 
@@ -515,6 +527,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showFiatApiSettings,
           ),
+          // Needs a price to work from, so it is only offered with prices on.
+          if (_fiatMode != FiatApiMode.disabled)
+            SettingsNavTile(
+              title: i18n.shared.trimDecimalsLabel,
+              value: trimDecimalsValue(i18n.shared, fiatRate.trimDecimals, fiatRate.fiatCurrency),
+              onTap: _showTrimDecimals,
+            ),
         ],
       ),
       SettingsGroup(

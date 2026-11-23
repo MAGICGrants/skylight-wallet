@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:wallet_domain/wallet_domain.dart'
         BroadcastFailure,
         BroadcastOutcome,
         OpenAliasMode;
+import 'package:wallet_fiat/wallet_fiat.dart' show baseUnitsToFiatMinor;
 import 'package:wallet_infra/wallet_infra.dart' show RequestNotSentException;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
@@ -84,7 +86,7 @@ class _SendScreenState extends State<SendScreen> {
   bool _isSweepAll = false;
   Contact? _selectedContact;
   String? _backLabel;
-  List<int?>? _fees; // estimated fee (piconero) per priority; null = estimate failed
+  List<AppFee?>? _fees; // fee per priority, estimated or from a built tx; null = none
   int _selectedPriority = 1; // 0=Low, 1=Normal, 2=High
   int _feeCalculationCounter = 0; // Track the latest fee calculation request
   String _lastFeeFetchKey = '';
@@ -389,7 +391,7 @@ class _SendScreenState extends State<SendScreen> {
     try {
       // Sequential: estimateFee builds the tx when no estimate comes back (a
       // sweep, or some states), and the builds share one wallet2.
-      final fees = <int?>[];
+      final fees = <AppFee?>[];
       for (var priority = 1; priority <= 3; priority++) {
         if (currentRequest != _feeCalculationCounter) return;
         fees.add(
@@ -541,6 +543,24 @@ class _SendScreenState extends State<SendScreen> {
     });
   }
 
+  /// The confirm sheet's fiat for [tx]'s amount: the figure the user typed,
+  /// when they typed one and it is what [tx] sends; otherwise the coin amount
+  /// at the current rate.
+  String? _confirmAmountFiat(AppPendingTx tx, FiatQuote? quote) {
+    if (quote == null) return null;
+    final typed =
+        _amount.unit == AmountUnit.fiat && !_isSweepAll && tx.amountBaseUnits == _amount.baseUnits;
+    final minor =
+        (typed ? _amount.fiatMinorUnits : null) ??
+        baseUnitsToFiatMinor(
+          tx.amountBaseUnits,
+          quote.rate,
+          coinDecimals: _xmrDecimals,
+          fiatDecimals: quote.currency.decimals,
+        );
+    return formatFiat(minor.toDouble() / math.pow(10, quote.currency.decimals), quote.currency);
+  }
+
   /// Opens the shared confirm-send bottom sheet, committing on confirm and,
   /// on success, routing to the wallet home with the success toast (matching
   /// the retired full-screen confirm route).
@@ -554,7 +574,6 @@ class _SendScreenState extends State<SendScreen> {
   }) async {
     final i18n = AppLocalizations.of(context)!;
     final quote = Provider.of<FiatRateModel>(context, listen: false).quoteFor('XMR');
-    final amountFiat = quote != null ? tx.amount * quote.rate : null;
     final feeFiat = quote != null ? tx.fee * quote.rate : null;
 
     // Monero fee is same-currency, so compare directly. Warn when it's ≥10% of
@@ -577,9 +596,10 @@ class _SendScreenState extends State<SendScreen> {
         cancel: i18n.shared.cancel,
       ),
       coinSymbol: 'XMR',
-      amountText: '${tx.amount.toStringAsFixed(12)} XMR',
-      amountFiat: amountFiat != null ? formatFiat(amountFiat, quote!.currency) : null,
-      feeText: '${tx.fee.toStringAsFixed(12)} XMR',
+      // Every digit, straight from base units: the confirm sheet never rounds.
+      amountText: formatExactAmount(tx.amountBaseUnits, _xmrDecimals, symbol: 'XMR'),
+      amountFiat: _confirmAmountFiat(tx, quote),
+      feeText: formatExactAmount(tx.feeBaseUnits, _xmrDecimals, symbol: 'XMR'),
       feeFiat: feeFiat != null ? formatFiat(feeFiat, quote!.currency) : null,
       address: destinationAddress,
       openAlias: destinationOpenAlias,
@@ -784,7 +804,11 @@ class _SendScreenState extends State<SendScreen> {
     final i18n = AppLocalizations.of(context)!;
     final wallet = appWalletOf(context, listen: true);
     final quote = context.watch<FiatRateModel>().quoteFor('XMR');
-    final available = wallet.unlockedBalance ?? 0;
+    // Every digit: what the user can send, never rounded.
+    final available = formatExactAmount(
+      wallet.unlockedBalanceBaseUnits ?? BigInt.zero,
+      _xmrDecimals,
+    );
     final xmr = xmrWallet(context);
 
     if (isDesktop) {
@@ -830,7 +854,7 @@ class _SendScreenState extends State<SendScreen> {
       amount: _amount,
       amountError: _amountError,
       onMax: _setBalanceAsSendAmount,
-      availableText: '${_amountText(available)} ${i18n.shared.sendAvailableSuffix}',
+      availableText: '$available ${i18n.shared.sendAvailableSuffix}',
       availableLeading: xmr != null
           ? CoinMark(coinSymbol: xmr.coinSymbol, iconAsset: xmr.iconAsset, size: 16)
           : const SizedBox(width: 16, height: 16),
@@ -850,7 +874,7 @@ class _SendScreenState extends State<SendScreen> {
     BuildContext context,
     AppLocalizations i18n,
     FiatQuote? quote,
-    double available,
+    String available,
   ) {
     final canSend = _formValid && _openAliasResolving == 0 && !_isLoading;
     return ListView(
@@ -876,7 +900,7 @@ class _SendScreenState extends State<SendScreen> {
     BuildContext context,
     AppLocalizations i18n,
     FiatQuote? quote,
-    double available,
+    String available,
     bool canSend,
   ) {
     final formColumn = Column(
@@ -1097,7 +1121,7 @@ class _SendScreenState extends State<SendScreen> {
     );
   }
 
-  Widget _dAmountCard(AppLocalizations i18n, double available) {
+  Widget _dAmountCard(AppLocalizations i18n, String available) {
     return _dCard(
       child: ListenableBuilder(
         listenable: _amount,
@@ -1106,7 +1130,7 @@ class _SendScreenState extends State<SendScreen> {
           maxLabel: i18n.shared.sendMaxButton,
           switchUnitLabel: i18n.shared.sendSwitchUnit,
           onMax: _setBalanceAsSendAmount,
-          availableText: '${_amountText(available)} ${i18n.shared.sendAvailableSuffix}',
+          availableText: '$available ${i18n.shared.sendAvailableSuffix}',
           onAvailableTap: _setBalanceAsSendAmount,
         ),
       ),
@@ -1148,7 +1172,7 @@ class _SendScreenState extends State<SendScreen> {
   );
 
   Widget _feeValue(FiatQuote? quote) {
-    final feePiconero = (_fees != null && _fees!.length > _selectedPriority)
+    final fee = (_fees != null && _fees!.length > _selectedPriority)
         ? _fees![_selectedPriority]
         : null;
     if (_isLoadingFees) {
@@ -1162,15 +1186,23 @@ class _SendScreenState extends State<SendScreen> {
         ),
       );
     }
-    if (feePiconero == null) {
+    if (fee == null) {
       return Text(
         '—',
         style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12, color: BrandColors.inkMuted),
       );
     }
-    final fee = doubleAmountFromInt(feePiconero);
-    final fiat = quote != null ? formatFiat(fee * quote.rate, quote.currency) : null;
+    final feeXmr = doubleAmountFromInt(fee.piconero);
+    final fiat = quote != null ? formatFiat(feeXmr * quote.rate, quote.currency) : null;
     final feeFiat = fiat != null ? ' · $fiat' : '';
+    // An estimate keeps its "~" and 5 decimals; the fee of a transaction
+    // already built (a Max send) is exact, so it shows every digit.
+    final feeText = fee.isEstimate
+        ? '~${feeXmr.toStringAsFixed(5)}'
+        : formatExactAmount(BigInt.from(fee.piconero), _xmrDecimals);
+    final feeSpoken = fee.isEstimate
+        ? feeXmr.toStringAsFixed(5)
+        : formatExactAmount(BigInt.from(fee.piconero), _xmrDecimals);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1182,18 +1214,15 @@ class _SendScreenState extends State<SendScreen> {
         ),
         const SizedBox(width: 5),
         Text(
-          '~${_amountText(fee)}$feeFiat',
+          '$feeText$feeFiat',
           // Spoken without the "~" and "·" marks.
-          semanticsLabel: '${_amountText(fee)} XMR${fiat != null ? ', $fiat' : ''}',
+          semanticsLabel: '$feeSpoken XMR${fiat != null ? ', $fiat' : ''}',
           style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12, color: BrandColors.inkMuted),
         ),
       ],
     );
   }
 }
-
-/// Monero is decimal-12; cap the displayed amount for legibility.
-String _amountText(double amount) => amount.toStringAsFixed(5);
 
 /// Monero's decimal places. Matches the adapter's own constant; kept local so
 /// this file does not reach into the adapter's privates.

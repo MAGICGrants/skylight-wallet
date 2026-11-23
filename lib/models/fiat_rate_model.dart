@@ -4,4 +4,4 @@
 // wallet_core_glue.dart, and WalletAppServices attaches the WalletManager at launch.
 // The fiatAutoDisabledByTor auto-disable/restore stays app-side (tor_settings_form).
 export 'package:wallet_fiat/wallet_fiat.dart'
-    show FiatRateModel, FiatApiMode, FiatCurrency, FiatQuote;
+    show FiatRateModel, FiatApiMode, FiatCurrency, FiatQuote, TrimDecimals;

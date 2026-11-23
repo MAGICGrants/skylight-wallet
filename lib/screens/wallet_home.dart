@@ -23,9 +23,6 @@ import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval;
 import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
-/// Monero is decimal-12; cap the displayed coin amount for legibility.
-String _amountText(double amount) => amount.toStringAsFixed(5);
-
 /// The resolved LWS connection state, driving the disconnected indicator.
 enum StatusIconStatus { loading, complete, fail }
 
@@ -150,12 +147,23 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
     // exact history and balances.
     final cw = xmrWallet(context)!;
     final coins = <HomeCoin>[(wallet: cw, tokens: const <CryptoWallet>[])];
-    final sections = HomeSections(activity: HomeActivity.shared, labels: homeLabels(i18n));
+    final sections = HomeSections(
+      activity: HomeActivity.shared,
+      labels: homeLabels(i18n),
+      trimDigitsOf: fiatRate.trimDigitsOf,
+    );
     final configured = cw.connectionAddress.isNotEmpty;
     Widget hero(Widget? footer) => HomeBalanceHero(
       fiatRate: fiatRate,
       fiatTotal: v.unlockedBalanceFiat,
-      coinText: '${_amountText(v.unlockedBalance)} XMR',
+      // From the engine's base units, cut to Trim Decimals (every digit when
+      // it is off or there is no price).
+      coinText: formatTrimmedAmount(
+        cw.unlockedBalanceBaseUnits ?? BigInt.zero,
+        cw.baseUnitDecimals,
+        fiatRate.trimDigitsOf(cw),
+        symbol: 'XMR',
+      ),
       fiatErrorTooltip: i18n.shared.homeFiatApiError,
       footer: footer,
     );

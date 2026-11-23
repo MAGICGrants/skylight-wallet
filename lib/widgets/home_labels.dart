@@ -8,6 +8,7 @@ HomeLabels homeLabels(AppLocalizations i18n) => HomeLabels(
   incomingMore: i18n.shared.homeIncomingTitleMore,
   unlocksIn: i18n.shared.homeIncomingUnlocksIn,
   confirmations: i18n.shared.homeIncomingConfirmations,
+  change: i18n.shared.homeIncomingChange,
   chartTitle: i18n.shared.homeChartTitle,
   chartToday: i18n.shared.homeChartToday,
   chartEachCoin: i18n.shared.homeChartEachCoin,

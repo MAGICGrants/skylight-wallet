@@ -16,12 +16,11 @@ import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/screens/verify_seed.dart';
 import 'package:skylight_wallet/widgets/home_labels.dart';
 import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
+import 'package:skylight_wallet/widgets/security_checklist_setup.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval;
-import 'package:wallet_backup_platform/wallet_backup_platform.dart' show MetadataBackupSetup;
-import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet, SeedStore;
-import 'package:wallet_fhse/security_keys_ui.dart' show securityKeysOn;
+import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
 
 /// Monero is decimal-12; cap the displayed coin amount for legibility.
@@ -73,24 +72,7 @@ class WalletHomeScreen extends StatefulWidget {
 }
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBindingObserver {
-  late final SecurityChecklist _checklist = SecurityChecklist(
-    autoBackupOn: MetadataBackupSetup.automaticBackupOn,
-    securityKeysOn: securityKeysOn,
-    canVerifySeed: _canVerifySeed,
-  );
-  bool? _seedAskable;
-
-  // The seed check asks for the words as kept since the wallet was made, or,
-  // for an older wallet, its polyseed. Worked out once per visit.
-  Future<bool> _canVerifySeed() async {
-    final known = _seedAskable;
-    if (known != null) return known;
-    var askable = await SeedStore.exists();
-    if (!askable && mounted) {
-      askable = (await appWalletOf(context).readPolyseed()).isNotEmpty;
-    }
-    return _seedAskable = askable;
-  }
+  late final SecurityChecklist _checklist = appSecurityChecklist(context);
 
   @override
   void initState() {

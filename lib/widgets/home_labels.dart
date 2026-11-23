@@ -26,3 +26,20 @@ SecurityChecklistLabels securityChecklistLabels(AppLocalizations i18n) => Securi
   privateLookups: i18n.shared.homeChecklistPrivateLookups,
   securityKeys: i18n.shared.homeChecklistSecurityKeys,
 );
+
+/// The Security Checklist settings card's strings.
+SecurityChecklistSheetLabels securityChecklistSheetLabels(AppLocalizations i18n) =>
+    SecurityChecklistSheetLabels(
+      title: i18n.shared.securityChecklistLabel,
+      subtitle: i18n.shared.securityChecklistSheetSubtitle,
+      homeSection: i18n.shared.securityChecklistHomeSection,
+      showOnHome: i18n.shared.securityChecklistShowOnHome,
+      showOnHomeDesc: i18n.shared.securityChecklistShowOnHomeDesc,
+      stepsSection: i18n.shared.securityChecklistStepsSection,
+      done: i18n.shared.securityChecklistStepDone,
+      notDone: i18n.shared.securityChecklistStepNotDone,
+      seedDone: i18n.shared.securityChecklistSeedDone,
+      steps: securityChecklistLabels(i18n),
+      save: i18n.shared.save,
+      cancel: i18n.shared.cancel,
+    );

@@ -164,7 +164,14 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final i18n = AppLocalizations.of(context)!;
 
     return UnlockView(
-      logo: FloatingBob(child: SvgPicture.asset('assets/logo_nobg.svg', width: 100, height: 100)),
+      logo: FloatingBob(
+        child: SvgPicture.asset(
+          'assets/logo_nobg.svg',
+          width: 100,
+          height: 100,
+          excludeFromSemantics: true,
+        ),
+      ),
       labels: UnlockLabels(
         title: i18n.unlockTitle,
         passwordHint: i18n.shared.unlockPasswordHint,

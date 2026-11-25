@@ -10,7 +10,18 @@ import 'package:skylight_wallet/models/wallet_types.dart'
 abstract interface class AppPendingTx {
   double get amount;
   double get fee;
+
+  /// The amount and fee exactly, in piconero, for anything the user reads
+  /// before confirming. [amount] and [fee] are doubles for arithmetic only.
+  BigInt get amountBaseUnits;
+  BigInt get feeBaseUnits;
 }
+
+/// A send's network fee before it is confirmed, in piconero. [isEstimate] when
+/// it is the backend's estimate (which assumes one input, so a send that spends
+/// more costs more); false when it is the fee of a transaction already built,
+/// which is exact.
+typedef AppFee = ({int piconero, bool isEstimate});
 
 /// The original mnemonic the user backed up; `format` is a [SeedFormat] name
 /// ('polyseed' | 'bip39' | 'moneroLegacy').
@@ -122,11 +133,12 @@ abstract interface class AppWallet implements Listenable {
   // Send
   bool isAddressValid(String address);
 
-  /// Estimated network fee in base units (piconero), or null when the backend
-  /// can't estimate it (typically insufficient balance for that priority).
-  /// [amount] is exact decimal text, never a double. A spend amount that has
-  /// been through a double is no longer the amount the user asked for.
-  Future<int?> estimateFee(
+  /// The network fee in base units (piconero), estimated or from a built
+  /// transaction (see [AppFee]), or null when there is neither (typically
+  /// insufficient balance for that priority). [amount] is exact decimal text,
+  /// never a double. A spend amount that has been through a double is no
+  /// longer the amount the user asked for.
+  Future<AppFee?> estimateFee(
     String destinationAddress,
     String amount, {
     int priority,

@@ -44,18 +44,27 @@ void main() {
     backend.feeEstimate = BigInt.from(30000000);
     backend.pendingFee = BigInt.from(12345);
     // Estimate is used; the tx is not built.
-    expect(await adapter.estimateFee(dest, '1.0', priority: 1), 30000000);
+    expect(await adapter.estimateFee(dest, '1.0', priority: 1), (
+      piconero: 30000000,
+      isEstimate: true,
+    ));
   });
 
   test('no estimate returned: falls back to the built-tx fee', () async {
     backend.feeEstimate = null;
     backend.pendingFee = BigInt.from(12345);
-    expect(await adapter.estimateFee(dest, '1.0', priority: 1), 12345);
+    expect(await adapter.estimateFee(dest, '1.0', priority: 1), (
+      piconero: 12345,
+      isEstimate: false,
+    ));
   });
 
   test('sweep: always priced from the built tx', () async {
     backend.feeEstimate = BigInt.from(30000000);
     backend.pendingFee = BigInt.from(12345);
-    expect(await adapter.estimateFee(dest, '1.0', priority: 1, isSweepAll: true), 12345);
+    expect(await adapter.estimateFee(dest, '1.0', priority: 1, isSweepAll: true), (
+      piconero: 12345,
+      isEstimate: false,
+    ));
   });
 }

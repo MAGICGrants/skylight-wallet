@@ -69,7 +69,10 @@ class _FiatApiSettingsFormState extends State<FiatApiSettingsForm> {
   Widget build(BuildContext context) {
     final i18n = AppLocalizations.of(context)!;
     if (!_loaded) {
-      return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
+      return SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator(semanticsLabel: i18n.shared.a11yLoading)),
+      );
     }
     final save = BrandButton(label: widget.saveButtonLabel, onPressed: _save);
     return Column(

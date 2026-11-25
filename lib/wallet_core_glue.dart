@@ -118,8 +118,8 @@ void installWalletCore() {
   };
 }
 
-/// The wallets the app's [WalletManager] holds. Only the store-screenshot test
-/// (integration_test/store_screenshots_test.dart) swaps it, for sample ones.
+/// The wallets the app's [WalletManager] holds. Tests can swap it for sample
+/// ones, which makes it easier to take promotional screenshots and recordings.
 @visibleForTesting
 List<CryptoWallet> Function() appCoins = () => [MoneroWallet()];
 
@@ -264,7 +264,12 @@ void installSecurityKeysUi() {
       appName: 'Skylight',
       walletManagerOf: (context) => Provider.of<WalletManager>(context, listen: false),
       homeRoute: '/wallet_home',
-      logo: (_) => SvgPicture.asset('assets/logo_nobg.svg', width: 44, height: 44),
+      logo: (_) => SvgPicture.asset(
+        'assets/logo_nobg.svg',
+        width: 44,
+        height: 44,
+        excludeFromSemantics: true,
+      ),
     ),
   );
 }

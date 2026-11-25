@@ -218,7 +218,7 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
   bool isAddressValid(String address) => _wallet.isAddressValid(address);
 
   @override
-  Future<int?> estimateFee(
+  Future<AppFee?> estimateFee(
     String destinationAddress,
     String amount, {
     int priority = 0,
@@ -231,7 +231,7 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
         amountBaseUnits,
         priority: priority,
       );
-      if (fee != null) return fee.toInt();
+      if (fee != null) return (piconero: fee.toInt(), isEstimate: true);
     }
     // A sweep can't be estimated; build the tx (also the fallback when no
     // estimate comes back).
@@ -242,7 +242,7 @@ class MoneroWalletAdapter extends ChangeNotifier implements AppWallet {
         isSweepAll,
         priority: priority,
       );
-      return tx.feeBaseUnits.toInt();
+      return (piconero: tx.feeBaseUnits.toInt(), isEstimate: false);
     } catch (_) {
       return null;
     }
@@ -295,4 +295,8 @@ class _CorePendingTx implements AppPendingTx {
   double get amount => MoneroWalletAdapter._toXmr(raw.amountBaseUnits);
   @override
   double get fee => MoneroWalletAdapter._toXmr(raw.feeBaseUnits);
+  @override
+  BigInt get amountBaseUnits => raw.amountBaseUnits;
+  @override
+  BigInt get feeBaseUnits => raw.feeBaseUnits;
 }

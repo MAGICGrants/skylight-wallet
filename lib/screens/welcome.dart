@@ -46,7 +46,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     if (isDesktop) {
       return DesktopWelcomeView(
-        logo: FloatingBob(child: SvgPicture.asset('assets/logo_nobg.svg', width: 120, height: 120)),
+        logo: FloatingBob(
+          child: SvgPicture.asset(
+            'assets/logo_nobg.svg',
+            width: 120,
+            height: 120,
+            excludeFromSemantics: true,
+          ),
+        ),
         appName: 'Skylight Wallet',
         description: i18n.welcomeDescription,
         labels: labels,
@@ -57,7 +64,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
 
     return WelcomeView(
-      logo: FloatingBob(child: SvgPicture.asset('assets/logo_nobg.svg', width: 132, height: 132)),
+      logo: FloatingBob(
+        child: SvgPicture.asset(
+          'assets/logo_nobg.svg',
+          width: 132,
+          height: 132,
+          excludeFromSemantics: true,
+        ),
+      ),
       appName: 'Skylight Wallet',
       appNameColor: BrandColors.ink,
       logoBottomGap: BrandSpacing.md,

@@ -10,11 +10,13 @@ import 'package:skylight_wallet/l10n/app_localizations.dart';
 import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/fiat_rate_model.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
+import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
-import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet, TxDetails;
+import 'package:wallet_domain/wallet_domain.dart'
+    show AddressLabelModel, CryptoWallet, TxDetails, UsedReceiveAddress;
 import 'package:wallet_infra/wallet_infra.dart' show LogLevel, exportFileName, log, saveExportFile;
 
 /// The wallet's transactions, filterable by direction and by address, and
@@ -26,6 +28,18 @@ class HistoryScreen extends StatefulWidget {
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+/// History opened from one address ("Transactions" on its own screen): the
+/// address filter starts on it, and the screen is pushed rather than a tab, so
+/// it gets a back button and no navigation bar.
+class HistoryScreenArgs {
+  const HistoryScreenArgs({required this.address, this.backLabel});
+
+  final String address;
+
+  /// Where the desktop back link goes; the address's own screen's title.
+  final String? backLabel;
 }
 
 enum _Filter { type, address }
@@ -55,6 +69,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _addressInvalid = false;
 
   _Filter? _open;
+
+  /// Set when opened with [HistoryScreenArgs].
+  HistoryScreenArgs? _args;
+
+  /// The used subaddresses, for the labeled ones in the address filter; read
+  /// again only when the history moves.
+  Future<List<UsedReceiveAddress>>? _used;
+  int? _usedRevision;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (_args == null && args is HistoryScreenArgs) {
+      _args = args;
+      _address = args.address;
+    }
+  }
+
+  Future<List<UsedReceiveAddress>> _usedAddresses(CryptoWallet wallet) {
+    if (_used == null || _usedRevision != wallet.txHistoryRevision) {
+      _usedRevision = wallet.txHistoryRevision;
+      _used = wallet.loadUsedReceiveAddresses();
+    }
+    return _used!;
+  }
+
+  void _pickAddress(String address) => setState(() {
+    _address = address;
+    _addressInvalid = false;
+  });
 
   void _toggleOpen(_Filter f) => setState(() => _open = _open == f ? null : f);
 
@@ -125,7 +170,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // wallet's exact amounts.
     appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
+    final labels = context.watch<AddressLabelModel>();
     final asset = xmrWallet(context);
+    final pushed = _args != null;
+    final addressLabel = _address == null || asset == null
+        ? null
+        : labels.labelFor(asset.coinSymbol, _address!);
     // Content gutter: the desktop shell caps width and wants wider margins.
     final gutter = isDesktop ? 44.0 : 20.0;
 
@@ -174,25 +224,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     final filters = <Widget>[
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
-        child: Row(
-          children: [
-            _FilterPill(
-              label: i18n.shared.historyFilterType,
-              count: typeCountBadge,
-              open: _open == _Filter.type,
-              onTap: () => _toggleOpen(_Filter.type),
-            ),
-            const SizedBox(width: 7),
-            _FilterPill(
-              label: i18n.historyFilterAddress,
-              count: _address == null ? null : 1,
-              open: _open == _Filter.address,
-              onTap: () => _toggleOpen(_Filter.address),
-            ),
-          ],
+      // Esc closes an open filter panel, keyboard or mouse.
+      EscapeCloses(
+        active: _open != null,
+        onClose: () => setState(() => _open = null),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
+          child: Row(
+            children: [
+              _FilterPill(
+                label: i18n.shared.historyFilterType,
+                count: typeCountBadge,
+                open: _open == _Filter.type,
+                onTap: () => _toggleOpen(_Filter.type),
+              ),
+              const SizedBox(width: 7),
+              _FilterPill(
+                label: addressLabel ?? i18n.historyFilterAddress,
+                count: _address == null || addressLabel != null ? null : 1,
+                selected: _address != null,
+                open: _open == _Filter.address,
+                onTap: () => _toggleOpen(_Filter.address),
+              ),
+            ],
+          ),
         ),
       ),
       if (_open == _Filter.type)
@@ -208,8 +264,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (_open == _Filter.address && asset != null)
         _AddressPanel(
           address: _address,
+          label: addressLabel,
           iconAsset: asset.iconAsset,
           invalid: _addressInvalid,
+          picker: FutureBuilder<List<UsedReceiveAddress>>(
+            future: _usedAddresses(asset),
+            builder: (context, snapshot) => LabeledAddressPicker(
+              strings: i18n.shared,
+              entries: [
+                for (final u in snapshot.data ?? const <UsedReceiveAddress>[])
+                  if (labels.labelFor(asset.coinSymbol, u.address) case final label?)
+                    (
+                      coinSymbol: asset.coinSymbol,
+                      address: u.address,
+                      label: label,
+                      index: u.index,
+                    ),
+              ],
+              selected: _address,
+              onSelect: (_, address) => _pickAddress(address),
+            ),
+          ),
           gutter: gutter,
           onPaste: () => _pasteAddress(asset),
           onScan: () => _scanAddress(asset),
@@ -219,10 +294,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       Expanded(
         child: _open == null
             ? list
+            // A tap outside closes the panel. Not a control to assistive tech
+            // (the panel's Done is), and the dimmed rows leave the Tab order.
             : GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true,
                 onTap: () => setState(() => _open = null),
-                child: Opacity(opacity: 0.4, child: IgnorePointer(child: list)),
+                child: ExcludeFocus(
+                  child: Opacity(opacity: 0.4, child: IgnorePointer(child: list)),
+                ),
               ),
       ),
     ];
@@ -233,11 +313,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (pushed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(44, 30, 44, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: DesktopBackLink(
+                    label: _args!.backLabel ?? i18n.shared.receiveTitle,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(44, 30, 44, 20),
+              padding: EdgeInsets.fromLTRB(44, pushed ? 16 : 30, 44, 20),
               child: Row(
                 children: [
-                  Expanded(child: Text(i18n.shared.historyTitle, style: desktopTitleStyle)),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      namesRoute: true,
+                      child: Text(i18n.shared.historyTitle, style: desktopTitleStyle),
+                    ),
+                  ),
                   Builder(
                     builder: (anchor) => BrandButton.secondary(
                       label: i18n.shared.historyExportCsv,
@@ -257,7 +354,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return Scaffold(
       backgroundColor: BrandColors.paper,
-      bottomNavigationBar: const WalletNavigationBar(selectedIndex: 1),
+      bottomNavigationBar: pushed ? null : const WalletNavigationBar(selectedIndex: 1),
       body: SafeArea(
         bottom: false,
         child: Center(
@@ -269,17 +366,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: BrandScreenHeader(
+                    onBack: pushed ? () => Navigator.of(context).pop() : null,
                     center: Text(
                       i18n.shared.historyTitle,
                       style: BrandText.appBar.copyWith(fontSize: 16),
                     ),
                     action: Tooltip(
                       message: i18n.shared.historyExportCsv,
+                      // The button carries the name, so it is not read twice.
+                      excludeFromSemantics: true,
                       child: Opacity(
                         opacity: canExport ? 1 : 0.4,
                         child: Builder(
                           builder: (anchor) => IconCircleButton(
                             icon: Icons.file_download_outlined,
+                            semanticLabel: i18n.shared.historyExportCsv,
                             onPressed: canExport ? () => export(anchor) : null,
                           ),
                         ),
@@ -381,6 +482,9 @@ class _Timeline extends StatelessWidget {
 /// one on a contact.
 class _AddressPanel extends StatelessWidget {
   final String? address;
+
+  /// [address]'s label, shown in place of the coin name.
+  final String? label;
   final String iconAsset;
   final bool invalid;
   final double gutter;
@@ -389,8 +493,13 @@ class _AddressPanel extends StatelessWidget {
   final VoidCallback onClear;
   final VoidCallback onDone;
 
+  /// The labeled addresses to pick from, under the paste and scan row.
+  final Widget picker;
+
   const _AddressPanel({
     required this.address,
+    required this.label,
+    required this.picker,
     required this.iconAsset,
     required this.invalid,
     required this.gutter,
@@ -423,8 +532,9 @@ class _AddressPanel extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-              child: address == null ? _empty(i18n) : _filled(),
+              child: address == null ? _empty(i18n) : _filled(i18n),
             ),
+            Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 6), child: picker),
             _PanelFooter(onReset: onClear, onDone: onDone),
           ],
         ),
@@ -485,16 +595,20 @@ class _AddressPanel extends StatelessWidget {
         ),
         if (invalid) ...[
           const SizedBox(height: 8),
-          Text(
-            i18n.historyFilterAddressInvalid,
-            style: BrandText.caption.copyWith(color: BrandColors.error),
+          Semantics(
+            container: true,
+            liveRegion: true,
+            child: Text(
+              i18n.historyFilterAddressInvalid,
+              style: BrandText.caption.copyWith(color: BrandColors.error),
+            ),
           ),
         ],
       ],
     ),
   );
 
-  Widget _filled() => BrandCard(
+  Widget _filled(AppLocalizations i18n) => BrandCard(
     radius: 14,
     padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
     child: Row(
@@ -506,7 +620,7 @@ class _AddressPanel extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Monero',
+                label ?? 'Monero',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
@@ -514,12 +628,16 @@ class _AddressPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 3),
-              Text(
-                shortenMiddle(address!, head: 9, tail: 9),
-                style: TextStyle(
-                  fontFamily: 'Ubuntu Mono',
-                  fontSize: 11,
-                  color: BrandColors.inkMuted,
+              Semantics(
+                label: spokenShortAddress(i18n, address!, head: 9, tail: 9),
+                excludeSemantics: true,
+                child: Text(
+                  shortenMiddle(address!, head: 9, tail: 9),
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu Mono',
+                    fontSize: 11,
+                    color: BrandColors.inkMuted,
+                  ),
                 ),
               ),
             ],
@@ -528,6 +646,8 @@ class _AddressPanel extends StatelessWidget {
         Tappable(
           behavior: HitTestBehavior.opaque,
           onTap: onClear,
+          semanticLabel: i18n.shared.a11yClear,
+          focusRadius: BorderRadius.circular(13),
           child: Container(
             width: 26,
             height: 26,
@@ -604,20 +724,27 @@ class _FilterPill extends StatelessWidget {
   final bool open;
   final VoidCallback onTap;
 
+  /// Holds a choice that the label already names (an address's label), so it
+  /// goes dark without a count badge.
+  final bool selected;
+
   const _FilterPill({
     required this.label,
     required this.count,
     required this.open,
     required this.onTap,
+    this.selected = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final active = open || count != null;
+    final active = open || count != null || selected;
     final fg = active ? BrandColors.onPrimary : BrandColors.ink;
     return Tappable(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      expanded: open,
+      focusRadius: BorderRadius.circular(100),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
@@ -719,6 +846,7 @@ class _FilterPanel extends StatelessWidget {
     return Tappable(
       behavior: HitTestBehavior.opaque,
       onTap: () => onToggle(opt.value),
+      checked: selected,
       child: Container(
         decoration: last
             ? null

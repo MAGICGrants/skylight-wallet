@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:skylight_wallet/l10n/app_localizations.dart';
+import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 
 /// Desktop Step 6 of 6 — set the wallet password (last step; the wallet is
@@ -66,7 +68,7 @@ class _DesktopCreatePasswordViewState extends State<DesktopCreatePasswordView> {
   Widget build(BuildContext context) {
     final l = widget.labels;
     return DesktopOnboardingScaffold(
-      logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+      logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52, excludeFromSemantics: true),
       title: l.title,
       description: l.description,
       step: 6,
@@ -113,18 +115,23 @@ class _DesktopCreatePasswordViewState extends State<DesktopCreatePasswordView> {
     required bool obscured,
     required VoidCallback onToggle,
   }) {
+    final shared = AppLocalizations.of(context)!.shared;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontFamily: 'Ubuntu Mono',
-            fontSize: 10,
-            height: 1,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-            color: BrandColors.inkMuted,
+        // The field below carries this as its name, read as written (shown
+        // upper-cased, a short word can be spelled out letter by letter).
+        ExcludeSemantics(
+          child: Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'Ubuntu Mono',
+              fontSize: 10,
+              height: 1,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: BrandColors.inkMuted,
+            ),
           ),
         ),
         const SizedBox(height: 9),
@@ -138,22 +145,33 @@ class _DesktopCreatePasswordViewState extends State<DesktopCreatePasswordView> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: controller,
-                  obscureText: obscured,
-                  style: TextStyle(
-                    fontFamily: 'Ubuntu Mono',
-                    fontSize: 16,
-                    letterSpacing: obscured ? 3.5 : 0.5,
-                    color: BrandColors.ink,
+                child: Semantics(
+                  label: label,
+                  child: TextField(
+                    controller: controller,
+                    obscureText: obscured,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    enableIMEPersonalizedLearning: false,
+                    smartDashesType: SmartDashesType.disabled,
+                    smartQuotesType: SmartQuotesType.disabled,
+                    style: TextStyle(
+                      fontFamily: 'Ubuntu Mono',
+                      fontSize: 16,
+                      letterSpacing: obscured ? 3.5 : 0.5,
+                      color: BrandColors.ink,
+                    ),
+                    cursorColor: BrandColors.primary,
+                    decoration: const InputDecoration.collapsed(hintText: ''),
                   ),
-                  cursorColor: BrandColors.primary,
-                  decoration: const InputDecoration.collapsed(hintText: ''),
                 ),
               ),
               const SizedBox(width: 12),
               Tappable(
                 onTap: onToggle,
+                // What pressing does: show while hidden, hide while shown.
+                semanticLabel: obscured ? shared.a11yShowPassword : shared.a11yHidePassword,
+                focusRadius: BorderRadius.circular(10),
                 child: Icon(
                   obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                   size: 20,
@@ -167,14 +185,19 @@ class _DesktopCreatePasswordViewState extends State<DesktopCreatePasswordView> {
     );
   }
 
+  // Spoken as it appears and each time it changes (too short, then strong).
   Widget _hint(String text, {required bool ok}) => Padding(
     padding: const EdgeInsets.only(top: 8, left: 4),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontFamily: 'Ubuntu',
-        fontSize: 12,
-        color: ok ? BrandColors.success : BrandColors.error,
+    child: Semantics(
+      container: true,
+      liveRegion: true,
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Ubuntu',
+          fontSize: 12,
+          color: ok ? BrandColors.success : BrandColors.error,
+        ),
       ),
     ),
   );

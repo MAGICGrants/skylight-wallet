@@ -9,6 +9,7 @@ import 'package:skylight_wallet/l10n/shared_strings.dart';
 import 'package:skylight_wallet/models/contact_model.dart';
 import 'package:skylight_wallet/screens/desktop/home_shell.dart';
 import 'package:skylight_wallet/screens/send.dart';
+import 'package:skylight_wallet/util/formatting.dart';
 import 'package:skylight_wallet/util/platform.dart';
 import 'package:skylight_wallet/util/secure_clipboard.dart';
 import 'package:skylight_wallet/wallet_core_glue.dart';
@@ -81,7 +82,14 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                       color: BrandColors.error,
                     ),
                     const SizedBox(width: 11),
-                    Text(i18n.shared.addressBookDeleteContact, style: BrandText.sheetTitle),
+                    Semantics(
+                      header: true,
+                      namesRoute: true,
+                      child: Text(
+                        i18n.shared.addressBookDeleteContact,
+                        style: BrandText.sheetTitle,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 7),
@@ -155,7 +163,13 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: Text(i18n.shared.addressBookTitle, style: desktopTitleStyle)),
+                      Expanded(
+                        child: Semantics(
+                          header: true,
+                          namesRoute: true,
+                          child: Text(i18n.shared.addressBookTitle, style: desktopTitleStyle),
+                        ),
+                      ),
                       BrandButton.secondary(
                         label: i18n.shared.addressBookAddContact,
                         icon: Icons.add,
@@ -213,6 +227,8 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
                       Tappable(
                         behavior: HitTestBehavior.opaque,
                         onTap: _showAddContactDialog,
+                        semanticLabel: i18n.shared.addressBookAddContact,
+                        focusRadius: BorderRadius.circular(BrandRadii.field),
                         child: Container(
                           width: 52,
                           height: 52,
@@ -259,16 +275,20 @@ class _SearchField extends StatelessWidget {
           Icon(Icons.search, size: 20, color: BrandColors.inkFaint),
           const SizedBox(width: 10),
           Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              textInputAction: TextInputAction.search,
-              style: TextStyle(fontSize: 14, color: BrandColors.ink),
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: i18n.shared.addressBookSearchHint,
-                hintStyle: TextStyle(fontSize: 14, color: BrandColors.inkFaint),
+            // Named for screen readers: the placeholder goes once text is typed.
+            child: Semantics(
+              label: i18n.shared.a11ySearch,
+              child: TextField(
+                controller: controller,
+                onChanged: onChanged,
+                textInputAction: TextInputAction.search,
+                style: TextStyle(fontSize: 14, color: BrandColors.ink),
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  hintText: i18n.shared.addressBookSearchHint,
+                  hintStyle: TextStyle(fontSize: 14, color: BrandColors.inkFaint),
+                ),
               ),
             ),
           ),
@@ -322,17 +342,20 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: BrandColors.primaryDeep, shape: BoxShape.circle),
-      child: Text(
-        name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: const TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-          color: BrandColors.onPrimary,
+    // Decorative: the name it abbreviates is read beside it.
+    return ExcludeSemantics(
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: BrandColors.primaryDeep, shape: BoxShape.circle),
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: BrandColors.onPrimary,
+          ),
         ),
       ),
     );
@@ -365,59 +388,14 @@ class _ContactTile extends StatelessWidget {
     if (!expanded) {
       return Column(
         children: [
-          InkWell(
-            onTap: onToggle,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              child: Row(
-                children: [
-                  _Avatar(name: contact.name),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          contact.name,
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            color: BrandColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          shortenMiddle(_xmrAddress(contact), head: 8, tail: 8),
-                          style: TextStyle(
-                            fontFamily: 'Ubuntu Mono',
-                            fontSize: 11.5,
-                            color: BrandColors.inkMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.keyboard_arrow_down, size: 22, color: BrandColors.inkMuted),
-                ],
-              ),
-            ),
-          ),
-          if (!isLast) Divider(height: 1, thickness: 1, color: BrandColors.surfaceTinted),
-        ],
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: BrandCard(
-        radius: 20,
-        child: Column(
-          children: [
-            InkWell(
+          Semantics(
+            container: true,
+            button: true,
+            expanded: false,
+            child: InkWell(
               onTap: onToggle,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(15, 15, 15, 13),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 child: Row(
                   children: [
                     _Avatar(name: contact.name),
@@ -434,11 +412,70 @@ class _ContactTile extends StatelessWidget {
                               color: BrandColors.ink,
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          Semantics(
+                            label: spokenShortAddress(i18n, _xmrAddress(contact), head: 8, tail: 8),
+                            excludeSemantics: true,
+                            child: Text(
+                              shortenMiddle(_xmrAddress(contact), head: 8, tail: 8),
+                              style: TextStyle(
+                                fontFamily: 'Ubuntu Mono',
+                                fontSize: 11.5,
+                                color: BrandColors.inkMuted,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    Icon(Icons.keyboard_arrow_up, size: 22, color: BrandColors.inkMuted),
+                    Icon(Icons.keyboard_arrow_down, size: 22, color: BrandColors.inkMuted),
                   ],
+                ),
+              ),
+            ),
+          ),
+          if (!isLast) Divider(height: 1, thickness: 1, color: BrandColors.surfaceTinted),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: BrandCard(
+        radius: 20,
+        child: Column(
+          children: [
+            Semantics(
+              container: true,
+              button: true,
+              expanded: true,
+              child: InkWell(
+                onTap: onToggle,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 15, 15, 13),
+                  child: Row(
+                    children: [
+                      _Avatar(name: contact.name),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              contact.name,
+                              style: TextStyle(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w700,
+                                color: BrandColors.ink,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.keyboard_arrow_up, size: 22, color: BrandColors.inkMuted),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -508,7 +545,11 @@ class _AddressRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          _IconSquare(icon: Icons.copy_outlined, onTap: () => _copy(context)),
+          _IconSquare(
+            icon: Icons.copy_outlined,
+            semanticLabel: i18n.shared.a11yCopyValue(i18n.shared.address),
+            onTap: () => _copy(context),
+          ),
           const SizedBox(width: 8),
           BrandButton(
             label: i18n.shared.homeSend,
@@ -533,14 +574,17 @@ class _AddressRow extends StatelessWidget {
 
 class _IconSquare extends StatelessWidget {
   final IconData icon;
+  final String semanticLabel;
   final VoidCallback onTap;
-  const _IconSquare({required this.icon, required this.onTap});
+  const _IconSquare({required this.icon, required this.semanticLabel, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Tappable(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      semanticLabel: semanticLabel,
+      focusRadius: BorderRadius.circular(12),
       child: Container(
         width: 44,
         height: 44,
@@ -691,11 +735,15 @@ class _ContactSheetState extends State<_ContactSheet> {
                         color: BrandColors.primaryDeep,
                       ),
                       const SizedBox(width: 11),
-                      Text(
-                        _isEditing
-                            ? i18n.shared.addressBookEditContact
-                            : i18n.shared.addressBookAddContact,
-                        style: BrandText.sheetTitle,
+                      Semantics(
+                        header: true,
+                        namesRoute: true,
+                        child: Text(
+                          _isEditing
+                              ? i18n.shared.addressBookEditContact
+                              : i18n.shared.addressBookAddContact,
+                          style: BrandText.sheetTitle,
+                        ),
                       ),
                     ],
                   ),
@@ -726,7 +774,14 @@ class _ContactSheetState extends State<_ContactSheet> {
                     _addressEntry(),
                     if (_error != null) ...[
                       const SizedBox(height: 10),
-                      Text(_error!, style: BrandText.caption.copyWith(color: BrandColors.error)),
+                      Semantics(
+                        container: true,
+                        liveRegion: true,
+                        child: Text(
+                          _error!,
+                          style: BrandText.caption.copyWith(color: BrandColors.error),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -779,28 +834,33 @@ class _ContactSheetState extends State<_ContactSheet> {
               shape: BoxShape.circle,
             ),
             child: filled
-                ? Text(
-                    name[0].toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: BrandColors.onPrimary,
+                ? ExcludeSemantics(
+                    child: Text(
+                      name[0].toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: BrandColors.onPrimary,
+                      ),
                     ),
                   )
                 : Icon(Icons.person_outline, size: 17, color: BrandColors.inkDisabled),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: TextField(
-              controller: _nameController,
-              onChanged: (_) => setState(() {}),
-              textCapitalization: TextCapitalization.words,
-              style: TextStyle(fontSize: 14.5, height: 1.3, color: BrandColors.ink),
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: i18n.shared.addressBookNameHint,
-                hintStyle: TextStyle(fontSize: 14.5, color: BrandColors.inkFaint),
+            child: Semantics(
+              label: i18n.shared.addressBookContactName,
+              child: TextField(
+                controller: _nameController,
+                onChanged: (_) => setState(() {}),
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(fontSize: 14.5, height: 1.3, color: BrandColors.ink),
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  hintText: i18n.shared.addressBookNameHint,
+                  hintStyle: TextStyle(fontSize: 14.5, color: BrandColors.inkFaint),
+                ),
               ),
             ),
           ),
@@ -820,9 +880,17 @@ class _ContactSheetState extends State<_ContactSheet> {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                shortenMiddle(address, head: 12, tail: 12),
-                style: TextStyle(fontFamily: 'Ubuntu Mono', fontSize: 12.5, color: BrandColors.ink),
+              child: Semantics(
+                label: spokenShortAddress(i18n, address, head: 12, tail: 12),
+                excludeSemantics: true,
+                child: Text(
+                  shortenMiddle(address, head: 12, tail: 12),
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu Mono',
+                    fontSize: 12.5,
+                    color: BrandColors.ink,
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 11),
@@ -832,6 +900,8 @@ class _ContactSheetState extends State<_ContactSheet> {
                 _address = null;
                 _invalidAddress = false;
               }),
+              semanticLabel: i18n.shared.a11yClear,
+              focusRadius: BorderRadius.circular(13),
               child: Container(
                 width: 26,
                 height: 26,
@@ -883,9 +953,13 @@ class _ContactSheetState extends State<_ContactSheet> {
             ),
             if (_invalidAddress) ...[
               const SizedBox(height: 8),
-              Text(
-                i18n.sendInvalidAddressError,
-                style: BrandText.caption.copyWith(color: BrandColors.error),
+              Semantics(
+                container: true,
+                liveRegion: true,
+                child: Text(
+                  i18n.sendInvalidAddressError,
+                  style: BrandText.caption.copyWith(color: BrandColors.error),
+                ),
               ),
             ],
           ],

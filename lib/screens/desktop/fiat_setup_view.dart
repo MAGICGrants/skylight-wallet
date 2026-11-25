@@ -40,7 +40,7 @@ class DesktopFiatSetupView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DesktopOnboardingScaffold(
-      logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52),
+      logo: SvgPicture.asset('assets/logo_nobg.svg', height: 52, excludeFromSemantics: true),
       title: labels.title,
       description: labels.subtitle,
       step: 2,
@@ -128,6 +128,8 @@ class _CurrencyChip extends StatelessWidget {
     return Tappable(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
+      selected: selected,
+      focusRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(

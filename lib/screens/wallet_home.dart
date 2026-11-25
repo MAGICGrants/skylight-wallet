@@ -16,16 +16,12 @@ import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:skylight_wallet/screens/verify_seed.dart';
 import 'package:skylight_wallet/widgets/home_labels.dart';
 import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
+import 'package:skylight_wallet/widgets/security_checklist_setup.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
 import 'package:wallet_monero/wallet_monero.dart' show LwsPendingApproval;
-import 'package:wallet_backup_platform/wallet_backup_platform.dart' show MetadataBackupSetup;
-import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet, SeedStore;
-import 'package:wallet_fhse/security_keys_ui.dart' show securityKeysOn;
+import 'package:wallet_domain/wallet_domain.dart' show CryptoWallet;
 import 'package:wallet_infra/wallet_infra.dart' show StoreReview;
-
-/// Monero is decimal-12; cap the displayed coin amount for legibility.
-String _amountText(double amount) => amount.toStringAsFixed(5);
 
 /// The resolved LWS connection state, driving the disconnected indicator.
 enum StatusIconStatus { loading, complete, fail }
@@ -73,24 +69,7 @@ class WalletHomeScreen extends StatefulWidget {
 }
 
 class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBindingObserver {
-  late final SecurityChecklist _checklist = SecurityChecklist(
-    autoBackupOn: MetadataBackupSetup.automaticBackupOn,
-    securityKeysOn: securityKeysOn,
-    canVerifySeed: _canVerifySeed,
-  );
-  bool? _seedAskable;
-
-  // The seed check asks for the words as kept since the wallet was made, or,
-  // for an older wallet, its polyseed. Worked out once per visit.
-  Future<bool> _canVerifySeed() async {
-    final known = _seedAskable;
-    if (known != null) return known;
-    var askable = await SeedStore.exists();
-    if (!askable && mounted) {
-      askable = (await appWalletOf(context).readPolyseed()).isNotEmpty;
-    }
-    return _seedAskable = askable;
-  }
+  late final SecurityChecklist _checklist = appSecurityChecklist(context);
 
   @override
   void initState() {
@@ -168,12 +147,23 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
     // exact history and balances.
     final cw = xmrWallet(context)!;
     final coins = <HomeCoin>[(wallet: cw, tokens: const <CryptoWallet>[])];
-    final sections = HomeSections(activity: HomeActivity.shared, labels: homeLabels(i18n));
+    final sections = HomeSections(
+      activity: HomeActivity.shared,
+      labels: homeLabels(i18n),
+      trimDigitsOf: fiatRate.trimDigitsOf,
+    );
     final configured = cw.connectionAddress.isNotEmpty;
     Widget hero(Widget? footer) => HomeBalanceHero(
       fiatRate: fiatRate,
       fiatTotal: v.unlockedBalanceFiat,
-      coinText: '${_amountText(v.unlockedBalance)} XMR',
+      // From the engine's base units, cut to Trim Decimals (every digit when
+      // it is off or there is no price).
+      coinText: formatTrimmedAmount(
+        cw.unlockedBalanceBaseUnits ?? BigInt.zero,
+        cw.baseUnitDecimals,
+        fiatRate.trimDigitsOf(cw),
+        symbol: 'XMR',
+      ),
       fiatErrorTooltip: i18n.shared.homeFiatApiError,
       footer: footer,
     );
@@ -222,7 +212,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> with WidgetsBinding
       header: HomeHeader(
         logo: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: SvgPicture.asset('assets/logo.svg', width: 30, height: 30),
+          child: SvgPicture.asset(
+            'assets/logo.svg',
+            width: 30,
+            height: 30,
+            excludeFromSemantics: true,
+          ),
         ),
         title: 'Skylight Wallet',
       ),
@@ -273,14 +268,20 @@ class _ConnectionRow extends StatelessWidget {
         Container(width: 1, height: 14, color: BrandColors.borderStrong),
         const SizedBox(width: 10),
         Flexible(
-          child: Text(
-            trailing,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'Ubuntu Mono',
-              fontSize: 13,
-              height: 1,
-              color: disconnected ? BrandColors.error : BrandColors.inkMuted,
+          // "Disconnected" is spoken when it appears; the blocks-left count,
+          // which ticks, is not.
+          child: Semantics(
+            container: true,
+            liveRegion: blocks == null && disconnected,
+            child: Text(
+              trailing,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Ubuntu Mono',
+                fontSize: 13,
+                height: 1,
+                color: disconnected ? BrandColors.error : BrandColors.inkMuted,
+              ),
             ),
           ),
         ),
@@ -309,32 +310,38 @@ class _SyncStatusPill extends StatelessWidget {
       ),
       StatusIconStatus.fail => (BrandColors.error, i18n.homeDisconnected),
     };
-    return Container(
-      decoration: BoxDecoration(
-        color: BrandColors.surfaceSunken,
-        border: Border.all(color: BrandColors.border),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              fontFamily: 'Ubuntu',
-              fontSize: 12.5,
-              height: 1,
-              color: BrandColors.inkMuted,
+    // Spoken when it turns Synced or Disconnected; not while the blocks-left
+    // count ticks during a sync.
+    return Semantics(
+      container: true,
+      liveRegion: status != StatusIconStatus.loading,
+      child: Container(
+        decoration: BoxDecoration(
+          color: BrandColors.surfaceSunken,
+          border: Border.all(color: BrandColors.border),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontSize: 12.5,
+                height: 1,
+                color: BrandColors.inkMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

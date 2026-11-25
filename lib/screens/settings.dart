@@ -20,7 +20,7 @@ import 'package:skylight_wallet/wallet_core_glue.dart';
 import 'package:wallet_backup_platform/backup_ui.dart' show BackupLocalizations;
 import 'package:wallet_fhse/security_keys_ui.dart'
     show AppLockTile, DesktopAutoLockTile, FhseLocalizations, SecurityKeysState, securityKeysState;
-import 'package:wallet_domain/wallet_domain.dart' show OpenAliasMode;
+import 'package:wallet_domain/wallet_domain.dart' show AddressLabelModel, OpenAliasMode;
 import 'package:wallet_fhse/wallet_fhse.dart' show SecurityKeyService;
 import 'package:wallet_infra/wallet_infra.dart' show SyncFrequency, loadSyncFrequency;
 import 'package:skylight_wallet/services/notifications_service.dart';
@@ -28,6 +28,7 @@ import 'package:skylight_wallet/services/shared_preferences_service.dart';
 import 'package:skylight_wallet/services/tor_settings_service.dart';
 import 'package:skylight_wallet/widgets/language_sheet.dart';
 import 'package:skylight_wallet/widgets/privacy_settings_sheets.dart';
+import 'package:skylight_wallet/widgets/security_checklist_setup.dart';
 import 'package:skylight_wallet/widgets/sync_frequency_sheet.dart';
 import 'package:skylight_wallet/widgets/ui/ui.dart';
 import 'package:skylight_wallet/widgets/wallet_navigation_bar.dart';
@@ -63,6 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   SecurityKeysState? _securityKeys;
   FiatApiMode _fiatMode = FiatApiMode.torOnly;
   OpenAliasMode _openAliasMode = OpenAliasMode.torOnly;
+  var _checklistShown = true;
   // Toggles animate only after the stored values have loaded, so they don't
   // slide from off→on when the screen first appears.
   var _animateToggles = false;
@@ -95,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final fiatMode = await FiatRateModel.loadFiatApiMode();
     final openAliasMode = await OpenAliasMode.load();
+    final checklist = await SecurityChecklistSettings.load();
     final syncFrequency = await loadSyncFrequency();
     await _loadSecurityKeys();
 
@@ -104,6 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _loggingEnabled = loggingEnabled;
       _fiatMode = fiatMode;
       _openAliasMode = openAliasMode;
+      _checklistShown = checklist.showOnHome;
       _syncFrequency = syncFrequency;
     });
     // Enable animation a frame after the loaded values are painted.
@@ -242,6 +246,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) showBrandToast(context, i18n.shared.settingsAddressBookDeleted);
   }
 
+  void _showDeleteAddressLabelsDialog() {
+    final i18n = AppLocalizations.of(context)!;
+    showConfirmSheet(
+      context: context,
+      icon: Icons.delete_outline,
+      iconBg: BrandColors.errorBg,
+      iconColor: BrandColors.error,
+      title: i18n.shared.settingsDeleteAddressLabelsButton,
+      body: i18n.shared.settingsDeleteAddressLabelsDialogText,
+      confirmLabel: i18n.shared.settingsDeleteAddressLabelsDialogDeleteButton,
+      cancelLabel: i18n.shared.cancel,
+      onConfirm: _deleteAddressLabels,
+    );
+  }
+
+  // Only the labels: the addresses and their transactions stay. A backup
+  // syncing to a location records the removals, as for the address book.
+  Future<void> _deleteAddressLabels() async {
+    final i18n = AppLocalizations.of(context)!;
+    await Provider.of<AddressLabelModel>(context, listen: false).deleteAll();
+    if (mounted) showBrandToast(context, i18n.shared.settingsAddressLabelsDeleted);
+  }
+
   Future<void> _showViewLwsKeysDialog() async {
     final i18n = AppLocalizations.of(context)!;
     final ok = await showConfirmSheet(
@@ -307,6 +334,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) await _refreshFiatMode();
   }
 
+  void _showTrimDecimals() {
+    final i18n = AppLocalizations.of(context)!;
+    showTrimDecimalsSheet(
+      context,
+      fiatRate: context.read<FiatRateModel>(),
+      strings: i18n.shared,
+      coins: [(coinSymbol: 'XMR', baseUnitDecimals: xmrWallet(context)?.baseUnitDecimals ?? 12)],
+      iconBg: BrandColors.surfaceTinted,
+      iconColor: BrandColors.primaryDeep,
+    );
+  }
+
   void _showConnectionSettings() async {
     final i18n = AppLocalizations.of(context)!;
 
@@ -339,6 +378,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final mode = await OpenAliasMode.load();
       if (mounted) setState(() => _openAliasMode = mode);
     }
+  }
+
+  Future<void> _showSecurityChecklist() async {
+    final saved = await showAppSecurityChecklistSheet(context);
+    if (saved != true) return;
+    final checklist = await SecurityChecklistSettings.load();
+    if (mounted) setState(() => _checklistShown = checklist.showOnHome);
   }
 
   String _openAliasModeLabel(AppLocalizations i18n) => switch (_openAliasMode) {
@@ -447,6 +493,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final wallet = appWalletOf(context, listen: true);
     final fiatRate = context.watch<FiatRateModel>();
     // Sync Frequency and the notifications it feeds: phones only.
+    final hasContacts = context.watch<ContactModel>().contacts.isNotEmpty;
+    final hasLabels = context.watch<AddressLabelModel>().count > 0;
     final showNotifyToggle = Platform.isAndroid || Platform.isIOS;
     final connectionSubtitle = _connectionSubtitle(wallet, i18n);
     final fiatSubtitle = _fiatMode == FiatApiMode.disabled
@@ -479,6 +527,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showFiatApiSettings,
           ),
+          // Needs a price to work from, so it is only offered with prices on.
+          if (_fiatMode != FiatApiMode.disabled)
+            SettingsNavTile(
+              title: i18n.shared.trimDecimalsLabel,
+              value: trimDecimalsValue(i18n.shared, fiatRate.trimDecimals, fiatRate.fiatCurrency),
+              onTap: _showTrimDecimals,
+            ),
         ],
       ),
       SettingsGroup(
@@ -504,6 +559,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: _openAliasModeLabel(i18n),
             linkLabel: i18n.shared.settingsLwsViewKeysButton,
             onTap: _showOpenAliasSettings,
+          ),
+          SettingsLinkTile(
+            title: i18n.shared.securityChecklistLabel,
+            subtitle: _checklistShown
+                ? i18n.shared.securityChecklistShown
+                : i18n.shared.securityChecklistHidden,
+            linkLabel: i18n.shared.settingsLwsViewKeysButton,
+            onTap: _showSecurityChecklist,
           ),
         ],
       ),
@@ -531,11 +594,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               linkLabel: i18n.shared.settingsExportLogsButton,
               onTap: _exportLogs,
             ),
-          SettingsLinkTile(
-            title: i18n.shared.settingsDeleteAddressBookButton,
-            titleColor: BrandColors.error,
-            onTap: _showDeleteAddressBookDialog,
-          ),
+          // Each only while there is something to delete.
+          if (hasContacts)
+            SettingsLinkTile(
+              title: i18n.shared.settingsDeleteAddressBookButton,
+              titleColor: BrandColors.error,
+              onTap: _showDeleteAddressBookDialog,
+            ),
+          if (hasLabels)
+            SettingsLinkTile(
+              title: i18n.shared.settingsDeleteAddressLabelsButton,
+              titleColor: BrandColors.error,
+              onTap: _showDeleteAddressLabelsDialog,
+            ),
         ],
       ),
       if (showNotifyToggle)
@@ -667,14 +738,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Icon(Icons.tune, size: 19, color: BrandColors.primary),
               ),
               const SizedBox(width: 13),
-              Text(
-                i18n.shared.settingsTitle,
-                style: TextStyle(
-                  fontFamily: 'Ubuntu',
-                  fontSize: 21,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                  color: BrandColors.ink,
+              Semantics(
+                header: true,
+                namesRoute: true,
+                child: Text(
+                  i18n.shared.settingsTitle,
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu',
+                    fontSize: 21,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
+                    color: BrandColors.ink,
+                  ),
                 ),
               ),
             ],

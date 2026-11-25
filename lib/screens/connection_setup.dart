@@ -47,7 +47,11 @@ class ConnectionSetupScreen extends StatelessWidget {
                     center: const StepDots(count: 6, index: 2),
                   ),
                   const SizedBox(height: BrandSpacing.lg),
-                  Text(i18n.shared.connectionSetupTitle, style: BrandText.title),
+                  Semantics(
+                    header: true,
+                    namesRoute: true,
+                    child: Text(i18n.shared.connectionSetupTitle, style: BrandText.title),
+                  ),
                   const SizedBox(height: BrandSpacing.sm),
                   Text(i18n.lwsSetupDescription, style: BrandText.bodyMuted),
                   const SizedBox(height: BrandSpacing.xl),

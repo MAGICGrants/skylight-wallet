@@ -3,14 +3,15 @@
 # APK-level reproducibility check.
 #
 # Builds the release APK for one ABI TWICE at the FIXED canonical path /tmp/skylight
-# (the path release.yml and the F-Droid recipe use) and compares them. Uses the
-# repo's ALREADY-COMMITTED monero_c .so as a fixed input. Validates that the
-# APK-layer build (Flutter AOT, tor + openalias Rust, dex, packaging) is deterministic
-# at that path, using the SAME pinned cargokit toolchain as release.yml/recipe.
+# (the path release.yml and the F-Droid recipe use) and compares them. Checks that
+# the whole APK build (Flutter AOT, the Rust libraries: wallet_monero_oxide, Tor and
+# wallet_openalias; dex, packaging) is deterministic at that path, using the SAME
+# pinned cargokit toolchain as release.yml/recipe.
 # NOTE: same-time builds share the pinned toolchain, so this proves the build is
-# deterministic + openalias compiles — but only fdroid build --verify proves the pin
-# holds across TIME. It also does NOT vary the Flutter SDK path (both builds use the image's
-# /flutter) — a residual SDK-path leak would only surface in `fdroid build --verify`.
+# deterministic + the cargokit crates compile — but only fdroid build --verify proves
+# the pin holds across TIME. Both builds also use the same cargo home
+# (/tmp/skylight-cargo, as release.yml and fdroid-build.sh do) and the image's
+# /flutter, so a leak of either path would only surface in `fdroid build --verify`.
 #
 # Usage:
 #   scripts/repro/apk-repro-check.sh [abi]
@@ -22,7 +23,7 @@
 #
 # NOTE: ~2x flutter builds (~20-30 min each). Uses the CURRENT working tree
 # (uncommitted changes included), copied clean into each build path. Needs network
-# (pub + cargo crates for the tor plugin).
+# (pub + cargo crates for the Rust libraries).
 #
 set -euo pipefail
 
@@ -39,9 +40,6 @@ IMAGE="${BUILDER_IMAGE:-ghcr.io/magicgrants/skylight-wallet-builder:latest}"
 OUT="$ROOT/repro-out/apk-$ABI"
 mkdir -p "$OUT"
 
-SO="$ROOT/android/app/src/main/jniLibs/$ABI/libmonero_libwallet2_api_c.so"
-[ -f "$SO" ] || { echo "committed .so not found: $SO" >&2; exit 1; }
-
 if [ -z "${REPRO_LOG:-}" ]; then
   export REPRO_LOG="$ROOT/repro-out/apk-repro-$ABI-$(date +%Y%m%d-%H%M%S).log"
   mkdir -p "$(dirname "$REPRO_LOG")"
@@ -51,7 +49,7 @@ fi
 
 # Derive SOURCE_DATE_EPOCH on the host — the copied tree excludes .git (see copy_tree).
 SDE=$(git -C "$ROOT" log -1 --format=%ct 2>/dev/null || echo 1700000000)
-echo "==> abi: $ABI | using committed .so | image: $IMAGE | SOURCE_DATE_EPOCH=$SDE"
+echo "==> abi: $ABI | image: $IMAGE | SOURCE_DATE_EPOCH=$SDE"
 
 docker run --rm \
   -v "$ROOT:/repo:ro" \
@@ -70,7 +68,7 @@ docker run --rm \
       local dst="$1"; mkdir -p "$dst"
       tar -C /repo \
         --exclude=./.git --exclude=./build --exclude=./fdroiddata \
-        --exclude=./repro-out --exclude=./spice-wallet --exclude=./monero_c \
+        --exclude=./repro-out --exclude=./spice-wallet \
         --exclude=./.dart_tool --exclude=./.pub-cache \
         --exclude="./plugins/*/rust/target" \
         -cf - . | tar -C "$dst" -xpf -
@@ -83,15 +81,19 @@ docker run --rm \
       echo "==> [$app] copying working tree (excludes build/fdroiddata/.git/...)..."
       copy_tree "$app"
       cd "$app"
-      test -f "android/app/src/main/jniLibs/$ABI/libmonero_libwallet2_api_c.so"
       : "${SOURCE_DATE_EPOCH:=1700000000}"   # from host -e (.git not copied)
       RUST_TOOLCHAIN=$(grep -m1 channel rust-toolchain.toml | cut -d\" -f2)
       rustup default "$RUST_TOOLCHAIN" >/dev/null 2>&1 || true
       rustup target add "$RUST" >/dev/null 2>&1 || true
       export PUB_CACHE="$app/.pub-cache"
+      # A fresh cargo home at the path release.yml and fdroid-build.sh use, so
+      # the crate source paths the Rust libraries record match theirs.
+      rm -rf /tmp/skylight-cargo
+      cp -a /opt/cargo /tmp/skylight-cargo
+      export CARGO_HOME=/tmp/skylight-cargo
       echo "==> [$app] flutter pub get..."
       flutter pub get --enforce-lockfile
-      echo "==> [$app] pinning cargokit toolchain (openalias)..."
+      echo "==> [$app] pinning cargokit toolchain (wallet_monero_oxide, wallet_openalias)..."
       bash scripts/pin-rust-toolchain.sh
       echo "==> [$app] flutter build apk (Rust + Dart AOT; slow, limited output)..."
       flutter build apk --dart-define=DEMO_MODE=true --release --split-per-abi --target-platform="$PLATFORM"

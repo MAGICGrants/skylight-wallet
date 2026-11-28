@@ -164,14 +164,6 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
    COMPONENT Runtime)
 
-# Install monero_libwallet2_api_c.so
-set(MONERO_LIB "${CMAKE_CURRENT_SOURCE_DIR}/monero_libwallet2_api_c.so")
-if(EXISTS "${MONERO_LIB}")
-  install(FILES "${MONERO_LIB}"
-    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-    COMPONENT Runtime)
-endif()
-
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
 set(FLUTTER_ASSET_DIR_NAME "flutter_assets")

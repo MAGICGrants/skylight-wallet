@@ -16,6 +16,7 @@ list(APPEND FLUTTER_FFI_PLUGIN_LIST
   fhse_native
   flutter_local_notifications_windows
   flutter_zxing
+  wallet_monero_oxide
   wallet_openalias
 )
 

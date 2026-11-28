@@ -1,28 +1,29 @@
-# TLS against the monero_c library this app ships, on every platform it ships
-# for: LWS and node, direct and through a SOCKS proxy, and the wallet's own
-# connect path with the CA bundle. The checks live in wallet-core
-# (`package:wallet_monero/testing.dart`) and run here as an integration test,
-# inside the real app on each platform, so they see the committed binaries and
-# the app's own asset bundle.
+# The CA bundle and the Monero library's TLS, inside the real app on every
+# platform it ships for (integration_test/ca_bundle_test.dart). The library,
+# wallet-core's wallet_monero_oxide, is built by cargokit for each platform and
+# uses rustls with no roots of its own, so it trusts exactly the CA file the
+# app hands it. The test checks that the shipped bundle reaches the app
+# directory, that a file with no certificate is refused, and, for LWS and node
+# mode, that a server the handed file vouches for is accepted and one it does
+# not is refused during the handshake.
 #
-# Every server, proxy and certificate is local to the runner; nothing is
-# contacted over the network.
+# Every server and certificate is local to the runner; nothing is contacted
+# over the network.
 name: Native TLS
 
 on:
   pull_request:
     paths:
-      - 'android/app/src/main/jniLibs/**'
-      - 'ios/Frameworks/**'
-      - 'linux/*.so'
-      - 'windows/*.dll'
+      - 'pubspec.yaml'
       - 'pubspec.lock'
+      - 'rust-toolchain.toml'
+      - 'scripts/pin-rust-toolchain.sh'
       - 'integration_test/**'
       - '.github/workflows/native-tls.yml'
   workflow_dispatch:
 
 env:
-  TEST: integration_test/native_tls_test.dart
+  TEST: integration_test/ca_bundle_test.dart
 
 jobs:
   flutter-version:

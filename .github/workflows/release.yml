@@ -106,30 +106,11 @@ jobs:
           echo "FLUTTER_VERSION=${FLUTTER_VERSION}" >> $GITHUB_OUTPUT
           echo "Using Flutter version: ${FLUTTER_VERSION}"
 
-  verify-native:
-    name: Verify monero_c binaries
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Binaries match the pinned monero_c commit
-        run: |
-          set -euo pipefail
-          EXPECTED=$(awk '/^  monero:/{f=1} f&&/resolved-ref:/{gsub(/"/,"",$2);print $2;exit}' pubspec.lock)
-          [ -n "$EXPECTED" ] || { echo "::error::no monero resolved-ref in pubspec.lock"; exit 1; }
-          MANIFEST=$(sed -n 's/^# monero_c //p' monero_c.sha256)
-          if [ "$EXPECTED" != "$MANIFEST" ]; then
-            echo "::error::monero_c.sha256 pins $MANIFEST but pubspec.lock pins $EXPECTED"
-            exit 1
-          fi
-          sha256sum -c monero_c.sha256
-
   build-android:
     name: Android
     runs-on: ubuntu-latest
     environment: Release
-    needs: [version, verify-native]
+    needs: version
     steps:
       - name: Free up disk space
         run: |
@@ -142,8 +123,6 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          submodules: recursive
 
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
@@ -189,7 +168,12 @@ jobs:
           test -n "$NDK_VERSION"
           echo "BUILD_NDK_HOME=/opt/android-sdk/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
           # No key.properties: gradle debug-signs; the real key is applied in the signing pass.
-          # Fixed build path for reproducibility
+          # Fixed build path, cargo home and pub cache for reproducibility: the
+          # Rust libraries record their source paths. cargokit builds
+          # wallet_monero_oxide (the Monero wallet library) and wallet_openalias
+          # for each ABI with the image's Android targets;
+          # pin-rust-toolchain.sh points both at the rust-toolchain.toml
+          # version and makes cargo honor their Cargo.lock.
           docker run --rm \
             -v "$PWD:/tmp/skylight" \
             -w /tmp/skylight \
@@ -209,6 +193,13 @@ jobs:
       - name: Check the Tor library's build paths
         run: |
           bash scripts/repro/check-tor-paths.sh /tmp/skylight "$BUILD_NDK_HOME" \
+            build/app/outputs/flutter-apk/app-*-release.apk
+
+      # Likewise the Monero library, which names the cargo home and the app's
+      # build directory (fdroid-build.sh uses the same two).
+      - name: Check the Monero library's build paths
+        run: |
+          bash scripts/repro/check-oxide-paths.sh /tmp/skylight /tmp/skylight-cargo \
             build/app/outputs/flutter-apk/app-*-release.apk
 
       - name: Sign APKs and AAB
@@ -257,12 +248,10 @@ jobs:
     name: Linux (x86_64)
     runs-on: ubuntu-latest
     environment: Release
-    needs: [version, verify-native]
+    needs: version
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          submodules: recursive
 
       - name: Pull builder image
         run: docker pull ghcr.io/magicgrants/skylight-wallet-builder:latest
@@ -297,9 +286,10 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          # cargokit builds wallet_openalias with `rustup run stable`, and the
-          # image only has the rust-toolchain.toml version, so pin cargokit to it
-          # (as the Android job does) instead of downloading stable mid-build.
+          # cargokit builds wallet_monero_oxide and wallet_openalias with
+          # `rustup run stable`, and the image only has the rust-toolchain.toml
+          # version, so pin cargokit to it (as the Android job does) instead of
+          # downloading stable mid-build.
           # tor_ffi_plugin's build hook uses its own pinned toolchain, which
           # rustup downloads on first use.
           VERSION='${{ needs.version.outputs.version }}'
@@ -325,12 +315,10 @@ jobs:
     name: Windows (x64)
     runs-on: windows-2022
     environment: Release
-    needs: [version, verify-native]
+    needs: version
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          submodules: recursive
 
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -350,6 +338,8 @@ jobs:
           choco install nasm -y
           echo "C:\Program Files\NASM" >> $env:GITHUB_PATH
 
+      # cargokit builds wallet_monero_oxide (the Monero wallet library) and
+      # wallet_openalias into DLLs during `flutter build windows`.
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
         with:
@@ -374,12 +364,10 @@ jobs:
     name: iOS
     runs-on: macos-26
     environment: Release
-    needs: [version, verify-native]
+    needs: version
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          submodules: recursive
 
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -392,6 +380,9 @@ jobs:
           brew untap aws/tap 2>/dev/null || true   # runner pre-taps it; newer brew nags about untrusted taps
           brew install cocoapods
 
+      # cargokit builds wallet_monero_oxide (the Monero wallet library) and
+      # wallet_openalias into static libraries, each force-loaded into its
+      # pod's framework, from the pods' build phases.
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
         with:

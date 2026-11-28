@@ -1,3 +1,0 @@
-[submodule "monero_c"]
-	path = monero_c
-	url = https://github.com/magicgrants/monero_c

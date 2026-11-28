@@ -54,12 +54,6 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
-  monero:
-    git:
-      url: https://github.com/magicgrants/monero_c
-      ref: 97e2331a7eed215cea62017a2b686eab092a401e
-      path: impls/monero.dart
-
   # wallet-core packages; SHA-pinned for release, redirected to the local sibling
   # clone by the gitignored pubspec_overrides.yaml for dev.
   wallet_infra:
@@ -77,6 +71,14 @@ dependencies:
       url: https://github.com/MAGICGrants/wallet-core
       ref: 43065fb1b782b7a33077b0e4ccb825ba83a78729
       path: packages/wallet_monero
+  # Proof of concept: the Monero backend in Rust on monero-oxide, in place of
+  # monero_c. Not on the pinned wallet-core SHA yet; local builds take it from
+  # pubspec_overrides.yaml.
+  wallet_monero_oxide:
+    git:
+      url: https://github.com/MAGICGrants/wallet-core
+      ref: bfc0990d2a3ef9fc19453e1ad52cece2847b1e43
+      path: packages/wallet_monero_oxide
   wallet_openalias:
     git:
       url: https://github.com/MAGICGrants/wallet-core
@@ -147,8 +149,8 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # integration_test/native_tls_test.dart: TLS against the shipped native
-  # library, on a device or desktop.
+  # integration_test/ca_bundle_test.dart: the CA bundle and the Monero
+  # library's TLS, inside the app on a device or desktop.
   integration_test:
     sdk: flutter
 

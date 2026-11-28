@@ -19,7 +19,8 @@
 # Env:
 #   RUNS=1   build once only (smoke-test the recipe; skip the repro comparison)
 #
-# NOTE: very heavy — each run does the full recipe (monero_c depends ~1h + flutter).
+# NOTE: heavy — each run does the full recipe (the Rust libraries, Tor and the
+# Flutter build).
 # Needs network. Mutates fdroiddata/{build,logs,unsigned,tmp} (gitignored artifacts).
 #
 set -euo pipefail
@@ -71,7 +72,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 git add -u                                  # tracked modifications (pubspec, scripts, ...)
-git add rust-toolchain.toml scripts/reproducible.patch scripts/pin-rust-toolchain.sh scripts/fdroid-build.sh scripts/build-moneroc.sh 2>/dev/null || true
+git add rust-toolchain.toml scripts/pin-rust-toolchain.sh scripts/fdroid-build.sh 2>/dev/null || true
 TREE=$(git write-tree)
 TMP_COMMIT=$(git commit-tree "$TREE" -p HEAD -m "repro test (throwaway)")
 git branch -f "$TMP_BRANCH" "$TMP_COMMIT"

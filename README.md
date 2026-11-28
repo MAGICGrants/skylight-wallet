@@ -91,6 +91,7 @@ Before you begin, ensure you have the following installed:
 - **Android SDK** - API level 24+ (Android 7.0 or higher)
 - **Java JDK** - Version 17
 - **Xcode** (26 or later) and **CocoaPods** (1.17) - For iOS and macOS builds
+- **Rust**, through [rustup](https://rustup.rs) - Builds the native libraries (see [Native libraries](#native-libraries))
 
 ## Getting Started
 
@@ -222,43 +223,28 @@ The app uses Flutter's internationalization framework. To add a new language:
    ```
 4. The generated localization files will be in `lib/l10n/`
 
-## Building `libmonero_libwallet2_api_c.so`
+## Native libraries
 
-This is needed for the wallet functions and is located at `android/app/src/main/jniLibs/<platform>/`.
-
-These instructions should work on Ubuntu 22.04. You can use the `ubuntu:22.04` Docker image if you don't use Ubuntu as your OS.
-
-### Install dependencies
-
-```bash
-$ apt update
-$ apt install -y build-essential pkg-config autoconf libtool \
-    ccache make cmake gcc g++ git curl lbzip2 libtinfo5 gperf \
-    unzip python-is-python3 llvm
-```
-
-### Prepare source
+The Monero wallet library is wallet-core's `wallet_monero_oxide`, a Rust crate
+built on [monero-oxide](https://github.com/monero-oxide/monero-oxide). Nothing
+prebuilt is committed: `flutter build` and `flutter run` compile it for the
+target platform through cargokit, as they do the OpenAlias resolver
+(`wallet_openalias`), while Tor's build hook compiles Tor. A Rust toolchain from
+rustup is all they need; cargokit adds the compilation targets it is missing.
+To add them ahead of time:
 
 ```bash
-$ git clone https://github.com/vtnerd/monero_c --recursive
-$ cd monero_c
-$ git checkout lwsf
-$ git submodule update --init
-$ ./apply_patches.sh monero
+# Android
+rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+
+# iOS (device, then simulator)
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim
 ```
 
-### Building
-
-```bash
-# For armeabi-v7a
-$ ./build_single.sh monero armv7a-linux-androideabi -j$(nproc)
-
-# For arm64-v8a
-$ ./build_single.sh monero aarch64-linux-android -j$(nproc)
-
-# For x86_64
-$ ./build_single.sh monero x86_64-linux-android -j$(nproc)
-```
+cargokit builds with the `stable` toolchain. The Android and Linux release
+builds, and F-Droid's, run `scripts/pin-rust-toolchain.sh` after
+`flutter pub get`: it pins cargokit to the toolchain in `rust-toolchain.toml`
+and makes cargo use each crate's committed `Cargo.lock`.
 
 ## Contributing
 

@@ -100,24 +100,6 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
    COMPONENT Runtime)
 
-# Install monero_libwallet2_api_c.dll and its MinGW runtime dependencies
-set(MONERO_LIB "${CMAKE_CURRENT_SOURCE_DIR}/monero_libwallet2_api_c.dll")
-if(EXISTS "${MONERO_LIB}")
-  install(FILES "${MONERO_LIB}"
-    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-    COMPONENT Runtime)
-endif()
-
-# MinGW runtime DLLs required by monero_libwallet2_api_c.dll
-foreach(MINGW_DLL libwinpthread-1.dll libssp-0.dll)
-  set(MINGW_DLL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${MINGW_DLL}")
-  if(EXISTS "${MINGW_DLL_PATH}")
-    install(FILES "${MINGW_DLL_PATH}"
-      DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-      COMPONENT Runtime)
-  endif()
-endforeach()
-
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
 set(FLUTTER_ASSET_DIR_NAME "flutter_assets")

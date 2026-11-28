@@ -10,19 +10,18 @@
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		6FF8B85D2F19277F00206EFD /* MoneroWallet.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */; };
-		6FF8B85E2F19277F00206EFD /* MoneroWallet.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
-		FF73651470A3258C9BE6BA6E /* SecurityKeyOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */; };
+		40BF308701DD5040BB863C5B /* SecureScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BD308BF063A444AD174FCB /* SecureScreen.swift */; };
 		513EAD7ECFC95D4EACD7524B /* SecurityKeyChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */; };
 		6431CB5BDF16DB08076C4F81 /* PrivacyCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A84F489497BC2189A49B732 /* PrivacyCover.swift */; };
-		40BF308701DD5040BB863C5B /* SecureScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BD308BF063A444AD174FCB /* SecureScreen.swift */; };
-		F4266FC460FC211C6FD972E7 /* YubiKit in Frameworks */ = {isa = PBXBuildFile; productRef = 786BC24A685CA9C36E047769 /* YubiKit */; };
+		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		79D78220F5B529E1F8AAEC80 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5801F2E4C06C47481468529E /* Pods_Runner.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		D587F92C1947DB9F625B3F24 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A82A71B64192DCF8A518EB3 /* Pods_RunnerTests.framework */; };
+		F4266FC460FC211C6FD972E7 /* YubiKit in Frameworks */ = {isa = PBXBuildFile; productRef = 786BC24A685CA9C36E047769 /* YubiKit */; };
+		FF73651470A3258C9BE6BA6E /* SecurityKeyOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,7 +41,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				6FF8B85E2F19277F00206EFD /* MoneroWallet.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -52,22 +50,20 @@
 /* Begin PBXFileReference section */
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		18BD308BF063A444AD174FCB /* SecureScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecureScreen.swift; path = .symlinks/plugins/wallet_fhse/apple/SecureScreen.swift; sourceTree = SOURCE_ROOT; };
 		1E186A242ACE0EB38B7C86CC /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		270E0AF39FBB7A6C0A6AA2A4 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+		285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecurityKeyOperations.swift; path = .symlinks/plugins/wallet_fhse/apple/SecurityKeyOperations.swift; sourceTree = SOURCE_ROOT; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3344664AE9D4D6E25C3F7E1B /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		5801F2E4C06C47481468529E /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5921F250118D12D155280500 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
-		6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MoneroWallet.xcframework; path = Frameworks/MoneroWallet.xcframework; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		285AB4E3C0ACD6DDA8D3EACD /* SecurityKeyOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecurityKeyOperations.swift; path = ".symlinks/plugins/wallet_fhse/apple/SecurityKeyOperations.swift"; sourceTree = SOURCE_ROOT; };
-		CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecurityKeyChannel.swift; path = ".symlinks/plugins/wallet_fhse/apple/SecurityKeyChannel.swift"; sourceTree = SOURCE_ROOT; };
-		7A84F489497BC2189A49B732 /* PrivacyCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrivacyCover.swift; path = ".symlinks/plugins/wallet_fhse/apple/PrivacyCover.swift"; sourceTree = SOURCE_ROOT; };
-		18BD308BF063A444AD174FCB /* SecureScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecureScreen.swift; path = ".symlinks/plugins/wallet_fhse/apple/SecureScreen.swift"; sourceTree = SOURCE_ROOT; };
-		C20E80BCEA94B1C535960DE5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
+		7A84F489497BC2189A49B732 /* PrivacyCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PrivacyCover.swift; path = .symlinks/plugins/wallet_fhse/apple/PrivacyCover.swift; sourceTree = SOURCE_ROOT; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -77,6 +73,8 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9A82A71B64192DCF8A518EB3 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C20E80BCEA94B1C535960DE5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		CEEB15EF9B8FA7344CFCD11C /* SecurityKeyChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SecurityKeyChannel.swift; path = .symlinks/plugins/wallet_fhse/apple/SecurityKeyChannel.swift; sourceTree = SOURCE_ROOT; };
 		E3DD4CA775711C6C8B864A0A /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		F9F011F3833A8F336C647460 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -94,7 +92,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6FF8B85D2F19277F00206EFD /* MoneroWallet.xcframework in Frameworks */,
+				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 				79D78220F5B529E1F8AAEC80 /* Pods_Runner.framework in Frameworks */,
 				F4266FC460FC211C6FD972E7 /* YubiKit in Frameworks */,
 			);
@@ -106,7 +104,6 @@
 		238254620A1D6CBD8992FC9E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				6FF8B85C2F19277F00206EFD /* MoneroWallet.xcframework */,
 				6F680F322F0C231F00E6DE71 /* Frameworks */,
 				5801F2E4C06C47481468529E /* Pods_Runner.framework */,
 				9A82A71B64192DCF8A518EB3 /* Pods_RunnerTests.framework */,
@@ -132,6 +129,7 @@
 		9740EEB11CF90186004384FC /* Flutter */ = {
 			isa = PBXGroup;
 			children = (
+				78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */,
 				3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */,
 				9740EEB21CF90195004384FC /* Debug.xcconfig */,
 				7AFA3C8E1D35360C0083082E /* Release.xcconfig */,
@@ -228,8 +226,6 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				FA400AF07F45AC9B9BB0A29C /* [CP] Embed Pods Frameworks */,
-				B05AE4C7A964EACCD3805024 /* [CP] Copy Pods Resources */,
-				6FF8B85F2F19278000206F00 /* Generate MoneroWallet dSYM */,
 			);
 			buildRules = (
 			);
@@ -237,6 +233,7 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
+				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
 				786BC24A685CA9C36E047769 /* YubiKit */,
 			);
 			productName = Runner;
@@ -273,6 +270,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
+				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
 				6F53B4424E23BB8F384171A1 /* XCRemoteSwiftPackageReference "yubikit-swift" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
@@ -338,23 +336,6 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
 		};
-		B05AE4C7A964EACCD3805024 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		BE5DF59B2E8B5315DD66BC99 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -414,23 +395,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		6FF8B85F2F19278000206F00 /* Generate MoneroWallet dSYM */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Frameworks/MoneroWallet.framework/MoneroWallet",
-			);
-			name = "Generate MoneroWallet dSYM";
-			outputPaths = (
-				"${DWARF_DSYM_FOLDER_PATH}/MoneroWallet.framework.dSYM",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"${PLATFORM_NAME}\" = \"iphoneos\" ] && [ -f \"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Frameworks/MoneroWallet.framework/MoneroWallet\" ]; then\n  DSYM_DIR=\"${DWARF_DSYM_FOLDER_PATH:-${BUILT_PRODUCTS_DIR}}\"\n  mkdir -p \"${DSYM_DIR}\"\n  dsymutil -o \"${DSYM_DIR}/MoneroWallet.framework.dSYM\" \"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Frameworks/MoneroWallet.framework/MoneroWallet\" 2>/dev/null || true\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -841,6 +805,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		6F53B4424E23BB8F384171A1 /* XCRemoteSwiftPackageReference "yubikit-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -857,6 +828,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6F53B4424E23BB8F384171A1 /* XCRemoteSwiftPackageReference "yubikit-swift" */;
 			productName = YubiKit;
+		};
+		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterGeneratedPluginSwiftPackage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

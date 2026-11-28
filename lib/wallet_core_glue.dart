@@ -33,6 +33,7 @@ import 'package:wallet_backup_platform/wallet_backup_platform.dart'
 import 'package:wallet_fhse/security_keys_ui.dart' show SecurityKeysUi, SecurityKeysUiConfig;
 import 'package:wallet_fhse/wallet_fhse.dart' show FhseNative, FhseWalletGuard;
 import 'package:wallet_monero/wallet_monero.dart' show MoneroWallet, closeOrphanedMoneroWallets;
+import 'package:wallet_monero_oxide/wallet_monero_oxide.dart' show OxideMoneroBackend;
 import 'package:wallet_openalias/wallet_openalias.dart' show resolveOpenAlias;
 
 const _moneroDecimals = 12;
@@ -52,7 +53,8 @@ void installWalletCore() {
   CryptoWallet.aliasResolver = resolveOpenAlias;
   // Android: native Monero wallets an app isolate left open when it was
   // destroyed (swiped away) are closed by whoever takes over.
-  WalletManager.closeOrphanedWallets = closeOrphanedMoneroWallets;
+  WalletManager.closeOrphanedWallets = ({String? exceptToken}) =>
+      closeOrphanedMoneroWallets(exceptToken: exceptToken, backend: const OxideMoneroBackend());
 
   // Where the wallet password is generated (mobile and macOS) it is FHSE's
   // root, derived from the seed, and security keys can later take it out of
@@ -73,7 +75,7 @@ void installWalletCore() {
   wcore.NotificationService.androidSmallIcon = 'ic_stat_skylight';
 
   BackgroundSync.install(
-    coins: () => [MoneroWallet()],
+    coins: () => [newMoneroWallet()],
     workmanagerCallback: backgroundDispatcher,
     foregroundCallback: foregroundSyncCallback,
     ensureTorConnected: TorSettingsService.sharedInstance.ensureConnected,
@@ -121,7 +123,7 @@ void installWalletCore() {
 /// The wallets the app's [WalletManager] holds. Tests can swap it for sample
 /// ones, which makes it easier to take promotional screenshots and recordings.
 @visibleForTesting
-List<CryptoWallet> Function() appCoins = () => [MoneroWallet()];
+List<CryptoWallet> Function() appCoins = () => [newMoneroWallet()];
 
 /// The wallet-core [WalletManager] provider.
 ChangeNotifierProvider<WalletManager> walletManagerProvider() =>
@@ -291,3 +293,13 @@ void installMetadataBackup() {
     ),
   );
 }
+
+/// The Monero network this build talks to: 0 mainnet (the default), 1 testnet,
+/// 2 stagenet. `--dart-define=MONERO_NETWORK=1` builds a testnet app.
+const int moneroNetworkType = int.fromEnvironment('MONERO_NETWORK');
+
+/// A [MoneroWallet] on the monero-oxide backend, for [moneroNetworkType].
+MoneroWallet newMoneroWallet() => MoneroWallet(
+  backend: const OxideMoneroBackend(),
+  networkTypeOverride: moneroNetworkType == 0 ? null : moneroNetworkType,
+);
